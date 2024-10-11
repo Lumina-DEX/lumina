@@ -54,7 +54,6 @@ export class Addresses {
         console.log("events", events);
         const newList = []
         if (events?.length) {
-            const tokenList = await this.getList();
 
             for (let index = 0; index < events.length; index++) {
                 const x = events[index];
@@ -64,18 +63,14 @@ export class Addresses {
                 const tokenAccount = await fetchAccount({ publicKey: tokenAddress });
                 const symbol = tokenAccount?.account?.tokenSymbol;
 
-                // @ts-ignore
-                const alreadyExist = tokenList?.tokens?.find(z => z.address === tokenAddress.toBase58());
-
-                if (!alreadyExist) {
-                    newList.push({
-                        "address": tokenAddress.toBase58(),
-                        "poolAddress": poolAddress.toBase58(),
-                        "chainId": isZeko ? "zeko-devnet" : "mina-devnet",
-                        "symbol": symbol,
-                        "decimals": 9
-                    });
-                }
+                newList.push({
+                    "address": tokenAddress.toBase58(),
+                    "poolAddress": poolAddress.toBase58(),
+                    "chainId": isZeko ? "zeko-devnet" : "mina-devnet",
+                    "symbol": symbol,
+                    "decimals": 9,
+                    "approved": false
+                });
             }
         }
         console.log("list", newList);
