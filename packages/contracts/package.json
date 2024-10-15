@@ -22,6 +22,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "testw": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "testfactory": "node --experimental-vm-modules node_modules/jest/bin/jest.js factory",
+    "testtoken": "node --experimental-vm-modules node_modules/jest/bin/jest.js token.test",
     "testfaucet": "node --experimental-vm-modules node_modules/jest/bin/jest.js faucet.test",
     "testprivate": "node --experimental-vm-modules node_modules/jest/bin/jest.js privatepool.test",
     "lint": "npx eslint src/* --fix",
