@@ -108,6 +108,7 @@ describe('Token', () => {
     let txn = await Mina.transaction(senderAccount, async () => {
       await zkToken.mint(zkFaucetAddress, amt);
     });
+    console.log("mint token", txn.toPretty());
     await txn.prove();
     await txn.sign([senderKey, deployerKey]).send();
 
