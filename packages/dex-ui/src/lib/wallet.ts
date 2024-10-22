@@ -12,6 +12,10 @@ type ChainInfoArgs = {
 
 export const zekoTestnet = "zeko:testnet";
 export const minaTestnet = "mina:testnet";
+const addInfo = {
+  url: encodeURIComponent("https://devnet.zeko.io/graphql"),
+  name: "zeko",
+}
 
 export async function connect() {
   if (!mina) return;
@@ -63,6 +67,10 @@ export async function requestAccounts() {
 }
 
 export async function switchChain(newNetwork: string) {
+  if (newNetwork === zekoTestnet) {
+    await mina.addChain(addInfo).catch((err: any) => console.log(err));
+  }
+
   const ret = await mina.switchChain({ networkID: newNetwork });
   return ret;
 }
