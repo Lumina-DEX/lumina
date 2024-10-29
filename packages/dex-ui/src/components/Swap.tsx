@@ -37,7 +37,7 @@ const Swap = ({ accountState }) => {
 
   const [toAmount, setToAmount] = useState("0.0");
 
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
 
   const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 });
 

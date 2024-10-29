@@ -1,20 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/router";
-import { useSearchParams } from "next/navigation";
-import { PublicKey } from "o1js";
-// @ts-ignore
-import CurrencyFormat from "react-currency-format";
-import Liquidity from "@/components/Liquidity";
-import Withdraw from "@/components//Withdraw";
-import TabButton from "@/components/TabButton";
-import Create from "@/components/Create";
-import useAccount from "@/states/useAccount";
-
-type Percent = number | string;
 
 // @ts-ignore
-const Pool = () => {
+const Simulator = () => {
 
     const [data, setData] = useState({ amountIn: 10, amountOut: 0, liquidityMina: 20000, liquidityToken: 10000 });
 
@@ -75,4 +63,4 @@ const Pool = () => {
     );
 };
 
-export default Pool;
+export default Simulator;

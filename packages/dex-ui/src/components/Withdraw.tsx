@@ -29,7 +29,7 @@ const Withdraw = ({ accountState }) => {
   const [fromAmount, setFromAmount] = useState("");
   const [toMina, setToMina] = useState(0);
   const [toToken, setToToken] = useState(0);
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
   const [data, setData] = useState({ amountAOut: 0, amountBOut: 0, balanceAMin: 0, balanceBMin: 0, supplyMax: 0, liquidity: 0 });
 
   useEffect(() => {

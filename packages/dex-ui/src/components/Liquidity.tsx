@@ -28,7 +28,7 @@ const Liquidity = ({ accountState }) => {
   const [toDai, setToDai] = useState(true);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("0.0");
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
   const [data, setData] = useState({ amountAIn: 0, amountBIn: 0, balanceAMax: 0, balanceBMax: 0, supplyMin: 0, liquidity: 0 });
 
   useEffect(() => {
