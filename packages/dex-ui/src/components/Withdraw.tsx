@@ -99,12 +99,12 @@ const Withdraw = ({ accountState }) => {
             Withdraw liquidity
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input className="pl-3" type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
-          <div>
-            Pool : <TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
+          <div className="flex flex-row w-full justify-center items-center">
+            <span className="font-light">Pool : </span> <TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
           </div>
-          <div className="flex flex-row w-full">
+          <div className="flex flex-row w-full justify-center items-center">
             <CurrencyFormat
               className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
               thousandSeparator={true}

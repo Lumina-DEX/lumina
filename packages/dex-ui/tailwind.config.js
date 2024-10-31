@@ -12,8 +12,8 @@ module.exports = {
     extend: {
 
       fontFamily: {
-        primary: ["Orbitron"],
-        secondary: ["Cutive Mono"],
+        primary: ["Inter"],
+        secondary: ["Arial"],
       },
       backgroundImage: {
         lumina: "url(/assets/backgrounds/holo.png)",

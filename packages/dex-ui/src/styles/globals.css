@@ -4,15 +4,14 @@
 
 
 :root {
-  --primary-font: "Orbitron";
-  --secondary-font: "Metrophobic";
+  --primary-font: "Inter";
 
   --primary-color: #351c75;
   --secondary-color: #f7f5de;
 
 
 
-  font-family: var(--primary-font), var(--secondary-font), Inter, system-ui,
+  font-family: var(--primary-font), system-ui,
     Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

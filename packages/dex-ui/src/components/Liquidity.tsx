@@ -126,7 +126,7 @@ const Liquidity = ({ accountState }) => {
             Add liquidity
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input type="number" className="pl-3" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
           <div className="flex flex-row w-full">
             <CurrencyFormat

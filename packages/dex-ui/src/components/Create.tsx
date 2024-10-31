@@ -52,7 +52,7 @@ const Create = ({ accountState }) => {
             Create Pool
           </div>
           <div>
-            <span>Token address : </span> <input type="text" defaultValue={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)}></input>
+            <span  className="font-light">Token address : </span> <input type="text" defaultValue={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)}></input>
           </div>
           <button onClick={createPool} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Create Pool

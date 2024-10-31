@@ -113,11 +113,11 @@ const Swap = ({ accountState }) => {
             Swap
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input type="number" className="pl-3" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
           <div className="flex flex-row w-full">
             <CurrencyFormat
-              className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
+              className="w-48 border-black text-default font-light pr-3 text-xl text-right rounded focus:outline-none "
               thousandSeparator={true}
               decimalScale={2}
               placeholder="0.0"

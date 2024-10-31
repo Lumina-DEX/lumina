@@ -69,7 +69,8 @@ export class Addresses {
                     "chainId": isZeko ? "zeko-devnet" : "mina-devnet",
                     "symbol": symbol,
                     "decimals": 9,
-                    "approved": false
+                    "approved": false,
+                    "blockHeight": x.blockHeight.toBigint()
                 });
             }
         }
