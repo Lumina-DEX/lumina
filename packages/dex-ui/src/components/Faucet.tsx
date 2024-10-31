@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { useSearchParams } from "next/navigation";
 import { PublicKey } from "o1js";
+import Loading from "./Loading";
 
 // @ts-ignore
 const Faucet = ({ accountState }) => {
@@ -57,7 +58,7 @@ const Faucet = ({ accountState }) => {
           <button onClick={claim} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Claim
           </button>
-          {loading && <p>Creating transaction ...</p>}
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
           <a className="text-blue-500 underline" href="https://faucet.minaprotocol.com/" target="_blank">Official Mina Faucet</a>
           <a className="text-blue-500 underline" href="https://zeko.io/faucet" target="_blank">Official Zeko Faucet</a>
         </div >

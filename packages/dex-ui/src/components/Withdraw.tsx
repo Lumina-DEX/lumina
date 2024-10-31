@@ -8,6 +8,7 @@ import CurrencyFormat from "react-currency-format";
 import TokenMenu from "./TokenMenu";
 import { poolToka } from "@/utils/addresses";
 import Balance from "./Balance";
+import Loading from "./Loading";
 
 // @ts-ignore
 const Withdraw = ({ accountState }) => {
@@ -127,7 +128,7 @@ const Withdraw = ({ accountState }) => {
           <button onClick={withdrawLiquidity} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Withdraw Liquidity
           </button>
-          {loading && <p>Creating transaction ...</p>}
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
 
         </div>
       </div>
