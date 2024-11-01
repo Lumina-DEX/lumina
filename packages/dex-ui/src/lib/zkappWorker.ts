@@ -312,7 +312,7 @@ const functions = {
     console.log("total fund liquidity", total);
     console.log("address", { poolAddress: poolAddress.toBase58(), token: token.toBase58() });
     const transaction = await Mina.transaction(publicKey, async () => {
-      AccountUpdate.fundNewAccount(publicKey, 1);
+      AccountUpdate.fundNewAccount(publicKey, total);
       if (supply > 0) {
         await zkPool.supplyLiquidity(UInt64.from(amtMinaIn), UInt64.from(amtTokenIn), UInt64.from(reserveMina), UInt64.from(reserveToken), UInt64.from(supply));
       } else {
