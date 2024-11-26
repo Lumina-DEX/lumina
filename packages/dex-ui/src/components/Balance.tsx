@@ -28,8 +28,8 @@ const Balance = ({ tokenAddress }) => {
     if (zkState.publicKeyBase58 && tokenAddress) {
       zkState.zkappWorkerClient.getBalanceToken(zkState.publicKeyBase58, tokenAddress).then((x: UInt64) => {
         if (x) {
-          let amtOut = x.toBigInt() / BigInt(10 ** 9);
-          console.log("bal", balance);
+          let amtOut = Number(x.toBigInt()) / (10 ** 9);
+          console.log("bal", amtOut);
           setBalance(Number(amtOut).toFixed(2));
         } else {
           setBalance("0.0");

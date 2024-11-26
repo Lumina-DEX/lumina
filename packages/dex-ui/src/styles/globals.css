@@ -4,15 +4,14 @@
 
 
 :root {
-  --primary-font: "Orbitron";
-  --secondary-font: "Metrophobic";
+  --primary-font: "Inter";
 
   --primary-color: #351c75;
   --secondary-color: #f7f5de;
 
 
 
-  font-family: var(--primary-font), var(--secondary-font), Inter, system-ui,
+  font-family: var(--primary-font), system-ui,
     Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -153,4 +152,47 @@ a[target="_blank"]:hover {
   border: rgb(31, 41, 55) 1px solid;
   border-radius: 5px;
   color: rgb(31, 41, 55);
+}
+
+.spinner-content {
+  position: relative;
+}
+
+.spinner.loading {
+  text-align: center;
+}
+
+.loading-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.spinner.loading:before {
+  content: "";
+  height: 60px;
+  width: 60px;
+  top: 0;
+  left: 0;
+  position: absolute;
+  border-width: 8px;
+  border-style: solid;
+  border-color: rgb(6 182 212) #ccc #ccc;
+  border-radius: 100%;
+  animation: rotation .7s infinite linear;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(359deg);
+  }
 }

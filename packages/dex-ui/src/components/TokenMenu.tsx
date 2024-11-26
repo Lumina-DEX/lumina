@@ -10,13 +10,19 @@ import { ZKFACTORY_ADDRESS } from "./Layout";
 const TokenMenu = ({ pool, setPool, setToken }) => {
 
   const [tokenList, setTokenList] = useState([]);
-  const [eventList, setEventList] = useState([]);
+  const [virtualList, setVirtualList] = useState([]);
   const accountState = useAccount();
   const [current, setCurrent] = useState({ symbol: "" });
   const [open, setOpen] = useState(false);
   const [indexed, setIndexed] = useState([]);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const [tokenAddress, setTokenAddress] = useState("");
+  const handleOpen = () => {
+    setTokenAddress("");
+    setOpen(true);
+  }
+  const handleClose = () => {
+    setOpen(false);
+  }
 
   useEffect(() => {
     console.log("token", pool);
@@ -26,6 +32,17 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 
   }, [accountState.network]);
 
+  useEffect(() => {
+    if (tokenAddress?.length) {
+      const filtered = tokenList?.filter(x => x.address.toLowerCase().indexOf(tokenAddress.toLowerCase()) > -1);
+      setVirtualList(filtered);
+
+    } else {
+      setVirtualList(tokenList);
+    }
+
+  }, [tokenAddress, tokenList]);
+
   const getTokens = async () => {
     const network = accountState.network === minaTestnet ? "mina-devnet" : "zeko-devnet";
 
@@ -33,15 +50,19 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 
     // @ts-ignore
     const tokens = listed?.tokens?.filter(z => z.chainId === network);
-    setTokenList(tokens);
-
 
     const fetchEvent = await Addresses.getEventList(network === "zeko-devnet");
-    setEventList([]);
-    if (fetchEvent?.length) {
-      setEventList(fetchEvent);
-
+    if (fetchEvent.length) {
+      for (let index = 0; index < fetchEvent.length; index++) {
+        const element = fetchEvent[index];
+        const alreadyExist = tokens?.find(z => z.address === element.address);
+        if (!alreadyExist) {
+          tokens.push(element);
+        }
+      }
     }
+
+    setTokenList(tokens);
 
     const poolExist = tokens.find(z => z.poolAddress === pool);
     if (!poolExist && tokens?.length) {
@@ -78,8 +99,15 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
     border: '2px solid #000',
     boxShadow: 24,
     p: 4,
-    maxHeight: '90vh',
-    overflow: 'auto'
+    // height: '200px',
+    // maxHeight: '90vh',
+    // overflow: 'auto'
+  };
+
+  const listStyle = {
+    height: '400px',
+    overflow: 'auto',
+    maxHeight: '70vh',
   };
 
   const trimText = (text: string) => {
@@ -99,16 +127,12 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <div className="flex flex-col">
-            {tokenList.map(x => <div style={{ borderBottom: "1px solid black" }} onClick={() => selectPool(x)} className="flex flex-col bg-blue-100 p-3" key={x.poolAddress}  >
-              <span title={x.name}>{x.symbol}</span>
-              <span className="text-sm" title={x.address}>Address : {trimText(x.address)}</span>
-              <span className="text-sm" title={x.poolAddress}>Pool : {trimText(x.poolAddress)}</span>
-            </div>)}
+          <div className="flex flex-row">
+            <input type="text" className="w-full mb-3 border border-indigo-600 p-1" placeholder="Token address" value={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)}></input>
           </div>
-          <div className="flex flex-col">
-            {eventList.map(x => <div style={{ borderBottom: "1px solid black" }} onClick={() => selectPool(x)} className="flex flex-col bg-red-100 p-3" key={x.poolAddress}  >
-              <span title={x.name}>{x.symbol}</span>
+          <div className="flex flex-col" style={listStyle}>
+            {virtualList.map(x => <div style={{ borderBottom: "1px solid black" }} onClick={() => selectPool(x)} className="flex flex-col bg-blue-100 p-3" key={x.poolAddress}  >
+              <div className="flex flex-row justify-between"><span title={x.name}>{x.symbol}</span> {!x.approved && <span title="This pool has not yet been listed and was created by an external user, so please take precautions before trading on this pool." className="text-orange-500 cursor-pointer">&#x26A0;</span>}</div>
               <span className="text-sm" title={x.address}>Address : {trimText(x.address)}</span>
               <span className="text-sm" title={x.poolAddress}>Pool : {trimText(x.poolAddress)}</span>
             </div>)}

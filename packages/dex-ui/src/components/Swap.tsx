@@ -8,6 +8,7 @@ import CurrencyFormat from "react-currency-format";
 import { poolToka } from "@/utils/addresses";
 import TokenMenu from "./TokenMenu";
 import Balance from "./Balance";
+import Loading from "./Loading";
 
 type Percent = number | string;
 
@@ -37,7 +38,7 @@ const Swap = ({ accountState }) => {
 
   const [toAmount, setToAmount] = useState("0.0");
 
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
 
   const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 });
 
@@ -113,11 +114,11 @@ const Swap = ({ accountState }) => {
             Swap
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input type="number" className="pl-3" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
           <div className="flex flex-row w-full">
             <CurrencyFormat
-              className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
+              className="w-48 border-slate-50 pr-3 text-xl text-right rounded focus:outline-none "
               thousandSeparator={true}
               decimalScale={2}
               placeholder="0.0"
@@ -133,7 +134,7 @@ const Swap = ({ accountState }) => {
           </div>
           <div className="flex flex-row w-full">
             <CurrencyFormat
-              className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
+              className="w-48 border-slate-50  pr-3 text-xl text-right rounded focus:outline-none "
               thousandSeparator={true}
               decimalScale={2}
               placeholder="0.0"
@@ -148,8 +149,7 @@ const Swap = ({ accountState }) => {
           <button onClick={swap} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Swap
           </button>
-          {loading && <p>Creating transaction ...</p>}
-
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
         </div>
       </div>
     </>

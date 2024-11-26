@@ -8,6 +8,7 @@ import CurrencyFormat from "react-currency-format";
 import { poolToka } from "@/utils/addresses";
 import TokenMenu from "./TokenMenu";
 import Balance from "./Balance";
+import Loading from "./Loading";
 
 // @ts-ignore
 const Liquidity = ({ accountState }) => {
@@ -28,7 +29,7 @@ const Liquidity = ({ accountState }) => {
   const [toDai, setToDai] = useState(true);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("0.0");
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
   const [data, setData] = useState({ amountAIn: 0, amountBIn: 0, balanceAMax: 0, balanceBMax: 0, supplyMin: 0, liquidity: 0 });
 
   useEffect(() => {
@@ -126,7 +127,7 @@ const Liquidity = ({ accountState }) => {
             Add liquidity
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input type="number" className="pl-3" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
           <div className="flex flex-row w-full">
             <CurrencyFormat
@@ -167,7 +168,7 @@ const Liquidity = ({ accountState }) => {
           <button onClick={addLiquidity} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Add Liquidity
           </button>
-          {loading && <p>Creating transaction ...</p>}
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
 
         </div>
       </div>

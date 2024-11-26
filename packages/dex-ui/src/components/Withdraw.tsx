@@ -8,6 +8,7 @@ import CurrencyFormat from "react-currency-format";
 import TokenMenu from "./TokenMenu";
 import { poolToka } from "@/utils/addresses";
 import Balance from "./Balance";
+import Loading from "./Loading";
 
 // @ts-ignore
 const Withdraw = ({ accountState }) => {
@@ -29,7 +30,7 @@ const Withdraw = ({ accountState }) => {
   const [fromAmount, setFromAmount] = useState("");
   const [toMina, setToMina] = useState(0);
   const [toToken, setToToken] = useState(0);
-  const [slippagePercent, setSlippagePercent] = useState<number>(1);
+  const [slippagePercent, setSlippagePercent] = useState<number>(15);
   const [data, setData] = useState({ amountAOut: 0, amountBOut: 0, balanceAMin: 0, balanceBMin: 0, supplyMax: 0, liquidity: 0 });
 
   useEffect(() => {
@@ -99,12 +100,12 @@ const Withdraw = ({ accountState }) => {
             Withdraw liquidity
           </div>
           <div>
-            <span>Slippage (%) : </span><input type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
+            <span className="font-light">Slippage (%) : </span><input className="pl-3" type="number" defaultValue={slippagePercent} onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}></input>
           </div>
-          <div>
-            Pool : <TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
+          <div className="flex flex-row w-full justify-center items-center">
+            <span className="font-light">Pool : </span> <TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
           </div>
-          <div className="flex flex-row w-full">
+          <div className="flex flex-row w-full justify-center items-center">
             <CurrencyFormat
               className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
               thousandSeparator={true}
@@ -127,7 +128,7 @@ const Withdraw = ({ accountState }) => {
           <button onClick={withdrawLiquidity} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Withdraw Liquidity
           </button>
-          {loading && <p>Creating transaction ...</p>}
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
 
         </div>
       </div>

@@ -7,6 +7,7 @@ import { PrivateKey, PublicKey } from "o1js";
 import CurrencyFormat from "react-currency-format";
 import { poolToka } from "@/utils/addresses";
 import TokenMenu from "./TokenMenu";
+import Loading from "./Loading";
 
 // @ts-ignore
 const Mint = ({ accountState }) => {
@@ -73,7 +74,7 @@ const Mint = ({ accountState }) => {
           <button onClick={mintToken} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
             Mint Token
           </button>
-          {loading && <p>Creating transaction ...</p>}
+          {loading && <div className="flex flex-row items-center"><Loading></Loading> <span className="ml-3">Creating transaction ...</span></div>}
         </div>
       </div>
     </>

@@ -19,7 +19,8 @@
             "tokenId": "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
             "name": "Toka test token",
             "symbol": "TOKA",
-            "decimals": 9
+            "decimals": 9,
+            "approved": true
         },
         {
             "address": "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
@@ -28,7 +29,8 @@
             "tokenId": "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
             "name": "Toka test token",
             "symbol": "TOKA",
-            "decimals": 9
+            "decimals": 9,
+            "approved": true
         },
         {
             "address": "B62qqKNnNRpCtgcBexw5khZSpk9K2d9Z7Wzcyir3WZcVd15Bz8eShVi",
@@ -37,7 +39,8 @@
             "tokenId": "yBtcFk2EJTBJh7Ubjbw7oeAmiPjSTNKbtSVHd1f7voV39HQaWK",
             "name": "Wrapped ether",
             "symbol": "WETH",
-            "decimals": 9
+            "decimals": 9,
+            "approved": true
         }
     ]
 }

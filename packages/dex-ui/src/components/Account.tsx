@@ -81,7 +81,7 @@ const Account = () => {
             <select value={zkState?.network} onChange={async (ev) => await switchNetwork(ev.target.value)}>
               {zkState?.network !== zekoTestnet && zkState?.network !== minaTestnet && <option>N/A</option>}
               <option value={zekoTestnet}>Zeko</option>
-              <option value={minaTestnet}>Devnet</option>
+              <option value={minaTestnet}>Mina</option>
             </select>
           </div>
         </div>}
