@@ -1,7 +1,8 @@
 import { AccountUpdate, Bool, fetchAccount, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from 'o1js';
+import { describe, beforeAll, beforeEach, it, expect } from "vitest"
 
 
-import { FungibleTokenAdmin, FungibleToken, mulDiv, Faucet, PoolFactory, PoolTokenHolder, PoolData, contractHash, contractHolderHash, Pool } from '../index';
+import { FungibleTokenAdmin, FungibleToken, mulDiv, Faucet, PoolFactory, PoolTokenHolder, PoolData, contractHash, contractHolderHash, Pool } from '../build/src/index';
 
 let proofsEnabled = false;
 

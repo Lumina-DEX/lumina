@@ -1,6 +1,6 @@
 {
-  "name": "lumina-mvp",
-  "version": "0.1.0",
+  "name": "@lumina/contracts",
+  "version": "0.0.0",
   "description": "",
   "author": "",
   "license": "Apache-2.0",
@@ -14,21 +14,19 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
+    "generate:docs": "pnpx typedoc src/indexpool.ts --out ../contracts-docs/dist",
     "build": "tsc",
+    "build:watch": "tsc --watch",
     "cache": "node build/src/cache.js",
-    "buildw": "tsc --watch",
-    "coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "format": "prettier --write --ignore-unknown **/*",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "testw": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "testfactory": "node --experimental-vm-modules node_modules/jest/bin/jest.js factory",
-    "testfaucet": "node --experimental-vm-modules node_modules/jest/bin/jest.js faucet.test",
-    "testdata": "node --experimental-vm-modules node_modules/jest/bin/jest.js pooldata.test",
-    "testtoken": "node --experimental-vm-modules node_modules/jest/bin/jest.js pooltoken.test",
-    "testprivate": "node --experimental-vm-modules node_modules/jest/bin/jest.js privatepool.test",
-    "lint": "npx eslint src/* --fix",
-    "patch": "node patch.js",
-    "doc": "npx typedoc src/indexpool.ts --out ../docs"
+    "lint": "pnpx eslint src/* tests/* --fix",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:factory": "vitest run Factory",
+    "test:faucet": "vitest run Faucet",
+    "test:data": "vitest run PoolData",
+    "test:token": "vitest run PoolToken"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.16.4",
@@ -36,19 +34,22 @@
     "@types/jest": "^27.0.3",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
+    "@vitest/coverage-v8": "2.1.6",
     "eslint": "^8.7.0",
     "eslint-plugin-o1js": "^0.4.0",
     "jest": "^28.1.3",
     "prettier": "^2.3.2",
     "ts-jest": "^28.0.8",
     "typedoc": "^0.26.11",
-    "typescript": "^5.1"
+    "typescript": "^5.1",
+    "unplugin-swc": "^1.5.1",
+    "vitest": "^2.1.6"
   },
   "engines": {
     "node": ">=18.14.0"
   },
   "dependencies": {
     "mina-fungible-token": "^1.0.0",
-    "o1js": "^1.7.0"
+    "o1js": "1.7.0"
   }
 }

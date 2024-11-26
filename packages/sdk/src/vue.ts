@@ -90,3 +90,8 @@ export function useDex(
 } {
 	return useActor(dexMachine, options)
 }
+const { send: sendWallet } = useWallet()
+
+const { send } = useDex({ input: { addresses: { pool: "", factory: "", faucet: "" } } })
+
+send({ type: "Swap", user: "" })

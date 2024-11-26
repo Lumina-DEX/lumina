@@ -1,0 +1,33 @@
+{
+    "folders": [
+      {
+        "path": "../packages/sdk",
+        "name": "@lumina/sdk"
+      },
+      {
+        "path": "../packages/contracts",
+        "name": "@lumina/contracts"
+      },
+      {
+        "path": "../packages/dex-ui",
+      },
+      {
+        "path": "../packages/contracts-docs",
+      },
+      {
+        "path": "..",
+        "name": "@lumina/monorepo"
+      },
+    ],
+    "settings": {
+      "typescript.tsdk": "../node_modules/typescript/lib",
+      "typescript.enablePromptUseWorkspaceTsdk": true
+    },
+    "extensions": {
+      "recommendations": [
+        "dprint.dprint",
+        "biomejs.biome"
+      ]
+    },
+  }
+  

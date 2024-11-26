@@ -109,6 +109,7 @@ type DexEvent =
 	| { type: "CalculateAddLiquidityAmount" }
 	| { type: "AddLiquidity"; user: string }
 	//Deploy
+	//TODO: On zeko we can deploy token/token pool
 	| { type: "DeployPool"; user: string; settings: { tokenAddress: string } }
 	| { type: "DeployToken"; user: string; symbol: string }
 	//Mint

@@ -1,0 +1,15 @@
+{
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "dprint.dprint",
+	"[javascript]": {
+		"editor.defaultFormatter": "dprint.dprint"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "dprint.dprint"
+	},
+	"editor.codeActionsOnSave": {
+		"quickfix.biome": "explicit",
+		"source.organizeImports.biome": "explicit"
+	},
+	"dprint.path": "../../node_modules/.bin/dprint"
+}

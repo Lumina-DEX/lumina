@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: ./.github/workflows/actions/install
+          
+      - name: Format
+        run: bun run format
+
+#   test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+#       - uses: ./.github/workflows/actions/install
+
+#       - name: Build
+#         run: bun run build
+
+#       - name: Test
+#         run: bun run test
+
+#       - name: Typecheck
+#         run: bun run typecheck

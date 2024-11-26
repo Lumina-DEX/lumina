@@ -20,5 +20,5 @@
     "allowSyntheticDefaultImports": true,
     "useDefineForClassFields": false,
   },
-  "include": ["./src", "../website/cache.ts"],
+  "include": ["./src", "tests"],
 }

@@ -1,6 +1,7 @@
 import { FungibleToken, FungibleTokenAdmin } from 'mina-fungible-token';
 import { AccountUpdate, Bool, fetchAccount, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from 'o1js';
-import { Faucet } from '../index';
+import { Faucet } from '../build/src/index';
+import { describe, beforeAll, beforeEach, it, expect } from "vitest"
 
 let proofsEnabled = false;
 
@@ -68,6 +69,7 @@ describe('Faucet', () => {
     zkToken = new FungibleToken(zkTokenAddress);
 
     zkFaucet = new Faucet(zkFaucetAddress, zkToken.deriveTokenId());
+    console.log(zkFaucet)
     const faucetAmount = UInt64.from(100 * 10 ** 9);
 
     const txn = await Mina.transaction(deployerAccount, async () => {

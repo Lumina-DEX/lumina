@@ -1,12 +1,12 @@
 {
-  "name": "ui",
-  "version": "0.1.0",
+  "name": "@lumina/dex-ui",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "postinstall": "cd ../contracts && npm install",
-    "prebuild": "cd ../contracts && npm run build",
+    "postinstall": "echo 'TODO: cd ../contracts && npm install'",
+    "prebuild": "echo 'TODO: cd ../contracts && npm run build'",
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",

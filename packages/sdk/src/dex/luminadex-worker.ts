@@ -2,17 +2,22 @@ import * as Comlink from "comlink"
 import { create } from "mutative"
 import { AccountUpdate, Bool, Mina, PrivateKey, PublicKey, UInt8, UInt64, fetchAccount } from "o1js"
 
-import type { Faucet } from "@zeko/luminadex-contracts/src/Faucet"
-import type { PoolFactory } from "@zeko/luminadex-contracts/src/PoolFactory"
-import type { PoolMina } from "@zeko/luminadex-contracts/src/PoolMina"
-import type { PoolTokenHolder } from "@zeko/luminadex-contracts/src/PoolTokenHolder"
-import type { FungibleToken, FungibleTokenAdmin } from "@zeko/luminadex-contracts/src/index"
+import type {
+	Faucet,
+	FungibleToken,
+	FungibleTokenAdmin,
+	Pool,
+	PoolData,
+	PoolFactory,
+	PoolTokenHolder
+} from "@lumina/contracts"
 
 import { fetchFiles, readCache } from "./cache"
 
 // Types
 type Contracts = {
-	PoolMina: typeof PoolMina
+	Pool: typeof Pool
+	PoolData: typeof PoolData
 	PoolFactory: typeof PoolFactory
 	PoolMinaHolder: typeof PoolTokenHolder
 	TokenStandard: typeof FungibleToken
@@ -22,7 +27,8 @@ type Contracts = {
 
 type ZkInstances = {
 	token: FungibleToken | null
-	pool: PoolMina | null
+	pool: Pool | null
+	poolData: PoolData | null
 	factory: PoolFactory | null
 	holder: PoolTokenHolder | null
 	faucet: Faucet | null
@@ -39,13 +45,16 @@ type WorkerState = {
 }
 
 // Constants
-const FRONTEND_KEY = PublicKey.fromBase58("B62qoSZbMLJSP7dHLqe8spFPFSsUoENnMSHJN8i5bS1X4tdGpAZuwAC")
-const PROTOCOL_KEY = PublicKey.fromBase58("B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1")
+const TAX_RECEIVER = PublicKey.fromBase58("B62qoSZbMLJSP7dHLqe8spFPFSsUoENnMSHJN8i5bS1X4tdGpAZuwAC")
+const TAX_FEE_FRONTEND = 0
+const LUMINA_KEY = PublicKey.fromBase58("B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1")
+
+let LuminaAddress = ""
 
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	zk: { token: null, pool: null, factory: null, holder: null, faucet: null },
+	zk: { token: null, pool: null, factory: null, poolData: null, holder: null, faucet: null },
 	transaction: null,
 	deployKey: null
 }
@@ -66,18 +75,20 @@ const proveTransaction = async (transaction: Transaction) => {
 const loadContract = async () => {
 	const {
 		PoolFactory,
-		PoolMina,
+		Pool,
+		PoolData,
 		PoolTokenHolder: PoolMinaHolder,
 		FungibleToken: TokenStandard,
 		FungibleTokenAdmin: TokenAdmin,
 		Faucet
 		//@ts-ignore TODO: fix import
-	} = await import("@zeko/luminadex-contracts/build/src/indexmina")
+	} = await import("@lumina/contracts")
 
 	workerState = create(workerState, (draft) => {
 		draft.contracts = {
 			PoolFactory,
-			PoolMina,
+			Pool,
+			PoolData,
 			PoolMinaHolder,
 			TokenStandard,
 			TokenAdmin,
@@ -94,8 +105,9 @@ const compileContract = async () => {
 		workerState.contracts.TokenAdmin.compile({ cache }),
 		workerState.contracts.TokenStandard.compile({ cache }),
 		workerState.contracts.PoolFactory.compile({ cache }),
+		workerState.contracts.PoolData.compile({ cache }),
 		workerState.contracts.PoolMinaHolder.compile({ cache }),
-		workerState.contracts.PoolMina.compile({ cache }),
+		workerState.contracts.Pool.compile({ cache }),
 		workerState.contracts.Faucet.compile({ cache })
 	])
 }
@@ -108,8 +120,8 @@ const fetchMinaAccountToken = async (pk: string) => {
 const getZkTokenFromPool = async (pool: string) => {
 	const poolKey = PublicKey.fromBase58(pool)
 
-	const zkPool = new workerState.contracts.PoolMina(poolKey)
-	const zkPoolTokenKey = await zkPool.token.fetch()
+	const zkPool = new workerState.contracts.Pool(poolKey)
+	const zkPoolTokenKey = await zkPool.token1.fetch()
 	if (!zkPoolTokenKey) throw new Error("ZKPool Token Key not found")
 
 	const zkToken = new workerState.contracts.TokenStandard(zkPoolTokenKey)
@@ -136,6 +148,15 @@ const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) =
 	const publicKeyFaucet = PublicKey.fromBase58(faucet)
 	const zkFaucet = new workerState.contracts.Faucet(publicKeyFaucet, zkTokenId)
 
+	const poolDataPublicKey = await zkFactory.poolData.fetch()
+	if (!poolDataPublicKey) throw new Error("PoolData not found")
+
+	const zkPoolData = new workerState.contracts.PoolData(poolDataPublicKey)
+	const la = (await zkPoolData.protocol.fetch())?.toBase58()
+	if (!la) throw new Error("Lumina Address not found")
+
+	LuminaAddress = la
+
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
 		fetchAccount({ publicKey: zkPoolTokenKey }),
@@ -148,6 +169,7 @@ const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) =
 		const zk = {
 			token: zkToken,
 			pool: zkPool,
+			poolData: zkPoolData,
 			factory: zkFactory,
 			holder: zkHolder,
 			faucet: zkFaucet
@@ -159,8 +181,10 @@ const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) =
 
 const deployPoolInstance = async ({
 	tokenAddress,
+	tokenA,
+	tokenB = "minaAddress",
 	user
-}: { tokenAddress: string; user: string }) => {
+}: { tokenAddress: string; user: string; tokenA: string; tokenB?: string }) => {
 	const poolKey = PrivateKey.random()
 	console.log("pool key", poolKey.toBase58())
 	console.log("pool address", poolKey.toPublicKey().toBase58())
@@ -169,9 +193,12 @@ const deployPoolInstance = async ({
 		draft.deployKey = deployedKey
 	})
 
+	const isPoolToken = tokenB !== "minaAddress"
+
 	const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
 		AccountUpdate.fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (!workerState.zk.factory) throw new Error("Factory not initialized")
+		//TODO: isPoolToken
 		await workerState.zk.factory.createPool(
 			poolKey.toPublicKey(),
 			PublicKey.fromBase58(tokenAddress)
@@ -240,39 +267,11 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 	return await proveTransaction(transaction)
 }
 
-const getSupply = async () => {
-	const pool = workerState.zk.pool
-	if (!pool) throw new Error("Zkapp not initialized")
-	const publicKey = pool.address
-	const tokenId = pool.deriveTokenId()
-	const acc = await fetchAccount({ publicKey, tokenId })
-	return acc.account?.balance.toJSON()
-}
-
-const getBalances = async (user: string) => {
-	const { zk } = workerState
-	if (!zk.token || !zk.pool) throw new Error("Instances not initialized")
-
-	const publicKey = PublicKey.fromBase58(user)
-
-	const [accMina, accToken, accLiquidity] = await Promise.all([
-		fetchAccount({ publicKey }),
-		fetchAccount({ publicKey, tokenId: zk.token.deriveTokenId() }),
-		fetchAccount({ publicKey, tokenId: zk.pool.deriveTokenId() })
-	])
-
-	return {
-		mina: accMina.account?.balance.toString() ?? "0",
-		token: accToken.account?.balance.toString() ?? "0",
-		liquidity: accLiquidity.account?.balance.toString() ?? "0"
-	}
-}
-
 const getReserves = async (pool: string) => {
 	const poolAddress = PublicKey.fromBase58(pool)
 
-	const poolInstance = new workerState.contracts.PoolMina(poolAddress)
-	const token = await poolInstance.token.fetch()
+	const poolInstance = new workerState.contracts.Pool(poolAddress)
+	const token = await poolInstance.token1.fetch()
 	if (!token) throw new Error("Token not found")
 
 	const tokenInstance = new workerState.contracts.TokenStandard(token)
@@ -296,6 +295,27 @@ const getReserves = async (pool: string) => {
 	}
 }
 
+export interface Swap {
+	from: string
+	to: string
+	pool: string
+	user: string
+	amount: number
+	minOut: number
+	balanceOutMin: number
+	balanceInMax: number
+}
+
+// TODO : Universal Swap
+const swap = async (args: Swap) => {
+	//IF Mina
+	// swapFromMinaToToken(args)
+	// OR ELSE
+	// SwapFromTokenToToke(args)
+	// OR ELSE
+	// SwapFromTokenToMina(args)
+}
+
 export interface SwapFrom {
 	pool: string
 	user: string
@@ -307,8 +327,8 @@ export interface SwapFrom {
 
 const swapFromMina = async (args: SwapFrom) => {
 	const poolAddress = PublicKey.fromBase58(args.pool)
-	const zkPool = new workerState.contracts.PoolMina(poolAddress)
-	const token = await zkPool.token.fetch()
+	const zkPool = new workerState.contracts.Pool(poolAddress)
+	const token = await zkPool.token1.fetch()
 	if (!token) throw new Error("Token not found")
 	const zkToken = new workerState.contracts.TokenStandard(token)
 	const zkPoolHolder = new workerState.contracts.PoolMinaHolder(
@@ -333,18 +353,26 @@ const swapFromMina = async (args: SwapFrom) => {
 	])
 
 	const acc = await fetchAccount({ publicKey, tokenId: zkToken.deriveTokenId() })
-	const accFront = await fetchAccount({ publicKey: FRONTEND_KEY, tokenId: zkToken.deriveTokenId() })
+	const accFront = await fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkToken.deriveTokenId() })
+	const accProtocol = await fetchAccount({
+		publicKey: LuminaAddress,
+		tokenId: zkToken.deriveTokenId()
+	})
 
 	const newAcc = acc.account ? 0 : 1
 	const newFront = accFront.account ? 0 : 1
-	const total = newAcc + newFront
+	const newAccProtocol = accProtocol.account ? 0 : 1
+
+	const total = newAcc + newFront + newAccProtocol
 
 	console.log("token", token?.toBase58())
 
 	const transaction = await Mina.transaction(publicKey, async () => {
 		AccountUpdate.fundNewAccount(publicKey, total)
 		await zkPoolHolder.swapFromMina(
-			FRONTEND_KEY,
+			TAX_RECEIVER,
+			//TODO: Add validation 0-15
+			UInt64.from(TAX_FEE_FRONTEND),
 			UInt64.from(amountIn),
 			UInt64.from(amountOut),
 			UInt64.from(balanceIn),
@@ -374,15 +402,21 @@ const swapFromToken = async (args: SwapFrom) => {
 		fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
 	])
 
-	const accFront = await fetchAccount({ publicKey: FRONTEND_KEY })
+	const accFront = await fetchAccount({ publicKey: TAX_RECEIVER })
 	const newFront = accFront.account ? 0 : 1
+	const accProtocol = await fetchAccount({ publicKey: LUMINA_KEY })
+	const newAccProtocol = accProtocol.account ? 0 : 1
+
+	const total = newFront + newAccProtocol
 
 	console.log("token", zkPoolTokenKey?.toBase58())
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, newFront)
-		await zkPool.swapFromToken(
-			FRONTEND_KEY,
+		AccountUpdate.fundNewAccount(userKey, total)
+		await zkPool.swapTokenForMina(
+			TAX_RECEIVER,
+			//TODO: Add validation 0-15
+			UInt64.from(TAX_FEE_FRONTEND),
 			UInt64.from(amounts.in),
 			UInt64.from(amounts.out),
 			UInt64.from(amounts.balanceIn),
@@ -393,6 +427,7 @@ const swapFromToken = async (args: SwapFrom) => {
 	return await proveTransaction(transaction)
 }
 
+//TODO: Allow token/token
 export interface AddLiquidity {
 	pool: string
 	user: string
@@ -427,16 +462,13 @@ const addLiquidity = async (args: AddLiquidity) => {
 	console.log("add liquidity")
 
 	const acc = await fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
-	const accPro = await fetchAccount({ publicKey: PROTOCOL_KEY, tokenId: zkPoolTokenId })
+	const newAccount = acc.account ? 0 : 1
 
-	const newAcc = acc.account ? 0 : 1
-	const newAccPro = accPro.account ? 0 : 1
-	const total = newAcc + newAccPro
-	console.log("total fund liquidity", total)
 	console.log("address", { poolAddress: poolKey.toBase58(), token: zkPoolTokenKey.toBase58() })
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, total)
+		AccountUpdate.fundNewAccount(userKey, newAccount)
+		//TODO: If Mina
 		if (amounts.supply > 0) {
 			await zkPool.supplyLiquidity(
 				UInt64.from(amounts.minaIn),
@@ -448,11 +480,13 @@ const addLiquidity = async (args: AddLiquidity) => {
 		} else {
 			await zkPool.supplyFirstLiquidities(UInt64.from(amounts.minaIn), UInt64.from(amounts.tokenIn))
 		}
+		//TODO: If not mina
 	})
 
 	return await proveTransaction(transaction)
 }
 
+//TODO: Allow token/token
 export interface WithdrawLiquidity {
 	pool: string
 	user: string
@@ -489,6 +523,7 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	])
 
 	const transaction = await Mina.transaction(userKey, async () => {
+		//TODO: Add if Mina
 		await zkHolder.withdrawLiquidity(
 			UInt64.from(amounts.liquidityIn),
 			UInt64.from(amounts.minaOut),
@@ -539,10 +574,6 @@ const claim = async ({ user }: { user: string }) => {
 
 	return await proveTransaction(transaction)
 }
-
-const getTransactionJSON = () => workerState.transaction?.toJSON()
-
-const getDeploymentKey = () => workerState.deployKey
 
 // Export worker API
 export const luminaDexWorker = {
@@ -598,3 +629,35 @@ export type LuminaDexWorker = typeof luminaDexWorker
 // 	const balance = account?.account ? account.account.balance : UInt64.zero
 // 	return balance.toJSON()
 // }
+
+// const getSupply = async () => {
+// 	const pool = workerState.zk.pool
+// 	if (!pool) throw new Error("Zkapp not initialized")
+// 	const publicKey = pool.address
+// 	const tokenId = pool.deriveTokenId()
+// 	const acc = await fetchAccount({ publicKey, tokenId })
+// 	return acc.account?.balance.toJSON()
+// }
+
+// const getBalances = async (user: string) => {
+// 	const { zk } = workerState
+// 	if (!zk.token || !zk.pool) throw new Error("Instances not initialized")
+
+// 	const publicKey = PublicKey.fromBase58(user)
+
+// 	const [accMina, accToken, accLiquidity] = await Promise.all([
+// 		fetchAccount({ publicKey }),
+// 		fetchAccount({ publicKey, tokenId: zk.token.deriveTokenId() }),
+// 		fetchAccount({ publicKey, tokenId: zk.pool.deriveTokenId() })
+// 	])
+
+// 	return {
+// 		mina: accMina.account?.balance.toString() ?? "0",
+// 		token: accToken.account?.balance.toString() ?? "0",
+// 		liquidity: accLiquidity.account?.balance.toString() ?? "0"
+// 	}
+// }
+
+// const getTransactionJSON = () => workerState.transaction?.toJSON()
+
+// const getDeploymentKey = () => workerState.deployKey

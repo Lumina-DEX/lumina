@@ -1,0 +1,39 @@
+diff --git a/dist/node/lib/mina/constants.js b/dist/node/lib/mina/constants.js
+index b418fc8c54f6ebcccf802895c020d4e0a118da72..95d3cacfc14882b10bfc9f518ed00f926e0fbc5c 100644
+--- a/dist/node/lib/mina/constants.js
++++ b/dist/node/lib/mina/constants.js
+@@ -13,7 +13,7 @@ export var TransactionCost;
+     // Defined in https://github.com/MinaProtocol/mina/blob/e39abf79b7fdf96717eb8a8ee88ec42ba1e2663d/src/lib/mina_compile_config/mina_compile_config.ml#L71
+     TransactionCost.SIGNED_SINGLE_COST = 9.14;
+     // Defined in https://github.com/MinaProtocol/mina/blob/e39abf79b7fdf96717eb8a8ee88ec42ba1e2663d/src/lib/mina_compile_config/mina_compile_config.ml#L73
+-    TransactionCost.COST_LIMIT = 69.45;
++    TransactionCost.COST_LIMIT = 1000;
+ })(TransactionCost || (TransactionCost = {}));
+ // Constants to define the maximum number of events and actions in a transaction
+ export var TransactionLimits;
+diff --git a/dist/web/lib/mina/constants.js b/dist/web/lib/mina/constants.js
+index b418fc8c54f6ebcccf802895c020d4e0a118da72..95d3cacfc14882b10bfc9f518ed00f926e0fbc5c 100644
+--- a/dist/web/lib/mina/constants.js
++++ b/dist/web/lib/mina/constants.js
+@@ -13,7 +13,7 @@ export var TransactionCost;
+     // Defined in https://github.com/MinaProtocol/mina/blob/e39abf79b7fdf96717eb8a8ee88ec42ba1e2663d/src/lib/mina_compile_config/mina_compile_config.ml#L71
+     TransactionCost.SIGNED_SINGLE_COST = 9.14;
+     // Defined in https://github.com/MinaProtocol/mina/blob/e39abf79b7fdf96717eb8a8ee88ec42ba1e2663d/src/lib/mina_compile_config/mina_compile_config.ml#L73
+-    TransactionCost.COST_LIMIT = 69.45;
++    TransactionCost.COST_LIMIT = 1000;
+ })(TransactionCost || (TransactionCost = {}));
+ // Constants to define the maximum number of events and actions in a transaction
+ export var TransactionLimits;
+diff --git a/src/lib/mina/constants.ts b/src/lib/mina/constants.ts
+index 80fb72ac711f1604fd608853beffa1974d90c494..ced2d6f6dea7e40b4d314e3d3a19d4c8a64d6013 100644
+--- a/src/lib/mina/constants.ts
++++ b/src/lib/mina/constants.ts
+@@ -16,7 +16,7 @@ export namespace TransactionCost {
+   export const SIGNED_SINGLE_COST = 9.14 as const;
+ 
+   // Defined in https://github.com/MinaProtocol/mina/blob/e39abf79b7fdf96717eb8a8ee88ec42ba1e2663d/src/lib/mina_compile_config/mina_compile_config.ml#L73
+-  export const COST_LIMIT = 69.45 as const;
++  export const COST_LIMIT = 1000 as const;
+ }
+ 
+ // Constants to define the maximum number of events and actions in a transaction

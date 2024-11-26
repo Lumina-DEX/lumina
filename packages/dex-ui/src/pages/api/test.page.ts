@@ -1,10 +1,7 @@
+import rom 'fs'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { PoolMina, PoolMinaDeployProps, MinaTokenHolder, FungibleToken, FungibleTokenAdmin } from "../../../../contracts/build/src/indexmina.js";
-import { AccountUpdate, Mina, PrivateKey, PublicKey, Cache, fetchAccount, UInt64 } from "o1js";
-import fs, { readFileSync } from 'fs'
-import util from 'util';
-import { resolve } from 'path';
-import { readCache } from '../../lib/cache.js';
+import { } from "o1js";
+import { } from "../../../../contracts/build/src/indexmina";
 import ZkappWorkerClient from './workerClient';
 
 export const maxDuration = 300; // This function can run for a maximum of 300 seconds

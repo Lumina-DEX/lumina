@@ -1,5 +1,5 @@
 import { Field, SmartContract, state, State, method, Permissions, PublicKey, AccountUpdateForest, DeployArgs, UInt64, Provable, AccountUpdate, Account, Bool, Reducer, VerificationKey, Poseidon } from 'o1js';
-import { PoolData } from '../indexpool';
+import { PoolData } from '../build/src/indexpool';
 
 
 
