@@ -219,6 +219,40 @@ async function deployToken() {
     }
 }
 
+async function deployTokenMint() {
+    try {
+        console.log("deploy mint token standard");
+
+        let tx = await Mina.transaction(
+            { sender: feepayerAddress, fee },
+            async () => {
+                AccountUpdate.fundNewAccount(feepayerAddress, 4);
+                await zkTokenAdmin.deploy({
+                    adminPublicKey: feepayerAddress,
+                });
+                await zkToken.deploy({
+                    symbol: "LTA",
+                    src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+                });
+                await zkToken.initialize(
+                    zkTokenAdminAddress,
+                    UInt8.from(9),
+                    Bool(false),
+                );
+            }
+        );
+        await tx.prove();
+        let sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey]).send();
+        if (sentTx.status === 'pending') {
+            console.log("hash", sentTx.hash);
+        }
+
+
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 async function deployPool() {
     try {
         console.log("deploy pool");
