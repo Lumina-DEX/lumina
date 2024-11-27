@@ -1,11 +1,11 @@
-import { PrivateKey } from 'o1js';
+import { PrivateKey } from "o1js"
 
 // node src/key.js
 for (let index = 0; index < 10; index++) {
-    const key = PrivateKey.random();
+  const key = PrivateKey.random()
 
-    console.log("key " + index, {
-        public: key.toPublicKey().toBase58(),
-        private: key.toBase58()
-    })
+  console.log("key " + index, {
+    public: key.toPublicKey().toBase58(),
+    private: key.toBase58(),
+  })
 }

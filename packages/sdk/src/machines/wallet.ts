@@ -2,18 +2,11 @@ import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromCallback, fromPromise, setup } from "xstate"
+import { supportedTokens, urls } from "../constants"
 import { FetchAccountBalanceQuery } from "../graphql/sequencer"
 
-export const urls = {
-	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
-	"mina:berkeley": "https://api.minascan.io/node/berkeley/v1/graphql",
-	"mina:testnet": "https://api.minascan.io/node/devnet/v1/graphql",
-	"zeko:testnet": "https://devnet.zeko.io/graphql"
-} as const
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
-
-//TODO: Additional token support
 
 type Balance = { testnet: Record<string, number>; mainnet: Record<string, number> }
 type TokenBalances = {
@@ -22,9 +15,6 @@ type TokenBalances = {
 }
 
 type CustomToken = { tokenAddress: string; name: string }
-export const supportedTokens = {
-	mina: "wSHV2S4qX9jFsLjQo8r1BsMLH2ZRKsZx6EJd1sbozGPieEC4Jf"
-} as const
 
 type FetchBalancePromise = { address: string; token?: CustomToken; networks: Networks[] }
 

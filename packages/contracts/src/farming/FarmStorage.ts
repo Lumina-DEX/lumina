@@ -1,126 +1,149 @@
-import { Field, Permissions, state, State, method, TokenContractV2, PublicKey, AccountUpdateForest, DeployArgs, UInt64, AccountUpdate, Provable, VerificationKey, TokenId, Account, Bool, Int64, Reducer, Struct, CircuitString, assert, Types, SmartContract } from 'o1js';
-import { BalanceChangeEvent, Pool, mulDiv, PoolData, PoolTokenHolder } from '../indexpool.js';
+import {
+  Account,
+  AccountUpdate,
+  AccountUpdateForest,
+  assert,
+  Bool,
+  CircuitString,
+  DeployArgs,
+  Field,
+  Int64,
+  method,
+  Permissions,
+  Provable,
+  PublicKey,
+  Reducer,
+  SmartContract,
+  State,
+  state,
+  Struct,
+  TokenContractV2,
+  TokenId,
+  Types,
+  UInt64,
+  VerificationKey,
+} from "o1js"
+import { BalanceChangeEvent, mulDiv, Pool, PoolData, PoolTokenHolder } from "../indexpool.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
-    pool: PublicKey;
-    owner: PublicKey;
+  pool: PublicKey
+  owner: PublicKey
 }
-
 
 /**
  * Farm contract
  */
 export class FarmStorage extends SmartContract {
-    // Farming for one pool
-    @state(PublicKey) pool = State<PublicKey>();
-    // current amount deposited
-    @state(UInt64) amount = State<UInt64>();
-    // last time commited
-    @state(UInt64) lastCommitment = State<UInt64>();
-    // points win before last deposit (1 point by token by minute)
-    @state(UInt64) points = State<UInt64>();
+  // Farming for one pool
+  @state(PublicKey)
+  pool = State<PublicKey>()
+  // current amount deposited
+  @state(UInt64)
+  amount = State<UInt64>()
+  // last time commited
+  @state(UInt64)
+  lastCommitment = State<UInt64>()
+  // points win before last deposit (1 point by token by minute)
+  @state(UInt64)
+  points = State<UInt64>()
 
-    events = {
-        upgrade: Field,
-    };
+  events = {
+    upgrade: Field,
+  }
 
-    async deploy() {
-        await super.deploy();
-    }
+  async deploy() {
+    await super.deploy()
+  }
 
-    @method.returns(UInt64)
-    async getAmount() {
-        const currentAmount = this.amount.getAndRequireEquals();
-        return currentAmount;
-    }
+  @method.returns(UInt64)
+  async getAmount() {
+    const currentAmount = this.amount.getAndRequireEquals()
+    return currentAmount
+  }
 
-    @method
-    async deposit(amount: UInt64) {
-        const poolAddress = this.pool.getAndRequireEquals();
-        const pool = new Pool(poolAddress);
+  @method
+  async deposit(amount: UInt64) {
+    const poolAddress = this.pool.getAndRequireEquals()
+    const pool = new Pool(poolAddress)
 
-        const sender = this.sender.getUnconstrainedV2();
-        this.address.assertEquals(sender);
-        // transfer amount to this account
-        await pool.transfer(sender, this.address, amount);
+    const sender = this.sender.getUnconstrainedV2()
+    this.address.assertEquals(sender)
+    // transfer amount to this account
+    await pool.transfer(sender, this.address, amount)
 
-        const currentAmount = this.amount.getAndRequireEquals();
-        const newAmount = currentAmount.add(amount);
-        this.amount.set(newAmount);
+    const currentAmount = this.amount.getAndRequireEquals()
+    const newAmount = currentAmount.add(amount)
+    this.amount.set(newAmount)
 
-        // maybe is to this method to call deposit ?
-        const timestamp = this.network.timestamp.getAndRequireEquals();
-        const lastCommitment = this.lastCommitment.getAndRequireEquals();
-        const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp);
+    // maybe is to this method to call deposit ?
+    const timestamp = this.network.timestamp.getAndRequireEquals()
+    const lastCommitment = this.lastCommitment.getAndRequireEquals()
+    const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-        const currentPoint = this.points.getAndRequireEquals();
-        const newPoints = currentPoint.add(winPoints);
-        this.points.set(newPoints);
+    const currentPoint = this.points.getAndRequireEquals()
+    const newPoints = currentPoint.add(winPoints)
+    this.points.set(newPoints)
 
-        this.lastCommitment.set(timestamp);
+    this.lastCommitment.set(timestamp)
+  }
 
-    }
+  @method
+  async withdraw(amount: UInt64) {
+    const poolAddress = this.pool.getAndRequireEquals()
+    const pool = new Pool(poolAddress)
 
+    const currentAmount = this.amount.getAndRequireEquals()
+    amount.assertLessThanOrEqual(currentAmount, "Insuffisient amount")
 
-    @method
-    async withdraw(amount: UInt64) {
-        const poolAddress = this.pool.getAndRequireEquals();
-        const pool = new Pool(poolAddress);
+    const sender = this.sender.getUnconstrainedV2()
+    this.address.assertEquals(sender)
+    // transfer amount to this account
+    await pool.transfer(this.address, sender, amount)
 
-        const currentAmount = this.amount.getAndRequireEquals();
-        amount.assertLessThanOrEqual(currentAmount, "Insuffisient amount");
+    const newAmount = currentAmount.sub(amount)
+    this.amount.set(newAmount)
 
-        const sender = this.sender.getUnconstrainedV2();
-        this.address.assertEquals(sender);
-        // transfer amount to this account
-        await pool.transfer(this.address, sender, amount);
+    // maybe is to this method to call deposit ?
+    const timestamp = this.network.timestamp.getAndRequireEquals()
+    const lastCommitment = this.lastCommitment.getAndRequireEquals()
+    const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-        const newAmount = currentAmount.sub(amount);
-        this.amount.set(newAmount);
+    const currentPoint = this.points.getAndRequireEquals()
+    const newPoints = currentPoint.add(winPoints)
+    this.points.set(newPoints)
 
-        // maybe is to this method to call deposit ?
-        const timestamp = this.network.timestamp.getAndRequireEquals();
-        const lastCommitment = this.lastCommitment.getAndRequireEquals();
-        const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp);
+    this.lastCommitment.set(timestamp)
+  }
 
-        const currentPoint = this.points.getAndRequireEquals();
-        const newPoints = currentPoint.add(winPoints);
-        this.points.set(newPoints);
+  @method.returns(UInt64)
+  async withdrawReward() {
+    const currentAmount = this.amount.getAndRequireEquals()
 
-        this.lastCommitment.set(timestamp);
-    }
+    // prevent from reinit points
+    const sender = this.sender.getAndRequireSignatureV2()
 
-    @method.returns(UInt64)
-    async withdrawReward() {
-        const currentAmount = this.amount.getAndRequireEquals();
+    // maybe is to this method to call deposit ?
+    const timestamp = this.network.timestamp.getAndRequireEquals()
+    const lastCommitment = this.lastCommitment.getAndRequireEquals()
+    const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-        // prevent from reinit points
-        const sender = this.sender.getAndRequireSignatureV2();
+    const currentPoint = this.points.getAndRequireEquals()
+    const newPoints = currentPoint.add(winPoints)
 
-        // maybe is to this method to call deposit ?
-        const timestamp = this.network.timestamp.getAndRequireEquals();
-        const lastCommitment = this.lastCommitment.getAndRequireEquals();
-        const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp);
+    // reinit points
+    this.points.set(UInt64.zero)
 
-        const currentPoint = this.points.getAndRequireEquals();
-        const newPoints = currentPoint.add(winPoints);
+    this.lastCommitment.set(timestamp)
 
-        // reinit points
-        this.points.set(UInt64.zero);
+    return newPoints
+  }
 
-        this.lastCommitment.set(timestamp);
+  private calculatePoint(currentAmount: UInt64, lastDeposit: UInt64, timestamp: UInt64): UInt64 {
+    lastDeposit.assertLessThan(timestamp, "last deposit is not older than current block")
 
-        return newPoints;
-
-    }
-
-    private calculatePoint(currentAmount: UInt64, lastDeposit: UInt64, timestamp: UInt64): UInt64 {
-        lastDeposit.assertLessThan(timestamp, "last deposit is not older than current block");
-
-        const time = timestamp.sub(lastDeposit);
-        // calculate points by minutes 
-        const points = mulDiv(time, currentAmount, UInt64.from(60));
-        return points;
-    }
-
+    const time = timestamp.sub(lastDeposit)
+    // calculate points by minutes
+    const points = mulDiv(time, currentAmount, UInt64.from(60))
+    return points
+  }
 }

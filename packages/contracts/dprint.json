@@ -1,6 +1,9 @@
 {
   "markdown": {},
   "typescript": {
+    "semiColons": "asi",
+    "quoteStyle": "preferDouble",
+    "trailingCommas": "onlyMultiLine"
   },
   "json": {
   },

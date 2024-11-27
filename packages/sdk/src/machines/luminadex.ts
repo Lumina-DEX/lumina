@@ -19,7 +19,7 @@ import type {
 	InitZkappInstance,
 	LuminaDexWorker,
 	MintToken,
-	SwapFrom,
+	SwapArgs,
 	WithdrawLiquidity
 } from "../dex/luminadex-worker"
 import { sendTransaction } from "../helpers/transfer"
@@ -27,25 +27,28 @@ import { sendTransaction } from "../helpers/transfer"
 type DexWorker = Comlink.Remote<LuminaDexWorker>
 type InputDexWorker = { worker: DexWorker }
 
+type Token = {
+	address: string
+	amount: string
+}
+
 type SwapSettings = {
-	toDai?: boolean
-	fromAmount?: string
-	toAmount?: string
 	pool?: string
+	from?: Token
 	slippagePercent?: number
 }
 
 type AddLiquiditySettings = {
-	toDai?: boolean
-	fromAmount?: string
-	toAmount?: string
 	pool?: string
+	tokenA?: Token
+	tokenB?: Token
 	slippagePercent?: number
 }
 
 type RemoveLiquiditySettings = {
 	pool?: string
-	fromAmount?: string
+	tokenA?: Token
+	tokenB?: Token
 	slippagePercent?: number
 }
 
@@ -55,32 +58,33 @@ type ContractContext = {
 }
 
 type DexContext = {
-	removeLiquidity: {
-		fromAmount: string
-		slippagePercent: number
-		pool: string
-		liquidity: number
-		toMina: number
-		toToken: number
-		amountAOut: number
-		amountBOut: number
-		balanceAMin: number
-		balanceBMin: number
-		supplyMax: number
-	}
 	addLiquidity: {
-		toDai: boolean
-		fromAmount: string
-		toAmount: string
-		slippagePercent: number
 		pool: string
-		liquidityMinted: number
-		liquidity: number
-		amountAIn: number
-		amountBIn: number
-		balanceAMax: number
-		balanceBMax: number
-		supplyMin: number
+		tokenA: Token
+		tokenB: Token
+		slippagePercent: number
+		calculated: {
+			amountAIn: number
+			amountBIn: number
+			balanceAMax: number
+			balanceBMax: number
+			liquidity: number
+			supplyMin: number
+		}
+	}
+	removeLiquidity: {
+		pool: string
+		tokenA: Token
+		tokenB: Token
+		slippagePercent: number
+		calculated: {
+			liquidity: number
+			amountAOut: number
+			amountBOut: number
+			balanceAMin: number
+			balanceBMin: number
+			supplyMax: number
+		}
 	}
 	swap: {
 		amountIn: number
@@ -89,7 +93,7 @@ type DexContext = {
 		balanceInMax: number
 	} & Required<SwapSettings>
 	mint: Omit<MintToken, "user">
-	deployPool: { tokenAddress: string }
+	deployPool: { tokenA: string; tokenB: string }
 	deployToken: { symbol: string }
 }
 
@@ -109,9 +113,8 @@ type DexEvent =
 	| { type: "CalculateAddLiquidityAmount" }
 	| { type: "AddLiquidity"; user: string }
 	//Deploy
-	//TODO: On zeko we can deploy token/token pool
-	| { type: "DeployPool"; user: string; settings: { tokenAddress: string } }
-	| { type: "DeployToken"; user: string; symbol: string }
+	| { type: "DeployPool"; user: string; settings: { tokenA: string; tokenB: string } }
+	| { type: "DeployToken"; user: string; settings: { symbol: string } }
 	//Mint
 	| { type: "MintToken"; user: string; settings: Omit<MintToken, "user"> }
 	//Claim
@@ -142,6 +145,9 @@ const setContractError = (defaultMessage: string) => {
 		)
 	} as const
 }
+
+//TODO: Handle network change
+//TODO: Automatically get first user from wallet
 
 export const createLuminaDexMachine = () => {
 	return setup({
@@ -175,17 +181,13 @@ export const createLuminaDexMachine = () => {
 				console.timeEnd("claim")
 				await sendTransaction(txJson)
 			}),
-			swap: fromPromise(
-				async ({ input }: { input: InputDexWorker & { toDai: boolean } & SwapFrom }) => {
-					const { worker, toDai, ...swapSettings } = input
-					console.time("swap")
-					const txJson = toDai
-						? await worker.swapFromMina(swapSettings)
-						: await worker.swapFromToken(swapSettings)
-					console.timeEnd("swap")
-					await sendTransaction(txJson)
-				}
-			),
+			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
+				const { worker, ...swapSettings } = input
+				console.time("swap")
+				const txJson = await worker.swap(swapSettings)
+				console.timeEnd("swap")
+				await sendTransaction(txJson)
+			}),
 			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) => {
 				const { worker, ...config } = input
 				console.time("addLiquidity")
@@ -208,17 +210,18 @@ export const createLuminaDexMachine = () => {
 				}: {
 					input: InputDexWorker & { pool: string } & Required<SwapSettings>
 				}) => {
-					const { worker, pool, slippagePercent, fromAmount, toDai } = input
+					const { worker, pool, slippagePercent, from } = input
 					const reserves = await worker.getReserves(pool)
-					const settings = { toDai, fromAmount, slippagePercent }
-					if (reserves.amountMina && reserves.amountToken) {
-						const amountIn = Number.parseFloat(fromAmount) * 1e9
-						const amountMina = Number.parseInt(reserves.amountMina)
-						const amountToken = Number.parseInt(reserves.amountToken)
+					const settings = { from, slippagePercent }
+					if (reserves.token0.amount && reserves.token1.amount) {
+						const amountIn = Number.parseFloat(from.amount) * 1e9
+						const ok = reserves.token0.address === from.address
+						const balanceIn = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+						const balanceOut = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
 						const swapAmount = getAmountOut({
 							amountIn,
-							balanceIn: toDai ? amountMina : amountToken,
-							balanceOut: toDai ? amountToken : amountMina,
+							balanceIn,
+							balanceOut,
 							slippagePercent
 						})
 						return { swapAmount, settings }
@@ -240,10 +243,12 @@ export const createLuminaDexMachine = () => {
 				await sendTransaction(txJson)
 			}),
 			deployPool: fromPromise(
-				async ({ input }: { input: InputDexWorker & { tokenAddress: string; user: string } }) => {
-					const { worker, tokenAddress, user } = input
+				async ({
+					input
+				}: { input: InputDexWorker & { user: string; tokenA: string; tokenB: string } }) => {
+					const { worker, user, tokenA, tokenB } = input
 					console.time("deployPool")
-					const txJson = await worker.deployPoolInstance({ tokenAddress, user })
+					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB })
 					console.timeEnd("deployPool")
 					await sendTransaction(txJson)
 				}
@@ -268,49 +273,36 @@ export const createLuminaDexMachine = () => {
 				}
 			),
 			calculateAddLiquidityAmount: fromPromise(
-				async ({
-					input
-				}: {
-					input: InputDexWorker & {
-						toDai: boolean
-						pool: string
-						fromAmount: string
-						toAmount: string
-						slippagePercent: number
-					}
-				}) => {
-					const { worker, pool, fromAmount, toDai, toAmount, slippagePercent } = input
+				async ({ input }: { input: InputDexWorker & Required<AddLiquiditySettings> }) => {
+					const { worker, pool, tokenA, tokenB, slippagePercent } = input
 					const reserves = await worker.getReserves(pool)
 
-					if (reserves.amountMina && reserves.amountToken && reserves.liquidity) {
-						const amountMina = Number.parseInt(reserves.amountMina)
-						const amountToken = Number.parseInt(reserves.amountToken)
+					const ok = reserves.token0.address === tokenA.address
+
+					if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
+						const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+						const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+
 						const liquidity = Number.parseInt(reserves.liquidity)
 
 						if (liquidity > 0) {
-							const amountAIn = Number.parseFloat(fromAmount) * 1e9
+							const amountAIn = Number.parseFloat(ok ? tokenA.amount : tokenB.amount) * 1e9
 							console.log("amountAIn", amountAIn)
 							const liquidityAmount = getAmountLiquidityOut({
 								amountAIn,
-								balanceA: toDai ? amountMina : amountToken,
-								balanceB: toDai ? amountToken : amountMina,
+								balanceA,
+								balanceB,
 								supply: liquidity,
 								slippagePercent
 							})
-							console.log("Calculated liquidityAmount", { toDai, liquidityAmount })
-							const toAmount = (liquidityAmount.amountBIn / 1e9).toString()
-							const liquidityMinted = liquidityAmount.liquidity / 1e9
-							return { liquidityAmount, settings: { toDai, toAmount, liquidityMinted } }
+							console.log("Calculated liquidityAmount", liquidityAmount)
+							return liquidityAmount
 						}
-						const amountA = Number.parseFloat(fromAmount) * 1e9
-						const amountB = Number.parseFloat(toAmount) * 1e9
-						const liquidityAmount = getFirstAmountLiquidityOut({
-							amountAIn: toDai ? amountA : amountB,
-							amountBIn: toDai ? amountB : amountA
-						})
-						console.log("Calculated liquidityAmount", { toDai, liquidityAmount })
-						const liquidityMinted = liquidityAmount.liquidity / 1e9
-						return { liquidityAmount, settings: { toDai, toAmount, liquidityMinted } }
+						const amountAIn = Number.parseFloat(ok ? tokenA.amount : tokenB.amount) * 1e9
+						const amountBIn = Number.parseFloat(ok ? tokenB.amount : tokenA.amount) * 1e9
+						const liquidityAmount = getFirstAmountLiquidityOut({ amountAIn, amountBIn })
+						console.log("Calculated liquidityAmount", { liquidityAmount })
+						return liquidityAmount
 					}
 					const liquidityAmount = {
 						amountAIn: 0,
@@ -320,41 +312,33 @@ export const createLuminaDexMachine = () => {
 						supplyMin: 0,
 						liquidity: 0
 					}
-					const settings = { toDai, toAmount, liquidityMinted: 0 }
-					return { liquidityAmount, settings }
+					return liquidityAmount
 				}
 			),
 			calculateRemoveLiquidityAmount: fromPromise(
-				async ({
-					input
-				}: {
-					input: InputDexWorker & {
-						pool: string
-						fromAmount: string
-						slippagePercent: number
-					}
-				}) => {
-					const { worker, pool, fromAmount, slippagePercent } = input
+				async ({ input }: { input: InputDexWorker & Required<RemoveLiquiditySettings> }) => {
+					const { worker, pool, tokenA, tokenB, slippagePercent } = input
 					const reserves = await worker.getReserves(pool)
 
-					if (reserves.amountMina && reserves.amountToken && reserves.liquidity) {
-						const amountMina = Number.parseInt(reserves.amountMina)
-						const amountToken = Number.parseInt(reserves.amountToken)
-						const supply = Number.parseInt(reserves.liquidity)
+					const ok = reserves.token0.address === tokenA.address
 
-						const liquidity = Number.parseFloat(fromAmount) * 1e9
+					if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
+						const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+						const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+
+						const supply = Number.parseInt(reserves.liquidity)
+						const liquidity = Number.parseFloat(ok ? tokenA.amount : tokenB.amount) * 1e9
+
 						console.log("liquidity (fromAmount)", liquidity)
 						const liquidityAmount = getAmountOutFromLiquidity({
 							liquidity,
-							balanceA: amountMina,
-							balanceB: amountToken,
+							balanceA,
+							balanceB,
 							supply,
 							slippagePercent
 						})
-						console.log("Calculated liquidityAmount", { liquidityAmount })
-						const toMina = liquidityAmount.amountAOut / 1e9
-						const toToken = liquidityAmount.amountBOut / 1e9
-						return { liquidityAmount, settings: { toMina, toToken } }
+						console.log("Calculated liquidityAmount", liquidityAmount)
+						return liquidityAmount
 					}
 					const liquidityAmount = {
 						amountAOut: 0,
@@ -364,8 +348,7 @@ export const createLuminaDexMachine = () => {
 						supplyMax: 0,
 						liquidity: 0
 					}
-					const settings = { toMina: 0, toToken: 0 }
-					return { liquidityAmount, settings }
+					return liquidityAmount
 				}
 			)
 		}
@@ -377,63 +360,48 @@ export const createLuminaDexMachine = () => {
 				addresses: { pool, faucet, factory }
 			}
 		}) => ({
-			addresses: {
-				pool,
-				faucet,
-				factory
-			},
-			contract: {
-				worker: null,
-				error: null
-			},
+			addresses: { pool, faucet, factory },
+			contract: { worker: null, error: null },
 			dex: {
 				swap: {
 					pool: "",
-					toDai: false,
-					fromAmount: "",
-					toAmount: "",
+					from: { address: "", amount: "" },
 					slippagePercent: 0,
 					amountIn: 0,
 					amountOut: 0,
 					balanceOutMin: 0,
 					balanceInMax: 0
 				},
-				removeLiquidity: {
-					pool: "",
-					toDai: false,
-					fromAmount: "",
-					slippagePercent: 0,
-					liquidity: 0,
-					toMina: 0,
-					toToken: 0,
-					amountAOut: 0,
-					amountBOut: 0,
-					balanceAMin: 0,
-					balanceBMin: 0,
-					supplyMax: 0
-				},
 				addLiquidity: {
 					pool: "",
-					liquidityMinted: 0,
-					toDai: false,
-					fromAmount: "",
-					toAmount: "",
+					tokenA: { address: "", amount: "" },
+					tokenB: { address: "", amount: "" },
 					slippagePercent: 0,
-					amountAIn: 0,
-					amountBIn: 0,
-					balanceAMax: 0,
-					balanceBMax: 0,
-					supplyMin: 0,
-					liquidity: 0
+					calculated: {
+						amountAIn: 0,
+						amountBIn: 0,
+						balanceAMax: 0,
+						balanceBMax: 0,
+						liquidity: 0,
+						supplyMin: 0
+					}
 				},
-				mint: {
-					to: "",
-					token: "",
-					amount: 0
+				removeLiquidity: {
+					pool: "",
+					tokenA: { address: "", amount: "" },
+					tokenB: { address: "", amount: "" },
+					slippagePercent: 0,
+					calculated: {
+						amountAOut: 0,
+						amountBOut: 0,
+						balanceAMin: 0,
+						balanceBMin: 0,
+						liquidity: 0,
+						supplyMax: 0
+					}
 				},
-				deployPool: {
-					tokenAddress: ""
-				},
+				mint: { to: "", token: "", amount: 0 },
+				deployPool: { tokenA: "", tokenB: "" },
 				deployToken: {
 					symbol: "",
 					tokenKey: "",
@@ -498,88 +466,6 @@ export const createLuminaDexMachine = () => {
 					//TODO: Handle Errors
 					READY: {
 						on: {
-							CalculateRemoveLiquidityAmount: {
-								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
-								actions: assign(({ context }) => ({
-									dex: {
-										...context.dex,
-										removeLiquidity: {
-											...context.dex.removeLiquidity,
-											amountAOut: 0,
-											amountBOut: 0,
-											balanceAMin: 0,
-											balanceBMin: 0,
-											supplyMax: 0,
-											liquidity: 0,
-											liquidityMinted: 0
-										}
-									}
-								}))
-							},
-							ChangeRemoveLiquiditySettings: {
-								description: "Change the settings for adding liquidity.",
-								actions: enqueueActions(({ context, event, enqueue }) => {
-									enqueue.assign({
-										dex: {
-											...context.dex,
-											removeLiquidity: { ...context.dex.removeLiquidity, ...event.settings }
-										}
-									})
-									//Only recalculate if the settings are relevant
-									if (event.settings.fromAmount || event.settings.slippagePercent) {
-										enqueue.raise({ type: "CalculateRemoveLiquidityAmount" })
-									}
-								})
-							},
-							//TODO: Guard against incomplete settings
-							RemoveLiquidity: {
-								description: "Remove liquidity from a pool.",
-								target: "REMOVING_LIQUIDITY"
-							},
-							CalculateAddLiquidityAmount: {
-								target: "CALCULATING_ADD_LIQUIDITY_AMOUNT",
-								actions: assign(({ context }) => ({
-									dex: {
-										...context.dex,
-										addLiquidity: {
-											...context.dex.addLiquidity,
-											amountAIn: 0,
-											amountBIn: 0,
-											balanceAMax: 0,
-											balanceBMax: 0,
-											supplyMin: 0,
-											liquidity: 0,
-											liquidityMinted: 0
-										}
-									}
-								}))
-							},
-							ChangeAddLiquiditySettings: {
-								description: "Change the settings for adding liquidity.",
-								actions: enqueueActions(({ context, event, enqueue }) => {
-									enqueue.assign({
-										dex: {
-											...context.dex,
-											addLiquidity: { ...context.dex.addLiquidity, ...event.settings }
-										}
-									})
-									//Only recalculate if the settings are relevant
-									if (
-										event.settings.pool ||
-										event.settings.toDai ||
-										event.settings.fromAmount ||
-										event.settings.toAmount ||
-										event.settings.slippagePercent
-									) {
-										enqueue.raise({ type: "CalculateAddLiquidityAmount" })
-									}
-								})
-							},
-							//TODO: Guard against incomplete settings
-							AddLiquidity: {
-								description: "Add liquidity to a pool.",
-								target: "ADDING_LIQUIDITY"
-							},
 							DeployPool: {
 								description: "Deploy a pool for a given token.",
 								target: "DEPLOYING_POOL",
@@ -601,7 +487,7 @@ export const createLuminaDexMachine = () => {
 											tokenAdminKey: "",
 											tokenKeyPublic: "",
 											tokenAdminKeyPublic: "",
-											symbol: event.symbol
+											symbol: event.settings.symbol
 										}
 									}
 								}))
@@ -617,6 +503,92 @@ export const createLuminaDexMachine = () => {
 									dex: { ...context.dex, mint: { ...context.dex.mint, ...event.settings } }
 								}))
 							},
+							ChangeRemoveLiquiditySettings: {
+								description: "Change the settings for adding liquidity.",
+								actions: enqueueActions(({ context, event, enqueue }) => {
+									enqueue.assign({
+										dex: {
+											...context.dex,
+											removeLiquidity: { ...context.dex.removeLiquidity, ...event.settings }
+										}
+									})
+									//Only recalculate if the settings are relevant
+									if (
+										event.settings.pool ||
+										event.settings.tokenA ||
+										event.settings.tokenB ||
+										event.settings.slippagePercent
+									) {
+										enqueue.raise({ type: "CalculateRemoveLiquidityAmount" })
+									}
+								})
+							},
+							CalculateRemoveLiquidityAmount: {
+								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
+								actions: assign(({ context }) => ({
+									dex: {
+										...context.dex,
+										removeLiquidity: {
+											...context.dex.removeLiquidity,
+											amountAOut: 0,
+											amountBOut: 0,
+											balanceAMin: 0,
+											balanceBMin: 0,
+											supplyMax: 0,
+											liquidity: 0,
+											liquidityMinted: 0
+										}
+									}
+								}))
+							},
+							//TODO: Guard against incomplete settings
+							RemoveLiquidity: {
+								description: "Create and send a transaction to remove liquidity from a pool.",
+								target: "REMOVING_LIQUIDITY"
+							},
+							ChangeAddLiquiditySettings: {
+								description: "Change the settings for adding liquidity.",
+								actions: enqueueActions(({ context, event, enqueue }) => {
+									enqueue.assign({
+										dex: {
+											...context.dex,
+											addLiquidity: { ...context.dex.addLiquidity, ...event.settings }
+										}
+									})
+									//Only recalculate if the settings are relevant
+									if (
+										event.settings.pool ||
+										event.settings.tokenA ||
+										event.settings.tokenB ||
+										event.settings.slippagePercent
+									) {
+										enqueue.raise({ type: "CalculateAddLiquidityAmount" })
+									}
+								})
+							},
+							CalculateAddLiquidityAmount: {
+								target: "CALCULATING_ADD_LIQUIDITY_AMOUNT",
+								actions: assign(({ context }) => ({
+									dex: {
+										...context.dex,
+										addLiquidity: {
+											...context.dex.addLiquidity,
+											amountAIn: 0,
+											amountBIn: 0,
+											balanceAMax: 0,
+											balanceBMax: 0,
+											supplyMin: 0,
+											liquidity: 0,
+											liquidityMinted: 0
+										}
+									}
+								}))
+							},
+							//TODO: Guard against incomplete settings
+							AddLiquidity: {
+								description: "Create and send a transaction to add liquidity to a pool.",
+								target: "ADDING_LIQUIDITY"
+							},
 							ChangeSwapSettings: {
 								description: "Change the settings for a token swap.",
 								actions: enqueueActions(({ context, event, enqueue }) => {
@@ -627,11 +599,9 @@ export const createLuminaDexMachine = () => {
 										}
 									})
 									//Only recalculate if the settings are relevant
-									//TODO: Handle network change
 									if (
-										event.settings.toDai ||
 										event.settings.pool ||
-										event.settings.fromAmount ||
+										event.settings.from ||
 										event.settings.slippagePercent
 									) {
 										enqueue.raise({ type: "CalculateSwapAmount" })
@@ -640,7 +610,8 @@ export const createLuminaDexMachine = () => {
 							},
 							CalculateSwapAmount: {
 								target: "CALCULATING_SWAP_AMOUNT",
-								description: "Manually recalculate the swap amount.",
+								description:
+									"Manually recalculate the swap amount. Automatically called after ChangeSwapSettings.",
 								actions: assign(({ context }) => ({
 									dex: {
 										...context.dex,
@@ -694,7 +665,8 @@ export const createLuminaDexMachine = () => {
 								assertEvent(event, "DeployPool")
 								return {
 									...inputWorker(context),
-									tokenAddress: context.dex.deployPool.tokenAddress,
+									tokenA: context.dex.deployPool.tokenA,
+									tokenB: context.dex.deployPool.tokenB,
 									user: event.user
 								}
 							},
@@ -737,8 +709,10 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									user: event.user,
-									pool: context.addresses.pool,
-									toDai: swap.toDai,
+									pool: swap.pool,
+									from: swap.from.address,
+									frontendFee: 0,
+									frontendFeeDestination: "TODO: Frontend destination",
 									amount: swap.amountIn,
 									minOut: swap.amountOut,
 									balanceOutMin: swap.balanceOutMin,
@@ -758,11 +732,17 @@ export const createLuminaDexMachine = () => {
 									...inputWorker(context),
 									user: event.user,
 									pool: liquidity.pool,
-									amountMina: liquidity.toDai ? liquidity.amountAIn : liquidity.amountBIn,
-									amountToken: liquidity.toDai ? liquidity.amountBIn : liquidity.amountAIn,
-									reserveMinaMax: liquidity.toDai ? liquidity.balanceAMax : liquidity.balanceBMax,
-									reserveTokenMax: liquidity.toDai ? liquidity.balanceBMax : liquidity.balanceAMax,
-									supplyMin: liquidity.supplyMin
+									supplyMin: liquidity.calculated.supplyMin,
+									tokenA: {
+										address: liquidity.tokenA.address,
+										amount: liquidity.calculated.amountAIn,
+										reserve: liquidity.calculated.balanceAMax
+									},
+									tokenB: {
+										address: liquidity.tokenB.address,
+										amount: liquidity.calculated.amountBIn,
+										reserve: liquidity.calculated.balanceBMax
+									}
 								}
 							},
 							onDone: "READY"
@@ -778,12 +758,18 @@ export const createLuminaDexMachine = () => {
 									...inputWorker(context),
 									user: event.user,
 									pool: liquidity.pool,
-									liquidityAmount: liquidity.liquidity,
-									amountMinaMin: liquidity.amountAOut,
-									amountTokenMin: liquidity.amountBOut,
-									reserveMinaMin: liquidity.balanceAMin,
-									reserveTokenMin: liquidity.balanceBMin,
-									supplyMax: liquidity.supplyMax
+									supplyMax: liquidity.calculated.supplyMax,
+									liquidityAmount: liquidity.calculated.liquidity,
+									tokenA: {
+										address: liquidity.tokenA.address,
+										amount: liquidity.calculated.amountAOut,
+										reserve: liquidity.calculated.balanceAMin
+									},
+									tokenB: {
+										address: liquidity.tokenB.address,
+										amount: liquidity.calculated.amountBOut,
+										reserve: liquidity.calculated.balanceBMin
+									}
 								}
 							},
 							onDone: "READY"
@@ -797,9 +783,7 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									pool: swap.pool,
-									toDai: swap.toDai,
-									fromAmount: swap.fromAmount,
-									toAmount: swap.toAmount,
+									from: swap.from,
 									slippagePercent: swap.slippagePercent
 								}
 							},
@@ -825,9 +809,8 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									pool: liquidity.pool,
-									toDai: liquidity.toDai,
-									fromAmount: liquidity.fromAmount,
-									toAmount: liquidity.toAmount,
+									tokenA: liquidity.tokenA,
+									tokenB: liquidity.tokenB,
 									slippagePercent: liquidity.slippagePercent
 								}
 							},
@@ -838,8 +821,9 @@ export const createLuminaDexMachine = () => {
 										...context.dex,
 										addLiquidity: {
 											...context.dex.addLiquidity,
-											...event.output.liquidityAmount,
-											...event.output.settings
+											calculated: {
+												...event.output
+											}
 										}
 									}
 								}))
@@ -854,7 +838,8 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									pool: liquidity.pool,
-									fromAmount: liquidity.fromAmount,
+									tokenA: liquidity.tokenA,
+									tokenB: liquidity.tokenB,
 									slippagePercent: liquidity.slippagePercent
 								}
 							},
@@ -865,8 +850,9 @@ export const createLuminaDexMachine = () => {
 										...context.dex,
 										removeLiquidity: {
 											...context.dex.addLiquidity,
-											...event.output.liquidityAmount,
-											...event.output.settings
+											calculated: {
+												...event.output
+											}
 										}
 									}
 								}))

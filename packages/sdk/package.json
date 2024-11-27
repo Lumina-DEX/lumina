@@ -28,16 +28,15 @@
 	"dependencies": {
 		"@aurowallet/mina-provider": "^1.0.6",
 		"@gql.tada/vue-support": "^1.0.1",
+		"@lumina/contracts": "workspace:^",
 		"@surma/rollup-plugin-off-main-thread": "^2.2.3",
 		"@types/surma__rollup-plugin-off-main-thread": "^2.2.3",
 		"@urql/exchange-retry": "^1.3.0",
 		"@urql/vue": "^1.4.1",
 		"@xstate/react": "^4.1.3",
-		"@lumina/contracts": "workspace:^",
+		"@xstate/store": "^2.6.1",
 		"comlink": "^4.4.2",
 		"gql.tada": "^1.8.9",
-		"immer": "^10.1.1",
-		"mutative": "^1.0.11",
 		"o1js": "1.7.0",
 		"urql": "^4.1.0",
 		"vue": "^3.5.11",
@@ -45,8 +44,6 @@
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
-		"oxc-transform": "^0.30.5",
-		"rolldown": "^0.13.2",
 		"unbuild": "^2.0.0"
 	},
 	"peerDependencies": {
