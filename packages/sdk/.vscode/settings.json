@@ -11,5 +11,5 @@
 		"quickfix.biome": "explicit",
 		"source.organizeImports.biome": "explicit"
 	},
-	"dprint.path": "node_modules/.bin/dprint"
+	"dprint.path": "../../node_modules/.bin/dprint"
 }
