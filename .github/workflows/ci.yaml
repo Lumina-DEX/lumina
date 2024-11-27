@@ -18,7 +18,7 @@ jobs:
       - uses: ./.github/workflows/actions/install
           
       - name: Format
-        run: bun run format
+        run: bun run format:all
 
 #   test:
 #     runs-on: ubuntu-latest
