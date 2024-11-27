@@ -23,18 +23,18 @@ type Account {
 
   """
   A natural number that increases with each transaction (stringified uint32)
-  """
+"""
   nonce: AccountNonce
 
   """
   Like the `nonce` field, except it includes the scheduled transactions
   (transactions not yet included in a block) (stringified uint32)
-  """
+"""
   inferredNonce: AccountNonce
 
   """
   The account that you delegated on the staking ledger of the current block's epoch
-  """
+"""
   epochDelegateAccount: Account
 
   """Top hash of the receipt chain Merkle-list"""
@@ -42,26 +42,26 @@ type Account {
 
   """
   The public key to which you are delegating - if you are not delegating to anybody, this would return your public key
-  """
+"""
   delegate: PublicKey @deprecated(reason: "use delegateAccount instead")
 
   """
   The account to which you are delegating - if you are not delegating to anybody, this would return your public key
-  """
+"""
   delegateAccount: Account
 
   """
   The list of accounts which are delegating to you (note that the info is
   recorded in the last epoch so it might not be up to date with the current
   account status)
-  """
+"""
   delegators: [Account!]
 
   """
   The list of accounts which are delegating to you in the last epoch (note that
   the info is recorded in the one before last epoch so it might not be up to
   date with the current account status)
-  """
+"""
   lastEpochDelegators: [Account!]
 
   """The previous epoch lock hash of the chain which you are voting for"""
@@ -70,7 +70,7 @@ type Account {
   """
   True if you are actively staking with this account on the current daemon -
   this may not yet have been updated if the staking key was changed recently
-  """
+"""
   stakingActive: Boolean!
 
   """Path of the private key file for this account"""
@@ -78,27 +78,27 @@ type Account {
 
   """
   True if locked, false if unlocked, null if the account isn't tracked by the queried daemon
-  """
+"""
   locked: Boolean
 
   """
   The index of this account in the ledger, or null if this account does not yet have a known position in the best tip ledger
-  """
+"""
   index: Int
 
   """
   The URI associated with this account, usually pointing to the zkApp source code
-  """
+"""
   zkappUri: String
 
   """
   The 8 field elements comprising the zkApp state associated with this account encoded as bignum strings
-  """
+"""
   zkappState: [FieldElem!]
 
   """
   Boolean indicating whether all 8 fields on zkAppState were last set by a proof-authorized account update
-  """
+"""
   provedState: Boolean
 
   """Permissions for updating certain fields of this account"""
@@ -115,12 +115,12 @@ type Account {
 
   """
   The base58Check-encoded hash of this account to bootstrap the merklePath
-  """
+"""
   leafHash: FieldElem
 
   """
   Merkle path is a list of path elements that are either the left or right hashes up to the root
-  """
+"""
   merklePath: [MerklePathElement!]
 }
 
@@ -157,12 +157,12 @@ type AccountPermissions {
 
   """
   Authorization required to set the verification key of the zkApp associated with the account
-  """
+"""
   setVerificationKey: VerificationKeyPermission!
 
   """
   Authorization required to change the URI of the zkApp associated with the account 
-  """
+"""
   setZkappUri: AccountAuthRequired!
 
   """Authorization required to edit the action state"""
@@ -322,17 +322,17 @@ type AnnotatedBalance {
 
   """
   The amount of MINA owned by the account whose origin is currently unknown
-  """
+"""
   unknown: Balance!
 
   """
   The amount of MINA owned by the account which is currently available. Can be null if bootstrapping.
-  """
+"""
   liquid: Balance
 
   """
   The amount of MINA owned by the account which is currently locked. Can be null if bootstrapping.
-  """
+"""
   locked: Balance
 
   """Block height at which balance was measured"""
@@ -342,7 +342,7 @@ type AnnotatedBalance {
   Hash of block at which balance was measured. Can be null if bootstrapping.
   Guaranteed to be non-null for direct account lookup queries when not
   bootstrapping. Can also be null when accessed as nested properties (eg. via delegators). 
-  """
+"""
   stateHash: StateHash
 }
 
@@ -417,13 +417,13 @@ type Block {
 type BlockchainState {
   """
   date (stringified Unix time - number of milliseconds since January 1, 1970)
-  """
+"""
   date: BlockTime!
 
   """
   utcDate (stringified Unix time - number of milliseconds since January 1,
   1970). Time offsets are adjusted to reflect true wall-clock time instead of genesis time.
-  """
+"""
   utcDate: BlockTime!
 
   """Base58Check-encoded hash of the snarked ledger"""
@@ -440,20 +440,20 @@ type BlockchainState {
 
   """
   Base58Check-encoded hash of the staged ledger hash's pending_coinbase_hash
-  """
+"""
   stagedLedgerPendingCoinbaseHash: PendingCoinbaseHash!
 
   """
   Block finished a staged ledger, and a proof was emitted from it and included
   into this block's proof. If there is no transition frontier available or no
   block found, this will return null.
-  """
+"""
   stagedLedgerProofEmitted: Boolean
   ledgerProofStatement: SnarkedLedgerState!
 
   """
   A reference to how the block header refers to the body of the block as a hex-encoded string
-  """
+"""
   bodyReference: BodyReference!
 }
 
@@ -466,7 +466,7 @@ type BlockProducerTimings {
 
   """
   Consensus time of the block that was used to determine the next block production time
-  """
+"""
   generatedFromConsensusAt: ConsensusTimeGlobalSlot!
 }
 
@@ -534,12 +534,12 @@ type ConsensusState {
 
   """
   Whether or not this coinbase was "supercharged", ie. created by an account that has no locked tokens
-  """
+"""
   superchargedCoinbase: Boolean!
 
   """
   The public key that is responsible for winning this block (including delegations)
-  """
+"""
   blockStakeWinner: PublicKey!
 
   """The block producer public key that created this block"""
@@ -559,7 +559,7 @@ type ConsensusTime {
 type ConsensusTimeGlobalSlot {
   """
   Time in terms of slot number in an epoch, start and end time of the slot since UTC epoch
-  """
+"""
   consensusTime: ConsensusTime!
   globalSlotSinceGenesis: Globalslot!
 }
@@ -719,7 +719,7 @@ type FeeTransfer {
   Fee_transfer|Fee_transfer_via_coinbase Snark worker fees deducted from the
   coinbase amount are of type 'Fee_transfer_via_coinbase', rest are deducted
   from transaction fees
-  """
+"""
   type: FeeTransferType!
 }
 
@@ -907,17 +907,17 @@ type Metrics {
 type mutation {
   """
   Add a wallet - this will create a new keypair and store it in the daemon
-  """
+"""
   addWallet(input: AddAccountInput!): AddAccountPayload! @deprecated(reason: "use createAccount instead")
 
   """
   TESTING ONLY: Start filtering and recording all structured events in memory
-  """
+"""
   startFilteredLog(filter: [String!]!): Boolean!
 
   """
   Create a new account - this will create a new keypair and store it in the daemon
-  """
+"""
   createAccount(input: AddAccountInput!): AddAccountPayload!
 
   """
@@ -925,7 +925,7 @@ type mutation {
   generate a keypair corresponds to the HD-index you give and store this
   HD-index and the generated public key in the daemon. Calling this command with
   the same HD-index and the same hardware wallet will always generate the same keypair.
-  """
+"""
   createHDAccount(input: CreateHDAccountInput!): AddAccountPayload!
 
   """Allow transactions to be sent from the unlocked account"""
@@ -956,7 +956,7 @@ type mutation {
 
     """
     Path to the wallet file, relative to the daemon's current working directory.
-    """
+"""
     path: String!
   ): ImportAccountPayload!
 
@@ -968,7 +968,7 @@ type mutation {
     """
     If a signature is provided, this transaction is considered signed and will
     be broadcasted to the network without requiring a private key
-    """
+"""
     signature: SignatureInput
     input: SendPaymentInput!
   ): SendPaymentPayload!
@@ -999,7 +999,7 @@ type mutation {
     """
     If a signature is provided, this transaction is considered signed and will
     be broadcasted to the network without requiring a private key
-    """
+"""
     signature: SignatureInput
     input: SendDelegationInput!
   ): SendDelegationPayload!
@@ -1017,7 +1017,9 @@ type mutation {
   exportLogs(basename: String): ExportLogsPayload!
 
   """Set the key to receive coinbases"""
-  setCoinbaseReceiver(input: SetCoinbaseReceiverInput!): SetCoinbaseReceiverPayload!
+  setCoinbaseReceiver(
+    input: SetCoinbaseReceiverInput!
+  ): SetCoinbaseReceiverPayload!
 
   """Set key you wish to snark work with or disable snark working"""
   setSnarkWorker(input: SetSnarkWorkerInput!): SetSnarkWorkerPayload!
@@ -1027,8 +1029,10 @@ type mutation {
 
   """
   Set the connection gating config, returning the current config after the application (which may have failed)
-  """
-  setConnectionGatingConfig(input: SetConnectionGatingConfigInput!): SetConnectionGatingConfigPayload!
+"""
+  setConnectionGatingConfig(
+    input: SetConnectionGatingConfigInput!
+  ): SetConnectionGatingConfigPayload!
 
   """Connect to the given peers"""
   addPeers(seed: Boolean, peers: [NetworkPeer!]!): [Peer!]!
@@ -1042,7 +1046,9 @@ type mutation {
   ): Applied!
 
   """Send a transaction in Rosetta format"""
-  sendRosettaTransaction(input: RosettaTransaction!): SendRosettaTransactionPayload!
+  sendRosettaTransaction(
+    input: RosettaTransaction!
+  ): SendRosettaTransactionPayload!
 }
 
 """Network identifiers for another protocol participant"""
@@ -1231,7 +1237,7 @@ type query {
 
   """
   The rules that the libp2p helper will use to determine which connections to permit
-  """
+"""
   connectionGatingConfig: SetConnectionGatingConfigPayload!
 
   """Find any account via a public key and token"""
@@ -1267,19 +1273,19 @@ type query {
   """
   Retrieve a list of blocks from transition frontier's root to the current best
   tip. Returns an error if the system is bootstrapping.
-  """
+"""
   bestChain(
     """
     The maximum number of blocks to return. If there are more blocks in the
     transition frontier from root to tip, the n blocks closest to the best tip
     will be returned
-    """
+"""
     maxLength: Int
   ): [Block!]
 
   """
   Retrieve a block with the given state hash or height, if contained in the transition frontier.
-  """
+"""
   block(
     """The height of the desired block in the best chain"""
     height: Int
@@ -1301,7 +1307,7 @@ type query {
   Retrieve all the scheduled user commands for a specified sender that the
   current daemon sees in its transaction pool. All scheduled commands are
   queried if no sender is specified
-  """
+"""
   pooledUserCommands(
     """Ids of User commands"""
     ids: [ID!]
@@ -1317,7 +1323,7 @@ type query {
   Retrieve all the scheduled zkApp commands for a specified sender that the
   current daemon sees in its transaction pool. All scheduled commands are
   queried if no sender is specified
-  """
+"""
   pooledZkappCommands(
     """Ids of zkApp commands"""
     ids: [ID!]
@@ -1352,12 +1358,12 @@ type query {
 
   """
   The constants used to determine the configuration of the genesis block and all of its transitive dependencies
-  """
+"""
   genesisConstants: GenesisConstants!
 
   """
   The time offset in seconds used to convert real times into blockchain times
-  """
+"""
   timeOffset: Int!
 
   """Validate the format and signature of a payment"""
@@ -1365,7 +1371,7 @@ type query {
     """
     If a signature is provided, this transaction is considered signed and will
     be broadcasted to the network without requiring a private key
-    """
+"""
     signature: SignatureInput
     input: SendPaymentInput!
   ): Boolean!
@@ -1373,13 +1379,17 @@ type query {
   """
   Evaluate a vrf for the given public key. This includes a witness which may be
   verified without access to the private key for this vrf evaluation.
-  """
-  evaluateVrf(vrfThreshold: VrfThresholdInput, publicKey: PublicKey!, message: VrfMessageInput!): VrfEvaluation!
+"""
+  evaluateVrf(
+    vrfThreshold: VrfThresholdInput
+    publicKey: PublicKey!
+    message: VrfMessageInput!
+  ): VrfEvaluation!
 
   """
   Check a vrf evaluation commitment. This can be used to check vrf evaluations
   without needing to reveal the private key, in the format returned by evaluateVrf
-  """
+"""
   checkVrf(input: VrfEvaluationInput!): VrfEvaluation!
 
   """The runtime configuration passed to the daemon at start-up"""
@@ -1390,7 +1400,7 @@ type query {
   of the current one. By default, this returns the newest block that appeared
   before the transaction stop slot provided in the configuration, or the best
   tip if no such block exists.
-  """
+"""
   fork_config(
     """The height of the desired block in the best chain"""
     height: Int
@@ -1401,7 +1411,7 @@ type query {
 
   """
   A graphviz dot format representation of the deamon's internal thread graph
-  """
+"""
   threadGraph: String!
 
   """The pickles verification key for the protocol state proof"""
@@ -1409,7 +1419,7 @@ type query {
 
   """
   The chain-agnostic identifier of the network this daemon is participating in
-  """
+"""
   networkID: String!
 
   """The signature kind that this daemon instance is using"""
@@ -1454,7 +1464,7 @@ type RpcTimings {
 input SendDelegationInput {
   """
   Should only be set when cancelling transactions, otherwise a nonce is determined automatically
-  """
+"""
   nonce: UInt32
 
   """Short arbitrary message provided by the sender"""
@@ -1462,7 +1472,7 @@ input SendDelegationInput {
 
   """
   The global slot since genesis after which this transaction cannot be applied
-  """
+"""
   validUntil: UInt32
 
   """Fee amount in order to send a stake delegation"""
@@ -1483,7 +1493,7 @@ type SendDelegationPayload {
 input SendPaymentInput {
   """
   Should only be set when cancelling transactions, otherwise a nonce is determined automatically
-  """
+"""
   nonce: UInt32
 
   """Short arbitrary message provided by the sender"""
@@ -1491,7 +1501,7 @@ input SendPaymentInput {
 
   """
   The global slot since genesis after which this transaction cannot be applied
-  """
+"""
   validUntil: UInt32
 
   """Fee amount in order to send payment"""
@@ -1535,19 +1545,19 @@ input SetCoinbaseReceiverInput {
   Public key of the account to receive coinbases. Block production keys will
   receive the coinbases if omitted. Warning: If the key is from a zkApp account,
   the account's receive permission must be None.
-  """
+"""
   publicKey: PublicKey
 }
 
 type SetCoinbaseReceiverPayload {
   """
   Returns the public key that was receiving coinbases previously, or none if it was the block producer
-  """
+"""
   lastCoinbaseReceiver: PublicKey
 
   """
   Returns the public key that will receive coinbase, or none if it will be the block producer
-  """
+"""
   currentCoinbaseReceiver: PublicKey
 }
 
@@ -1557,12 +1567,12 @@ input SetConnectionGatingConfigInput {
 
   """
   If true, no connections will be allowed unless they are from a trusted peer
-  """
+"""
   isolate: Boolean!
 
   """
   Peers we will never allow connections from (unless they are also trusted!)
-  """
+"""
   bannedPeers: [NetworkPeer!]!
 
   """Peers we will always allow connections from"""
@@ -1575,12 +1585,12 @@ type SetConnectionGatingConfigPayload {
 
   """
   Peers we will never allow connections from (unless they are also trusted!)
-  """
+"""
   bannedPeers: [NetworkPeerPayload!]!
 
   """
   If true, no connections will be allowed unless they are from a trusted peer
-  """
+"""
   isolate: Boolean!
 }
 
@@ -1589,7 +1599,7 @@ input SetSnarkWorkerInput {
   Public key you wish to start snark-working on; null to stop doing any snark
   work. Warning: If the key is from a zkApp account, the account's receive
   permission must be None.
-  """
+"""
   publicKey: PublicKey
 }
 
@@ -1711,7 +1721,7 @@ type subscription {
   Event that triggers when a new block is created that either contains a
   transaction with the specified public key, or was produced by it. If no public
   key is provided, then the event will trigger for every new block received
-  """
+"""
   newBlock(
     """Public key that is included in the block"""
     publicKey: PublicKey
@@ -1719,7 +1729,7 @@ type subscription {
 
   """
   Event that triggers when the best tip changes in a way that is not a trivial extension of the existing one
-  """
+"""
   chainReorganization: ChainReorganizationStatus!
 }
 
@@ -1768,7 +1778,7 @@ scalar TransactionId
 type Transactions {
   """
   List of user commands (payments and stake delegations) included in this block
-  """
+"""
   userCommands: [UserCommand!]!
 
   """List of zkApp commands included in this block"""
@@ -1791,12 +1801,12 @@ enum TransactionStatus {
 
   """
   A transaction either in the transition frontier or in transaction pool but is not on the longest chain
-  """
+"""
   PENDING
 
   """
   The transaction has either been snarked, reached finality through consensus or has been dropped
-  """
+"""
   UNKNOWN
 }
 
@@ -1869,7 +1879,7 @@ interface UserCommand {
 
   """
   Amount that the source is sending to receiver - 0 for commands that are not associated with an amount
-  """
+"""
   amount: Amount!
 
   """Token used to pay the fee"""
@@ -1883,7 +1893,7 @@ interface UserCommand {
 
   """
   If true, this represents a delegation of stake, otherwise it is a payment
-  """
+"""
   isDelegation: Boolean! @deprecated(reason: "use kind field instead")
 
   """Public key of the sender"""
@@ -1931,7 +1941,7 @@ type UserCommandDelegation implements UserCommand {
 
   """
   Amount that the source is sending to receiver; 0 for commands without an associated amount
-  """
+"""
   amount: Amount!
 
   """Token used to pay the fee"""
@@ -1942,7 +1952,7 @@ type UserCommandDelegation implements UserCommand {
 
   """
   A short message from the sender, encoded with Base58Check, version byte=0x14; byte 2 of the decoding is the message length
-  """
+"""
   memo: String!
 
   """If true, this command represents a delegation of stake"""
@@ -1994,7 +2004,7 @@ type UserCommandPayment implements UserCommand {
 
   """
   Amount that the source is sending to receiver; 0 for commands without an associated amount
-  """
+"""
   amount: Amount!
 
   """Token used to pay the fee"""
@@ -2005,7 +2015,7 @@ type UserCommandPayment implements UserCommand {
 
   """
   A short message from the sender, encoded with Base58Check, version byte=0x14; byte 2 of the decoding is the message length
-  """
+"""
   memo: String!
 
   """If true, this command represents a delegation of stake"""
@@ -2036,7 +2046,7 @@ scalar VerificationKeyHash
 type VerificationKeyPermission {
   """
   Authorization required to set the verification key of the zkApp associated with the account
-  """
+"""
   auth: AccountAuthRequired!
   txnVersion: String!
 }
@@ -2069,14 +2079,14 @@ type VrfEvaluation {
 
   """
   The vrf output derived from the evaluation witness. If null, the vrf witness was invalid.
-  """
+"""
   vrfOutput: VrfOutputTruncated
 
   """
   The vrf output derived from the evaluation witness, as a fraction. This
   represents a won slot if vrfOutputFractional <= (1 - (1 /
   4)^(delegated_balance / total_stake)). If null, the vrf witness was invalid.
-  """
+"""
   vrfOutputFractional: Float
 
   """Whether the threshold to produce a block was met, if specified"""
@@ -2129,12 +2139,12 @@ type VrfThreshold {
   The amount of stake delegated to the vrf evaluator by the delegating account.
   This should match the amount in the epoch's staking ledger, which may be
   different to the amount in the current ledger.
-  """
+"""
   delegatedStake: Balance!
 
   """
   The total amount of stake across all accounts in the epoch's staking ledger.
-  """
+"""
   totalStake: Amount!
 }
 
@@ -2144,14 +2154,14 @@ The amount of stake delegated, used to determine the threshold for a vrf evaluat
 input VrfThresholdInput {
   """
   The total amount of stake across all accounts in the epoch's staking ledger.
-  """
+"""
   totalStake: UInt64!
 
   """
   The amount of stake delegated to the vrf evaluator by the delegating account.
   This should match the amount in the epoch's staking ledger, which may be
   different to the amount in the current ledger.
-  """
+"""
   delegatedStake: UInt64!
 }
 
@@ -2173,7 +2183,7 @@ type WorkDescription {
 
   """
   Total transaction fee that is not accounted for in the transition from source ledger to target ledger
-  """
+"""
   feeExcess: FeeExcess!
 
   """Increase in total supply"""
@@ -2230,7 +2240,7 @@ type ZkappCommandResult {
 
   """
   The reason for the zkApp transaction failure; null means success or the status is unknown
-  """
+"""
   failureReason: [ZkappCommandFailureReason]
 }
 
@@ -2245,4 +2255,3 @@ input ZkappFeePayerInput {
 }
 
 scalar ZkappProof
-

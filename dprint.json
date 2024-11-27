@@ -5,7 +5,10 @@
 		"semicolons": "asNeeded",
 		"trailingCommas": "none"
 	},
-	"graphql": {},
+	"graphql": {
+		"printWidth": 120,
+		"useTabs": false
+	},
 	"excludes": ["**/node_modules"],
 	"plugins": [
 		"https://plugins.dprint.dev/markdown-0.17.8.wasm",

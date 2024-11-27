@@ -23,18 +23,18 @@ type Account {
 
   """
   A natural number that increases with each transaction (stringified uint32)
-  """
+"""
   nonce: AccountNonce
 
   """
   Like the `nonce` field, except it includes the scheduled transactions
   (transactions not yet included in a block) (stringified uint32)
-  """
+"""
   inferredNonce: AccountNonce
 
   """
   The account that you delegated on the staking ledger of the current block's epoch
-  """
+"""
   epochDelegateAccount: Account
 
   """Top hash of the receipt chain Merkle-list"""
@@ -42,26 +42,26 @@ type Account {
 
   """
   The public key to which you are delegating - if you are not delegating to anybody, this would return your public key
-  """
+"""
   delegate: PublicKey @deprecated(reason: "use delegateAccount instead")
 
   """
   The account to which you are delegating - if you are not delegating to anybody, this would return your public key
-  """
+"""
   delegateAccount: Account
 
   """
   The list of accounts which are delegating to you (note that the info is
   recorded in the last epoch so it might not be up to date with the current
   account status)
-  """
+"""
   delegators: [Account!]
 
   """
   The list of accounts which are delegating to you in the last epoch (note that
   the info is recorded in the one before last epoch epoch so it might not be up
   to date with the current account status)
-  """
+"""
   lastEpochDelegators: [Account!]
 
   """The previous epoch lock hash of the chain which you are voting for"""
@@ -70,7 +70,7 @@ type Account {
   """
   True if you are actively staking with this account on the current daemon -
   this may not yet have been updated if the staking key was changed recently
-  """
+"""
   stakingActive: Boolean!
 
   """Path of the private key file for this account"""
@@ -78,27 +78,27 @@ type Account {
 
   """
   True if locked, false if unlocked, null if the account isn't tracked by the queried daemon
-  """
+"""
   locked: Boolean
 
   """
   The index of this account in the ledger, or null if this account does not yet have a known position in the best tip ledger
-  """
+"""
   index: Int
 
   """
   The URI associated with this account, usually pointing to the zkApp source code
-  """
+"""
   zkappUri: String
 
   """
   The 8 field elements comprising the zkApp state associated with this account encoded as bignum strings
-  """
+"""
   zkappState: [FieldElem!]
 
   """
   Boolean indicating whether all 8 fields on zkAppState were last set by a proof-authorized account update
-  """
+"""
   provedState: Boolean
 
   """Permissions for updating certain fields of this account"""
@@ -115,12 +115,12 @@ type Account {
 
   """
   The base58Check-encoded hash of this account to bootstrap the merklePath
-  """
+"""
   leafHash: FieldElem
 
   """
   Merkle path is a list of path elements that are either the left or right hashes up to the root
-  """
+"""
   merklePath: [MerklePathElement!]
 }
 
@@ -157,12 +157,12 @@ type AccountPermissions {
 
   """
   Authorization required to set the verification key of the zkApp associated with the account
-  """
+"""
   setVerificationKey: VerificationKeyPermission!
 
   """
   Authorization required to change the URI of the zkApp associated with the account 
-  """
+"""
   setZkappUri: AccountAuthRequired!
 
   """Authorization required to edit the action state"""
@@ -329,17 +329,17 @@ type AnnotatedBalance {
 
   """
   The amount of MINA owned by the account whose origin is currently unknown
-  """
+"""
   unknown: Balance!
 
   """
   The amount of MINA owned by the account which is currently available. Can be null if bootstrapping.
-  """
+"""
   liquid: Balance
 
   """
   The amount of MINA owned by the account which is currently locked. Can be null if bootstrapping.
-  """
+"""
   locked: Balance
 
   """Block height at which balance was measured"""
@@ -349,7 +349,7 @@ type AnnotatedBalance {
   Hash of block at which balance was measured. Can be null if bootstrapping.
   Guaranteed to be non-null for direct account lookup queries when not
   bootstrapping. Can also be null when accessed as nested properties (eg. via delegators). 
-  """
+"""
   stateHash: StateHash
 }
 
@@ -558,7 +558,7 @@ type mutation {
     """
     If a signature is provided, this transaction is considered signed and will
     be broadcasted to the network without requiring a private key
-    """
+"""
     signature: SignatureInput
     input: SendPaymentInput!
   ): SendPaymentPayload!
@@ -685,7 +685,7 @@ type query {
 
   """
   The constants used to determine the configuration of the genesis block and all of its transitive dependencies
-  """
+"""
   genesisConstants: GenesisConstants!
 
   """Query proved account update for transfer in a JSON format"""
@@ -702,7 +702,7 @@ type query {
 
   """
   The chain-agnostic identifier of the network this daemon is participating in
-  """
+"""
   networkID: String!
   statistics(luminaFactory: PublicKey!): Statistics!
   actions(input: ActionFilterOptionsInput!): [ActionOutput!]!
@@ -712,7 +712,7 @@ type query {
 input SendPaymentInput {
   """
   Should only be set when cancelling transactions, otherwise a nonce is determined automatically
-  """
+"""
   nonce: UInt32
 
   """Short arbitrary message provided by the sender"""
@@ -720,7 +720,7 @@ input SendPaymentInput {
 
   """
   The global slot since genesis after which this transaction cannot be applied
-  """
+"""
   validUntil: UInt32
 
   """Fee amount in order to send payment"""
@@ -793,7 +793,7 @@ type Statistics {
 type subscription {
   """
   Event that triggers when some of the state hashes are changed. Max once per minute.
-  """
+"""
   stateHashesChanged: StateHashes!
 }
 
@@ -903,7 +903,7 @@ interface UserCommand {
 
   """
   Amount that the source is sending to receiver - 0 for commands that are not associated with an amount
-  """
+"""
   amount: Amount!
 
   """Token used to pay the fee"""
@@ -917,7 +917,7 @@ interface UserCommand {
 
   """
   If true, this represents a delegation of stake, otherwise it is a payment
-  """
+"""
   isDelegation: Boolean! @deprecated(reason: "use kind field instead")
 
   """Public key of the sender"""
@@ -966,7 +966,7 @@ type UserCommandPayment implements UserCommand {
 
   """
   Amount that the source is sending to receiver; 0 for commands without an associated amount
-  """
+"""
   amount: Amount!
 
   """Token used to pay the fee"""
@@ -977,7 +977,7 @@ type UserCommandPayment implements UserCommand {
 
   """
   A short message from the sender, encoded with Base58Check, version byte=0x14; byte 2 of the decoding is the message length
-  """
+"""
   memo: String!
 
   """If true, this command represents a delegation of stake"""
@@ -1008,7 +1008,7 @@ scalar VerificationKeyHash
 type VerificationKeyPermission {
   """
   Authorization required to set the verification key of the zkApp associated with the account
-  """
+"""
   auth: AccountAuthRequired!
   txnVersion: String!
 }
@@ -1072,7 +1072,7 @@ type ZkappCommandResult {
 
   """
   The reason for the zkApp transaction failure; null means success or the status is unknown
-  """
+"""
   failureReason: [ZkappCommandFailureReason]
 }
 
@@ -1087,4 +1087,3 @@ input ZkappFeePayerInput {
 }
 
 scalar ZkappProof
-

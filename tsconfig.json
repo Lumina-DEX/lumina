@@ -1,6 +1,6 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": false
-  }
+	"compilerOptions": {
+		"strict": true,
+		"noUncheckedIndexedAccess": false
+	}
 }
