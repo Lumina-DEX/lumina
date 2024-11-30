@@ -16,6 +16,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - run: echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
+    - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.bun }}'
+    - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.node }}'
+    - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.pnpm }}'
+    - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.deno || 10 }}'
+
     - name: Use Bun ${{ inputs.bun-version }} 
       uses: oven-sh/setup-bun@v2
       with:

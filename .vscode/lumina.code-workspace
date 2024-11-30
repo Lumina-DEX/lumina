@@ -16,7 +16,7 @@
       },
       {
         "path": "..",
-        "name": "@lumina/monorepo"
+        "name": "#root"
       },
     ],
     "settings": {

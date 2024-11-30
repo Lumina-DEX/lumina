@@ -8,7 +8,7 @@
 		"build:all": "lage build",
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
-		"format:all": "dprint check --verbose",
+		"format:all": "dprint check",
 		"format:all:fix": "dprint fmt --verbose",
 		"version": "changeset version && bun run format:fix",
 		"publish:all": "pnpm run build && pnpm publish -r --no-git-checks --access public"
