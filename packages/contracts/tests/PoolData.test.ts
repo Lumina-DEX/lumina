@@ -1,3 +1,5 @@
+import type { PublicKey, VerificationKey } from "o1js"
+
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
 import {
   AccountUpdate,
@@ -9,26 +11,18 @@ import {
   Mina,
   Poseidon,
   PrivateKey,
-  PublicKey,
   UInt64,
-  UInt8,
-  VerificationKey,
+  UInt8
 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
-import {
-  contractHash,
-  contractHolderHash,
-  Faucet,
-  Pool,
-  PoolData,
-  PoolFactory,
-  PoolTokenHolder,
-} from "../build/src/index"
+
+import { contractHash, contractHolderHash, Faucet, Pool, PoolData, PoolFactory, PoolTokenHolder } from "../dist"
+
 import { PoolHolderUpgradeTest } from "./PoolHolderUpgradeTest"
 import { PoolSampleTest } from "./PoolSampleTest"
 import { PoolUpgradeTest } from "./PoolUpgradeTest"
 
-let proofsEnabled = false
+const proofsEnabled = false
 
 describe("Pool data", () => {
   let deployerAccount: Mina.TestPublicKey,
@@ -125,7 +119,7 @@ describe("Pool data", () => {
       await zkPoolData.deploy({
         owner: bobAccount,
         protocol: aliceAccount,
-        delegator: dylanAccount,
+        delegator: dylanAccount
       })
     })
     await txn0.prove()
@@ -136,16 +130,16 @@ describe("Pool data", () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
       await zkApp.deploy({ symbol: "FAC", src: "https://luminadex.com/", poolData: zkPoolDataAddress })
       await zkTokenAdmin.deploy({
-        adminPublicKey: deployerAccount,
+        adminPublicKey: deployerAccount
       })
       await zkToken.deploy({
         symbol: "LTA",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
       })
       await zkToken.initialize(
         zkTokenAdminAddress,
         UInt8.from(9),
-        Bool(false),
+        Bool(false)
       )
     })
     await txn.prove()
@@ -164,7 +158,7 @@ describe("Pool data", () => {
   })
 
   it("update owner", async () => {
-    let owner = await zkPoolData.owner.fetch()
+    const owner = await zkPoolData.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
     let txn = await Mina.transaction(senderAccount, async () => {
       await zkPoolData.setNewOwner(senderAccount)
@@ -172,10 +166,10 @@ describe("Pool data", () => {
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkPoolData.newOwner.fetch()
+    const newowner = await zkPoolData.newOwner.fetch()
     expect(newowner?.toBase58()).toEqual(senderAccount.toBase58())
 
-    let oldowner = await zkPoolData.owner.fetch()
+    const oldowner = await zkPoolData.owner.fetch()
     expect(oldowner?.toBase58()).toEqual(bobAccount.toBase58())
 
     // aceept ownership
@@ -185,25 +179,25 @@ describe("Pool data", () => {
     await txn.prove()
     await txn.sign([senderKey]).send()
 
-    let ownership = await zkPoolData.owner.fetch()
+    const ownership = await zkPoolData.owner.fetch()
     expect(ownership?.toBase58()).toEqual(senderAccount.toBase58())
   })
 
   it("update protocol", async () => {
-    let protocol = await zkPoolData.protocol.fetch()
+    const protocol = await zkPoolData.protocol.fetch()
     expect(protocol?.toBase58()).toEqual(aliceAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkPoolData.setNewProtocol(deployerAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let protocolNew = await zkPoolData.protocol.fetch()
+    const protocolNew = await zkPoolData.protocol.fetch()
     expect(protocolNew?.toBase58()).toEqual(deployerAccount.toBase58())
   })
 
   it("set delegator", async () => {
-    let delegator = await zkPoolData.delegator.fetch()
+    const delegator = await zkPoolData.delegator.fetch()
     let poolAccount = zkPool.account?.delegate?.get()
     expect(delegator?.toBase58()).toEqual(dylanAccount.toBase58())
     expect(poolAccount?.toBase58()).toEqual(zkPoolAddress.toBase58())
@@ -245,7 +239,7 @@ describe("Pool data", () => {
 
   it("failed change delegator", async () => {
     // only owner can change it
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkPoolData.setNewDelegator(aliceAccount)
     })
     await txn.prove()
@@ -253,14 +247,14 @@ describe("Pool data", () => {
   })
 
   it("update verification key", async () => {
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkPoolData.updateVerificationKey(vk.verificationKey)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let poolDatav2 = new PoolSampleTest(zkPoolDataAddress)
-    let version = await poolDatav2.version()
+    const poolDatav2 = new PoolSampleTest(zkPoolDataAddress)
+    const version = await poolDatav2.version()
     expect(version?.toBigInt()).toEqual(2n)
   })
 
@@ -285,7 +279,7 @@ describe("Pool data", () => {
   })
 
   it("failed change owner", async () => {
-    let owner = await zkPoolData.owner.fetch()
+    const owner = await zkPoolData.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
     let txn = await Mina.transaction(senderAccount, async () => {
       await zkPoolData.setNewOwner(aliceAccount)
@@ -293,10 +287,10 @@ describe("Pool data", () => {
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkPoolData.newOwner.fetch()
+    const newowner = await zkPoolData.newOwner.fetch()
     expect(newowner?.toBase58()).toEqual(aliceAccount.toBase58())
 
-    let oldowner = await zkPoolData.owner.fetch()
+    const oldowner = await zkPoolData.owner.fetch()
     expect(oldowner?.toBase58()).toEqual(bobAccount.toBase58())
 
     // aceept ownership
@@ -307,7 +301,7 @@ describe("Pool data", () => {
     // you need to sign with the new owner key to get the ownership
     await expect(txn.sign([senderKey]).send()).rejects.toThrow()
 
-    let ownership = await zkPoolData.owner.fetch()
+    const ownership = await zkPoolData.owner.fetch()
     expect(ownership?.toBase58()).toEqual(bobAccount.toBase58())
   })
 })

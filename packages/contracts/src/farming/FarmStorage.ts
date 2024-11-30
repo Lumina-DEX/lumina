@@ -1,3 +1,5 @@
+import type { DeployArgs } from "o1js"
+
 import {
   Account,
   AccountUpdate,
@@ -5,7 +7,6 @@ import {
   assert,
   Bool,
   CircuitString,
-  DeployArgs,
   Field,
   Int64,
   method,
@@ -21,8 +22,9 @@ import {
   TokenId,
   Types,
   UInt64,
-  VerificationKey,
+  VerificationKey
 } from "o1js"
+
 import { BalanceChangeEvent, mulDiv, Pool, PoolData, PoolTokenHolder } from "../indexpool.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
@@ -48,7 +50,7 @@ export class FarmStorage extends SmartContract {
   points = State<UInt64>()
 
   events = {
-    upgrade: Field,
+    upgrade: Field
   }
 
   async deploy() {

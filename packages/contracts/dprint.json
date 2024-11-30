@@ -3,7 +3,7 @@
   "typescript": {
     "semiColons": "asi",
     "quoteStyle": "preferDouble",
-    "trailingCommas": "onlyMultiLine"
+    "trailingCommas": "never"
   },
   "json": {
   },

@@ -6,7 +6,7 @@
 
 export { tic, toc }
 
-let timingStack: [string | undefined, number][] = []
+const timingStack: [string | undefined, number][] = []
 
 function tic(label?: string) {
   if (label) process.stdout.write(`${label}... `)
@@ -14,8 +14,8 @@ function tic(label?: string) {
 }
 
 function toc() {
-  let [label, start] = timingStack.pop()!
-  let time = (performance.now() - start) / 1000
+  const [label, start] = timingStack.pop()!
+  const time = (performance.now() - start) / 1000
   if (label) process.stdout.write(`\r${label}... ${time.toFixed(3)} sec\n`)
   return time
 }

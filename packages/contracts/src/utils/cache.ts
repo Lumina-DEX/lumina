@@ -1,4 +1,7 @@
 import fs from "fs/promises"
+import path from "path"
+import readline from "readline/promises"
+
 import {
   AccountUpdate,
   Bool,
@@ -11,10 +14,9 @@ import {
   PublicKey,
   SmartContract,
   UInt64,
-  UInt8,
+  UInt8
 } from "o1js"
-import path from "path"
-import readline from "readline/promises"
+
 import { Faucet, FungibleToken, FungibleTokenAdmin, mulDiv, Pool, PoolFactory, PoolTokenHolder } from "../index.js"
 
 // node build/src/cache.js
@@ -44,20 +46,20 @@ await fs.cp("./cache", "../website/public/cache", {
   recursive: true,
   filter: (source, _destination) => {
     return filter(source)
-  },
+  }
 })
 
 const folderPath = "../website/public/cache"
-let filesArr = await fs.readdir(folderPath)
+const filesArr = await fs.readdir(folderPath)
 
 // Loop through array and rename all files
 filesArr.forEach(async (file) => {
-  let fullPath = path.join(folderPath, file)
-  let fileExtension = path.extname(file)
-  let fileName = path.basename(file, fileExtension)
+  const fullPath = path.join(folderPath, file)
+  const fileExtension = path.extname(file)
+  const fileName = path.basename(file, fileExtension)
 
   // we use textfile to get browser compression
-  let newFileName = fileName + ".txt"
+  const newFileName = fileName + ".txt"
   try {
     await fs.rename(fullPath, path.join(folderPath, newFileName))
   } catch (error) {

@@ -5,8 +5,8 @@ try {
   const devnet = Mina.Network(
     {
       networkId: "testnet",
-      mina: "https://devnet.minaprotocol.network/graphql",
-    },
+      mina: "https://devnet.minaprotocol.network/graphql"
+    }
   )
 
   Mina.setActiveInstance(devnet)

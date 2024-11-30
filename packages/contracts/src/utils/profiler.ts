@@ -17,8 +17,8 @@ function getProfiler(name: string) {
       times = {
         ...times,
         [label]: {
-          start: performance.now(),
-        },
+          start: performance.now()
+        }
       }
     },
     stop() {
@@ -31,7 +31,7 @@ function getProfiler(name: string) {
       let totalTimePassed = 0
 
       Object.keys(times).forEach((k) => {
-        let timePassed = (times[k].end - times[k].start) / 1000
+        const timePassed = (times[k].end - times[k].start) / 1000
         totalTimePassed += timePassed
 
         profilingData += `\n|${k}|${round(timePassed)}|`
@@ -39,11 +39,11 @@ function getProfiler(name: string) {
 
       profilingData += `\n\nIn total, it took ${
         round(
-          totalTimePassed,
+          totalTimePassed
         )
       } seconds to run the entire benchmark\n\n\n`
 
       fs.appendFileSync("profiling.md", profilingData)
-    },
+    }
   }
 }

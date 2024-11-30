@@ -1,9 +1,10 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
-import { assign, emit, enqueueActions, fromCallback, fromPromise, setup } from "xstate"
-import { supportedTokens, urls } from "../constants"
-import { FetchAccountBalanceQuery } from "../graphql/sequencer"
+import { type ActorRefFromLogic, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
+import { supportedTokens, urls } from "../../constants"
+import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
+import { fromCallback } from "../../helpers/xstate"
 
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
@@ -27,30 +28,41 @@ const toNumber = (n: unknown) => {
 	return 0
 }
 
+export type WalletMachine = ReturnType<typeof createWalletMachine>
+
+export type Wallet = ActorRefFromLogic<WalletMachine>
+
+export type WalletEvent =
+	| { type: "RequestNetworkChange"; network: Networks }
+	| { type: "WalletExtensionChangedNetwork"; network: Networks }
+	| { type: "Connect" }
+	| { type: "Disconnect" }
+	| { type: "SetAccount"; account: string }
+	| { type: "FetchBalance"; token?: CustomToken; networks: Networks[] }
+
+export type WalletEmit =
+	| { type: "NetworkChanged"; network: Networks }
+	| { type: "AccountChanged"; account: string }
+
 export const createWalletMachine = ({
 	createMinaClient
 }: { createMinaClient: (url: string) => Client }) =>
 	setup({
 		types: {
 			context: {} as {
-				accounts: string[]
+				account: string
 				currentNetwork: Networks
 				zekoBalances: Balance
 				minaBalances: Balance
 			},
-			emitted: {} as { type: "NetworkChanged"; network: Networks },
-			events: {} as
-				| { type: "RequestNetworkChange"; network: Networks }
-				| { type: "WalletExtensionChangedNetwork"; network: Networks }
-				| { type: "Connect" }
-				| { type: "Disconnect" }
-				| { type: "FetchBalance"; token?: CustomToken; networks: Networks[] }
+			emitted: {} as WalletEmit,
+			events: {} as WalletEvent
 		},
 		actors: {
 			/**
 			 * Invoked on initialization to listen to Mina wallet changes.
 			 */
-			listenToWalletChange: fromCallback(({ sendBack }) => {
+			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
 				window.mina.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
 					console.log("User manually changed network", networkID)
 					sendBack({
@@ -59,9 +71,19 @@ export const createWalletMachine = ({
 					})
 				})
 				window.mina.on("accountsChanged", (accounts: string[]) => {
-					console.log("User manually changed account") //TODO: implement this
+					console.log("User manually changed account", accounts) //TODO: implement this
+					if (accounts.length === 0) {
+						console.log("User disconnected account")
+						sendBack({ type: "Disconnect" })
+					}
+					if (accounts.length > 0) {
+						sendBack({ type: "SetAccount", account: accounts[0] })
+					}
 				})
-				return () => {}
+				return () => {
+					console.log("Removing listeners...")
+					window.mina.removeAllListeners()
+				}
 			}),
 			/**
 			 * Invoked from Connect events to attempt to connect a Mina wallet.
@@ -150,13 +172,34 @@ export const createWalletMachine = ({
 	}).createMachine({
 		id: "wallet",
 		context: {
-			accounts: [""],
+			account: "",
 			currentNetwork: "mina:testnet",
 			zekoBalances: { testnet: { MINA: 0, ZEKO: 0 }, mainnet: { MINA: 0, ZEKO: 0 } },
 			minaBalances: { testnet: { MINA: 0, ZEKO: 0 }, mainnet: { MINA: 0, ZEKO: 0 } }
 		},
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },
+		on: {
+			WalletExtensionChangedNetwork: {
+				target: ".FETCHING_BALANCE",
+				description:
+					"If the network is changed from the wallet extension. The NetworkChanged event will be sent by the setWalletNetwork action.",
+				guard: ({ context, event }) => context.currentNetwork !== event.network,
+				actions: {
+					type: "setWalletNetwork",
+					params: ({ event }) => ({ network: event.network })
+				}
+			},
+			SetAccount: {
+				target: ".FETCHING_BALANCE",
+				description: "If the accounts are set from the wallet extension.",
+				actions: enqueueActions(({ enqueue, event }) => {
+					enqueue.assign({ account: event.account })
+					enqueue.emit({ type: "AccountChanged", account: event.account })
+				})
+			},
+			Disconnect: { target: ".INIT", actions: assign({ account: "" }) }
+		},
 		states: {
 			INIT: {
 				on: { Connect: { target: "CONNECTING" } }
@@ -165,14 +208,14 @@ export const createWalletMachine = ({
 				invoke: {
 					src: "connectWallet",
 					onDone: {
-						target: "FETCHING_BALANCE",
-						actions: [
-							{
+						actions: enqueueActions(({ enqueue, event }) => {
+							enqueue({
 								type: "setWalletNetwork",
-								params: ({ event }) => ({ network: event.output.currentNetwork })
-							},
-							assign({ accounts: ({ event }) => event.output.accounts })
-						]
+								params: { network: event.output.currentNetwork }
+							})
+							//This will target the FETCHING_BALANCE state
+							enqueue.raise({ type: "SetAccount", account: event.output.accounts[0] })
+						})
 					}
 				}
 			},
@@ -181,10 +224,10 @@ export const createWalletMachine = ({
 					src: "fetchBalance",
 					input: ({ context, event }) => {
 						if (event.type === "FetchBalance") {
-							return { address: context.accounts[0], token: event.token, networks: event.networks }
+							return { address: context.account, token: event.token, networks: event.networks }
 						}
 						//TODO: Hardcoded testnet
-						return { address: context.accounts[0], networks: ["mina:testnet", "zeko:testnet"] }
+						return { address: context.account, networks: ["mina:testnet", "zeko:testnet"] }
 					},
 					onDone: {
 						target: "READY",
@@ -218,15 +261,6 @@ export const createWalletMachine = ({
 							}))
 						}
 					],
-					WalletExtensionChangedNetwork: {
-						target: "FETCHING_BALANCE",
-						guard: ({ context, event }) => context.currentNetwork !== event.network,
-						actions: {
-							type: "setWalletNetwork",
-							params: ({ event }) => ({ network: event.network })
-						}
-					},
-					Disconnect: { target: "INIT" },
 					FetchBalance: { target: "FETCHING_BALANCE" }
 				}
 			},

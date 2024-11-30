@@ -6,6 +6,6 @@ for (let index = 0; index < 10; index++) {
 
   console.log("key " + index, {
     public: key.toPublicKey().toBase58(),
-    private: key.toBase58(),
+    private: key.toBase58()
   })
 }

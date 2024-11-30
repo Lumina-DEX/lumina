@@ -15,9 +15,10 @@ import {
   State,
   state,
   UInt64,
-  VerificationKey,
+  VerificationKey
 } from "o1js"
-import { PoolData } from "../build/src/indexpool"
+
+import { PoolData } from "../dist"
 
 /**
  * Pool informations, use to manage protocol, receiver and verification key update

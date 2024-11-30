@@ -2,5 +2,6 @@
 	"compilerOptions": {
 		"strict": true,
 		"noUncheckedIndexedAccess": false
-	}
+	},
+	"exclude": ["node_modules"]
 }

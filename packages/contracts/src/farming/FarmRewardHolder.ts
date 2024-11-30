@@ -1,3 +1,5 @@
+import type { DeployArgs, VerificationKey } from "o1js"
+
 import {
   Account,
   AccountUpdate,
@@ -5,7 +7,6 @@ import {
   assert,
   Bool,
   CircuitString,
-  DeployArgs,
   Field,
   Int64,
   method,
@@ -20,10 +21,11 @@ import {
   TokenContractV2,
   TokenId,
   Types,
-  UInt64,
-  VerificationKey,
+  UInt64
 } from "o1js"
+
 import { BalanceChangeEvent, mulDiv, Pool, PoolData, PoolTokenHolder } from "../indexpool.js"
+
 import { FarmStorage } from "./FarmStorage.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
@@ -45,7 +47,7 @@ export class FarmRewardHolder extends SmartContract {
 
   events = {
     upgrade: Field,
-    BalanceChange: BalanceChangeEvent,
+    BalanceChange: BalanceChangeEvent
   }
 
   async deploy(args: FarmingDeployProps) {
@@ -57,7 +59,7 @@ export class FarmRewardHolder extends SmartContract {
     this.pool.set(args.pool)
     this.owner.set(args.owner)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proofOrSignature()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()

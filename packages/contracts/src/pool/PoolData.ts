@@ -1,9 +1,10 @@
+import type { DeployArgs, VerificationKey } from "o1js"
+
 import {
   Account,
   AccountUpdate,
   AccountUpdateForest,
   Bool,
-  DeployArgs,
   Field,
   method,
   Permissions,
@@ -14,8 +15,7 @@ import {
   SmartContract,
   State,
   state,
-  UInt64,
-  VerificationKey,
+  UInt64
 } from "o1js"
 
 export interface PoolDataDeployProps extends Exclude<DeployArgs, undefined> {
@@ -35,7 +35,7 @@ export class PoolData extends SmartContract {
     setNewOwner: PublicKey,
     acceptOwnership: PublicKey,
     updateProtocol: PublicKey,
-    updateDelegator: PublicKey,
+    updateDelegator: PublicKey
   }
 
   @state(PublicKey)
@@ -58,7 +58,7 @@ export class PoolData extends SmartContract {
     this.owner.set(args.owner)
     this.delegator.set(args.delegator)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proofOrSignature()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()

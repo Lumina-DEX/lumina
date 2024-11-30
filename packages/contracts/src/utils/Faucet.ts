@@ -1,9 +1,9 @@
+import type { AccountUpdateForest, DeployArgs } from "o1js"
+
 import {
   Account,
   AccountUpdate,
-  AccountUpdateForest,
   Bool,
-  DeployArgs,
   Field,
   method,
   Permissions,
@@ -15,8 +15,9 @@ import {
   state,
   TokenContractV2,
   UInt64,
-  VerificationKey,
+  VerificationKey
 } from "o1js"
+
 import { FungibleToken } from "../indexpool.js"
 
 export interface FaucetDeployProps extends Exclude<DeployArgs, undefined> {
@@ -49,7 +50,7 @@ export class Faucet extends TokenContractV2 {
       ...Permissions.default(),
       send: Permissions.proof(),
       setVerificationKey: Permissions.VerificationKey.none(),
-      setPermissions: Permissions.impossible(),
+      setPermissions: Permissions.impossible()
     })
   }
 
@@ -62,7 +63,7 @@ export class Faucet extends TokenContractV2 {
 
     const sender = this.sender.getUnconstrainedV2()
 
-    let senderToken = AccountUpdate.create(sender, this.deriveTokenId())
+    const senderToken = AccountUpdate.create(sender, this.deriveTokenId())
     // if the balance is not zero, so the sender already claim
     senderToken.account.balance.requireEquals(UInt64.zero)
 

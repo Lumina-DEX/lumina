@@ -1,19 +1,6 @@
 import * as Comlink from "comlink"
 import { PrivateKey } from "o1js"
-import {
-	type ErrorActorEvent,
-	assertEvent,
-	assign,
-	enqueueActions,
-	fromPromise,
-	setup
-} from "xstate"
-import {
-	getAmountLiquidityOut,
-	getAmountOut,
-	getAmountOutFromLiquidity,
-	getFirstAmountLiquidityOut
-} from "../dex/helper"
+import { type ErrorActorEvent, and, assertEvent, assign, fromPromise, setup, stateIn } from "xstate"
 import type {
 	AddLiquidity,
 	InitZkappInstance,
@@ -21,110 +8,25 @@ import type {
 	MintToken,
 	SwapArgs,
 	WithdrawLiquidity
-} from "../dex/luminadex-worker"
-import { sendTransaction } from "../helpers/transfer"
-
-type DexWorker = Comlink.Remote<LuminaDexWorker>
-type InputDexWorker = { worker: DexWorker }
-
-type Token = {
-	address: string
-	amount: string
-}
-
-type SwapSettings = {
-	pool?: string
-	from?: Token
-	slippagePercent?: number
-}
-
-type AddLiquiditySettings = {
-	pool?: string
-	tokenA?: Token
-	tokenB?: Token
-	slippagePercent?: number
-}
-
-type RemoveLiquiditySettings = {
-	pool?: string
-	tokenA?: Token
-	tokenB?: Token
-	slippagePercent?: number
-}
-
-type ContractContext = {
-	worker: DexWorker | null
-	error: Error | null
-}
-
-type DexContext = {
-	addLiquidity: {
-		pool: string
-		tokenA: Token
-		tokenB: Token
-		slippagePercent: number
-		calculated: {
-			amountAIn: number
-			amountBIn: number
-			balanceAMax: number
-			balanceBMax: number
-			liquidity: number
-			supplyMin: number
-		}
-	}
-	removeLiquidity: {
-		pool: string
-		tokenA: Token
-		tokenB: Token
-		slippagePercent: number
-		calculated: {
-			liquidity: number
-			amountAOut: number
-			amountBOut: number
-			balanceAMin: number
-			balanceBMin: number
-			supplyMax: number
-		}
-	}
-	swap: {
-		amountIn: number
-		amountOut: number
-		balanceOutMin: number
-		balanceInMax: number
-	} & Required<SwapSettings>
-	mint: Omit<MintToken, "user">
-	deployPool: { tokenA: string; tokenB: string }
-	deployToken: { symbol: string }
-}
-
-type ContractEvent = { type: "InitializeWorker" }
-
-type DexEvent =
-	//Swap
-	| { type: "ChangeSwapSettings"; settings: SwapSettings }
-	| { type: "CalculateSwapAmount" }
-	| { type: "Swap"; user: string }
-	//Remove Liquidity
-	| { type: "ChangeRemoveLiquiditySettings"; settings: RemoveLiquiditySettings }
-	| { type: "CalculateRemoveLiquidityAmount" }
-	| { type: "RemoveLiquidity"; user: string }
-	//Add Liquidity
-	| { type: "ChangeAddLiquiditySettings"; settings: AddLiquiditySettings }
-	| { type: "CalculateAddLiquidityAmount" }
-	| { type: "AddLiquidity"; user: string }
-	//Deploy
-	| { type: "DeployPool"; user: string; settings: { tokenA: string; tokenB: string } }
-	| { type: "DeployToken"; user: string; settings: { symbol: string } }
-	//Mint
-	| { type: "MintToken"; user: string; settings: Omit<MintToken, "user"> }
-	//Claim
-	| { type: "ClaimTokensFromFaucet"; user: string }
-
-type LuminaDexMachineContext = {
-	contract: ContractContext
-	dex: DexContext
-	addresses: InitZkappInstance
-}
+} from "../../dex/luminadex-worker"
+import {
+	getAmountLiquidityOut,
+	getAmountOut,
+	getAmountOutFromLiquidity,
+	getFirstAmountLiquidityOut
+} from "../../dex/utils"
+import { sendTransaction } from "../../helpers/transfer"
+import { isBetween } from "../../helpers/validation"
+import { detectWalletChange } from "../wallet/actors"
+import type {
+	AddLiquiditySettings,
+	InputDexWorker,
+	LuminaDexMachineContext,
+	LuminaDexMachineEvent,
+	LuminaDexMachineInput,
+	RemoveLiquiditySettings,
+	SwapSettings
+} from "./types"
 
 const inputWorker = (context: LuminaDexMachineContext) => {
 	if (!context.contract.worker) throw new Error("Worker not initialized")
@@ -153,10 +55,17 @@ export const createLuminaDexMachine = () => {
 	return setup({
 		types: {
 			context: {} as LuminaDexMachineContext,
-			events: {} as ContractEvent | DexEvent,
-			input: {} as { addresses: InitZkappInstance }
+			events: {} as LuminaDexMachineEvent,
+			input: {} as LuminaDexMachineInput
+		},
+		guards: {
+			calculatedSwap: ({ context }) => context.dex.swap.calculated !== null,
+			calculatedAddLiquidity: ({ context }) => context.dex.addLiquidity.calculated !== null,
+			calculatedRemoveLiquidity: ({ context }) => context.dex.removeLiquidity.calculated !== null,
+			contractsReady: stateIn({ contractSystem: "CONTRACTS_READY" })
 		},
 		actors: {
+			detectWalletChange,
 			initializeWorker: fromPromise(async () => {
 				const worker = new Worker(new URL("../dex/luminadex-worker.ts", import.meta.url), {
 					type: "module"
@@ -355,62 +264,57 @@ export const createLuminaDexMachine = () => {
 	}).createMachine({
 		id: "luminaDex",
 		context: ({
-			//TODO: Automatically track the current user from the wallet machine.
 			input: {
-				addresses: { pool, faucet, factory }
+				wallet,
+				addresses: { pool, faucet, factory },
+				frontendFee: { destination, amount }
 			}
-		}) => ({
-			addresses: { pool, faucet, factory },
-			contract: { worker: null, error: null },
-			dex: {
-				swap: {
-					pool: "",
-					from: { address: "", amount: "" },
-					slippagePercent: 0,
-					amountIn: 0,
-					amountOut: 0,
-					balanceOutMin: 0,
-					balanceInMax: 0
+		}) => {
+			if (!isBetween(0, 15)(amount)) throw new Error("The Frontend Fee must be between 0 and 15.")
+			return {
+				wallet: {
+					actor: wallet,
+					account: wallet.getSnapshot().context.account,
+					network: "mina:testnet"
 				},
-				addLiquidity: {
-					pool: "",
-					tokenA: { address: "", amount: "" },
-					tokenB: { address: "", amount: "" },
-					slippagePercent: 0,
-					calculated: {
-						amountAIn: 0,
-						amountBIn: 0,
-						balanceAMax: 0,
-						balanceBMax: 0,
-						liquidity: 0,
-						supplyMin: 0
+				addresses: { pool, faucet, factory },
+				frontendFee: { destination, amount },
+				contract: { worker: null, error: null },
+				dex: {
+					swap: {
+						pool: "",
+						from: { address: "", amount: "" },
+						slippagePercent: 0,
+						calculated: null
+					},
+					addLiquidity: {
+						pool: "",
+						tokenA: { address: "", amount: "" },
+						tokenB: { address: "", amount: "" },
+						slippagePercent: 0,
+						calculated: null
+					},
+					removeLiquidity: {
+						pool: "",
+						tokenA: { address: "", amount: "" },
+						tokenB: { address: "", amount: "" },
+						slippagePercent: 0,
+						calculated: null
+					},
+					mint: { to: "", token: "", amount: 0 },
+					deployPool: { tokenA: "", tokenB: "" },
+					deployToken: {
+						symbol: "",
+						result: {
+							tokenKey: "",
+							tokenAdminKey: "",
+							tokenKeyPublic: "",
+							tokenAdminKeyPublic: ""
+						}
 					}
-				},
-				removeLiquidity: {
-					pool: "",
-					tokenA: { address: "", amount: "" },
-					tokenB: { address: "", amount: "" },
-					slippagePercent: 0,
-					calculated: {
-						amountAOut: 0,
-						amountBOut: 0,
-						balanceAMin: 0,
-						balanceBMin: 0,
-						liquidity: 0,
-						supplyMax: 0
-					}
-				},
-				mint: { to: "", token: "", amount: 0 },
-				deployPool: { tokenA: "", tokenB: "" },
-				deployToken: {
-					symbol: "",
-					tokenKey: "",
-					tokenAdminKey: "",
-					tokenKeyPublic: "",
-					tokenAdminKeyPublic: ""
 				}
 			}
-		}),
+		},
 		type: "parallel",
 		states: {
 			contractSystem: {
@@ -442,11 +346,11 @@ export const createLuminaDexMachine = () => {
 							input: ({ context }) => {
 								return { ...inputWorker(context), ...context.addresses }
 							},
-							onDone: "READY",
+							onDone: "CONTRACTS_READY",
 							onError: setContractError("Error initializing zkapp")
 						}
 					},
-					READY: {
+					CONTRACTS_READY: {
 						description: "The dex is ready."
 					},
 					//TODO: Add a global way to enter the failed state.
@@ -462,6 +366,22 @@ export const createLuminaDexMachine = () => {
 			},
 			dexSystem: {
 				initial: "READY",
+				invoke: {
+					src: "detectWalletChange",
+					input: ({ context }) => ({ wallet: context.wallet.actor })
+				},
+				on: {
+					NetworkChanged: {
+						actions: assign(({ context, event }) => ({
+							wallet: { ...context.wallet, network: event.network }
+						}))
+					},
+					AccountChanged: {
+						actions: assign(({ context, event }) => ({
+							wallet: { ...context.wallet, account: event.account }
+						}))
+					}
+				},
 				states: {
 					//TODO: Handle Errors
 					READY: {
@@ -469,6 +389,7 @@ export const createLuminaDexMachine = () => {
 							DeployPool: {
 								description: "Deploy a pool for a given token.",
 								target: "DEPLOYING_POOL",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -479,155 +400,73 @@ export const createLuminaDexMachine = () => {
 							DeployToken: {
 								description: "Deploy a token.",
 								target: "DEPLOYING_TOKEN",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
 										deployToken: {
-											tokenKey: "",
-											tokenAdminKey: "",
-											tokenKeyPublic: "",
-											tokenAdminKeyPublic: "",
-											symbol: event.settings.symbol
+											symbol: event.settings.symbol,
+											result: null
 										}
 									}
 								}))
 							},
 							ClaimTokensFromFaucet: {
 								description: "Claim tokens from the faucet.",
+								guard: "contractsReady",
 								target: "CLAIMING_FROM_FAUCET"
 							},
 							MintToken: {
 								description: "Mint a token to a given destination address.",
 								target: "MINTING",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: { ...context.dex, mint: { ...context.dex.mint, ...event.settings } }
 								}))
 							},
 							ChangeRemoveLiquiditySettings: {
 								description: "Change the settings for adding liquidity.",
-								actions: enqueueActions(({ context, event, enqueue }) => {
-									enqueue.assign({
-										dex: {
-											...context.dex,
-											removeLiquidity: { ...context.dex.removeLiquidity, ...event.settings }
-										}
-									})
-									//Only recalculate if the settings are relevant
-									if (
-										event.settings.pool ||
-										event.settings.tokenA ||
-										event.settings.tokenB ||
-										event.settings.slippagePercent
-									) {
-										enqueue.raise({ type: "CalculateRemoveLiquidityAmount" })
-									}
-								})
-							},
-							CalculateRemoveLiquidityAmount: {
 								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
-								actions: assign(({ context }) => ({
+								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										removeLiquidity: {
-											...context.dex.removeLiquidity,
-											amountAOut: 0,
-											amountBOut: 0,
-											balanceAMin: 0,
-											balanceBMin: 0,
-											supplyMax: 0,
-											liquidity: 0,
-											liquidityMinted: 0
-										}
+										removeLiquidity: { ...event.settings, calculated: null }
 									}
 								}))
 							},
-							//TODO: Guard against incomplete settings
 							RemoveLiquidity: {
 								description: "Create and send a transaction to remove liquidity from a pool.",
+								guard: and(["calculatedRemoveLiquidity", "contractsReady"]),
 								target: "REMOVING_LIQUIDITY"
 							},
 							ChangeAddLiquiditySettings: {
 								description: "Change the settings for adding liquidity.",
-								actions: enqueueActions(({ context, event, enqueue }) => {
-									enqueue.assign({
-										dex: {
-											...context.dex,
-											addLiquidity: { ...context.dex.addLiquidity, ...event.settings }
-										}
-									})
-									//Only recalculate if the settings are relevant
-									if (
-										event.settings.pool ||
-										event.settings.tokenA ||
-										event.settings.tokenB ||
-										event.settings.slippagePercent
-									) {
-										enqueue.raise({ type: "CalculateAddLiquidityAmount" })
-									}
-								})
-							},
-							CalculateAddLiquidityAmount: {
 								target: "CALCULATING_ADD_LIQUIDITY_AMOUNT",
-								actions: assign(({ context }) => ({
+								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										addLiquidity: {
-											...context.dex.addLiquidity,
-											amountAIn: 0,
-											amountBIn: 0,
-											balanceAMax: 0,
-											balanceBMax: 0,
-											supplyMin: 0,
-											liquidity: 0,
-											liquidityMinted: 0
-										}
+										addLiquidity: { ...event.settings, calculated: null }
 									}
 								}))
 							},
-							//TODO: Guard against incomplete settings
 							AddLiquidity: {
 								description: "Create and send a transaction to add liquidity to a pool.",
+								guard: and(["calculatedAddLiquidity", "contractsReady"]),
 								target: "ADDING_LIQUIDITY"
 							},
 							ChangeSwapSettings: {
 								description: "Change the settings for a token swap.",
-								actions: enqueueActions(({ context, event, enqueue }) => {
-									enqueue.assign({
-										dex: {
-											...context.dex,
-											swap: { ...context.dex.swap, ...event.settings }
-										}
-									})
-									//Only recalculate if the settings are relevant
-									if (
-										event.settings.pool ||
-										event.settings.from ||
-										event.settings.slippagePercent
-									) {
-										enqueue.raise({ type: "CalculateSwapAmount" })
-									}
-								})
-							},
-							CalculateSwapAmount: {
 								target: "CALCULATING_SWAP_AMOUNT",
-								description:
-									"Manually recalculate the swap amount. Automatically called after ChangeSwapSettings.",
-								actions: assign(({ context }) => ({
+								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										swap: {
-											...context.dex.swap,
-											amountIn: 0,
-											amountOut: 0,
-											balanceOutMin: 0,
-											balanceInMax: 0
-										}
+										swap: { ...event.settings, calculated: null }
 									}
 								}))
 							},
-							//TODO: Guard against incomplete settings
 							Swap: {
 								target: "SWAPPING",
+								guard: and(["calculatedSwap", "contractsReady"]),
 								description:
 									"Create and send a transaction to swap tokens. To be called after ChangeSwapSettings."
 							}
@@ -641,7 +480,7 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									symbol: context.dex.deployToken.symbol,
-									user: event.user
+									user: context.wallet.account
 								}
 							},
 							onDone: {
@@ -667,7 +506,7 @@ export const createLuminaDexMachine = () => {
 									...inputWorker(context),
 									tokenA: context.dex.deployPool.tokenA,
 									tokenB: context.dex.deployPool.tokenB,
-									user: event.user
+									user: context.wallet.account
 								}
 							},
 							onDone: "READY"
@@ -678,7 +517,7 @@ export const createLuminaDexMachine = () => {
 							src: "claim",
 							input: ({ context, event }) => {
 								assertEvent(event, "ClaimTokensFromFaucet")
-								return { ...inputWorker(context), user: event.user }
+								return { ...inputWorker(context), user: context.wallet.account }
 							},
 							onDone: "READY"
 						}
@@ -691,7 +530,7 @@ export const createLuminaDexMachine = () => {
 								const mint = context.dex.mint
 								return {
 									...inputWorker(context),
-									user: event.user,
+									user: context.wallet.account,
 									to: mint.to,
 									token: mint.token,
 									amount: mint.amount
@@ -706,20 +545,26 @@ export const createLuminaDexMachine = () => {
 							input: ({ context, event }) => {
 								assertEvent(event, "Swap")
 								const swap = context.dex.swap
+								if (!swap.calculated) throw new Error("Swap amount not calculated.")
 								return {
 									...inputWorker(context),
-									user: event.user,
+									frontendFee: context.frontendFee.amount,
+									frontendFeeDestination: context.frontendFee.destination,
+									user: context.wallet.account,
 									pool: swap.pool,
 									from: swap.from.address,
-									frontendFee: 0,
-									frontendFeeDestination: "TODO: Frontend destination",
-									amount: swap.amountIn,
-									minOut: swap.amountOut,
-									balanceOutMin: swap.balanceOutMin,
-									balanceInMax: swap.balanceInMax
+									amount: swap.calculated.amountIn,
+									minOut: swap.calculated.amountOut,
+									balanceOutMin: swap.calculated.balanceOutMin,
+									balanceInMax: swap.calculated.balanceInMax
 								}
 							},
-							onDone: "READY"
+							onDone: {
+								target: "READY",
+								actions: assign(({ context }) => ({
+									dex: { ...context.dex, swap: { ...context.dex.swap, calculated: null } }
+								}))
+							}
 						}
 					},
 					ADDING_LIQUIDITY: {
@@ -728,9 +573,10 @@ export const createLuminaDexMachine = () => {
 							input: ({ context, event }) => {
 								assertEvent(event, "AddLiquidity")
 								const liquidity = context.dex.addLiquidity
+								if (!liquidity.calculated) throw new Error("Liquidity amount not calculated.")
 								return {
 									...inputWorker(context),
-									user: event.user,
+									user: context.wallet.account,
 									pool: liquidity.pool,
 									supplyMin: liquidity.calculated.supplyMin,
 									tokenA: {
@@ -745,7 +591,15 @@ export const createLuminaDexMachine = () => {
 									}
 								}
 							},
-							onDone: "READY"
+							onDone: {
+								target: "READY",
+								actions: assign(({ context }) => ({
+									dex: {
+										...context.dex,
+										addLiquidity: { ...context.dex.addLiquidity, calculated: null }
+									}
+								}))
+							}
 						}
 					},
 					REMOVING_LIQUIDITY: {
@@ -754,9 +608,10 @@ export const createLuminaDexMachine = () => {
 							input: ({ context, event }) => {
 								assertEvent(event, "RemoveLiquidity")
 								const liquidity = context.dex.removeLiquidity
+								if (!liquidity.calculated) throw new Error("Liquidity amount not calculated.")
 								return {
 									...inputWorker(context),
-									user: event.user,
+									user: context.wallet.account,
 									pool: liquidity.pool,
 									supplyMax: liquidity.calculated.supplyMax,
 									liquidityAmount: liquidity.calculated.liquidity,
@@ -772,7 +627,15 @@ export const createLuminaDexMachine = () => {
 									}
 								}
 							},
-							onDone: "READY"
+							onDone: {
+								target: "READY",
+								actions: assign(({ context }) => ({
+									dex: {
+										...context.dex,
+										removeLiquidity: { ...context.dex.removeLiquidity, calculated: null }
+									}
+								}))
+							}
 						}
 					},
 					CALCULATING_SWAP_AMOUNT: {
@@ -794,7 +657,9 @@ export const createLuminaDexMachine = () => {
 										...context.dex,
 										swap: {
 											...context.dex.swap,
-											...event.output.swapAmount
+											calculated: {
+												...event.output.swapAmount
+											}
 										}
 									}
 								}))

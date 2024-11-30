@@ -1,11 +1,11 @@
+import type { AccountUpdateForest, DeployArgs, UInt64, VerificationKey } from "o1js"
+
 import {
   Account,
   AccountUpdate,
-  AccountUpdateForest,
   assert,
   Bool,
   CircuitString,
-  DeployArgs,
   Field,
   Int64,
   method,
@@ -18,11 +18,11 @@ import {
   Struct,
   TokenContractV2,
   TokenId,
-  Types,
-  UInt64,
-  VerificationKey,
+  Types
 } from "o1js"
+
 import { BalanceChangeEvent, mulDiv, Pool, PoolData, PoolTokenHolder } from "../indexpool.js"
+
 import { FarmStorage } from "./FarmStorage"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
@@ -42,7 +42,7 @@ export class Farm extends TokenContractV2 {
 
   events = {
     upgrade: Field,
-    BalanceChange: BalanceChangeEvent,
+    BalanceChange: BalanceChangeEvent
   }
 
   async deploy(args: FarmingDeployProps) {
@@ -54,7 +54,7 @@ export class Farm extends TokenContractV2 {
     this.pool.set(args.pool)
     this.owner.set(args.owner)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proofOrSignature()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
@@ -89,32 +89,32 @@ export class Farm extends TokenContractV2 {
       this.emitEventIf(
         usesToken,
         "BalanceChange",
-        new BalanceChangeEvent({ address: update.publicKey, amount: update.balanceChange }),
+        new BalanceChangeEvent({ address: update.publicKey, amount: update.balanceChange })
       )
 
       // Don't allow transfers to/from the account that's tracking circulation
       update.publicKey.equals(this.address).and(usesToken).assertFalse(
-        "Can't transfer to/from the circulation account",
+        "Can't transfer to/from the circulation account"
       )
       totalBalance = Provable.if(usesToken, totalBalance.add(update.balanceChange), totalBalance)
       totalBalance.isPositiveV2().assertFalse(
-        "Flash-minting or unbalanced transaction detected",
+        "Flash-minting or unbalanced transaction detected"
       )
     })
     totalBalance.assertEquals(Int64.zero, "Unbalanced transaction")
   }
 
   private checkPermissionsUpdate(update: AccountUpdate) {
-    let permissions = update.update.permissions
+    const permissions = update.update.permissions
 
-    let { access, receive } = permissions.value
-    let accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
-    let receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
-    let updateAllowed = accessIsNone.and(receiveIsNone)
+    const { access, receive } = permissions.value
+    const accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
+    const receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
+    const updateAllowed = accessIsNone.and(receiveIsNone)
 
     assert(
       updateAllowed.or(permissions.isSome.not()),
-      "Can't change permissions for access or receive on token accounts",
+      "Can't change permissions for access or receive on token accounts"
     )
   }
 
@@ -143,8 +143,8 @@ export class Farm extends TokenContractV2 {
         access: Permissions.proof(),
         setVerificationKey: Permissions.VerificationKey.proofDuringCurrentVersion(),
         send: Permissions.proof(),
-        setPermissions: Permissions.impossible(),
-      },
+        setPermissions: Permissions.impossible()
+      }
     }
 
     const poolAddress = this.pool.getAndRequireEquals()
@@ -159,7 +159,7 @@ export class Farm extends TokenContractV2 {
       { isSome: Bool(true), value: Field(0) },
       { isSome: Bool(true), value: Field(0) },
       { isSome: Bool(true), value: Field(0) },
-      { isSome: Bool(true), value: Field(0) },
+      { isSome: Bool(true), value: Field(0) }
     ]
   }
 

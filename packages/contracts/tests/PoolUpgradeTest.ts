@@ -20,9 +20,10 @@ import {
   TokenId,
   Types,
   UInt64,
-  VerificationKey,
+  VerificationKey
 } from "o1js"
-import { BalanceChangeEvent, FungibleToken, mulDiv, Pool, PoolData, PoolTokenHolder } from "../build/src/indexpool"
+
+import { BalanceChangeEvent, FungibleToken, mulDiv, Pool, PoolData, PoolTokenHolder } from "../dist"
 
 /**
  * Pool contract for Lumina dex (Future implementation for direct mina token support)

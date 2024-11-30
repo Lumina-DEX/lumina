@@ -1,4 +1,7 @@
 import fs from "fs/promises"
+import path from "path"
+import readline from "readline/promises"
+
 import {
   AccountUpdate,
   Bool,
@@ -11,10 +14,9 @@ import {
   PublicKey,
   SmartContract,
   UInt64,
-  UInt8,
+  UInt8
 } from "o1js"
-import path from "path"
-import readline from "readline/promises"
+
 import {
   Faucet,
   FungibleToken,
@@ -23,7 +25,7 @@ import {
   Pool,
   PoolData,
   PoolFactory,
-  PoolTokenHolder,
+  PoolTokenHolder
 } from "../index.js"
 
 // node build/src/verificationKey.js

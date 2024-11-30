@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
+      - run: echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
+      
+      - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.bun }}'
+      - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.node }}'
+      - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.pnpm }}'
+      - run: echo '${{ fromJson(env.PACKAGE_JSON).engines.deno || 10 }}'
+
       - uses: ./.github/workflows/actions/install
           
       - name: Format
