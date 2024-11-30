@@ -1,11 +1,18 @@
 {
-  "name": "@lumina/contracts",
+  "name": "@lumina-dex/contracts",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
-  "description": "",
-  "author": "",
+  "description": "Contracts for Lumina DEX.",
+  "author": {
+    "name": "youtpout"
+  },
   "license": "BSL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lumina-DEX/lumina.git",
+    "directory": "packages/contracts"
+  },
   "keywords": [
     "mina-zkapp",
     "mina-zk-app",

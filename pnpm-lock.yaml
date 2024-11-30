@@ -164,7 +164,7 @@ importers:
       '@gql.tada/vue-support':
         specifier: ^1.0.1
         version: 1.0.1(typescript@5.7.2)
-      '@lumina/contracts':
+      '@lumina-dex/contracts':
         specifier: workspace:^
         version: link:../contracts
       '@surma/rollup-plugin-off-main-thread':

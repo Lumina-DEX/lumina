@@ -10,7 +10,7 @@ import type {
 	PoolData,
 	PoolFactory,
 	PoolTokenHolder
-} from "@lumina/contracts"
+} from "@lumina-dex/contracts"
 
 import { MINA_ADDRESS } from "../constants"
 import { fetchFiles, readCache } from "./cache"
@@ -89,7 +89,7 @@ const loadContract = async () => {
 		FungibleToken,
 		FungibleTokenAdmin,
 		Faucet
-	} = await import("@lumina/contracts")
+	} = await import("@lumina-dex/contracts")
 
 	workerState.send({
 		type: "SetContracts",

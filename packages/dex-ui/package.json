@@ -1,5 +1,5 @@
 {
-	"name": "@lumina/dex-ui",
+	"name": "@lumina-dex/dex-ui",
 	"private": true,
 	"type": "module",
 	"scripts": {

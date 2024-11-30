@@ -2,11 +2,11 @@
     "folders": [
       {
         "path": "../packages/sdk",
-        "name": "@lumina/sdk"
+        "name": "@lumina-dex/sdk"
       },
       {
         "path": "../packages/contracts",
-        "name": "@lumina/contracts"
+        "name": "@lumina-dex/contracts"
       },
       {
         "path": "../packages/dex-ui",

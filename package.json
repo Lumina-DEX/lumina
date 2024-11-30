@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "lage build --scope '@lumina/sdk' '@lumina/contracts' --no-deps",
+		"build": "lage build --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
 		"build:all": "lage build",
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
