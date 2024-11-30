@@ -8,24 +8,14 @@ import dts from "rollup-plugin-dts"
 export default defineConfig([
   {
     input: "src/index.ts",
-    output: [
-      {
-        sourcemap: true,
-        dir: "dist",
-        format: "es"
-      }
-    ],
-    plugins: [
-      typescript({
-        tsconfig: "tsconfig.build.esm.json",
-        sourceMap: true
-      })
-    ]
+    output: [{ sourcemap: true, dir: "dist", format: "es" }],
+    plugins: [typescript({ tsconfig: "tsconfig.build.esm.json", sourceMap: true })]
   },
   {
     input: "dist/index.d.ts",
     output: [{ file: "dist/index.d.ts", format: "es" }],
     plugins: [dts(), {
+      // Clean up the dist folder after build
       buildEnd: async () => {
         const __dirname = new URL(".", import.meta.url).pathname
 

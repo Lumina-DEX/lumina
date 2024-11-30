@@ -71,7 +71,7 @@ export const createWalletMachine = ({
 					})
 				})
 				window.mina.on("accountsChanged", (accounts: string[]) => {
-					console.log("User manually changed account", accounts) //TODO: implement this
+					console.log("User manually changed account", accounts)
 					if (accounts.length === 0) {
 						console.log("User disconnected account")
 						sendBack({ type: "Disconnect" })

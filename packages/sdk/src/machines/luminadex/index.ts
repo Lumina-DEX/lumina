@@ -24,8 +24,10 @@ import type {
 	LuminaDexMachineContext,
 	LuminaDexMachineEvent,
 	LuminaDexMachineInput,
+	PoolSettings,
 	RemoveLiquiditySettings,
-	SwapSettings
+	SwapSettings,
+	User
 } from "./types"
 
 const inputWorker = (context: LuminaDexMachineContext) => {
@@ -48,8 +50,20 @@ const setContractError = (defaultMessage: string) => {
 	} as const
 }
 
-//TODO: Handle network change
-//TODO: Automatically get first user from wallet
+const setDexError = (defaultMessage: string) => {
+	return {
+		target: "DEX.ERROR",
+		// biome-ignore lint/suspicious/noExplicitAny: helper
+		actions: assign<LuminaDexMachineContext, ErrorActorEvent, any, any, any>(
+			({ context, event }) => {
+				if (event.error instanceof Error) {
+					return { dex: { ...context.dex, error: event.error } }
+				}
+				return { dex: { ...context.dex, error: new Error(defaultMessage) } }
+			}
+		)
+	} as const
+}
 
 export const createLuminaDexMachine = () => {
 	return setup({
@@ -83,26 +97,26 @@ export const createLuminaDexMachine = () => {
 					await worker.initZkappInstance(config)
 				}
 			),
-			claim: fromPromise(async ({ input }: { input: InputDexWorker & { user: string } }) => {
+			claim: fromPromise(async ({ input }: { input: InputDexWorker & User }) => {
 				const { worker, user } = input
 				console.time("claim")
 				const txJson = await worker.claim({ user })
 				console.timeEnd("claim")
-				await sendTransaction(txJson)
+				return await sendTransaction(txJson)
 			}),
 			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
 				const { worker, ...swapSettings } = input
 				console.time("swap")
 				const txJson = await worker.swap(swapSettings)
 				console.timeEnd("swap")
-				await sendTransaction(txJson)
+				return await sendTransaction(txJson)
 			}),
 			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) => {
 				const { worker, ...config } = input
 				console.time("addLiquidity")
 				const txJson = await worker.addLiquidity(config)
 				console.timeEnd("addLiquidity")
-				await sendTransaction(txJson)
+				return await sendTransaction(txJson)
 			}),
 			removeLiquidity: fromPromise(
 				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
@@ -110,15 +124,49 @@ export const createLuminaDexMachine = () => {
 					console.time("removeLiquidity")
 					const txJson = await worker.withdrawLiquidity(config)
 					console.timeEnd("removeLiquidity")
-					await sendTransaction(txJson)
+					return await sendTransaction(txJson)
+				}
+			),
+			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) => {
+				const { worker, ...config } = input
+				console.time("mint")
+				const txJson = await worker.mintToken(config)
+				console.timeEnd("mint")
+				return await sendTransaction(txJson)
+			}),
+			deployPool: fromPromise(
+				async ({ input }: { input: InputDexWorker & User & PoolSettings }) => {
+					const { worker, user, tokenA, tokenB } = input
+					console.time("deployPool")
+					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB })
+					console.timeEnd("deployPool")
+					return await sendTransaction(txJson)
+				}
+			),
+			deployToken: fromPromise(
+				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) => {
+					const { worker, symbol, user } = input
+					console.time("deployToken")
+					//TokenKey
+					const tk = PrivateKey.random()
+					const tokenKey = tk.toBase58()
+					const tokenKeyPublic = tk.toPublicKey().toBase58()
+					//TokenAdminKey
+					const tak = PrivateKey.random()
+					const tokenAdminKey = tak.toBase58()
+					const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
+
+					const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
+					console.timeEnd("deployToken")
+					const transactionOutput = await sendTransaction(txJson)
+					return {
+						transactionOutput,
+						token: { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
+					}
 				}
 			),
 			calculateSwapAmount: fromPromise(
-				async ({
-					input
-				}: {
-					input: InputDexWorker & { pool: string } & Required<SwapSettings>
-				}) => {
+				async ({ input }: { input: InputDexWorker & SwapSettings }) => {
 					const { worker, pool, slippagePercent, from } = input
 					const reserves = await worker.getReserves(pool)
 					const settings = { from, slippagePercent }
@@ -144,45 +192,8 @@ export const createLuminaDexMachine = () => {
 					return { swapAmount, settings }
 				}
 			),
-			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) => {
-				const { worker, ...config } = input
-				console.time("mint")
-				const txJson = await worker.mintToken(config)
-				console.timeEnd("mint")
-				await sendTransaction(txJson)
-			}),
-			deployPool: fromPromise(
-				async ({
-					input
-				}: { input: InputDexWorker & { user: string; tokenA: string; tokenB: string } }) => {
-					const { worker, user, tokenA, tokenB } = input
-					console.time("deployPool")
-					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB })
-					console.timeEnd("deployPool")
-					await sendTransaction(txJson)
-				}
-			),
-			deployToken: fromPromise(
-				async ({ input }: { input: InputDexWorker & { symbol: string; user: string } }) => {
-					const { worker, symbol, user } = input
-					console.time("deployToken")
-					//TokenKey
-					const tk = PrivateKey.random()
-					const tokenKey = tk.toBase58()
-					const tokenKeyPublic = tk.toPublicKey().toBase58()
-					//TokenAdminKey
-					const tak = PrivateKey.random()
-					const tokenAdminKey = tak.toBase58()
-					const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
-
-					const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
-					console.timeEnd("deployToken")
-					await sendTransaction(txJson)
-					return { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
-				}
-			),
 			calculateAddLiquidityAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & Required<AddLiquiditySettings> }) => {
+				async ({ input }: { input: InputDexWorker & AddLiquiditySettings }) => {
 					const { worker, pool, tokenA, tokenB, slippagePercent } = input
 					const reserves = await worker.getReserves(pool)
 
@@ -225,7 +236,7 @@ export const createLuminaDexMachine = () => {
 				}
 			),
 			calculateRemoveLiquidityAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & Required<RemoveLiquiditySettings> }) => {
+				async ({ input }: { input: InputDexWorker & RemoveLiquiditySettings }) => {
 					const { worker, pool, tokenA, tokenB, slippagePercent } = input
 					const reserves = await worker.getReserves(pool)
 
@@ -281,30 +292,36 @@ export const createLuminaDexMachine = () => {
 				frontendFee: { destination, amount },
 				contract: { worker: null, error: null },
 				dex: {
+					error: null,
 					swap: {
 						pool: "",
 						from: { address: "", amount: "" },
 						slippagePercent: 0,
-						calculated: null
+						calculated: null,
+						transactionResult: null
 					},
 					addLiquidity: {
 						pool: "",
 						tokenA: { address: "", amount: "" },
 						tokenB: { address: "", amount: "" },
 						slippagePercent: 0,
-						calculated: null
+						calculated: null,
+						transactionResult: null
 					},
 					removeLiquidity: {
 						pool: "",
 						tokenA: { address: "", amount: "" },
 						tokenB: { address: "", amount: "" },
 						slippagePercent: 0,
-						calculated: null
+						calculated: null,
+						transactionResult: null
 					},
-					mint: { to: "", token: "", amount: 0 },
-					deployPool: { tokenA: "", tokenB: "" },
+					claim: { transactionResult: null },
+					mint: { to: "", token: "", amount: 0, transactionResult: null },
+					deployPool: { tokenA: "", tokenB: "", transactionResult: null },
 					deployToken: {
 						symbol: "",
+						transactionResult: null,
 						result: {
 							tokenKey: "",
 							tokenAdminKey: "",
@@ -313,6 +330,25 @@ export const createLuminaDexMachine = () => {
 						}
 					}
 				}
+			}
+		},
+		invoke: {
+			src: "detectWalletChange",
+			input: ({ context }) => ({ wallet: context.wallet.actor })
+		},
+		on: {
+			//TODO: What should happen when the network changes?
+			// Recalculate Settings if not null ? Re-initialize Contracts?
+			NetworkChanged: {
+				actions: assign(({ context, event }) => ({
+					wallet: { ...context.wallet, network: event.network }
+				}))
+			},
+
+			AccountChanged: {
+				actions: assign(({ context, event }) => ({
+					wallet: { ...context.wallet, account: event.account }
+				}))
 			}
 		},
 		type: "parallel",
@@ -329,7 +365,7 @@ export const createLuminaDexMachine = () => {
 									contract: { ...context.contract, worker: event.output }
 								}))
 							},
-							onError: setContractError("Error initializing worker")
+							onError: setContractError("Initializing Worker")
 						}
 					},
 					LOADING_CONTRACTS: {
@@ -337,7 +373,7 @@ export const createLuminaDexMachine = () => {
 							src: "loadAndCompileContracts",
 							input: ({ context }) => inputWorker(context),
 							onDone: "INITIALIZING_ZKAPP",
-							onError: setContractError("Error loading contracts")
+							onError: setContractError("Loading Contracts")
 						}
 					},
 					INITIALIZING_ZKAPP: {
@@ -347,13 +383,12 @@ export const createLuminaDexMachine = () => {
 								return { ...inputWorker(context), ...context.addresses }
 							},
 							onDone: "CONTRACTS_READY",
-							onError: setContractError("Error initializing zkapp")
+							onError: setContractError("Initializing zkapp")
 						}
 					},
 					CONTRACTS_READY: {
 						description: "The dex is ready."
 					},
-					//TODO: Add a global way to enter the failed state.
 					FAILED: {
 						on: {
 							InitializeWorker: "INITIALIZING_WORKER"
@@ -365,102 +400,105 @@ export const createLuminaDexMachine = () => {
 				}
 			},
 			dexSystem: {
-				initial: "READY",
-				invoke: {
-					src: "detectWalletChange",
-					input: ({ context }) => ({ wallet: context.wallet.actor })
-				},
-				on: {
-					NetworkChanged: {
-						actions: assign(({ context, event }) => ({
-							wallet: { ...context.wallet, network: event.network }
-						}))
-					},
-					AccountChanged: {
-						actions: assign(({ context, event }) => ({
-							wallet: { ...context.wallet, account: event.account }
-						}))
-					}
-				},
+				initial: "DEX",
 				states: {
-					//TODO: Handle Errors
-					READY: {
+					DEX: {
+						initial: "READY",
+						states: { READY: {}, ERROR: {} },
 						on: {
 							DeployPool: {
-								description: "Deploy a pool for a given token.",
 								target: "DEPLOYING_POOL",
+								description: "Deploy a pool for a given token.",
 								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										deployPool: { ...context.dex.deployPool, ...event.settings }
+										deployPool: {
+											...context.dex.deployPool,
+											...event.settings,
+											transactionResult: null
+										}
 									}
 								}))
 							},
 							DeployToken: {
-								description: "Deploy a token.",
 								target: "DEPLOYING_TOKEN",
+								description: "Deploy a token.",
 								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
 										deployToken: {
 											symbol: event.settings.symbol,
+											transactionResult: null,
 											result: null
 										}
 									}
 								}))
 							},
 							ClaimTokensFromFaucet: {
+								target: "CLAIMING_FROM_FAUCET",
 								description: "Claim tokens from the faucet.",
 								guard: "contractsReady",
-								target: "CLAIMING_FROM_FAUCET"
-							},
-							MintToken: {
-								description: "Mint a token to a given destination address.",
-								target: "MINTING",
-								guard: "contractsReady",
-								actions: assign(({ context, event }) => ({
-									dex: { ...context.dex, mint: { ...context.dex.mint, ...event.settings } }
+								actions: assign(({ context }) => ({
+									dex: { ...context.dex, claim: { transactionResult: null } }
 								}))
 							},
-							ChangeRemoveLiquiditySettings: {
-								description: "Change the settings for adding liquidity.",
-								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
+							MintToken: {
+								target: "MINTING",
+								description: "Mint a token to a given destination address.",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										removeLiquidity: { ...event.settings, calculated: null }
+										mint: { ...context.dex.mint, ...event.settings, transactionResult: null }
+									}
+								}))
+							},
+							ChangeRemoveLiquiditySettings: {
+								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
+								description: "Change the settings for adding liquidity.",
+								guard: "contractsReady",
+								actions: assign(({ context, event }) => ({
+									dex: {
+										...context.dex,
+										removeLiquidity: {
+											...event.settings,
+											calculated: null,
+											transactionResult: null
+										}
 									}
 								}))
 							},
 							RemoveLiquidity: {
+								target: "REMOVING_LIQUIDITY",
 								description: "Create and send a transaction to remove liquidity from a pool.",
-								guard: and(["calculatedRemoveLiquidity", "contractsReady"]),
-								target: "REMOVING_LIQUIDITY"
+								guard: and(["calculatedRemoveLiquidity", "contractsReady"])
 							},
 							ChangeAddLiquiditySettings: {
-								description: "Change the settings for adding liquidity.",
 								target: "CALCULATING_ADD_LIQUIDITY_AMOUNT",
+								description: "Change the settings for adding liquidity.",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										addLiquidity: { ...event.settings, calculated: null }
+										addLiquidity: { ...event.settings, calculated: null, transactionResult: null }
 									}
 								}))
 							},
 							AddLiquidity: {
+								target: "ADDING_LIQUIDITY",
 								description: "Create and send a transaction to add liquidity to a pool.",
-								guard: and(["calculatedAddLiquidity", "contractsReady"]),
-								target: "ADDING_LIQUIDITY"
+								guard: and(["calculatedAddLiquidity", "contractsReady"])
 							},
 							ChangeSwapSettings: {
-								description: "Change the settings for a token swap.",
 								target: "CALCULATING_SWAP_AMOUNT",
+								description: "Change the settings for a token swap.",
+								guard: "contractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										swap: { ...event.settings, calculated: null }
+										swap: { ...event.settings, calculated: null, transactionResult: null }
 									}
 								}))
 							},
@@ -484,17 +522,19 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
+								target: "DEX.READY",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
 										deployToken: {
 											...context.dex.deployToken,
-											...event.output
+											...event.output.token,
+											transactionResult: event.output.transactionOutput
 										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Deploying Token")
 						}
 					},
 					DEPLOYING_POOL: {
@@ -509,7 +549,16 @@ export const createLuminaDexMachine = () => {
 									user: context.wallet.account
 								}
 							},
-							onDone: "READY"
+							onDone: {
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
+									dex: {
+										...context.dex,
+										deployPool: { ...context.dex.deployPool, transactionResult: event.output }
+									}
+								}))
+							},
+							onError: setDexError("Deploying Pool")
 						}
 					},
 					CLAIMING_FROM_FAUCET: {
@@ -519,7 +568,13 @@ export const createLuminaDexMachine = () => {
 								assertEvent(event, "ClaimTokensFromFaucet")
 								return { ...inputWorker(context), user: context.wallet.account }
 							},
-							onDone: "READY"
+							onDone: {
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
+									dex: { ...context.dex, claim: { transactionResult: event.output } }
+								}))
+							},
+							onError: setDexError("Claiming from Faucet")
 						}
 					},
 					MINTING: {
@@ -536,7 +591,16 @@ export const createLuminaDexMachine = () => {
 									amount: mint.amount
 								}
 							},
-							onDone: "READY"
+							onDone: {
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
+									dex: {
+										...context.dex,
+										mint: { ...context.dex.mint, transactionResult: event.output }
+									}
+								}))
+							},
+							onError: setDexError("Minting Token")
 						}
 					},
 					SWAPPING: {
@@ -560,11 +624,15 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
-								actions: assign(({ context }) => ({
-									dex: { ...context.dex, swap: { ...context.dex.swap, calculated: null } }
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
+									dex: {
+										...context.dex,
+										swap: { ...context.dex.swap, calculated: null, transactionResult: event.output }
+									}
 								}))
-							}
+							},
+							onError: setDexError("Swapping Tokens")
 						}
 					},
 					ADDING_LIQUIDITY: {
@@ -592,14 +660,19 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
-								actions: assign(({ context }) => ({
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										addLiquidity: { ...context.dex.addLiquidity, calculated: null }
+										addLiquidity: {
+											...context.dex.addLiquidity,
+											calculated: null,
+											transactionResult: event.output
+										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Adding Liquidity")
 						}
 					},
 					REMOVING_LIQUIDITY: {
@@ -628,14 +701,19 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
-								actions: assign(({ context }) => ({
+								target: "DEX.READY",
+								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										removeLiquidity: { ...context.dex.removeLiquidity, calculated: null }
+										removeLiquidity: {
+											...context.dex.removeLiquidity,
+											calculated: null,
+											transactionResult: event.output
+										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Removing Liquidity")
 						}
 					},
 					CALCULATING_SWAP_AMOUNT: {
@@ -651,7 +729,7 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
+								target: "DEX.READY",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -663,7 +741,8 @@ export const createLuminaDexMachine = () => {
 										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Calculating Swap Amount")
 						}
 					},
 					CALCULATING_ADD_LIQUIDITY_AMOUNT: {
@@ -680,7 +759,7 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
+								target: "DEX.READY",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -692,7 +771,8 @@ export const createLuminaDexMachine = () => {
 										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Calculating Add Liquidity Amount")
 						}
 					},
 					CALCULATING_REMOVE_LIQUIDITY_AMOUNT: {
@@ -709,7 +789,7 @@ export const createLuminaDexMachine = () => {
 								}
 							},
 							onDone: {
-								target: "READY",
+								target: "DEX.READY",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -721,7 +801,8 @@ export const createLuminaDexMachine = () => {
 										}
 									}
 								}))
-							}
+							},
+							onError: setDexError("Calculating Remove Liquidity Amount")
 						}
 					}
 				}

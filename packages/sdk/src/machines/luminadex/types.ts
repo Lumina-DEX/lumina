@@ -1,3 +1,4 @@
+import type { ProviderError, SendZkTransactionResult } from "@aurowallet/mina-provider"
 import type * as Comlink from "comlink"
 import type { InitZkappInstance, LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { Networks, Wallet } from "../wallet"
@@ -15,7 +16,9 @@ interface ContractContext {
 }
 
 interface DexContext {
+	error: Error | null
 	addLiquidity: {
+		transactionResult: DexTransactionResult
 		calculated: {
 			amountAIn: number
 			amountBIn: number
@@ -26,6 +29,7 @@ interface DexContext {
 		} | null
 	} & AddLiquiditySettings
 	removeLiquidity: {
+		transactionResult: DexTransactionResult
 		calculated: {
 			liquidity: number
 			amountAOut: number
@@ -36,6 +40,7 @@ interface DexContext {
 		} | null
 	} & RemoveLiquiditySettings
 	swap: {
+		transactionResult: DexTransactionResult
 		calculated: {
 			amountIn: number
 			amountOut: number
@@ -43,10 +48,12 @@ interface DexContext {
 			balanceInMax: number
 		} | null
 	} & SwapSettings
-	mint: Omit<MintToken, "user">
-	deployPool: { tokenA: string; tokenB: string }
+	mint: Omit<MintToken, "user"> & { transactionResult: DexTransactionResult }
+	deployPool: PoolSettings & { transactionResult: DexTransactionResult }
+	claim: { transactionResult: DexTransactionResult }
 	deployToken: {
 		symbol: string
+		transactionResult: DexTransactionResult
 		result: {
 			tokenKey: string
 			tokenAdminKey: string
@@ -69,7 +76,7 @@ type DexEvent =
 	| { type: "ChangeAddLiquiditySettings"; settings: AddLiquiditySettings }
 	| { type: "AddLiquidity" }
 	//Deploy
-	| { type: "DeployPool"; settings: { tokenA: string; tokenB: string } }
+	| { type: "DeployPool"; settings: PoolSettings }
 	| { type: "DeployToken"; settings: { symbol: string } }
 	//Mint
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
@@ -124,3 +131,14 @@ export interface RemoveLiquiditySettings {
 	tokenB: Token
 	slippagePercent: number
 }
+
+export interface PoolSettings {
+	tokenA: string
+	tokenB: string
+}
+
+export interface User {
+	user: string
+}
+
+export type DexTransactionResult = SendZkTransactionResult | ProviderError | null
