@@ -41,7 +41,7 @@ export default [
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         {
-          prefer: "type-imports",
+          prefer: "no-type-imports", // /!\ Do not change that or the build will break due to decorators stuff.
           fixStyle: "separate-type-imports"
         }
       ]

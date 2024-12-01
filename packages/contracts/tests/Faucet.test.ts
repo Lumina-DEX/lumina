@@ -1,6 +1,5 @@
-import type { PublicKey } from "o1js"
-
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
+import { PublicKey } from "o1js"
 import { AccountUpdate, Bool, fetchAccount, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 

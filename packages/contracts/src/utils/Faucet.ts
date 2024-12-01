@@ -1,5 +1,4 @@
-import type { AccountUpdateForest, DeployArgs } from "o1js"
-
+import { AccountUpdateForest, DeployArgs } from "o1js"
 import {
   Account,
   AccountUpdate,

@@ -15,8 +15,7 @@
 import fs from "fs/promises"
 import readline from "readline/promises"
 
-import type { NetworkId, SmartContract } from "o1js"
-
+import { NetworkId, SmartContract } from "o1js"
 import { AccountUpdate, Bool, Cache, fetchAccount, Field, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from "o1js"
 
 import {

@@ -1,6 +1,5 @@
-import type { PublicKey, VerificationKey } from "o1js"
-
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
+import { PublicKey, VerificationKey } from "o1js"
 import {
   AccountUpdate,
   Bool,

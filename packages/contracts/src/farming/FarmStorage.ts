@@ -1,5 +1,4 @@
-import type { DeployArgs } from "o1js"
-
+import { DeployArgs } from "o1js"
 import {
   Account,
   AccountUpdate,

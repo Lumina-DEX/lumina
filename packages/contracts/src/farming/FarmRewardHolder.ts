@@ -1,5 +1,4 @@
-import type { DeployArgs, VerificationKey } from "o1js"
-
+import { DeployArgs, VerificationKey } from "o1js"
 import {
   Account,
   AccountUpdate,
