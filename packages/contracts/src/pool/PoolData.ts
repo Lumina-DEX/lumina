@@ -1,14 +1,5 @@
 import { DeployArgs, VerificationKey } from "o1js"
-import {
-  AccountUpdate,
-  Field,
-  method,
-  Permissions,
-  PublicKey,
-  SmartContract,
-  State,
-  state
-} from "o1js"
+import { AccountUpdate, Field, method, Permissions, PublicKey, SmartContract, State, state } from "o1js"
 
 export interface PoolDataDeployProps extends Exclude<DeployArgs, undefined> {
   protocol: PublicKey

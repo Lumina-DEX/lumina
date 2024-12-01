@@ -1,6 +1,4 @@
-import {
-  UInt64
-} from "o1js"
+import { UInt64 } from "o1js"
 
 import { mulDiv } from "../indexpool.js"
 

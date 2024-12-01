@@ -1,14 +1,4 @@
-
-
-
-import {
-  FungibleToken,
-  FungibleTokenAdmin,
-  Pool,
-  PoolData,
-  PoolFactory,
-  PoolTokenHolder
-} from "../index.js"
+import { FungibleToken, FungibleTokenAdmin, Pool, PoolData, PoolFactory, PoolTokenHolder } from "../index.js"
 
 // node build/src/verificationKey.js
 

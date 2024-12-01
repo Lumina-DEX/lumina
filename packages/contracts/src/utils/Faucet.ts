@@ -1,14 +1,5 @@
 import { AccountUpdateForest, DeployArgs } from "o1js"
-import {
-  AccountUpdate,
-  method,
-  Permissions,
-  PublicKey,
-  State,
-  state,
-  TokenContractV2,
-  UInt64
-} from "o1js"
+import { AccountUpdate, method, Permissions, PublicKey, State, state, TokenContractV2, UInt64 } from "o1js"
 
 import { FungibleToken } from "../indexpool.js"
 

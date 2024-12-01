@@ -16,17 +16,9 @@ import fs from "fs/promises"
 import readline from "readline/promises"
 
 import { NetworkId, SmartContract } from "o1js"
-import { AccountUpdate, Bool, Cache, fetchAccount, Mina, PrivateKey, PublicKey, UInt8,UInt64 } from "o1js"
+import { AccountUpdate, Bool, Cache, fetchAccount, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from "o1js"
 
-import {
-  Faucet,
-  FungibleToken,
-  FungibleTokenAdmin,
-  mulDiv,
-  Pool,
-  PoolFactory,
-  PoolTokenHolder
-} from "../index.js"
+import { Faucet, FungibleToken, FungibleTokenAdmin, mulDiv, Pool, PoolFactory, PoolTokenHolder } from "../index.js"
 
 const prompt = async (message: string) => {
   const rl = readline.createInterface({

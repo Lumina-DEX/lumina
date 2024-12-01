@@ -1,7 +1,4 @@
-import {
-  method,
-  UInt64
-} from "o1js"
+import { method, UInt64 } from "o1js"
 
 import { PoolTokenHolder } from "../dist"
 

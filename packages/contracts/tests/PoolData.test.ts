@@ -1,12 +1,6 @@
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
 import { PublicKey, VerificationKey } from "o1js"
-import {
-  AccountUpdate,
-  Bool,
-  Cache,
-  Mina,
-  PrivateKey,
-  UInt8} from "o1js"
+import { AccountUpdate, Bool, Cache, Mina, PrivateKey, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { Pool, PoolData, PoolFactory, PoolTokenHolder } from "../dist"

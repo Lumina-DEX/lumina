@@ -1,16 +1,8 @@
 import { PublicKey } from "o1js"
-import { AccountUpdate, Bool, Mina, PrivateKey, UInt8,UInt64 } from "o1js"
+import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import {
-  FungibleToken,
-  FungibleTokenAdmin,
-  mulDiv,
-  Pool,
-  PoolData,
-  PoolFactory,
-  PoolTokenHolder
-} from "../dist"
+import { FungibleToken, FungibleTokenAdmin, mulDiv, Pool, PoolData, PoolFactory, PoolTokenHolder } from "../dist"
 
 const proofsEnabled = false
 

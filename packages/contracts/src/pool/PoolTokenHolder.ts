@@ -1,15 +1,4 @@
-import {
-  AccountUpdate,
-  Bool,
-  method,
-  Provable,
-  PublicKey,
-  SmartContract,
-  State,
-  state,
-  TokenId,
-  UInt64
-} from "o1js"
+import { AccountUpdate, Bool, method, Provable, PublicKey, SmartContract, State, state, TokenId, UInt64 } from "o1js"
 
 import { FungibleToken, mulDiv, Pool, PoolData, SwapEvent } from "../indexpool.js"
 

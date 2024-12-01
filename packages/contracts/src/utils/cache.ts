@@ -1,8 +1,7 @@
 import fs from "fs/promises"
 import path from "path"
 
-import {
-  Cache} from "o1js"
+import { Cache } from "o1js"
 
 import { Faucet, FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder } from "../index.js"
 
