@@ -14,7 +14,6 @@ import { getRetryExchange } from "./graphql/helpers"
 import { createLuminaDexMachine } from "./machines/luminadex"
 import { useActor } from "./machines/vue/useXstate"
 import { createWalletMachine } from "./machines/wallet"
-import { WalletMachine } from "./machines/wallet/index"
 
 //xstate bindings
 export * from "./machines/vue/useXstate"
@@ -45,7 +44,9 @@ export const createMinaClient = (url: string) => {
  *___________________________________________________________*/
 
 const walletMachine = createWalletMachine({ createMinaClient })
-export { walletMachine, WalletMachine }
+export type WalletMachine = typeof walletMachine
+
+export { walletMachine }
 
 export function useWallet(
 	...[options]: ConditionalRequired<

@@ -81,10 +81,10 @@ export const createLuminaDexMachine = () => {
 		actors: {
 			detectWalletChange,
 			initializeWorker: fromPromise(async () => {
-				const worker = new Worker(new URL("../dex/luminadex-worker.ts", import.meta.url), {
+				const worker = new SharedWorker(new URL("../../dex/luminadex-worker.ts", import.meta.url), {
 					type: "module"
 				})
-				return Comlink.wrap<LuminaDexWorker>(worker)
+				return Comlink.wrap<LuminaDexWorker>(worker.port)
 			}),
 			loadAndCompileContracts: fromPromise(
 				async ({ input: { worker } }: { input: InputDexWorker }) => {

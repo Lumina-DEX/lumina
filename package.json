@@ -38,8 +38,7 @@
 	},
 	"pnpm": {
 		"patchedDependencies": {
-			"o1js@1.7.0": "patches/o1js@1.7.0.patch",
-			"@surma/rollup-plugin-off-main-thread": "patches/@surma__rollup-plugin-off-main-thread.patch"
+			"o1js@1.7.0": "patches/o1js@1.7.0.patch"
 		}
 	}
 }

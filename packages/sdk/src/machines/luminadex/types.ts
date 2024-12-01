@@ -5,7 +5,7 @@ import type { Networks, Wallet } from "../wallet"
 
 type DexWorker = Comlink.Remote<LuminaDexWorker>
 
-interface Token {
+export interface Token {
 	address: string
 	amount: string
 }

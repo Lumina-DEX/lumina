@@ -1,6 +1,5 @@
-//@ts-expect-error options.plugins
-import OMT from "@surma/rollup-plugin-off-main-thread"
 import { defineBuildConfig } from "unbuild"
+import OMT from "./src/web-worker-plugin"
 
 export default defineBuildConfig({
 	sourcemap: true,

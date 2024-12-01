@@ -595,6 +595,9 @@ export const luminaDexWorker = {
 	claim
 }
 
-Comlink.expose(luminaDexWorker)
+// Shared Worker
+self.addEventListener("connect", (e) => {
+	Comlink.expose(luminaDexWorker, (e as MessageEvent).ports[0])
+})
 
 export type LuminaDexWorker = typeof luminaDexWorker

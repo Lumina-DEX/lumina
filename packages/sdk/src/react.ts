@@ -11,7 +11,7 @@ import type {
 } from "xstate"
 import { getRetryExchange } from "./graphql/helpers"
 import { createLuminaDexMachine } from "./machines/luminadex"
-import { WalletMachine, createWalletMachine } from "./machines/wallet"
+import { createWalletMachine } from "./machines/wallet"
 
 export * from "@xstate/react"
 
@@ -43,7 +43,9 @@ export { Provider }
  *___________________________________________________________*/
 
 const walletMachine = createWalletMachine({ createMinaClient })
-export { walletMachine, WalletMachine }
+export type WalletMachine = typeof walletMachine
+
+export { walletMachine }
 
 export function useWallet(
 	...[options]: ConditionalRequired<

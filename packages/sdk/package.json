@@ -37,8 +37,6 @@
 		"@aurowallet/mina-provider": "^1.0.6",
 		"@gql.tada/vue-support": "^1.0.1",
 		"@lumina-dex/contracts": "workspace:^",
-		"@surma/rollup-plugin-off-main-thread": "^2.2.3",
-		"@types/surma__rollup-plugin-off-main-thread": "^2.2.3",
 		"@urql/exchange-retry": "^1.3.0",
 		"@urql/vue": "^1.4.1",
 		"@xstate/react": "^4.1.3",
@@ -52,6 +50,8 @@
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
+		"magic-string": "^0.30.14",
+		"rollup": "^4.27.4",
 		"unbuild": "^2.0.0"
 	},
 	"peerDependencies": {

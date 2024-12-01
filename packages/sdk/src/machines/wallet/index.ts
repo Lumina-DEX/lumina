@@ -28,7 +28,7 @@ const toNumber = (n: unknown) => {
 	return 0
 }
 
-export type WalletMachine = ReturnType<typeof createWalletMachine>
+type WalletMachine = ReturnType<typeof createWalletMachine>
 
 export type Wallet = ActorRefFromLogic<WalletMachine>
 
