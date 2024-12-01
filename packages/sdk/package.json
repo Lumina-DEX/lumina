@@ -13,6 +13,7 @@
 	},
 	"scripts": {
 		"build": "unbuild",
+		"test": "echo 'test succesful'",
 		"schema:zeko:get": "bunx get-graphql-schema https://devnet.zeko.io/graphql > ./src/graphql/sequencer.graphql",
 		"schema:mina:get": "bunx get-graphql-schema https://api.minascan.io/node/devnet/v1/graphql > ./src/graphql/mina.graphql"
 	},

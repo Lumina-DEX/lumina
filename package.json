@@ -6,6 +6,7 @@
 	"scripts": {
 		"build": "lage build --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
 		"build:all": "lage build",
+		"test": "lage test --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
 		"format:all": "dprint check",
