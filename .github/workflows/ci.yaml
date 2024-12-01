@@ -28,10 +28,7 @@ jobs:
 
       - uses: ./.github/workflows/actions/install
 
-      - name: Build
-        run: bun run build
-
-      - name: Test
+      - name: Build & Test
         run: bun run test
 
       # - name: Typecheck

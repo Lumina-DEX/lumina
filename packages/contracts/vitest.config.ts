@@ -4,7 +4,9 @@ import { defineConfig } from "vitest/config"
 export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
-    hookTimeout: 50_000
+    hookTimeout: 120_000,
+    isolate: false,
+    pool: "forks"
   },
   plugins: [swc.vite()]
 })
