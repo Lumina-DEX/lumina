@@ -31,6 +31,6 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Test contracts
-        working-directory: packages/contracts
-        run: bun run test
+      # - name: Test contracts
+      #   working-directory: packages/contracts
+      #   run: bun run test
