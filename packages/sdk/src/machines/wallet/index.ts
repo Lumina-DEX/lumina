@@ -151,7 +151,7 @@ export const createWalletMachine = ({
 					// //TODO: Testnet is hardcoded for now
 					if (switchTo.includes("mainnet")) console.error("Mainnet is not supported")
 					if (!switchTo.startsWith("mina")) {
-						//TODO: this might not be necessary
+						// TODO: this might not be necessary
 						await window.mina.addChain({ url: urls[switchTo], name: switchTo })
 					}
 					const result = await window.mina.switchChain({ networkID: switchTo })
@@ -213,7 +213,7 @@ export const createWalletMachine = ({
 								type: "setWalletNetwork",
 								params: { network: event.output.currentNetwork }
 							})
-							//This will target the FETCHING_BALANCE state
+							// This will target the FETCHING_BALANCE state
 							enqueue.raise({ type: "SetAccount", account: event.output.accounts[0] })
 						})
 					}
@@ -226,7 +226,7 @@ export const createWalletMachine = ({
 						if (event.type === "FetchBalance") {
 							return { address: context.account, token: event.token, networks: event.networks }
 						}
-						//TODO: Hardcoded testnet
+						// TODO: Hardcoded testnet
 						return { address: context.account, networks: ["mina:testnet", "zeko:testnet"] }
 					},
 					onDone: {

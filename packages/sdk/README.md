@@ -19,7 +19,7 @@ const App = () => (
 Create a custom hook to interact with the wallet.
 
 ```jsx
-import { useWallet, useSelector } from "@zeko/sdk/react"
+import { useSelector, useWallet } from "@zeko/sdk/react"
 import { useEffect } from "react"
 
 export const useUserWallet = () => {
@@ -40,10 +40,9 @@ export const useUserWallet = () => {
 		(state) => state.context.zekoBalances
 	)
 
-	const walletLoaded =
-		snapshot.matches("READY") ||
-		snapshot.matches("SWITCHING_NETWORK") ||
-		snapshot.matches("FETCHING_BALANCE")
+	const walletLoaded = snapshot.matches("READY")
+		|| snapshot.matches("SWITCHING_NETWORK")
+		|| snapshot.matches("FETCHING_BALANCE")
 
 	useEffect(() => {
 		if (snapshot.matches("INIT")) {

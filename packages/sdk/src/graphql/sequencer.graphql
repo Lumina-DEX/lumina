@@ -4,192 +4,144 @@ schema {
   subscription: subscription
 }
 
-"""An account record according to the daemon"""
-type Account {
-  """The public identity of the account"""
+type subscription {
+  """
+  Event that triggers when some of the state hashes are changed. Max once per minute.
+"""
+  stateHashesChanged: StateHashes!
+}
+
+input TransferClaimInput {
+  transfer: TransferRequestInput!
+  after: [TransferInput!]!
+  before: [TransferInput!]!
+  pointer: String!
+  isNew: Boolean!
+}
+
+enum TransferDirection {
+  DEPOSIT
+  WITHDRAW
+}
+
+input TransferInput {
+  recipient: PublicKey!
+  amount: UInt64!
+}
+
+input TransferRequestInput {
+  direction: TransferDirection!
+  transfer: TransferInput!
+}
+
+type ProveTransferPayload {
+  """Key for querying the account update"""
+  accountUpdateKey: String!
+}
+
+input FeePayerBodyInput {
   publicKey: PublicKey!
-
-  """The token associated with this account"""
-  tokenId: TokenId!
-
-  """The token associated with this account"""
-  token: TokenId! @deprecated(reason: "Use tokenId")
-
-  """The timing associated with this account"""
-  timing: AccountTiming!
-
-  """The amount of MINA owned by the account"""
-  balance: AnnotatedBalance!
-
-  """
-  A natural number that increases with each transaction (stringified uint32)
-"""
-  nonce: AccountNonce
-
-  """
-  Like the `nonce` field, except it includes the scheduled transactions
-  (transactions not yet included in a block) (stringified uint32)
-"""
-  inferredNonce: AccountNonce
-
-  """
-  The account that you delegated on the staking ledger of the current block's epoch
-"""
-  epochDelegateAccount: Account
-
-  """Top hash of the receipt chain Merkle-list"""
-  receiptChainHash: ChainHash
-
-  """
-  The public key to which you are delegating - if you are not delegating to anybody, this would return your public key
-"""
-  delegate: PublicKey @deprecated(reason: "use delegateAccount instead")
-
-  """
-  The account to which you are delegating - if you are not delegating to anybody, this would return your public key
-"""
-  delegateAccount: Account
-
-  """
-  The list of accounts which are delegating to you (note that the info is
-  recorded in the last epoch so it might not be up to date with the current
-  account status)
-"""
-  delegators: [Account!]
-
-  """
-  The list of accounts which are delegating to you in the last epoch (note that
-  the info is recorded in the one before last epoch epoch so it might not be up
-  to date with the current account status)
-"""
-  lastEpochDelegators: [Account!]
-
-  """The previous epoch lock hash of the chain which you are voting for"""
-  votingFor: ChainHash
-
-  """
-  True if you are actively staking with this account on the current daemon -
-  this may not yet have been updated if the staking key was changed recently
-"""
-  stakingActive: Boolean!
-
-  """Path of the private key file for this account"""
-  privateKeyPath: String!
-
-  """
-  True if locked, false if unlocked, null if the account isn't tracked by the queried daemon
-"""
-  locked: Boolean
-
-  """
-  The index of this account in the ledger, or null if this account does not yet have a known position in the best tip ledger
-"""
-  index: Int
-
-  """
-  The URI associated with this account, usually pointing to the zkApp source code
-"""
-  zkappUri: String
-
-  """
-  The 8 field elements comprising the zkApp state associated with this account encoded as bignum strings
-"""
-  zkappState: [FieldElem!]
-
-  """
-  Boolean indicating whether all 8 fields on zkAppState were last set by a proof-authorized account update
-"""
-  provedState: Boolean
-
-  """Permissions for updating certain fields of this account"""
-  permissions: AccountPermissions
-
-  """The symbol for the token owned by this account, if there is one"""
-  tokenSymbol: String
-
-  """Verification key associated with this account"""
-  verificationKey: AccountVerificationKeyWithHash
-
-  """Action state associated with this account"""
-  actionState: [Action!]
-
-  """
-  The base58Check-encoded hash of this account to bootstrap the merklePath
-"""
-  leafHash: FieldElem
-
-  """
-  Merkle path is a list of path elements that are either the left or right hashes up to the root
-"""
-  merklePath: [MerklePathElement!]
+  fee: Fee!
+  validUntil: GlobalSlotSinceGenesis
+  nonce: UInt32!
 }
 
-"""Kind of authorization required"""
-enum AccountAuthRequired {
-  None
-  Either
-  Proof
-  Signature
-  Impossible
+input ZkappFeePayerInput {
+  body: FeePayerBodyInput!
+  authorization: Signature!
 }
 
-"""account nonce"""
-scalar AccountNonce
-
-type AccountPermissions {
-  """Authorization required to edit zkApp state"""
-  editState: AccountAuthRequired!
-
-  """Authorization required to send tokens"""
-  send: AccountAuthRequired!
-
-  """Authorization required to receive tokens"""
-  receive: AccountAuthRequired!
-
-  """Authorization required to access the account"""
-  access: AccountAuthRequired!
-
-  """Authorization required to set the delegate"""
-  setDelegate: AccountAuthRequired!
-
-  """Authorization required to change permissions"""
-  setPermissions: AccountAuthRequired!
-
-  """
-  Authorization required to set the verification key of the zkApp associated with the account
-"""
-  setVerificationKey: VerificationKeyPermission!
-
-  """
-  Authorization required to change the URI of the zkApp associated with the account 
-"""
-  setZkappUri: AccountAuthRequired!
-
-  """Authorization required to edit the action state"""
-  editActionState: AccountAuthRequired!
-
-  """Authorization required to set the token symbol"""
-  setTokenSymbol: AccountAuthRequired!
-
-  """Authorization required to increment the nonce"""
-  incrementNonce: AccountAuthRequired!
-
-  """Authorization required to set the state hash the account is voting for"""
-  setVotingFor: AccountAuthRequired!
-
-  """Authorization required to set the timing of the account"""
-  setTiming: AccountAuthRequired!
+input VerificationKeyWithHashInput {
+  data: VerificationKey!
+  hash: Field!
 }
 
-type AccountPrecondition {
-  balance: BalanceInterval
-  nonce: NonceInterval
-  receiptChainHash: Field
+input VerificationKeyPermissionInput {
+  auth: AuthRequired!
+  txnVersion: UInt32!
+}
+
+input PermissionsInput {
+  editState: AuthRequired!
+  access: AuthRequired!
+  send: AuthRequired!
+  receive: AuthRequired!
+  setDelegate: AuthRequired!
+  setPermissions: AuthRequired!
+  setVerificationKey: VerificationKeyPermissionInput!
+  setZkappUri: AuthRequired!
+  editActionState: AuthRequired!
+  setTokenSymbol: AuthRequired!
+  incrementNonce: AuthRequired!
+  setVotingFor: AuthRequired!
+  setTiming: AuthRequired!
+}
+
+input TimingInput {
+  initialMinimumBalance: Balance!
+  cliffTime: GlobalSlotSinceGenesis!
+  cliffAmount: CurrencyAmount!
+  vestingPeriod: GlobalSlotSpan!
+  vestingIncrement: CurrencyAmount!
+}
+
+input AccountUpdateModificationInput {
+  appState: [Field]!
   delegate: PublicKey
-  state: [Field]!
-  actionState: Field
-  provedState: Boolean
-  isNew: Boolean
+  verificationKey: VerificationKeyWithHashInput
+  permissions: PermissionsInput
+  zkappUri: String
+  tokenSymbol: String
+  timing: TimingInput
+  votingFor: StateHash
+}
+
+input BalanceChangeInput {
+  magnitude: CurrencyAmount!
+  sgn: Sign!
+}
+
+input CurrencyAmountIntervalInput {
+  lower: CurrencyAmount!
+  upper: CurrencyAmount!
+}
+
+input EpochLedgerPreconditionInput {
+  hash: Field
+  totalCurrency: CurrencyAmountIntervalInput
+}
+
+input LengthIntervalInput {
+  lower: UInt32!
+  upper: UInt32!
+}
+
+input EpochDataPreconditionInput {
+  ledger: EpochLedgerPreconditionInput!
+  seed: Field
+  startCheckpoint: Field
+  lockCheckpoint: Field
+  epochLength: LengthIntervalInput
+}
+
+input NetworkPreconditionInput {
+  snarkedLedgerHash: Field
+  blockchainLength: LengthIntervalInput
+  minWindowDensity: LengthIntervalInput
+  totalCurrency: CurrencyAmountIntervalInput
+  globalSlotSinceGenesis: GlobalSlotSinceGenesisIntervalInput
+  stakingEpochData: EpochDataPreconditionInput!
+  nextEpochData: EpochDataPreconditionInput!
+}
+
+input BalanceIntervalInput {
+  lower: Balance!
+  upper: Balance!
+}
+
+input NonceIntervalInput {
+  lower: UInt32!
+  upper: UInt32!
 }
 
 input AccountPreconditionInput {
@@ -203,38 +155,26 @@ input AccountPreconditionInput {
   isNew: Boolean
 }
 
-type AccountTiming {
-  """The initial minimum balance for a time-locked account"""
-  initialMinimumBalance: Balance
-
-  """The cliff time for a time-locked account"""
-  cliffTime: Globalslot
-
-  """The cliff amount for a time-locked account"""
-  cliffAmount: Amount
-
-  """The vesting period for a time-locked account"""
-  vestingPeriod: GlobalSlotSpan
-
-  """The vesting increment for a time-locked account"""
-  vestingIncrement: Amount
+input GlobalSlotSinceGenesisIntervalInput {
+  lower: GlobalSlotSinceGenesis!
+  upper: GlobalSlotSinceGenesis!
 }
 
-type AccountUpdateBody {
-  publicKey: PublicKey!
-  tokenId: TokenId!
-  update: AccountUpdateModification!
-  balanceChange: BalanceChange!
-  incrementNonce: Boolean!
-  events: [[Field!]!]!
-  actions: [[Field!]!]!
-  callData: Field!
-  callDepth: Int!
-  preconditions: Preconditions!
-  useFullCommitment: Boolean!
-  implicitAccountCreationFee: Boolean!
-  mayUseToken: MayUseToken!
-  authorizationKind: AuthorizationKindStructured!
+input PreconditionsInput {
+  network: NetworkPreconditionInput!
+  account: AccountPreconditionInput!
+  validWhile: GlobalSlotSinceGenesisIntervalInput
+}
+
+input MayUseTokenInput {
+  parentsOwnToken: Boolean!
+  inheritFromParent: Boolean!
+}
+
+input AuthorizationKindStructuredInput {
+  isSigned: Boolean!
+  isProved: Boolean!
+  verificationKeyHash: Field!
 }
 
 input AccountUpdateBodyInput {
@@ -254,103 +194,46 @@ input AccountUpdateBodyInput {
   authorizationKind: AuthorizationKindStructuredInput!
 }
 
-type AccountUpdateModification {
-  appState: [Field]!
-  delegate: PublicKey
-  verificationKey: VerificationKeyWithHash
-  permissions: Permissions
-  zkappUri: String
-  tokenSymbol: String
-  timing: Timing
-  votingFor: StateHash
+input ControlInput {
+  proof: ZkappProof
+  signature: Signature
 }
 
-input AccountUpdateModificationInput {
-  appState: [Field]!
-  delegate: PublicKey
-  verificationKey: VerificationKeyWithHashInput
-  permissions: PermissionsInput
-  zkappUri: String
-  tokenSymbol: String
-  timing: TimingInput
-  votingFor: StateHash
+"""An account update in a zkApp transaction"""
+input ZkappAccountUpdateInput {
+  body: AccountUpdateBodyInput!
+  authorization: ControlInput!
 }
 
-"""Verification key with hash"""
-type AccountVerificationKeyWithHash {
-  """verification key in Base64 format"""
-  verificationKey: VerificationKey!
-
-  """Hash of verification key"""
-  hash: VerificationKeyHash!
+input ZkappCommandInput {
+  feePayer: ZkappFeePayerInput!
+  accountUpdates: [ZkappAccountUpdateInput!]!
+  memo: Memo!
 }
 
-"""action"""
-scalar Action
-
-type ActionData {
-  accountUpdateId: String!
-  data: [String!]!
-  transactionInfo: TransactionInfo
+input SendZkappInput {
+  """zkApp command structure representing the transaction"""
+  zkappCommand: ZkappCommandInput!
 }
 
-input ActionFilterOptionsInput {
-  endActionState: String
-  fromActionState: String
-  tokenId: TokenId
-  address: PublicKey!
+"""ocaml integer as a string"""
+scalar Index
+
+type ZkappCommandFailureReason {
+  """List index of the account update that failed"""
+  index: Index
+
+  """Failure reason for the account update or any nested zkapp command"""
+  failures: [TransactionStatusFailure!]!
 }
 
-type ActionOutput {
-  blockInfo: BlockInfo
-  transactionInfo: TransactionInfo
-  actionState: ActionStates!
-  actionData: [ActionData!]!
-}
+scalar Memo
 
-type ActionStates {
-  actionStateOne: String
-  actionStateTwo: String
-  actionStateThree: String
-  actionStateFour: String
-  actionStateFive: String
-}
+scalar ZkappProof
 
-"""amount"""
-scalar Amount
-
-"""
-A total balance annotated with the amount that is currently unknown with the
-invariant unknown <= total, as well as the currently liquid and locked balances.
-"""
-type AnnotatedBalance {
-  """The amount of MINA owned by the account"""
-  total: Balance!
-
-  """
-  The amount of MINA owned by the account whose origin is currently unknown
-"""
-  unknown: Balance!
-
-  """
-  The amount of MINA owned by the account which is currently available. Can be null if bootstrapping.
-"""
-  liquid: Balance
-
-  """
-  The amount of MINA owned by the account which is currently locked. Can be null if bootstrapping.
-"""
-  locked: Balance
-
-  """Block height at which balance was measured"""
-  blockHeight: Length!
-
-  """
-  Hash of block at which balance was measured. Can be null if bootstrapping.
-  Guaranteed to be non-null for direct account lookup queries when not
-  bootstrapping. Can also be null when accessed as nested properties (eg. via delegators). 
-"""
-  stateHash: StateHash
+type Control {
+  proof: ZkappProof
+  signature: Signature
 }
 
 type AuthorizationKindStructured {
@@ -359,26 +242,14 @@ type AuthorizationKindStructured {
   verificationKeyHash: Field!
 }
 
-input AuthorizationKindStructuredInput {
-  isSigned: Boolean!
-  isProved: Boolean!
-  verificationKeyHash: Field!
+type MayUseToken {
+  parentsOwnToken: Boolean!
+  inheritFromParent: Boolean!
 }
 
-"""Kind of authorization required"""
-scalar AuthRequired
-
-"""balance"""
-scalar Balance
-
-type BalanceChange {
-  magnitude: CurrencyAmount!
-  sgn: Sign!
-}
-
-input BalanceChangeInput {
-  magnitude: CurrencyAmount!
-  sgn: Sign!
+type NonceInterval {
+  lower: UInt32!
+  upper: UInt32!
 }
 
 type BalanceInterval {
@@ -386,50 +257,20 @@ type BalanceInterval {
   upper: Balance!
 }
 
-input BalanceIntervalInput {
-  lower: Balance!
-  upper: Balance!
+type AccountPrecondition {
+  balance: BalanceInterval
+  nonce: NonceInterval
+  receiptChainHash: Field
+  delegate: PublicKey
+  state: [Field]!
+  actionState: Field
+  provedState: Boolean
+  isNew: Boolean
 }
 
-type BlockInfo {
-  height: Int!
-  stateHash: String!
-  parentHash: String!
-  ledgerHash: String!
-  chainStatus: String!
-  timestamp: Int!
-  globalSlotSinceHardfork: Int!
-  globalSlotSinceGenesis: Int!
-  distanceFromMaxBlockHeight: Int!
-}
-
-"""Base58Check-encoded chain hash"""
-scalar ChainHash
-
-type Control {
-  proof: ZkappProof
-  signature: Signature
-}
-
-input ControlInput {
-  proof: ZkappProof
-  signature: Signature
-}
-
-scalar CurrencyAmount
-
-type CurrencyAmountInterval {
-  lower: CurrencyAmount!
-  upper: CurrencyAmount!
-}
-
-input CurrencyAmountIntervalInput {
-  lower: CurrencyAmount!
-  upper: CurrencyAmount!
-}
-
-type DaemonStatus {
-  chainId: String!
+type EpochLedgerPrecondition {
+  hash: Field
+  totalCurrency: CurrencyAmountInterval
 }
 
 type EpochDataPrecondition {
@@ -440,137 +281,19 @@ type EpochDataPrecondition {
   epochLength: LengthInterval
 }
 
-input EpochDataPreconditionInput {
-  ledger: EpochLedgerPreconditionInput!
-  seed: Field
-  startCheckpoint: Field
-  lockCheckpoint: Field
-  epochLength: LengthIntervalInput
-}
-
-type EpochLedgerPrecondition {
-  hash: Field
-  totalCurrency: CurrencyAmountInterval
-}
-
-input EpochLedgerPreconditionInput {
-  hash: Field
-  totalCurrency: CurrencyAmountIntervalInput
-}
-
-type EventData {
-  data: [String!]!
-  transactionInfo: TransactionInfo
-}
-
-input EventFilterOptionsInput {
-  tokenId: TokenId
-  address: PublicKey!
-}
-
-type EventOutput {
-  blockInfo: BlockInfo
-  eventData: [EventData!]!
-}
-
-"""fee"""
-scalar Fee
-
-type FeePayerBody {
-  publicKey: PublicKey!
-  fee: Fee!
-  validUntil: GlobalSlotSinceGenesis
-  nonce: UInt32!
-}
-
-input FeePayerBodyInput {
-  publicKey: PublicKey!
-  fee: Fee!
-  validUntil: GlobalSlotSinceGenesis
-  nonce: UInt32!
-}
-
-"""String representing an Fp Field element"""
-scalar Field
-
-"""field element"""
-scalar FieldElem
-
-type GenesisConstants {
-  """The fee charged to create a new account"""
-  accountCreationFee: Fee!
-}
-
-"""global slot"""
-scalar Globalslot
-
-scalar GlobalSlotSinceGenesis
-
 type GlobalSlotSinceGenesisInterval {
   lower: GlobalSlotSinceGenesis!
   upper: GlobalSlotSinceGenesis!
 }
 
-input GlobalSlotSinceGenesisIntervalInput {
-  lower: GlobalSlotSinceGenesis!
-  upper: GlobalSlotSinceGenesis!
+type CurrencyAmountInterval {
+  lower: CurrencyAmount!
+  upper: CurrencyAmount!
 }
-
-"""global slot span"""
-scalar GlobalSlotSpan
-
-"""ocaml integer as a string"""
-scalar Index
-
-"""length"""
-scalar Length
 
 type LengthInterval {
   lower: UInt32!
   upper: UInt32!
-}
-
-input LengthIntervalInput {
-  lower: UInt32!
-  upper: UInt32!
-}
-
-type MayUseToken {
-  parentsOwnToken: Boolean!
-  inheritFromParent: Boolean!
-}
-
-input MayUseTokenInput {
-  parentsOwnToken: Boolean!
-  inheritFromParent: Boolean!
-}
-
-scalar Memo
-
-type MerklePathElement {
-  left: FieldElem
-  right: FieldElem
-}
-
-type mutation {
-  """Send a payment"""
-  sendPayment(
-    """
-    If a signature is provided, this transaction is considered signed and will
-    be broadcasted to the network without requiring a private key
-"""
-    signature: SignatureInput
-    input: SendPaymentInput!
-  ): SendPaymentPayload!
-
-  """Send a zkApp transaction"""
-  sendZkapp(input: SendZkappInput!): SendZkappPayload!
-
-  """Prove rollup transfer request"""
-  proveTransferRequest(input: TransferRequestInput!): ProveTransferPayload!
-
-  """Prove rollup transfer claim"""
-  proveTransferClaim(input: TransferClaimInput!): ProveTransferPayload!
 }
 
 type NetworkPrecondition {
@@ -583,25 +306,31 @@ type NetworkPrecondition {
   nextEpochData: EpochDataPrecondition!
 }
 
-input NetworkPreconditionInput {
-  snarkedLedgerHash: Field
-  blockchainLength: LengthIntervalInput
-  minWindowDensity: LengthIntervalInput
-  totalCurrency: CurrencyAmountIntervalInput
-  globalSlotSinceGenesis: GlobalSlotSinceGenesisIntervalInput
-  stakingEpochData: EpochDataPreconditionInput!
-  nextEpochData: EpochDataPreconditionInput!
+type Preconditions {
+  network: NetworkPrecondition!
+  account: AccountPrecondition!
+  validWhile: GlobalSlotSinceGenesisInterval
 }
 
-type NonceInterval {
-  lower: UInt32!
-  upper: UInt32!
+scalar Sign
+
+type BalanceChange {
+  magnitude: CurrencyAmount!
+  sgn: Sign!
 }
 
-input NonceIntervalInput {
-  lower: UInt32!
-  upper: UInt32!
+scalar CurrencyAmount
+
+type Timing {
+  initialMinimumBalance: Balance!
+  cliffTime: GlobalSlotSinceGenesis!
+  cliffAmount: CurrencyAmount!
+  vestingPeriod: GlobalSlotSpan!
+  vestingIncrement: CurrencyAmount!
 }
+
+"""Kind of authorization required"""
+scalar AuthRequired
 
 type Permissions {
   editState: AuthRequired!
@@ -619,95 +348,114 @@ type Permissions {
   setTiming: AuthRequired!
 }
 
-input PermissionsInput {
-  editState: AuthRequired!
-  access: AuthRequired!
-  send: AuthRequired!
-  receive: AuthRequired!
-  setDelegate: AuthRequired!
-  setPermissions: AuthRequired!
-  setVerificationKey: VerificationKeyPermissionInput!
-  setZkappUri: AuthRequired!
-  editActionState: AuthRequired!
-  setTokenSymbol: AuthRequired!
-  incrementNonce: AuthRequired!
-  setVotingFor: AuthRequired!
-  setTiming: AuthRequired!
+type VerificationKeyWithHash {
+  data: VerificationKey!
+  hash: Field!
 }
 
-type Preconditions {
-  network: NetworkPrecondition!
-  account: AccountPrecondition!
-  validWhile: GlobalSlotSinceGenesisInterval
+"""String representing an Fp Field element"""
+scalar Field
+
+type AccountUpdateModification {
+  appState: [Field]!
+  delegate: PublicKey
+  verificationKey: VerificationKeyWithHash
+  permissions: Permissions
+  zkappUri: String
+  tokenSymbol: String
+  timing: Timing
+  votingFor: StateHash
 }
 
-input PreconditionsInput {
-  network: NetworkPreconditionInput!
-  account: AccountPreconditionInput!
-  validWhile: GlobalSlotSinceGenesisIntervalInput
+type AccountUpdateBody {
+  publicKey: PublicKey!
+  tokenId: TokenId!
+  update: AccountUpdateModification!
+  balanceChange: BalanceChange!
+  incrementNonce: Boolean!
+  events: [[Field!]!]!
+  actions: [[Field!]!]!
+  callData: Field!
+  callDepth: Int!
+  preconditions: Preconditions!
+  useFullCommitment: Boolean!
+  implicitAccountCreationFee: Boolean!
+  mayUseToken: MayUseToken!
+  authorizationKind: AuthorizationKindStructured!
 }
 
-type ProveTransferPayload {
-  """Key for querying the account update"""
-  accountUpdateKey: String!
+"""An account update in a zkApp transaction"""
+type ZkappAccountUpdate {
+  body: AccountUpdateBody!
+  authorization: Control!
 }
 
-"""Base58Check-encoded public key string"""
-scalar PublicKey
+scalar Signature
 
-type query {
-  """Network sync status"""
-  syncStatus: SyncStatus!
+scalar GlobalSlotSinceGenesis
 
-  """Get running daemon status"""
-  daemonStatus: DaemonStatus!
+type FeePayerBody {
+  publicKey: PublicKey!
+  fee: Fee!
+  validUntil: GlobalSlotSinceGenesis
+  nonce: UInt32!
+}
 
-  """Find any account via a public key and token"""
-  account(
-    """Token of account being retrieved (defaults to MINA)"""
-    token: TokenId
+type ZkappFeePayer {
+  body: FeePayerBody!
+  authorization: Signature!
+}
 
-    """Public key of account being retrieved"""
-    publicKey: PublicKey!
-  ): Account
+type ZkappCommand {
+  feePayer: ZkappFeePayer!
+  accountUpdates: [ZkappAccountUpdate!]!
+  memo: Memo!
+}
 
-  """Find all accounts for a public key"""
-  accounts(
-    """Public key to find accounts for"""
-    publicKey: PublicKey!
-  ): [Account!]!
+type ZkappCommandResult {
+  """A Base64 string representing the zkApp command"""
+  id: TransactionId!
 
-  """Find all accounts for a token ID"""
-  tokenAccounts(
-    """Token ID to find accounts for"""
-    tokenId: TokenId!
-  ): [Account!]!
+  """A cryptographic hash of the zkApp command"""
+  hash: TransactionHash!
+
+  """zkApp command representing the transaction"""
+  zkappCommand: ZkappCommand!
 
   """
-  The constants used to determine the configuration of the genesis block and all of its transitive dependencies
+  The reason for the zkApp transaction failure; null means success or the status is unknown
 """
-  genesisConstants: GenesisConstants!
-
-  """Query proved account update for transfer in a JSON format"""
-  transferAccountUpdate(key: String!): String
-
-  """Get current state of the rollup"""
-  stateHashes: StateHashes
-
-  """Find the account that owns a given token"""
-  tokenOwner(
-    """Token ID to find the owning account for"""
-    tokenId: TokenId!
-  ): Account
-
-  """
-  The chain-agnostic identifier of the network this daemon is participating in
-"""
-  networkID: String!
-  statistics(luminaFactory: PublicKey!): Statistics!
-  actions(input: ActionFilterOptionsInput!): [ActionOutput!]!
-  events(input: EventFilterOptionsInput!): [EventOutput!]!
+  failureReason: [ZkappCommandFailureReason]
 }
+
+type SendZkappPayload {
+  """zkApp transaction that was sent"""
+  zkapp: ZkappCommandResult!
+}
+
+"""
+A cryptographic signature -- you must provide either field+scalar or rawSignature
+"""
+input SignatureInput {
+  """Raw encoded signature"""
+  rawSignature: String
+
+  """Scalar component of signature"""
+  scalar: String
+
+  """Field component of signature"""
+  field: String
+}
+
+"""
+String or Integer representation of a uint32 number. If the input is a string, it must represent the number in base 10
+"""
+scalar UInt32
+
+"""
+String or Integer representation of a uint64 number. If the input is a string, it must represent the number in base 10
+"""
+scalar UInt64
 
 input SendPaymentInput {
   """
@@ -736,144 +484,74 @@ input SendPaymentInput {
   from: PublicKey!
 }
 
-type SendPaymentPayload {
-  """Payment that was sent"""
-  payment: UserCommand!
-}
+"""transaction status failure"""
+scalar TransactionStatusFailure
 
-input SendZkappInput {
-  """zkApp command structure representing the transaction"""
-  zkappCommand: ZkappCommandInput!
-}
-
-type SendZkappPayload {
-  """zkApp transaction that was sent"""
-  zkapp: ZkappCommandResult!
-}
-
-scalar Sign
-
-scalar Signature
-
-"""
-A cryptographic signature -- you must provide either field+scalar or rawSignature
-"""
-input SignatureInput {
-  """Raw encoded signature"""
-  rawSignature: String
-
-  """Scalar component of signature"""
-  scalar: String
-
-  """Field component of signature"""
-  field: String
-}
-
-"""Base58Check-encoded state hash"""
-scalar StateHash
-
-type StateHashes {
-  """Ledger hash of latest proved state"""
-  provedLedgerHash: String!
-
-  """Ledger hash of latest unproved state"""
-  unprovedLedgerHash: String!
-
-  """Ledger hash of latest committed state"""
-  committedLedgerHash: String!
-}
-
-type Statistics {
-  transactions: Int!
-  deposits: Int!
-  luminaSwaps: Int!
-  luminaLiquidityPools: Int!
-}
-
-type subscription {
-  """
-  Event that triggers when some of the state hashes are changed. Max once per minute.
-"""
-  stateHashesChanged: StateHashes!
-}
-
-"""Sync status of daemon"""
-enum SyncStatus {
-  CONNECTING
-  LISTENING
-  OFFLINE
-  BOOTSTRAP
-  SYNCED
-  CATCHUP
-}
-
-type Timing {
-  initialMinimumBalance: Balance!
-  cliffTime: GlobalSlotSinceGenesis!
-  cliffAmount: CurrencyAmount!
-  vestingPeriod: GlobalSlotSpan!
-  vestingIncrement: CurrencyAmount!
-}
-
-input TimingInput {
-  initialMinimumBalance: Balance!
-  cliffTime: GlobalSlotSinceGenesis!
-  cliffAmount: CurrencyAmount!
-  vestingPeriod: GlobalSlotSpan!
-  vestingIncrement: CurrencyAmount!
-}
-
-"""String representation of a token's UInt64 identifier"""
-scalar TokenId
-
-"""Base58Check-encoded transaction hash"""
-scalar TransactionHash
+"""The kind of user command"""
+scalar UserCommandKind
 
 """Base64-encoded transaction"""
 scalar TransactionId
 
-type TransactionInfo {
-  status: String!
+type UserCommandPayment implements UserCommand {
+  id: TransactionId!
   hash: TransactionHash!
+
+  """String describing the kind of user command"""
+  kind: UserCommandKind!
+
+  """Sequence number of command for the fee-payer's account"""
+  nonce: Int!
+
+  """Account that the command is sent from"""
+  source: Account!
+
+  """Account that the command applies to"""
+  receiver: Account!
+
+  """Account that pays the fees for the command"""
+  feePayer: Account! @deprecated(reason: "use source field instead")
+
+  """The global slot number after which this transaction cannot be applied"""
+  validUntil: Globalslot!
+
+  """Token used for the transaction"""
+  token: TokenId!
+
+  """
+  Amount that the source is sending to receiver; 0 for commands without an associated amount
+"""
+  amount: Amount!
+
+  """Token used to pay the fee"""
+  feeToken: TokenId!
+
+  """Fee that the fee-payer is willing to pay for making the transaction"""
+  fee: Fee!
+
+  """
+  A short message from the sender, encoded with Base58Check, version byte=0x14; byte 2 of the decoding is the message length
+"""
   memo: String!
-  authorizationKind: String!
+
+  """If true, this command represents a delegation of stake"""
+  isDelegation: Boolean! @deprecated(reason: "use kind field instead")
+
+  """Public key of the sender"""
+  from: PublicKey! @deprecated(reason: "use feePayer field instead")
+
+  """Account of the sender"""
+  fromAccount: Account! @deprecated(reason: "use feePayer field instead")
+
+  """Public key of the receiver"""
+  to: PublicKey! @deprecated(reason: "use receiver field instead")
+
+  """Account of the receiver"""
+  toAccount: Account! @deprecated(reason: "use receiver field instead")
+
+  """null is no failure or status unknown, reason for failure otherwise."""
+  failureReason: TransactionStatusFailure
 }
-
-"""transaction status failure"""
-scalar TransactionStatusFailure
-
-input TransferClaimInput {
-  transfer: TransferRequestInput!
-  after: [TransferInput!]!
-  before: [TransferInput!]!
-  pointer: String!
-  isNew: Boolean!
-}
-
-enum TransferDirection {
-  DEPOSIT
-  WITHDRAW
-}
-
-input TransferInput {
-  recipient: PublicKey!
-  amount: UInt64!
-}
-
-input TransferRequestInput {
-  direction: TransferDirection!
-  transfer: TransferInput!
-}
-
-"""
-String or Integer representation of a uint32 number. If the input is a string, it must represent the number in base 10
-"""
-scalar UInt32
-
-"""
-String or Integer representation of a uint64 number. If the input is a string, it must represent the number in base 10
-"""
-scalar UInt64
 
 """Common interface for user commands"""
 interface UserCommand {
@@ -936,74 +614,144 @@ interface UserCommand {
   failureReason: TransactionStatusFailure
 }
 
-"""The kind of user command"""
-scalar UserCommandKind
-
-type UserCommandPayment implements UserCommand {
-  id: TransactionId!
-  hash: TransactionHash!
-
-  """String describing the kind of user command"""
-  kind: UserCommandKind!
-
-  """Sequence number of command for the fee-payer's account"""
-  nonce: Int!
-
-  """Account that the command is sent from"""
-  source: Account!
-
-  """Account that the command applies to"""
-  receiver: Account!
-
-  """Account that pays the fees for the command"""
-  feePayer: Account! @deprecated(reason: "use source field instead")
-
-  """The global slot number after which this transaction cannot be applied"""
-  validUntil: Globalslot!
-
-  """Token used for the transaction"""
-  token: TokenId!
-
-  """
-  Amount that the source is sending to receiver; 0 for commands without an associated amount
-"""
-  amount: Amount!
-
-  """Token used to pay the fee"""
-  feeToken: TokenId!
-
-  """Fee that the fee-payer is willing to pay for making the transaction"""
-  fee: Fee!
-
-  """
-  A short message from the sender, encoded with Base58Check, version byte=0x14; byte 2 of the decoding is the message length
-"""
-  memo: String!
-
-  """If true, this command represents a delegation of stake"""
-  isDelegation: Boolean! @deprecated(reason: "use kind field instead")
-
-  """Public key of the sender"""
-  from: PublicKey! @deprecated(reason: "use feePayer field instead")
-
-  """Account of the sender"""
-  fromAccount: Account! @deprecated(reason: "use feePayer field instead")
-
-  """Public key of the receiver"""
-  to: PublicKey! @deprecated(reason: "use receiver field instead")
-
-  """Account of the receiver"""
-  toAccount: Account! @deprecated(reason: "use receiver field instead")
-
-  """null is no failure or status unknown, reason for failure otherwise."""
-  failureReason: TransactionStatusFailure
+type SendPaymentPayload {
+  """Payment that was sent"""
+  payment: UserCommand!
 }
+
+type mutation {
+  """Send a payment"""
+  sendPayment(
+    """
+    If a signature is provided, this transaction is considered signed and will be broadcasted to the network without requiring a private key
+"""
+    signature: SignatureInput
+    input: SendPaymentInput!
+  ): SendPaymentPayload!
+
+  """Send a zkApp transaction"""
+  sendZkapp(input: SendZkappInput!): SendZkappPayload!
+
+  """Prove rollup transfer request"""
+  proveTransferRequest(input: TransferRequestInput!): ProveTransferPayload!
+
+  """Prove rollup transfer claim"""
+  proveTransferClaim(input: TransferClaimInput!): ProveTransferPayload!
+}
+
+input EventFilterOptionsInput {
+  tokenId: TokenId
+  address: PublicKey!
+}
+
+type EventData {
+  data: [String!]!
+  transactionInfo: TransactionInfo
+}
+
+type EventOutput {
+  blockInfo: BlockInfo
+  eventData: [EventData!]!
+}
+
+input ActionFilterOptionsInput {
+  endActionState: String
+  fromActionState: String
+  tokenId: TokenId
+  address: PublicKey!
+}
+
+type ActionData {
+  accountUpdateId: String!
+  data: [String!]!
+  transactionInfo: TransactionInfo
+}
+
+type ActionStates {
+  actionStateOne: String
+  actionStateTwo: String
+  actionStateThree: String
+  actionStateFour: String
+  actionStateFive: String
+}
+
+"""Base58Check-encoded transaction hash"""
+scalar TransactionHash
+
+type TransactionInfo {
+  status: String!
+  hash: TransactionHash!
+  memo: String!
+  authorizationKind: String!
+}
+
+type BlockInfo {
+  height: Int!
+  stateHash: String!
+  parentHash: String!
+  ledgerHash: String!
+  chainStatus: String!
+  timestamp: Int!
+  globalSlotSinceHardfork: Int!
+  globalSlotSinceGenesis: Int!
+  distanceFromMaxBlockHeight: Int!
+}
+
+type ActionOutput {
+  blockInfo: BlockInfo
+  transactionInfo: TransactionInfo
+  actionState: ActionStates!
+  actionData: [ActionData!]!
+}
+
+type Statistics {
+  transactions: Int!
+  deposits: Int!
+  luminaSwaps: Int!
+  luminaLiquidityPools: Int!
+}
+
+type StateHashes {
+  """Ledger hash of latest proved state"""
+  provedLedgerHash: String!
+
+  """Ledger hash of latest unproved state"""
+  unprovedLedgerHash: String!
+
+  """Ledger hash of latest committed state"""
+  committedLedgerHash: String!
+}
+
+"""fee"""
+scalar Fee
+
+type GenesisConstants {
+  """The fee charged to create a new account"""
+  accountCreationFee: Fee!
+}
+
+type MerklePathElement {
+  left: FieldElem
+  right: FieldElem
+}
+
+"""action"""
+scalar Action
+
+"""Hash of verification key"""
+scalar VerificationKeyHash
 
 """verification key in Base64 format"""
 scalar VerificationKey
 
-"""Hash of verification key"""
-scalar VerificationKeyHash
+"""Verification key with hash"""
+type AccountVerificationKeyWithHash {
+  """verification key in Base64 format"""
+  verificationKey: VerificationKey!
+
+  """Hash of verification key"""
+  hash: VerificationKeyHash!
+}
 
 type VerificationKeyPermission {
   """
@@ -1013,77 +761,319 @@ type VerificationKeyPermission {
   txnVersion: String!
 }
 
-input VerificationKeyPermissionInput {
-  auth: AuthRequired!
-  txnVersion: UInt32!
+"""Kind of authorization required"""
+enum AccountAuthRequired {
+  None
+  Either
+  Proof
+  Signature
+  Impossible
 }
 
-type VerificationKeyWithHash {
-  data: VerificationKey!
-  hash: Field!
-}
+type AccountPermissions {
+  """Authorization required to edit zkApp state"""
+  editState: AccountAuthRequired!
 
-input VerificationKeyWithHashInput {
-  data: VerificationKey!
-  hash: Field!
-}
+  """Authorization required to send tokens"""
+  send: AccountAuthRequired!
 
-"""An account update in a zkApp transaction"""
-type ZkappAccountUpdate {
-  body: AccountUpdateBody!
-  authorization: Control!
-}
+  """Authorization required to receive tokens"""
+  receive: AccountAuthRequired!
 
-"""An account update in a zkApp transaction"""
-input ZkappAccountUpdateInput {
-  body: AccountUpdateBodyInput!
-  authorization: ControlInput!
-}
+  """Authorization required to access the account"""
+  access: AccountAuthRequired!
 
-type ZkappCommand {
-  feePayer: ZkappFeePayer!
-  accountUpdates: [ZkappAccountUpdate!]!
-  memo: Memo!
-}
+  """Authorization required to set the delegate"""
+  setDelegate: AccountAuthRequired!
 
-type ZkappCommandFailureReason {
-  """List index of the account update that failed"""
-  index: Index
-
-  """Failure reason for the account update or any nested zkapp command"""
-  failures: [TransactionStatusFailure!]!
-}
-
-input ZkappCommandInput {
-  feePayer: ZkappFeePayerInput!
-  accountUpdates: [ZkappAccountUpdateInput!]!
-  memo: Memo!
-}
-
-type ZkappCommandResult {
-  """A Base64 string representing the zkApp command"""
-  id: TransactionId!
-
-  """A cryptographic hash of the zkApp command"""
-  hash: TransactionHash!
-
-  """zkApp command representing the transaction"""
-  zkappCommand: ZkappCommand!
+  """Authorization required to change permissions"""
+  setPermissions: AccountAuthRequired!
 
   """
-  The reason for the zkApp transaction failure; null means success or the status is unknown
+  Authorization required to set the verification key of the zkApp associated with the account
 """
-  failureReason: [ZkappCommandFailureReason]
+  setVerificationKey: VerificationKeyPermission!
+
+  """
+  Authorization required to change the URI of the zkApp associated with the account 
+"""
+  setZkappUri: AccountAuthRequired!
+
+  """Authorization required to edit the action state"""
+  editActionState: AccountAuthRequired!
+
+  """Authorization required to set the token symbol"""
+  setTokenSymbol: AccountAuthRequired!
+
+  """Authorization required to increment the nonce"""
+  incrementNonce: AccountAuthRequired!
+
+  """Authorization required to set the state hash the account is voting for"""
+  setVotingFor: AccountAuthRequired!
+
+  """Authorization required to set the timing of the account"""
+  setTiming: AccountAuthRequired!
 }
 
-type ZkappFeePayer {
-  body: FeePayerBody!
-  authorization: Signature!
+"""field element"""
+scalar FieldElem
+
+"""Base58Check-encoded chain hash"""
+scalar ChainHash
+
+"""account nonce"""
+scalar AccountNonce
+
+"""Base58Check-encoded state hash"""
+scalar StateHash
+
+"""length"""
+scalar Length
+
+"""
+A total balance annotated with the amount that is currently unknown with the invariant unknown <= total, as well as the currently liquid and locked balances.
+"""
+type AnnotatedBalance {
+  """The amount of MINA owned by the account"""
+  total: Balance!
+
+  """
+  The amount of MINA owned by the account whose origin is currently unknown
+"""
+  unknown: Balance!
+
+  """
+  The amount of MINA owned by the account which is currently available. Can be null if bootstrapping.
+"""
+  liquid: Balance
+
+  """
+  The amount of MINA owned by the account which is currently locked. Can be null if bootstrapping.
+"""
+  locked: Balance
+
+  """Block height at which balance was measured"""
+  blockHeight: Length!
+
+  """
+  Hash of block at which balance was measured. Can be null if bootstrapping. Guaranteed to be non-null for direct account lookup queries when not bootstrapping. Can also be null when accessed as nested properties (eg. via delegators). 
+"""
+  stateHash: StateHash
 }
 
-input ZkappFeePayerInput {
-  body: FeePayerBodyInput!
-  authorization: Signature!
+"""global slot span"""
+scalar GlobalSlotSpan
+
+"""amount"""
+scalar Amount
+
+"""global slot"""
+scalar Globalslot
+
+"""balance"""
+scalar Balance
+
+type AccountTiming {
+  """The initial minimum balance for a time-locked account"""
+  initialMinimumBalance: Balance
+
+  """The cliff time for a time-locked account"""
+  cliffTime: Globalslot
+
+  """The cliff amount for a time-locked account"""
+  cliffAmount: Amount
+
+  """The vesting period for a time-locked account"""
+  vestingPeriod: GlobalSlotSpan
+
+  """The vesting increment for a time-locked account"""
+  vestingIncrement: Amount
 }
 
-scalar ZkappProof
+"""String representation of a token's UInt64 identifier"""
+scalar TokenId
+
+"""Base58Check-encoded public key string"""
+scalar PublicKey
+
+"""An account record according to the daemon"""
+type Account {
+  """The public identity of the account"""
+  publicKey: PublicKey!
+
+  """The token associated with this account"""
+  tokenId: TokenId!
+
+  """The token associated with this account"""
+  token: TokenId! @deprecated(reason: "Use tokenId")
+
+  """The timing associated with this account"""
+  timing: AccountTiming!
+
+  """The amount of MINA owned by the account"""
+  balance: AnnotatedBalance!
+
+  """
+  A natural number that increases with each transaction (stringified uint32)
+"""
+  nonce: AccountNonce
+
+  """
+  Like the `nonce` field, except it includes the scheduled transactions (transactions not yet included in a block) (stringified uint32)
+"""
+  inferredNonce: AccountNonce
+
+  """
+  The account that you delegated on the staking ledger of the current block's epoch
+"""
+  epochDelegateAccount: Account
+
+  """Top hash of the receipt chain Merkle-list"""
+  receiptChainHash: ChainHash
+
+  """
+  The public key to which you are delegating - if you are not delegating to anybody, this would return your public key
+"""
+  delegate: PublicKey @deprecated(reason: "use delegateAccount instead")
+
+  """
+  The account to which you are delegating - if you are not delegating to anybody, this would return your public key
+"""
+  delegateAccount: Account
+
+  """
+  The list of accounts which are delegating to you (note that the info is recorded in the last epoch so it might not be up to date with the current account status)
+"""
+  delegators: [Account!]
+
+  """
+  The list of accounts which are delegating to you in the last epoch (note that the info is recorded in the one before last epoch epoch so it might not be up to date with the current account status)
+"""
+  lastEpochDelegators: [Account!]
+
+  """The previous epoch lock hash of the chain which you are voting for"""
+  votingFor: ChainHash
+
+  """
+  True if you are actively staking with this account on the current daemon - this may not yet have been updated if the staking key was changed recently
+"""
+  stakingActive: Boolean!
+
+  """Path of the private key file for this account"""
+  privateKeyPath: String!
+
+  """
+  True if locked, false if unlocked, null if the account isn't tracked by the queried daemon
+"""
+  locked: Boolean
+
+  """
+  The index of this account in the ledger, or null if this account does not yet have a known position in the best tip ledger
+"""
+  index: Int
+
+  """
+  The URI associated with this account, usually pointing to the zkApp source code
+"""
+  zkappUri: String
+
+  """
+  The 8 field elements comprising the zkApp state associated with this account encoded as bignum strings
+"""
+  zkappState: [FieldElem!]
+
+  """
+  Boolean indicating whether all 8 fields on zkAppState were last set by a proof-authorized account update
+"""
+  provedState: Boolean
+
+  """Permissions for updating certain fields of this account"""
+  permissions: AccountPermissions
+
+  """The symbol for the token owned by this account, if there is one"""
+  tokenSymbol: String
+
+  """Verification key associated with this account"""
+  verificationKey: AccountVerificationKeyWithHash
+
+  """Action state associated with this account"""
+  actionState: [Action!]
+
+  """
+  The base58Check-encoded hash of this account to bootstrap the merklePath
+"""
+  leafHash: FieldElem
+
+  """
+  Merkle path is a list of path elements that are either the left or right hashes up to the root
+"""
+  merklePath: [MerklePathElement!]
+}
+
+type DaemonStatus {
+  chainId: String!
+}
+
+"""Sync status of daemon"""
+enum SyncStatus {
+  CONNECTING
+  LISTENING
+  OFFLINE
+  BOOTSTRAP
+  SYNCED
+  CATCHUP
+}
+
+type query {
+  """Network sync status"""
+  syncStatus: SyncStatus!
+
+  """Get running daemon status"""
+  daemonStatus: DaemonStatus!
+
+  """Find any account via a public key and token"""
+  account(
+    """Token of account being retrieved (defaults to MINA)"""
+    token: TokenId
+
+    """Public key of account being retrieved"""
+    publicKey: PublicKey!
+  ): Account
+
+  """Find all accounts for a public key"""
+  accounts(
+    """Public key to find accounts for"""
+    publicKey: PublicKey!
+  ): [Account!]!
+
+  """Find all accounts for a token ID"""
+  tokenAccounts(
+    """Token ID to find accounts for"""
+    tokenId: TokenId!
+  ): [Account!]!
+
+  """
+  The constants used to determine the configuration of the genesis block and all of its transitive dependencies
+"""
+  genesisConstants: GenesisConstants!
+
+  """Query proved account update for transfer in a JSON format"""
+  transferAccountUpdate(key: String!): String
+
+  """Get current state of the rollup"""
+  stateHashes: StateHashes
+
+  """Find the account that owns a given token"""
+  tokenOwner(
+    """Token ID to find the owning account for"""
+    tokenId: TokenId!
+  ): Account
+
+  """
+  The chain-agnostic identifier of the network this daemon is participating in
+"""
+  networkID: String!
+  statistics(luminaFactory: PublicKey!): Statistics!
+  actions(input: ActionFilterOptionsInput!): [ActionOutput!]!
+  events(input: EventFilterOptionsInput!): [EventOutput!]!
+}

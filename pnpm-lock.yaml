@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  '@gql.tada/internal':
+    hash: r6sdebyzpemqktlkckaf4ey7wm
+    path: patches/@gql.tada__internal.patch
   o1js@1.7.0:
     hash: 6p5qldkvrpfnuy7cjffmurxjci
     path: patches/o1js@1.7.0.patch
@@ -183,7 +186,7 @@ importers:
         specifier: ^4.4.2
         version: 4.4.2
       gql.tada:
-        specifier: ^1.8.9
+        specifier: ^1.8.10
         version: 1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.9.0)(typescript@5.7.2)
       o1js:
         specifier: 1.7.0
@@ -201,6 +204,9 @@ importers:
         specifier: ^5.18.2
         version: 5.19.0
     devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
       '@types/bun':
         specifier: latest
         version: 1.1.14
@@ -3912,7 +3918,7 @@ snapshots:
 
   '@0no-co/graphqlsp@1.12.16(graphql@16.9.0)(typescript@5.7.2)':
     dependencies:
-      '@gql.tada/internal': 1.0.8(graphql@16.9.0)(typescript@5.7.2)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.9.0)(typescript@5.7.2)
       graphql: 16.9.0
       typescript: 5.7.2
 
@@ -4579,13 +4585,13 @@ snapshots:
   '@gql.tada/cli-utils@1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.9.0)(typescript@5.7.2))(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.9.0)(typescript@5.7.2)':
     dependencies:
       '@0no-co/graphqlsp': 1.12.16(graphql@16.9.0)(typescript@5.7.2)
-      '@gql.tada/internal': 1.0.8(graphql@16.9.0)(typescript@5.7.2)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.9.0)(typescript@5.7.2)
       graphql: 16.9.0
       typescript: 5.7.2
     optionalDependencies:
       '@gql.tada/vue-support': 1.0.1(typescript@5.7.2)
 
-  '@gql.tada/internal@1.0.8(graphql@16.9.0)(typescript@5.7.2)':
+  '@gql.tada/internal@1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.9.0)(typescript@5.7.2)':
     dependencies:
       '@0no-co/graphql.web': 1.0.11(graphql@16.9.0)
       graphql: 16.9.0
@@ -6068,7 +6074,7 @@ snapshots:
       '@0no-co/graphql.web': 1.0.11(graphql@16.9.0)
       '@0no-co/graphqlsp': 1.12.16(graphql@16.9.0)(typescript@5.7.2)
       '@gql.tada/cli-utils': 1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.9.0)(typescript@5.7.2))(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.9.0)(typescript@5.7.2)
-      '@gql.tada/internal': 1.0.8(graphql@16.9.0)(typescript@5.7.2)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.9.0)(typescript@5.7.2)
       typescript: 5.7.2
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'

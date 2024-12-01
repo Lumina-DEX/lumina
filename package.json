@@ -39,7 +39,8 @@
 	},
 	"pnpm": {
 		"patchedDependencies": {
-			"o1js@1.7.0": "patches/o1js@1.7.0.patch"
+			"o1js@1.7.0": "patches/o1js@1.7.0.patch",
+			"@gql.tada/internal": "patches/@gql.tada__internal.patch"
 		}
 	}
 }

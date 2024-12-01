@@ -66,21 +66,21 @@ interface DexContext {
 type ContractEvent = { type: "InitializeWorker" }
 
 type DexEvent =
-	//Swap
+	// Swap
 	| { type: "ChangeSwapSettings"; settings: SwapSettings }
 	| { type: "Swap" }
-	//Remove Liquidity
+	// Remove Liquidity
 	| { type: "ChangeRemoveLiquiditySettings"; settings: RemoveLiquiditySettings }
 	| { type: "RemoveLiquidity" }
-	//Add Liquidity
+	// Add Liquidity
 	| { type: "ChangeAddLiquiditySettings"; settings: AddLiquiditySettings }
 	| { type: "AddLiquidity" }
-	//Deploy
+	// Deploy
 	| { type: "DeployPool"; settings: PoolSettings }
 	| { type: "DeployToken"; settings: { symbol: string } }
-	//Mint
+	// Mint
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
-	//Claimå
+	// Claimå
 	| { type: "ClaimTokensFromFaucet" }
 
 interface FrontendFee {

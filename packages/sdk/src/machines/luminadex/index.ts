@@ -1,6 +1,6 @@
 import * as Comlink from "comlink"
 import { PrivateKey } from "o1js"
-import { type ErrorActorEvent, and, assertEvent, assign, fromPromise, setup, stateIn } from "xstate"
+import { and, assertEvent, assign, type ErrorActorEvent, fromPromise, setup, stateIn } from "xstate"
 import type {
 	AddLiquidity,
 	InitZkappInstance,
@@ -147,11 +147,11 @@ export const createLuminaDexMachine = () => {
 				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) => {
 					const { worker, symbol, user } = input
 					console.time("deployToken")
-					//TokenKey
+					// TokenKey
 					const tk = PrivateKey.random()
 					const tokenKey = tk.toBase58()
 					const tokenKeyPublic = tk.toPublicKey().toBase58()
-					//TokenAdminKey
+					// TokenAdminKey
 					const tak = PrivateKey.random()
 					const tokenAdminKey = tak.toBase58()
 					const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
@@ -337,7 +337,7 @@ export const createLuminaDexMachine = () => {
 			input: ({ context }) => ({ wallet: context.wallet.actor })
 		},
 		on: {
-			//TODO: What should happen when the network changes?
+			// TODO: What should happen when the network changes?
 			// Recalculate Settings if not null ? Re-initialize Contracts?
 			NetworkChanged: {
 				actions: assign(({ context, event }) => ({

@@ -1,3 +1,4 @@
+// dprint-ignore-file
 /* eslint-disable */
 /* prettier-ignore */
 

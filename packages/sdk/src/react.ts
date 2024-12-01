@@ -1,5 +1,5 @@
 import { useActor } from "@xstate/react"
-import { Client, type ClientOptions, Provider, fetchExchange } from "urql"
+import { Client, type ClientOptions, fetchExchange, Provider } from "urql"
 import type {
 	Actor,
 	ActorOptions,
@@ -17,7 +17,7 @@ export * from "@xstate/react"
 
 /**
  * GraphQL client
- *___________________________________________________________*/
+ * ___________________________________________________________ */
 
 const clientCache = new Map<string, Client>()
 
@@ -40,7 +40,7 @@ export { Provider }
 
 /**
  * Wallet
- *___________________________________________________________*/
+ * ___________________________________________________________ */
 
 const walletMachine = createWalletMachine({ createMinaClient })
 export type WalletMachine = typeof walletMachine
@@ -50,9 +50,11 @@ export { walletMachine }
 export function useWallet(
 	...[options]: ConditionalRequired<
 		[
-			options?: ActorOptions<WalletMachine> & {
-				[K in RequiredActorOptionsKeys<WalletMachine>]: unknown
-			}
+			options?:
+				& ActorOptions<WalletMachine>
+				& {
+					[K in RequiredActorOptionsKeys<WalletMachine>]: unknown
+				}
 		],
 		IsNotNever<RequiredActorOptionsKeys<WalletMachine>>
 	>
@@ -66,7 +68,7 @@ export function useWallet(
 
 /**
  * Dex
- *___________________________________________________________*/
+ * ___________________________________________________________ */
 
 const dexMachine = createLuminaDexMachine()
 export { dexMachine }
@@ -76,9 +78,11 @@ export type DexMachine = typeof dexMachine
 export function useDex(
 	...[options]: ConditionalRequired<
 		[
-			options?: ActorOptions<DexMachine> & {
-				[K in RequiredActorOptionsKeys<DexMachine>]: unknown
-			}
+			options?:
+				& ActorOptions<DexMachine>
+				& {
+					[K in RequiredActorOptionsKeys<DexMachine>]: unknown
+				}
 		],
 		IsNotNever<RequiredActorOptionsKeys<DexMachine>>
 	>

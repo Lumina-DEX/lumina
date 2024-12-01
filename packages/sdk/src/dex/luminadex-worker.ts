@@ -1,6 +1,6 @@
 import { createStore } from "@xstate/store"
 import * as Comlink from "comlink"
-import { AccountUpdate, Bool, Mina, PrivateKey, PublicKey, UInt8, UInt64, fetchAccount } from "o1js"
+import { AccountUpdate, Bool, fetchAccount, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from "o1js"
 
 import type {
 	Faucet,
@@ -569,7 +569,7 @@ const claim = async ({ user }: { user: string }) => {
 
 // Export worker API
 export const luminaDexWorker = {
-	//Unused
+	// Unused
 	// getBalances,
 	// getSupply,
 	// getTransactionJSON,

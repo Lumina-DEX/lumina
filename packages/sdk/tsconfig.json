@@ -1,24 +1,25 @@
 {
-	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "Node",
-		"esModuleInterop": true,
-		"strict": true,
-		"skipLibCheck": true,
-		"noUncheckedIndexedAccess": false,
-		"plugins": [
-			{
-				"name": "gql.tada/ts-plugin",
-				"schemas": [
-					{
-						"name": "zeko-sequencer",
-						"schema": "./src/graphql/sequencer.graphql",
-						"tadaOutputLocation": "./src/graphql/sequencer-env.d.ts"
-					}
-				]
-			}
-		]
-	},
-	"include": ["src"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": false,
+    "plugins": [
+      {
+        "name": "gql.tada/ts-plugin",
+        "schemas": [
+          {
+            "name": "zeko-sequencer",
+            "schema": "./src/graphql/sequencer.graphql",
+            "tadaOutputLocation": "./src/graphql/sequencer-env.d.ts",
+            "tadaTurboLocation": "./src/graphql/sequeencer-cache.d.ts"
+          }
+        ]
+      }
+    ]
+  },
+  "include": ["src"]
 }

@@ -1,6 +1,6 @@
 import type { EventObject } from "xstate"
-import type { Wallet, WalletEmit } from "."
 import { fromCallback } from "../../helpers/xstate"
+import type { Wallet, WalletEmit } from "."
 
 /**
  * This Actor listens to the Wallet machine and emits events.

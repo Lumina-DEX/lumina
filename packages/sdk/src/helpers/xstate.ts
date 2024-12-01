@@ -2,8 +2,8 @@ import {
 	type AnyEventObject,
 	type CallbackLogicFunction,
 	type EventObject,
-	type NonReducibleUnknown,
-	fromCallback as xstateFromCallback
+	fromCallback as xstateFromCallback,
+	type NonReducibleUnknown
 } from "xstate"
 
 export function fromCallback<

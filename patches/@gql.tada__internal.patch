@@ -1,0 +1,26 @@
+diff --git a/dist/gql-tada-internal.js b/dist/gql-tada-internal.js
+index a508754e8fde118097c4c3440c6d13df49bbcd3d..89d1393835e0764c0147162ec036c988aba7fda0 100644
+--- a/dist/gql-tada-internal.js
++++ b/dist/gql-tada-internal.js
+@@ -2979,7 +2979,7 @@ function preprocessIntrospection(e, n = preprocessIntrospectionTypes(e)) {
+   return `{\n  name: ${printName(a)};\n  query: ${t};\n  mutation: ${i};\n  subscription: ${o};\n  types: ${n};\n}`;
+ }
+ 
+-var x = [ "/* eslint-disable */", "/* prettier-ignore */" ].join("\n") + "\n";
++var x = [ "// dprint-ignore-file", "/* eslint-disable */", "/* prettier-ignore */" ].join("\n") + "\n";
+ 
+ var L = [ "/** An IntrospectionQuery representation of your schema.", " *", " * @remarks", " * This is an introspection of your schema saved as a file by GraphQLSP.", " * It will automatically be used by `gql.tada` to infer the types of your GraphQL documents.", " * If you need to reuse this data or update your `scalars`, update `tadaOutputLocation` to", " * instead save to a .ts instead of a .d.ts file.", " */" ].join("\n");
+ 
+diff --git a/dist/gql-tada-internal.mjs b/dist/gql-tada-internal.mjs
+index 3066e1934d40978d33b2b27866175c616c0186ca..a6af0bde17e6a168744c3d544d4d8a30fbb1f003 100644
+--- a/dist/gql-tada-internal.mjs
++++ b/dist/gql-tada-internal.mjs
+@@ -3179,7 +3179,7 @@ function preprocessIntrospection(e, r = preprocessIntrospectionTypes(e)) {
+   return `{\n  name: ${printName(n)};\n  query: ${t};\n  mutation: ${i};\n  subscription: ${o};\n  types: ${r};\n}`;
+ }
+ 
+-var $ = [ "/* eslint-disable */", "/* prettier-ignore */" ].join("\n") + "\n";
++var $ = [ "// dprint-ignore-file", "/* eslint-disable */", "/* prettier-ignore */" ].join("\n") + "\n";
+ 
+ var q = [ "/** An IntrospectionQuery representation of your schema.", " *", " * @remarks", " * This is an introspection of your schema saved as a file by GraphQLSP.", " * It will automatically be used by `gql.tada` to infer the types of your GraphQL documents.", " * If you need to reuse this data or update your `scalars`, update `tadaOutputLocation` to", " * instead save to a .ts instead of a .d.ts file.", " */" ].join("\n");
+ 

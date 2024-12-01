@@ -5,7 +5,7 @@ export const urls = {
 	"zeko:testnet": "https://devnet.zeko.io/graphql"
 } as const
 
-//TODO: Additional token support
+// TODO: Additional token support
 export const supportedTokens = {
 	mina: "wSHV2S4qX9jFsLjQo8r1BsMLH2ZRKsZx6EJd1sbozGPieEC4Jf"
 } as const

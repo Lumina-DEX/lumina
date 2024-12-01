@@ -5,7 +5,7 @@ import type { introspection } from "./sequencer-env"
 export type { FragmentOf, ResultOf, VariablesOf } from "gql.tada"
 export { readFragment } from "gql.tada"
 
-//GraphQL Tada initialization
+// GraphQL Tada initialization
 export const graphql = initGraphQLTada<{
 	introspection: introspection
 	scalars: { UInt64: string; PublicKey: string; TokenID: string }
