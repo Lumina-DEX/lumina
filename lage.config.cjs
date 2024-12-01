@@ -4,5 +4,5 @@ module.exports = {
 		test: ["build"],
 		lint: []
 	},
-	npmClient: "pnpm"
+	npmClient: "bun"
 }
