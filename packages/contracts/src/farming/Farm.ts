@@ -1,26 +1,21 @@
 import { AccountUpdateForest, DeployArgs, UInt64, VerificationKey } from "o1js"
 import {
-  Account,
   AccountUpdate,
   assert,
   Bool,
-  CircuitString,
   Field,
   Int64,
   method,
   Permissions,
   Provable,
   PublicKey,
-  Reducer,
   State,
   state,
-  Struct,
   TokenContractV2,
-  TokenId,
   Types
 } from "o1js"
 
-import { BalanceChangeEvent, mulDiv, Pool, PoolData, PoolTokenHolder } from "../indexpool.js"
+import { BalanceChangeEvent } from "../indexpool.js"
 
 import { FarmStorage } from "./FarmStorage"
 

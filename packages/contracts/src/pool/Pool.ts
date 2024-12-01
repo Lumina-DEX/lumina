@@ -1,29 +1,23 @@
 import { AccountUpdateForest } from "o1js"
 import {
-  Account,
   AccountUpdate,
   assert,
   Bool,
-  CircuitString,
-  DeployArgs,
-  Field,
   Int64,
   method,
   Permissions,
   Provable,
   PublicKey,
-  Reducer,
   State,
   state,
   Struct,
   TokenContractV2,
   TokenId,
   Types,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
-import { BalanceChangeEvent, FungibleToken, mulDiv, PoolData, PoolTokenHolder } from "../indexpool.js"
+import { BalanceChangeEvent, FungibleToken, mulDiv, PoolData } from "../indexpool.js"
 
 export class SwapEvent extends Struct({
   sender: PublicKey,

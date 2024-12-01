@@ -1,20 +1,13 @@
 import { DeployArgs, VerificationKey } from "o1js"
 import {
-  Account,
   AccountUpdate,
-  AccountUpdateForest,
-  Bool,
   Field,
   method,
   Permissions,
-  Poseidon,
-  Provable,
   PublicKey,
-  Reducer,
   SmartContract,
   State,
-  state,
-  UInt64
+  state
 } from "o1js"
 
 export interface PoolDataDeployProps extends Exclude<DeployArgs, undefined> {

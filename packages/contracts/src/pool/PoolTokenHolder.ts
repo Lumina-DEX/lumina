@@ -1,22 +1,14 @@
 import {
-  Account,
   AccountUpdate,
-  AccountUpdateForest,
   Bool,
-  DeployArgs,
-  Field,
-  Int64,
   method,
-  Permissions,
   Provable,
   PublicKey,
-  Reducer,
   SmartContract,
   State,
   state,
   TokenId,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
 import { FungibleToken, mulDiv, Pool, PoolData, SwapEvent } from "../indexpool.js"

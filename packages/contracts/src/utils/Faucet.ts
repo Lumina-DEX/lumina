@@ -1,20 +1,13 @@
 import { AccountUpdateForest, DeployArgs } from "o1js"
 import {
-  Account,
   AccountUpdate,
-  Bool,
-  Field,
   method,
   Permissions,
-  Provable,
   PublicKey,
-  Reducer,
-  SmartContract,
   State,
   state,
   TokenContractV2,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
 import { FungibleToken } from "../indexpool.js"

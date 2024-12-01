@@ -16,7 +16,7 @@ import fs from "fs/promises"
 import readline from "readline/promises"
 
 import { NetworkId, SmartContract } from "o1js"
-import { AccountUpdate, Bool, Cache, fetchAccount, Field, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from "o1js"
+import { AccountUpdate, Bool, Cache, fetchAccount, Mina, PrivateKey, PublicKey, UInt8,UInt64 } from "o1js"
 
 import {
   Faucet,
@@ -24,7 +24,6 @@ import {
   FungibleTokenAdmin,
   mulDiv,
   Pool,
-  PoolDeployProps,
   PoolFactory,
   PoolTokenHolder
 } from "../index.js"

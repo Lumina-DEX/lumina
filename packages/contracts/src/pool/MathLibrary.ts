@@ -1,4 +1,4 @@
-import { AccountUpdate, Field, Gadgets as RangeCheck, Provable, UInt64 } from "o1js"
+import { Field, Gadgets as RangeCheck, Provable, UInt64 } from "o1js"
 
 /**
  * Function to multiply one Uint64 by another and divide the result,

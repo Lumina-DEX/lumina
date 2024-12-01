@@ -1,21 +1,6 @@
 import {
-  Account,
-  AccountUpdate,
-  AccountUpdateForest,
-  Bool,
-  DeployArgs,
-  Field,
   method,
-  Permissions,
-  Poseidon,
-  Provable,
-  PublicKey,
-  Reducer,
-  SmartContract,
-  State,
-  state,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
 import { PoolData } from "../dist"

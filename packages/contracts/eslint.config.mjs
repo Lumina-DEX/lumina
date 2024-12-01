@@ -5,6 +5,7 @@ import { fileURLToPath } from "url"
 import { FlatCompat } from "@eslint/eslintrc"
 import jsLint from "@eslint/js"
 import pluginSimpleImportSort from "eslint-plugin-simple-import-sort"
+import unusedImports from "eslint-plugin-unused-imports"
 import globals from "globals"
 import tsLint from "typescript-eslint"
 
@@ -33,11 +34,22 @@ export default [
   ...compat.extends("plugin:o1js/recommended"),
   {
     rules: {
+      "no-unused-vars": "off",
       "no-constant-condition": "off",
       "prefer-const": "warn",
       "o1js/no-constructor-in-smart-contract": "error",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "warn",
+      "unused-imports/no-unused-imports": "warn",
+      "unused-imports/no-unused-vars": [
+        "warn",
+        {
+          "vars": "all",
+          "varsIgnorePattern": "^_",
+          "args": "after-used",
+          "argsIgnorePattern": "^_"
+        }
+      ],
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         {
@@ -50,7 +62,8 @@ export default [
   ...compat.plugins("o1js"),
   {
     plugins: {
-      "simple-import-sort": pluginSimpleImportSort
+      "simple-import-sort": pluginSimpleImportSort,
+      "unused-imports": unusedImports
     },
     rules: {
       "simple-import-sort/imports": [

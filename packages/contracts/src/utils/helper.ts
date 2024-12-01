@@ -1,20 +1,5 @@
 import {
-  Account,
-  AccountUpdate,
-  AccountUpdateForest,
-  Bool,
-  DeployArgs,
-  Field,
-  method,
-  Permissions,
-  Provable,
-  PublicKey,
-  Reducer,
-  SmartContract,
-  State,
-  state,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
 import { mulDiv } from "../indexpool.js"

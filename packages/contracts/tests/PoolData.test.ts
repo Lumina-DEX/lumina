@@ -4,20 +4,13 @@ import {
   AccountUpdate,
   Bool,
   Cache,
-  CircuitString,
-  fetchAccount,
-  Field,
   Mina,
-  Poseidon,
   PrivateKey,
-  UInt64,
-  UInt8
-} from "o1js"
+  UInt8} from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { contractHash, contractHolderHash, Faucet, Pool, PoolData, PoolFactory, PoolTokenHolder } from "../dist"
+import { Pool, PoolData, PoolFactory, PoolTokenHolder } from "../dist"
 
-import { PoolHolderUpgradeTest } from "./PoolHolderUpgradeTest"
 import { PoolSampleTest } from "./PoolSampleTest"
 import { PoolUpgradeTest } from "./PoolUpgradeTest"
 
