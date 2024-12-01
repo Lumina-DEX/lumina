@@ -11,7 +11,7 @@
 		"lint:all": "lage lint",
 		"format:all": "dprint check",
 		"format:all:fix": "dprint fmt --verbose",
-		"version": "changeset version && bun run format:fix",
+		"version": "changeset version && bun run format:all:fix",
 		"publish:all": "pnpm run build && pnpm publish -r --no-git-checks --access public"
 	},
 	"devDependencies": {
