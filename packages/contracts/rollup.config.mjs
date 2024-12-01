@@ -9,7 +9,7 @@ export default defineConfig([
   {
     input: "src/index.ts",
     output: [{ sourcemap: true, dir: "dist", format: "es" }],
-    plugins: [typescript({ tsconfig: "tsconfig.build.esm.json", sourceMap: true })]
+    plugins: [typescript({ tsconfig: "tsconfig.build.esm.json" })]
   },
   {
     input: "dist/index.d.ts",
@@ -24,15 +24,17 @@ export default defineConfig([
 
         const filesToKeep = ["index.js", "index.js.map", "index.d.ts"]
 
+        // const removed = []
         for (const file of files) {
           const fullPath = path.join(distPath, file)
           const shouldKeep = filesToKeep.some(keep => file.endsWith(keep))
           if (!shouldKeep) {
             await fs.rm(fullPath, { recursive: true, force: true })
+            // removed.push(fullPath)
             // console.log(`Removing: ${file}`)
           }
         }
-        // console.log("Finished!!", __dirname)
+        // console.log("Removed Files", removed)
       }
     }]
   }
