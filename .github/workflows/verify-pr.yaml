@@ -1,0 +1,35 @@
+name: Verify PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-pr-title:
+    name: Valid Title
+    permissions: write-all
+    runs-on: self-hosted
+    steps:
+      - uses: ytanikin/PRConventionalCommits@1.1.0
+        with:
+          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert", "release"]'
+          add_label: true
+          custom_labels: '{"feat": "feature", "fix": "fix", "docs": "documentation", "test": "test", "ci": "CI/CD", "refactor": "refactor", "perf": "performance", "chore": "chore", "revert": "revert", "wip": "WIP", "release": "release"}'
+  write-labels:
+    name: Has Conflicts
+    runs-on: self-hosted
+    permissions: write-all
+    steps:
+      - uses: prince-chrismc/label-merge-conflicts-action@v3
+        with:
+          conflict_label_name: "conflicts"
+          github_token: ${{ github.token }}
+          # --- Optional Inputs ---
+          # To make sure the merge commit exactly matches the branch
+          #   detect_merge_changes: false # or true to handle as conflicts
+          # By default a comment will be left, adding `conflict_comment: ''` will disable comments
+          # The optional `${author}` will be replaced with the username of the pull request
+          conflict_comment: |
+            :wave: Hi, @${author},
+            I detected conflicts against the base branch :speak_no_evil:
+            You'll want to sync :arrows_counterclockwise: your branch with upstream!
