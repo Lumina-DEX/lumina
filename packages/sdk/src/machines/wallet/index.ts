@@ -6,6 +6,7 @@ import { supportedTokens, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
 import { fromCallback } from "../../helpers/xstate"
 
+export * from "./actors"
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
