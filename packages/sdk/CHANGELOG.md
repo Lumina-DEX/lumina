@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.1.1
+
+### Patch Changes
+
+- 024e96e: Export constants and wallet actors
+
 ## 0.1.0
 
 ### Minor Changes
