@@ -48,11 +48,9 @@ console.log("Compilation done")
 
 const cachedContracts = await fs.readdir(cacheDir)
 
-// we will filter pk directly on the frontend
-const filterPkAndHeader = (name: string) => {
-	return !(name.includes("-pk-") && name.includes(".header"))
-}
+const filterPkAndHeader = (x: string) => !x.includes("-pk-") && !x.includes(".header")
 
+await fs.rm(publicDir, { recursive: true, force: true })
 await fs.mkdir(publicDir, { recursive: true })
 
 console.log("Writing compiled.json...")
