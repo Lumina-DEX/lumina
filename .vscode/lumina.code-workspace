@@ -9,6 +9,10 @@
         "name": "@lumina-dex/contracts"
       },
       {
+        "path": "../packages/contracts-cdn",
+        "name": "cdn"
+      },
+      {
         "path": "../packages/dex-ui",
       },
       {
