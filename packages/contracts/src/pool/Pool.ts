@@ -22,7 +22,7 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
-import { BalanceChangeEvent, FungibleToken, mulDiv, PoolFactory, PoolTokenHolder } from "../indexpool.js"
+import { BalanceChangeEvent, FungibleToken, mulDiv, PoolFactory } from "../indexpool.js"
 
 export class SwapEvent extends Struct({
   sender: PublicKey,
