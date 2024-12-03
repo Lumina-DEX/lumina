@@ -1,9 +1,8 @@
-import { FungibleToken, FungibleTokenAdmin, Pool, PoolData, PoolFactory, PoolTokenHolder } from "../index.js"
+import { FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder } from "../index.js"
 
 // node build/src/verificationKey.js
 
 // get contract vk
-await PoolData.compile()
 await PoolFactory.compile()
 const poolKey = await Pool.compile()
 await FungibleToken.compile()

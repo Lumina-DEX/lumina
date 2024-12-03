@@ -1,15 +1,27 @@
 import { createStore } from "@xstate/store"
 import * as Comlink from "comlink"
-import { AccountUpdate, Bool, fetchAccount, Mina, PrivateKey, PublicKey, UInt64, UInt8 } from "o1js"
+import {
+	AccountUpdate,
+	Bool,
+	fetchAccount,
+	MerkleTree,
+	Mina,
+	Poseidon,
+	PrivateKey,
+	PublicKey,
+	Signature,
+	UInt64,
+	UInt8
+} from "o1js"
 
-import type {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	Pool,
-	PoolData,
-	PoolFactory,
-	PoolTokenHolder
+import {
+	type Faucet,
+	type FungibleToken,
+	type FungibleTokenAdmin,
+	type Pool,
+	type PoolFactory,
+	type PoolTokenHolder,
+	SignerMerkleWitness
 } from "@lumina-dex/contracts"
 
 import { MINA_ADDRESS } from "../constants"
@@ -18,7 +30,6 @@ import { fetchFiles, readCache } from "./cache"
 // Types
 type Contracts = {
 	Pool: typeof Pool
-	PoolData: typeof PoolData
 	PoolFactory: typeof PoolFactory
 	PoolTokenHolder: typeof PoolTokenHolder
 	FungibleToken: typeof FungibleToken
@@ -29,7 +40,6 @@ type Contracts = {
 type ZkInstances = {
 	token: FungibleToken | null
 	pool: Pool | null
-	poolData: PoolData | null
 	factory: PoolFactory | null
 	holder: PoolTokenHolder | null
 	faucet: Faucet | null
@@ -46,9 +56,9 @@ type WorkerState = {
 
 let LuminaAddress = ""
 
-const getLuminaAddress = async (poolData: PoolData | null) => {
+const getLuminaAddress = async (poolFactory: PoolFactory | null) => {
 	if (LuminaAddress.length > 0) return LuminaAddress
-	const la = (await poolData?.protocol.fetch())?.toBase58()
+	const la = (await poolFactory?.protocol.fetch())?.toBase58()
 	if (!la) throw new Error("Lumina Address not found")
 	LuminaAddress = la
 	return la
@@ -57,7 +67,7 @@ const getLuminaAddress = async (poolData: PoolData | null) => {
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	zk: { token: null, pool: null, factory: null, poolData: null, holder: null, faucet: null },
+	zk: { token: null, pool: null, factory: null, holder: null, faucet: null },
 	transaction: null
 }
 
@@ -84,7 +94,6 @@ const loadContract = async () => {
 	const {
 		PoolFactory,
 		Pool,
-		PoolData,
 		PoolTokenHolder,
 		FungibleToken,
 		FungibleTokenAdmin,
@@ -96,7 +105,6 @@ const loadContract = async () => {
 		contracts: {
 			PoolFactory,
 			Pool,
-			PoolData,
 			PoolTokenHolder,
 			FungibleToken,
 			FungibleTokenAdmin,
@@ -113,7 +121,6 @@ const compileContract = async () => {
 		contracts.FungibleTokenAdmin.compile({ cache }),
 		contracts.FungibleToken.compile({ cache }),
 		contracts.PoolFactory.compile({ cache }),
-		contracts.PoolData.compile({ cache }),
 		contracts.PoolTokenHolder.compile({ cache }),
 		contracts.Pool.compile({ cache }),
 		contracts.Faucet.compile({ cache })
@@ -160,11 +167,6 @@ const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) =
 	const publicKeyFaucet = PublicKey.fromBase58(faucet)
 	const zkFaucet = new contracts.Faucet(publicKeyFaucet, zkTokenId)
 
-	const poolDataPublicKey = await zkFactory.poolData.fetch()
-	if (!poolDataPublicKey) throw new Error("PoolData not found")
-
-	const zkPoolData = new contracts.PoolData(poolDataPublicKey)
-
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
 		fetchAccount({ publicKey: zkPoolTokenKey }),
@@ -178,7 +180,6 @@ const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) =
 		zk: {
 			token: zkToken,
 			pool: zkPool,
-			poolData: zkPoolData,
 			factory: zkFactory,
 			holder: zkHolder,
 			faucet: zkFaucet
@@ -195,6 +196,17 @@ const deployPoolInstance = async ({
 	console.log("pool key", poolKey.toBase58())
 	console.log("pool address", poolKey.toPublicKey().toBase58())
 
+	const merkle = new MerkleTree(32)
+	// temporary solution for testnet
+	const signer = PrivateKey.fromBase58("EKFAo5kssADMSFXSCjYRHKABVRzCAfgnyHTRZsMCHkQD7EPLhvAt")
+	const user0 = PublicKey.fromBase58("B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1")
+	const user1 = signer.toPublicKey()
+	merkle.setLeaf(0n, Poseidon.hash(user0.toFields()))
+	merkle.setLeaf(1n, Poseidon.hash(user1.toFields()))
+	const signature = Signature.create(signer, poolKey.toPublicKey().toFields())
+	const witness = merkle.getWitness(0n)
+	const circuitWitness = new SignerMerkleWitness(witness)
+
 	const zk = context().zk
 
 	const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
@@ -204,13 +216,22 @@ const deployPoolInstance = async ({
 		AccountUpdate.fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (isMinaTokenPool) {
 			const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
-			await zk.factory.createPool(poolKey.toPublicKey(), PublicKey.fromBase58(token))
+			await zk.factory.createPool(
+				poolKey.toPublicKey(),
+				PublicKey.fromBase58(token),
+				user1,
+				signature,
+				circuitWitness
+			)
 		}
 		if (!isMinaTokenPool) {
 			await zk.factory.createPoolToken(
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(tokenA),
-				PublicKey.fromBase58(tokenB)
+				PublicKey.fromBase58(tokenB),
+				user1,
+				signature,
+				circuitWitness
 			)
 		}
 	})
@@ -345,7 +366,7 @@ const swap = async (args: SwapArgs) => {
 		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
 		fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
 		fetchAccount({
-			publicKey: await getLuminaAddress(zk.poolData),
+			publicKey: await getLuminaAddress(zk.factory),
 			tokenId: zkTokenId
 		})
 	])
@@ -358,7 +379,7 @@ const swap = async (args: SwapArgs) => {
 
 	const transaction = await Mina.transaction(userKey, async () => {
 		AccountUpdate.fundNewAccount(userKey, total)
-		await zkPoolHolder[args.from === MINA_ADDRESS ? "swapFromMina" : "swapFromToken"](
+		await zkPoolHolder[args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"](
 			TAX_RECEIVER,
 			UInt64.from(Math.trunc(args.frontendFee)),
 			UInt64.from(Math.trunc(args.amount)),
