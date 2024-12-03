@@ -50,7 +50,7 @@ const cachedContracts = await fs.readdir(cacheDir)
 
 // we will filter pk directly on the frontend
 const filterPkAndHeader = (name: string) => {
-	return name.includes("-pk-") || name.includes(".header")
+	return !(name.includes("-pk-") && name.includes(".header"))
 }
 
 await fs.mkdir(publicDir, { recursive: true })
