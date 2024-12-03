@@ -25,7 +25,7 @@ import {
 } from "@lumina-dex/contracts"
 
 import { MINA_ADDRESS } from "../constants"
-import { fetchFiles, readCache } from "./cache"
+import { fetchZippedContracts, readCache } from "./cache"
 
 // Types
 type Contracts = {
@@ -114,17 +114,16 @@ const loadContract = async () => {
 }
 
 const compileContract = async () => {
-	const cacheFiles = await fetchFiles()
+	const cacheFiles = await fetchZippedContracts()
 	const cache = readCache(cacheFiles)
 	const contracts = context().contracts
-	await Promise.all([
-		contracts.FungibleTokenAdmin.compile({ cache }),
-		contracts.FungibleToken.compile({ cache }),
-		contracts.PoolFactory.compile({ cache }),
-		contracts.PoolTokenHolder.compile({ cache }),
-		contracts.Pool.compile({ cache }),
-		contracts.Faucet.compile({ cache })
-	])
+	// Compile Contracts
+	await contracts.FungibleTokenAdmin.compile({ cache })
+	await contracts.FungibleToken.compile({ cache })
+	await contracts.PoolFactory.compile({ cache })
+	await contracts.PoolTokenHolder.compile({ cache })
+	await contracts.Pool.compile({ cache })
+	await contracts.Faucet.compile({ cache })
 }
 
 const fetchMinaAccountToken = async (pk: string) => {
