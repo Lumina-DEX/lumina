@@ -1,9 +1,12 @@
 {
 	"name": "luminadex-contracts-cdn",
-	"version": "0.0.0",
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"lint": "bunx @biomejs/biome lint src/",
+		"lint:fix": "bunx @biomejs/biome lint --write src/",
+		"format": "dprint check",
+		"format:fix": "dprint fmt --verbose",
 		"cache:create": "bun scripts/create-cache.ts",
 		"cache:test": "bun scripts/test-cache.ts",
 		"deploy": "wrangler deploy",
