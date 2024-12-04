@@ -18,7 +18,6 @@ export function App() {
 	//Read
 	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
 	const connect = () => Wallet.send({ type: "Connect" })
-
 	return (
 		<LuminaContext.Provider value={Context}>
 			<div>Context</div>
