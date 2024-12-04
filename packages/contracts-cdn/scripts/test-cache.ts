@@ -74,5 +74,3 @@ async function zipFileRemote() {
 
 await individualFiles()
 await zipFiles()
-
-// await compareZipFiles()

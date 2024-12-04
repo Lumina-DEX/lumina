@@ -42,7 +42,7 @@ export default {
 		}
 		if (match?.data.path === "tokens" && match.params?.network) {
 			// Check for the cache
-			const cacheKey = new Request(url, request)
+			const cacheKey = new URL(`http://${match.params.network}.key${url.pathname}`)
 			const cache = caches.default
 			const cacheResponse = await cache.match(cacheKey)
 			if (cacheResponse) return cacheResponse
@@ -50,7 +50,7 @@ export default {
 			const tokens = { "mina:testnet": minaTestnet() }[match.params?.network] // TODO: Use a database
 			if (!tokens) return new Response("Not Found", { status: 404 })
 			const response = Response.json(tokens)
-			response.headers.append("Cache-Control", "s-maxage=10")
+			response.headers.append("Cache-Control", "s-maxage=3600")
 			context.waitUntil(cache.put(cacheKey, response.clone()))
 			return response
 		}

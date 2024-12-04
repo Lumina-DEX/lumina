@@ -90,7 +90,7 @@ export const useLuminaDex = createSharedComposable(() => {
 
 Then in your components
 
-```vue
+```html
 <script lang="ts" setup>
 import { useLuminaDex } from "./somewhere"
 
