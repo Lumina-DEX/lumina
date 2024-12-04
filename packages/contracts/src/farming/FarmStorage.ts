@@ -1,6 +1,29 @@
-import { DeployArgs, Field, method, PublicKey, SmartContract, State, state, UInt64 } from "o1js"
-
-import { mulDiv, Pool } from "../indexpool.js"
+import {
+  Account,
+  AccountUpdate,
+  AccountUpdateForest,
+  assert,
+  Bool,
+  CircuitString,
+  DeployArgs,
+  Field,
+  Int64,
+  method,
+  Permissions,
+  Provable,
+  PublicKey,
+  Reducer,
+  SmartContract,
+  State,
+  state,
+  Struct,
+  TokenContractV2,
+  TokenId,
+  Types,
+  UInt64,
+  VerificationKey
+} from "o1js"
+import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
@@ -20,9 +43,9 @@ export class FarmStorage extends SmartContract {
   // last time commited
   @state(UInt64)
   lastCommitment = State<UInt64>()
-  // points win before last deposit (1 point by token by minute)
+  // user debt to deduct from his reward
   @state(UInt64)
-  points = State<UInt64>()
+  debt = State<UInt64>()
 
   events = {
     upgrade: Field
@@ -39,9 +62,12 @@ export class FarmStorage extends SmartContract {
   }
 
   @method
-  async deposit(amount: UInt64) {
+  async deposit(amount: UInt64, oldCommitment: UInt64, oldDebt: UInt64) {
     const poolAddress = this.pool.getAndRequireEquals()
     const pool = new Pool(poolAddress)
+
+    this.lastCommitment.requireEquals(oldCommitment)
+    this.debt.requireEquals(oldDebt)
 
     const sender = this.sender.getUnconstrainedV2()
     this.address.assertEquals(sender)
@@ -57,9 +83,9 @@ export class FarmStorage extends SmartContract {
     const lastCommitment = this.lastCommitment.getAndRequireEquals()
     const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-    const currentPoint = this.points.getAndRequireEquals()
+    const currentPoint = this.debt.getAndRequireEquals()
     const newPoints = currentPoint.add(winPoints)
-    this.points.set(newPoints)
+    this.debt.set(newPoints)
 
     this.lastCommitment.set(timestamp)
   }
@@ -85,9 +111,9 @@ export class FarmStorage extends SmartContract {
     const lastCommitment = this.lastCommitment.getAndRequireEquals()
     const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-    const currentPoint = this.points.getAndRequireEquals()
+    const currentPoint = this.debt.getAndRequireEquals()
     const newPoints = currentPoint.add(winPoints)
-    this.points.set(newPoints)
+    this.debt.set(newPoints)
 
     this.lastCommitment.set(timestamp)
   }
@@ -104,11 +130,11 @@ export class FarmStorage extends SmartContract {
     const lastCommitment = this.lastCommitment.getAndRequireEquals()
     const winPoints = this.calculatePoint(currentAmount, lastCommitment, timestamp)
 
-    const currentPoint = this.points.getAndRequireEquals()
+    const currentPoint = this.debt.getAndRequireEquals()
     const newPoints = currentPoint.add(winPoints)
 
     // reinit points
-    this.points.set(UInt64.zero)
+    this.debt.set(UInt64.zero)
 
     this.lastCommitment.set(timestamp)
 

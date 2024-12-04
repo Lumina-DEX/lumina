@@ -1,8 +1,10 @@
 import {
+  Account,
   AccountUpdate,
   AccountUpdateForest,
   assert,
   Bool,
+  CircuitString,
   DeployArgs,
   Field,
   Int64,
@@ -10,21 +12,25 @@ import {
   Permissions,
   Provable,
   PublicKey,
+  Reducer,
   State,
   state,
+  Struct,
   TokenContractV2,
+  TokenId,
   Types,
   UInt64,
   VerificationKey
 } from "o1js"
-
-import { BalanceChangeEvent } from "../indexpool.js"
-
+import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
 import { FarmStorage } from "./FarmStorage"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
   owner: PublicKey
+  tokenBySecond: UInt64
+  startTimestamp: UInt64
+  endTimestamp: UInt64
 }
 
 /**
@@ -36,6 +42,12 @@ export class Farm extends TokenContractV2 {
   pool = State<PublicKey>()
   @state(PublicKey)
   owner = State<PublicKey>()
+  @state(UInt64)
+  tokenBySecond = State<UInt64>()
+  @state(UInt64)
+  startTimestamp = State<UInt64>()
+  @state(UInt64)
+  endTimestamp = State<UInt64>()
 
   events = {
     upgrade: Field,
@@ -47,15 +59,28 @@ export class Farm extends TokenContractV2 {
 
     args.pool.isEmpty().assertFalse("Pool empty")
     args.owner.isEmpty().assertFalse("Owner empty")
+    args.tokenBySecond.assertGreaterThan(UInt64.zero, "Token by second can't be 0")
+    const currentTimestamp = this.network.timestamp.getAndRequireEquals()
+    args.startTimestamp.assertGreaterThanOrEqual(
+      currentTimestamp,
+      "Start timestamp need to be greater or equal to the current timestamp"
+    )
+    args.endTimestamp.assertGreaterThan(currentTimestamp, "End timestamp need to be greater than current timestamp")
 
     this.pool.set(args.pool)
     this.owner.set(args.owner)
+    this.tokenBySecond.set(args.tokenBySecond)
+    this.startTimestamp.set(args.startTimestamp)
+    this.endTimestamp.set(args.endTimestamp)
 
-    const permissions = Permissions.default()
-    permissions.access = Permissions.proofOrSignature()
+    let permissions = Permissions.default()
+    permissions.access = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
     this.account.permissions.set(permissions)
+
+    const circulationUpdate = AccountUpdate.create(this.address, this.deriveTokenId())
+    this.internal.mint({ address: circulationUpdate, amount: args.tokenBySecond })
   }
 
   /**
@@ -79,47 +104,7 @@ export class Farm extends TokenContractV2 {
    */
   @method
   async approveBase(updates: AccountUpdateForest): Promise<void> {
-    let totalBalance = Int64.from(0)
-    this.forEachUpdate(updates, (update, usesToken) => {
-      // Make sure that the account permissions are not changed
-      this.checkPermissionsUpdate(update)
-      this.emitEventIf(
-        usesToken,
-        "BalanceChange",
-        new BalanceChangeEvent({ address: update.publicKey, amount: update.balanceChange })
-      )
-
-      // Don't allow transfers to/from the account that's tracking circulation
-      update.publicKey.equals(this.address).and(usesToken).assertFalse(
-        "Can't transfer to/from the circulation account"
-      )
-      totalBalance = Provable.if(usesToken, totalBalance.add(update.balanceChange), totalBalance)
-      totalBalance.isPositiveV2().assertFalse(
-        "Flash-minting or unbalanced transaction detected"
-      )
-    })
-    totalBalance.assertEquals(Int64.zero, "Unbalanced transaction")
-  }
-
-  private checkPermissionsUpdate(update: AccountUpdate) {
-    const permissions = update.update.permissions
-
-    const { access, receive } = permissions.value
-    const accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
-    const receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
-    const updateAllowed = accessIsNone.and(receiveIsNone)
-
-    assert(
-      updateAllowed.or(permissions.isSome.not()),
-      "Can't change permissions for access or receive on token accounts"
-    )
-  }
-
-  @method
-  async transfer(from: PublicKey, to: PublicKey, amount: UInt64) {
-    from.equals(this.address).assertFalse("Can't transfer to/from the circulation account")
-    to.equals(this.address).assertFalse("Can't transfer to/from the circulation account")
-    this.internal.send({ from, to, amount })
+    Bool(false).assertTrue("You can't manage the token")
   }
 
   @method
@@ -166,9 +151,29 @@ export class Farm extends TokenContractV2 {
   }
 
   @method
-  async deposit(amount: UInt64) {
+  async deposit(amount: UInt64, supplyMax: UInt64, oldDebt: UInt64, oldAmount: UInt64, oldCommitment: UInt64) {
+    // recaculate from current supply
+    this.account.balance.requireBetween(UInt64.zero, supplyMax)
     const sender = this.sender.getAndRequireSignatureV2()
+    const senderBalanceAccount = AccountUpdate.create(sender, this.deriveTokenId())
+    senderBalanceAccount.account.balance.requireEquals(oldAmount)
+    const time = this.network.timestamp.getAndRequireEquals()
+
+    // check correct time range
+    const start = this.startTimestamp.getAndRequireEquals()
+    const end = this.startTimestamp.getAndRequireEquals()
+    this.network.timestamp.requireBetween(start, end)
+
+    const tokenBySecond = this.tokenBySecond.getAndRequireEquals()
+    const rewardBySecond = mulDiv(tokenBySecond, oldAmount, supplyMax)
+    const elapsed = time.sub(start)
+    const reward = elapsed.mul(rewardBySecond)
+    // manage transfer reward
+
     const newStorage = new FarmStorage(sender, this.deriveTokenId())
-    await newStorage.deposit(amount)
+    await newStorage.deposit(amount, oldCommitment, oldDebt)
+    // mint token to user and this account to track balance
+    this.internal.mint({ address: sender, amount })
+    this.internal.mint({ address: this.address, amount })
   }
 }
