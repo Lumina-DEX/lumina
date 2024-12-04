@@ -1,4 +1,5 @@
 import { unzipSync } from "fflate"
+import { luminaCdnOrigin } from "../constants"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>
@@ -24,11 +25,10 @@ const fetchWithRetry =
 	}
 
 export const fetchCachedContracts = async () => {
-	const origin = "https://luminadex-contracts-cdn.hebilicious.workers.dev/"
 	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
 
 	console.time("Compiled Contracts")
-	const filesResponse = await fetch(`${origin}/compiled.json`, { headers })
+	const filesResponse = await fetch(`${luminaCdnOrigin}/api/cache`, { headers })
 	const json = (await filesResponse.json()) as string[]
 	console.timeEnd("Compiled Contracts")
 
@@ -38,7 +38,9 @@ export const fetchCachedContracts = async () => {
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
 				console.time(`Fetch ${file}`)
-				const response = await fetchWithRetry(3)(`${origin}/cache/${file}.txt`, { headers })
+				const response = await fetchWithRetry(3)(`${luminaCdnOrigin}/cache/${file}.txt`, {
+					headers
+				})
 				console.timeEnd(`Fetch ${file}`)
 				return {
 					file,
@@ -57,7 +59,7 @@ type CacheData = {
 }
 
 export const fetchZippedContracts = async () => {
-	const response = await fetch("https://luminadex-contracts-cdn.hebilicious.workers.dev/bundle.zip")
+	const response = await fetch(`${luminaCdnOrigin}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 	const zipBuffer = await response.arrayBuffer()
 	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<

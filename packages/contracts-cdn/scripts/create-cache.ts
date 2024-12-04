@@ -16,7 +16,11 @@ import {
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const cacheDir = path.resolve(__dirname, "../cache")
+
+await fs.mkdir(cacheDir, { recursive: true })
+
 export const publicDir = path.resolve(__dirname, "../public/cdn-cgi/assets")
+export const testDir = path.resolve(__dirname, "../test")
 
 await fs.rm(publicDir, { recursive: true, force: true })
 
@@ -41,16 +45,12 @@ async function compileContracts() {
 		console.timeEnd(contract.name)
 	}
 
-	// compile 3 time to get all files
-	for (let index = 0; index < 6; index++) {
-		console.log(`[LOOP]: Compilation ${index}`)
-		await ct(PoolFactory)
-		await ct(Pool)
-		await ct(FungibleToken)
-		await ct(FungibleTokenAdmin)
-		await ct(PoolTokenHolder)
-		await ct(Faucet)
-	}
+	await ct(PoolFactory)
+	await ct(Pool)
+	await ct(PoolTokenHolder)
+	await ct(FungibleToken)
+	await ct(FungibleTokenAdmin)
+	await ct(Faucet)
 	console.log("Compilation done")
 }
 
@@ -63,6 +63,11 @@ async function writeCache() {
 	const fileName = cachedContracts.filter(filterPkAndHeader)
 	const json = JSON.stringify(fileName)
 	await fs.writeFile(path.resolve(publicDir, "compiled.json"), json, "utf8")
+	await fs.writeFile(
+		path.resolve(testDir, "generated-cache.ts"),
+		`export const cache = ${json}.join()`,
+		"utf8"
+	)
 
 	console.log("Copying cache to public...")
 	await fs.cp(cacheDir, publicCacheDir, {
@@ -155,7 +160,7 @@ async function createOptimizedZipBundle() {
 	} catch (e) {
 		console.error(e)
 	} finally {
-		await fs.mkdir(tempDir, { recursive: true })
+		await fs.rmdir(tempDir, { recursive: true })
 	}
 	// Create manifest
 	const manifest = {
@@ -168,7 +173,10 @@ async function createOptimizedZipBundle() {
 }
 
 console.time("start")
-// await compileContracts()
+// TODO: Compilation needs to run at least 3 times to to generate all the cached files.
+await compileContracts()
+await compileContracts()
+await compileContracts()
 await writeCache()
 await createOptimizedZipBundle()
 console.timeEnd("start")

@@ -1,6 +1,7 @@
 // Export features
 export * from "./constants"
 export * from "./graphql/sequencer"
+export * from "./helpers/blockchain"
 export * from "./helpers/transfer"
 
 // Export machines

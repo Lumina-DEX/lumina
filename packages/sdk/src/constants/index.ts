@@ -1,3 +1,9 @@
+type NetworkLayer = "mina" | "zeko"
+
+export type ChainNetwork = "mainnet" | "berkeley" | "testnet"
+
+export type NetworkUri = `${NetworkLayer}:${ChainNetwork}`
+
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
 	"mina:berkeley": "https://api.minascan.io/node/berkeley/v1/graphql",
@@ -15,3 +21,5 @@ export const supportedTokens = {
 } as const
 
 export const MINA_ADDRESS = "MINA"
+
+export const luminaCdnOrigin = "https://luminadex-contracts-cdn.hebilicious.workers.dev"

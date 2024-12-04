@@ -59,3 +59,79 @@ export function SomeComponent() {
 
 Refer to xstate documentation for more information :
 https://stately.ai/docs/xstate-react
+
+## Vue usage
+
+This example uses `@vueuse/core`, but you can share the actor in other ways as well.
+
+```ts
+import {
+	createDex,
+	createWallet,
+	type LuminaContext as LC
+} from "@lumina-dex/sdk"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { createContext } from "react"
+
+export const useLuminaDex = createSharedComposable(() => {
+	const Wallet = useActor(walletMachine)
+
+	const Dex = useActor(dexMachine, {
+		input: {
+			addresses: { faucet: "", factory: "", pool: "" },
+			wallet: Wallet,
+			frontendFee: { destination: "", amount: 0 }
+		}
+	})
+
+	return { Dex, Wallet }
+})
+```
+
+Then in your components
+
+```vue
+<script lang="ts" setup>
+import { useLuminaDex } from "./somewhere"
+
+const { Wallet, Dex } = useLuminaDex()
+const walletLoaded = computed(
+	() =>
+		Wallet.snapshot.value.matches("READY") ||
+		Wallet.snapshot.value.matches("SWITCHING_NETWORK") ||
+		Wallet.snapshot.value.matches("FETCHING_BALANCE")
+)
+
+</script>
+```
+
+## Fetching Pool and Token Data
+
+### Fetching from the CDN
+
+The SDK exposes 2 functions to fetch the pool and token data from the CDN.
+
+```ts
+import { fetchPoolTokenList } from "@lumina-dex/sdk"
+
+const tokens = await fetchPoolTokenList("mina:testnet")
+```
+
+### Fetching from the blockchain
+
+_Ideally this should be done server side._
+
+You can this information from the blockchain state by sending a GraphQL request to an archive node.
+The SDK exposes 2 functions to demonstrate how to do this.
+
+For more advanced use cases, you should create your own indexing service.
+
+```ts
+import {
+	internal_fetchAllPoolEvents,
+	internal_fetchAllPoolTokens
+} from "@lumina-dex/sdk"
+
+const events = await internal_fetchAllPoolEvents("mina:testnet")
+const tokens = await internal_fetchAllPoolTokens("mina:testnet")
+```
