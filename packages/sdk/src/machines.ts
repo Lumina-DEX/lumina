@@ -1,13 +1,9 @@
-
-import { Client, type ClientOptions, Provider, fetchExchange } from "urql"
-import {
-	createActor
-} from "xstate"
+import { Client, type ClientOptions, fetchExchange, Provider } from "urql"
+import { createActor } from "xstate"
 import { getRetryExchange } from "./graphql/helpers"
 import { createLuminaDexMachine } from "./machines/luminadex"
 import type { LuminaDexMachineInput } from "./machines/luminadex/types"
 import { createWalletMachine } from "./machines/wallet"
-
 
 /**
  * GraphQL client
@@ -63,6 +59,5 @@ export const createDex = (input: LuminaDexMachineInput) => {
 	dex.start()
 	return dex
 }
-
 
 export type LuminaContext = { Wallet: WalletActor; Dex: DexActor }

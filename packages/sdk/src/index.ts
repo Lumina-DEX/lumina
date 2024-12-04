@@ -3,10 +3,9 @@ export * from "./constants"
 export * from "./graphql/sequencer"
 export * from "./helpers/transfer"
 
-
 // Export machines
-export * from "./machines/wallet"
 export * from "./machines"
+export * from "./machines/wallet"
 
 // Re-Export xstate
 export * from "xstate"
@@ -17,7 +16,6 @@ export * from "o1js"
 // Export internal types
 // export * from "./machines/luminadex"
 // export * from "./machines/luminadex/types"
-
 
 // // Re-Export needed types
 // export type * from "comlink"

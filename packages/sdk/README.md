@@ -4,9 +4,8 @@
 
 The easiest way to get started would be to combine the SDK with React context to create global state for the Wallet and Dex machines.
 
-1) Use `createWallet` and `createDex` to start the state machines.
-2) Use React Context to provide the Wallet and Dex actors to the rest of the application.
-
+1. Use `createWallet` and `createDex` to start the state machines.
+2. Use React Context to provide the Wallet and Dex actors to the rest of the application.
 
 ```jsx
 import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
@@ -32,29 +31,27 @@ export function App() {
 		</LuminaContext.Provider>
 	)
 }
-
 ```
 
 Then in your components
+
 ```jsx
-import { useContext } from "react"
 import { useSelector } from "@lumina-dex/sdk/react"
+import { useContext } from "react"
 import { LuminaContext } from "./somewhere"
 
 export function SomeComponent() {
-	const { Wallet } = useContext(LuminaContext);
-  	//Read the state of the Wallet machine
+	const { Wallet } = useContext(LuminaContext)
+	// Read the state of the Wallet machine
 	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
-	//Dispatch an event to the Wallet machine
+	// Dispatch an event to the Wallet machine
 	const connect = () => Wallet.send({ type: "Connect" })
 
 	return (
 		<div>
-			{!isReady ? (
-				<button onClick={connect}>Connect</button>
-			) : (
-				<p>Wallet is ready</p>
-			)}
+			{!isReady
+				? <button onClick={connect}>Connect</button>
+				: <p>Wallet is ready</p>}
 		</div>
 	)
 }

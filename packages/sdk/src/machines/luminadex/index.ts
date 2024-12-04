@@ -1,6 +1,6 @@
 import * as Comlink from "comlink"
 import { PrivateKey } from "o1js"
-import { type ErrorActorEvent, and, assertEvent, assign, fromPromise, setup, stateIn } from "xstate"
+import { and, assertEvent, assign, type ErrorActorEvent, fromPromise, setup, stateIn } from "xstate"
 import type {
 	AddLiquidity,
 	InitZkappInstance,

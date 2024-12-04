@@ -1,13 +1,4 @@
-import {
-  DeployArgs,
-  Field,
-  method,
-  PublicKey,
-  SmartContract,
-  State,
-  state,
-  UInt64
-} from "o1js"
+import { DeployArgs, Field, method, PublicKey, SmartContract, State, state, UInt64 } from "o1js"
 
 import { mulDiv, Pool } from "../indexpool.js"
 
