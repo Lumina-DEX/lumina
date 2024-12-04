@@ -7,6 +7,8 @@
     "strict": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": false,
+    "declaration": true,
+    "noEmit": true,
     "plugins": [
       {
         "name": "gql.tada/ts-plugin",

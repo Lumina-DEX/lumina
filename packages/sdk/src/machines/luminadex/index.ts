@@ -1,6 +1,6 @@
 import * as Comlink from "comlink"
 import { PrivateKey } from "o1js"
-import { and, assertEvent, assign, type ErrorActorEvent, fromPromise, setup, stateIn } from "xstate"
+import { type ErrorActorEvent, and, assertEvent, assign, fromPromise, setup, stateIn } from "xstate"
 import type {
 	AddLiquidity,
 	InitZkappInstance,
@@ -286,7 +286,7 @@ export const createLuminaDexMachine = () => {
 				wallet: {
 					actor: wallet,
 					account: wallet.getSnapshot().context.account,
-					network: "mina:testnet"
+					network: wallet.getSnapshot().context.currentNetwork
 				},
 				addresses: { pool, faucet, factory },
 				frontendFee: { destination, amount },
