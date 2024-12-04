@@ -1,29 +1,15 @@
 import {
-  Account,
-  AccountUpdate,
-  AccountUpdateForest,
-  assert,
-  Bool,
-  CircuitString,
   DeployArgs,
   Field,
-  Int64,
   method,
-  Permissions,
-  Provable,
   PublicKey,
-  Reducer,
   SmartContract,
   State,
   state,
-  Struct,
-  TokenContractV2,
-  TokenId,
-  Types,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
-import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
+
+import { mulDiv, Pool } from "../indexpool.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey

@@ -1,27 +1,22 @@
 import {
-  Account,
   AccountUpdate,
   AccountUpdateForest,
   assert,
   Bool,
-  CircuitString,
-  DeployArgs,
-  Field,
   Int64,
   method,
   Permissions,
   Provable,
   PublicKey,
-  Reducer,
   State,
   state,
   Struct,
   TokenContractV2,
   TokenId,
   Types,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
+
 import { BalanceChangeEvent, FungibleToken, mulDiv, PoolFactory } from "../indexpool.js"
 
 export class SwapEvent extends Struct({
@@ -155,12 +150,12 @@ export class Pool extends TokenContractV2 {
   }
 
   private checkPermissionsUpdate(update: AccountUpdate) {
-    let permissions = update.update.permissions
+    const permissions = update.update.permissions
 
-    let { access, receive } = permissions.value
-    let accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
-    let receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
-    let updateAllowed = accessIsNone.and(receiveIsNone)
+    const { access, receive } = permissions.value
+    const accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
+    const receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
+    const updateAllowed = accessIsNone.and(receiveIsNone)
 
     assert(
       updateAllowed.or(permissions.isSome.not()),
@@ -254,8 +249,8 @@ export class Pool extends TokenContractV2 {
     // token 0 need to be empty on mina pool
     const [token0, token1] = this.checkToken(true)
 
-    let tokenContract = new FungibleToken(token1)
-    let tokenAccount = AccountUpdate.create(this.address, tokenContract.deriveTokenId())
+    const tokenContract = new FungibleToken(token1)
+    const tokenAccount = AccountUpdate.create(this.address, tokenContract.deriveTokenId())
 
     tokenAccount.account.balance.requireBetween(UInt64.one, balanceInMax)
     this.account.balance.requireBetween(balanceOutMin, UInt64.MAXINT())
@@ -269,9 +264,9 @@ export class Pool extends TokenContractV2 {
     amountOut.assertGreaterThanOrEqual(amountMinaOutMin, "Insufficient amount out")
 
     // send token to the pool
-    let sender = this.sender.getUnconstrainedV2()
+    const sender = this.sender.getUnconstrainedV2()
     sender.equals(this.address).assertFalse("Can't transfer to/from the pool account")
-    let senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
+    const senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
     senderToken.send({ to: tokenAccount, amount: amountTokenIn })
 
     await tokenContract.approveAccountUpdates([senderToken, tokenAccount])
@@ -305,8 +300,8 @@ export class Pool extends TokenContractV2 {
     this.protocol.requireEquals(protocol)
 
     this.account.balance.requireBetween(UInt64.one, balanceInMax)
-    let sender = this.sender.getUnconstrainedV2()
-    let senderSigned = AccountUpdate.createSigned(sender)
+    const sender = this.sender.getUnconstrainedV2()
+    const senderSigned = AccountUpdate.createSigned(sender)
     await senderSigned.send({ to: this.self, amount: amountMinaIn })
   }
 
@@ -457,7 +452,7 @@ export class Pool extends TokenContractV2 {
 
     if (isMinaPool) {
       // send mina to the pool
-      let senderUpdate = AccountUpdate.createSigned(sender)
+      const senderUpdate = AccountUpdate.createSigned(sender)
       senderUpdate.send({ to: this.self, amount: amountToken0 })
     } else {
       // send token 0 to the pool
@@ -495,12 +490,12 @@ export class Pool extends TokenContractV2 {
   }
 
   private async sendTokenAccount(tokenAccount: AccountUpdate, tokenAddress: PublicKey, amount: UInt64) {
-    let tokenContract = new FungibleToken(tokenAddress)
-    let sender = this.sender.getUnconstrainedV2()
+    const tokenContract = new FungibleToken(tokenAddress)
+    const sender = this.sender.getUnconstrainedV2()
     sender.equals(this.address).assertFalse("Can't transfer to/from the pool account")
 
     // send token to the pool
-    let senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
+    const senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
     senderToken.send({ to: tokenAccount, amount: amount })
     await tokenContract.approveAccountUpdates([senderToken, tokenAccount])
   }

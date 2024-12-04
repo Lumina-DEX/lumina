@@ -1,23 +1,16 @@
 import {
-  Account,
   AccountUpdate,
-  AccountUpdateForest,
   Bool,
-  DeployArgs,
-  Field,
-  Int64,
   method,
-  Permissions,
   Provable,
   PublicKey,
-  Reducer,
   SmartContract,
   State,
   state,
   TokenId,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
+
 import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent } from "../indexpool.js"
 
 /**
@@ -126,7 +119,7 @@ export class PoolTokenHolder extends SmartContract {
     // withdraw token 0
     const amountToken = this.withdraw(liquidityAmount, amountToken0Min, reserveToken0Min, supplyMax)
 
-    let poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
+    const poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
     await poolTokenZ.subWithdrawLiquidity(
       liquidityAmount,
       amountToken0Min,
@@ -154,7 +147,7 @@ export class PoolTokenHolder extends SmartContract {
     // withdraw token 1
     const amountToken = this.withdraw(liquidityAmount, amountToken1Min, reserveToken1Min, supplyMax)
 
-    let pool = new Pool(this.address)
+    const pool = new Pool(this.address)
     await pool.checkLiquidityToken(liquidityAmount, amountToken0Min, amountToken, reserveToken0Min, supplyMax)
   }
 
@@ -172,7 +165,7 @@ export class PoolTokenHolder extends SmartContract {
 
     const sender = this.sender.getUnconstrainedV2()
     // send token to the user
-    let receiverUpdate = this.send({ to: sender, amount: amountToken })
+    const receiverUpdate = this.send({ to: sender, amount: amountToken })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     return amountToken
@@ -215,19 +208,19 @@ export class PoolTokenHolder extends SmartContract {
 
     amountOut.assertGreaterThanOrEqual(amountTokenOutMin, "Insufficient amount out")
 
-    let sender = this.sender.getUnconstrainedV2()
+    const sender = this.sender.getUnconstrainedV2()
 
     // send token to the user
-    let receiverUpdate = this.send({ to: sender, amount: amountOut })
+    const receiverUpdate = this.send({ to: sender, amount: amountOut })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
     // send fee to frontend (if not empty)
     const frontendReceiver = Provable.if(frontend.equals(PublicKey.empty()), this.address, frontend)
-    let frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
+    const frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
     frontendUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     // send fee to protocol
     const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
-    let protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
+    const protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
     protocolUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     if (!isMinaPool) {

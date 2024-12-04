@@ -161,33 +161,33 @@ describe("Pool data", () => {
   })
 
   it("update owner", async () => {
-    let owner = await zkApp.owner.fetch()
+    const owner = await zkApp.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewOwner(senderAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkApp.owner.fetch()
+    const newowner = await zkApp.owner.fetch()
     expect(newowner?.toBase58()).toEqual(senderAccount.toBase58())
   })
 
   it("update protocol", async () => {
-    let protocol = await zkApp.protocol.fetch()
+    const protocol = await zkApp.protocol.fetch()
     expect(protocol?.toBase58()).toEqual(aliceAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewProtocol(deployerAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let protocolNew = await zkApp.protocol.fetch()
+    const protocolNew = await zkApp.protocol.fetch()
     expect(protocolNew?.toBase58()).toEqual(deployerAccount.toBase58())
   })
 
   it("set delegator", async () => {
-    let delegator = await zkApp.delegator.fetch()
+    const delegator = await zkApp.delegator.fetch()
     let poolAccount = zkPool.account?.delegate?.get()
     expect(delegator?.toBase58()).toEqual(dylanAccount.toBase58())
     expect(poolAccount?.toBase58()).toEqual(zkPoolAddress.toBase58())
@@ -229,7 +229,7 @@ describe("Pool data", () => {
 
   it("failed change delegator", async () => {
     // only owner can change it
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewDelegator(aliceAccount)
     })
     await txn.prove()
@@ -265,15 +265,15 @@ describe("Pool data", () => {
   })
 
   it("failed change owner", async () => {
-    let owner = await zkApp.owner.fetch()
+    const owner = await zkApp.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewOwner(aliceAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkApp.owner.fetch()
+    const newowner = await zkApp.owner.fetch()
     expect(newowner?.toBase58()).toEqual(aliceAccount.toBase58())
   })
 
@@ -336,7 +336,7 @@ describe("Pool data", () => {
     merkle.setLeaf(2n, Poseidon.hash(senderAccount.toFields()))
     const newRoot = merkle.getRoot()
     // works after authorized this account
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.updateApprovedSigner(newRoot)
     })
     await txn.prove()

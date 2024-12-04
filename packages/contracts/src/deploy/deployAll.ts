@@ -13,12 +13,13 @@
  * Run with node:     `$ node build/src/deploy.js`.
  */
 import fs from "fs/promises"
+import readline from "readline/promises"
+
 import {
   AccountUpdate,
   Bool,
   Cache,
   fetchAccount,
-  Field,
   MerkleTree,
   Mina,
   NetworkId,
@@ -27,17 +28,15 @@ import {
   PublicKey,
   Signature,
   SmartContract,
-  UInt64,
-  UInt8
-} from "o1js"
-import readline from "readline/promises"
+  UInt8,
+  UInt64} from "o1js"
+
 import {
   Faucet,
   FungibleToken,
   FungibleTokenAdmin,
   mulDiv,
   Pool,
-  PoolDeployProps,
   PoolFactory,
   PoolTokenHolder,
   SignerMerkleWitness
@@ -56,7 +55,7 @@ const prompt = async (message: string) => {
 }
 
 // check command line arg
-let deployAlias = "poolmina"
+const deployAlias = "poolmina"
 if (!deployAlias) {
   throw Error(`Missing <deployAlias> argument.
 
@@ -81,32 +80,32 @@ type Config = {
     }
   >
 }
-let configJson: Config = JSON.parse(await fs.readFile("config.json", "utf8"))
-let config = configJson.deployAliases[deployAlias]
-let feepayerKeysBase58: { privateKey: string; publicKey: string } = JSON.parse(
+const configJson: Config = JSON.parse(await fs.readFile("config.json", "utf8"))
+const config = configJson.deployAliases[deployAlias]
+const feepayerKeysBase58: { privateKey: string; publicKey: string } = JSON.parse(
   await fs.readFile(config.feepayerKeyPath, "utf8")
 )
 
-let feepayerKey = PrivateKey.fromBase58(feepayerKeysBase58.privateKey)
+const feepayerKey = PrivateKey.fromBase58(feepayerKeysBase58.privateKey)
 // B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH
-let zkPoolMinaTokaKey = PrivateKey.fromBase58("EKEKswWJXqG6mu1LFrBJMYqzJcYN2t74Gtsf2LZLmFVuUSXei3ia")
+const zkPoolMinaTokaKey = PrivateKey.fromBase58("EKEKswWJXqG6mu1LFrBJMYqzJcYN2t74Gtsf2LZLmFVuUSXei3ia")
 // B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w
-let zkTokenPrivateKey = PrivateKey.fromBase58("EKDpsCUu1roVtrqoprUyseGZVKbPLZMvGagBoN7WRUVHzDWBUWFj")
+const zkTokenPrivateKey = PrivateKey.fromBase58("EKDpsCUu1roVtrqoprUyseGZVKbPLZMvGagBoN7WRUVHzDWBUWFj")
 // B62qq7cGn7rx6wwbjMP2Q2c8nm3nuwH3JPAuezzihZjNLhV66KCK9Ct
-let zkTokenBPrivateKey = PrivateKey.fromBase58("EKEk3mQKdVvp42q5ixsLHgFcWanXNFmtGd6qcWyjo4mxLCz5YQa4")
+const zkTokenBPrivateKey = PrivateKey.fromBase58("EKEk3mQKdVvp42q5ixsLHgFcWanXNFmtGd6qcWyjo4mxLCz5YQa4")
 // B62qmZpuEkuf3MeH2WAkxzXRJMBMmZHb1JxSZqqQR8T3jtt2FUTy9wK
-let zkTokenAdminPrivateKey = PrivateKey.fromBase58("EKDym4pZnbRVmWtubWaBgEeQ5GHrhtQc1KyD6sJm5cFaDWcj3vai")
+const zkTokenAdminPrivateKey = PrivateKey.fromBase58("EKDym4pZnbRVmWtubWaBgEeQ5GHrhtQc1KyD6sJm5cFaDWcj3vai")
 // B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUAG
-let zkFaucetKey = PrivateKey.fromBase58("EKDrpqX83AMJPT4X2dpPhAESbtrL96YV85gGCjECiK523LnBNqka")
+const zkFaucetKey = PrivateKey.fromBase58("EKDrpqX83AMJPT4X2dpPhAESbtrL96YV85gGCjECiK523LnBNqka")
 // B62qnHMCGiqjFzC25yuKBjxC5yXFqfozsfgrjR22Gk2BdjJrmQqNVqi
-let zkFactoryKey = PrivateKey.fromBase58("EKFVE8YrmtuPjW5ytFXgq6ZNkHP2X6uySiLbW62f5Y47Sx74qcCs")
+const zkFactoryKey = PrivateKey.fromBase58("EKFVE8YrmtuPjW5ytFXgq6ZNkHP2X6uySiLbW62f5Y47Sx74qcCs")
 // B62qjfc5MNxGoa66fvaxcJemSFbY4mEb7HgcP6Chji7RmDe9gqKp65z
-let zkEthKey = PrivateKey.fromBase58("EKEzhixmJMjja6G7zM5YvmTNPeDgDcY2bQ3Q71NA9Xig2Jti86VV")
+const zkEthKey = PrivateKey.fromBase58("EKEzhixmJMjja6G7zM5YvmTNPeDgDcY2bQ3Q71NA9Xig2Jti86VV")
 // B62qmKVQ5hYj8E571wNktPC5JxvB3rogW7TKgJF5b7CmpbqHWXcMPZx
-let zkPoolTokaTokbKey = PrivateKey.fromBase58("EKFMFjZiEvxEyUwY1v5sG75d72BbwHneMUSdnHmTmMYi967NgpwJ")
+const zkPoolTokaTokbKey = PrivateKey.fromBase58("EKFMFjZiEvxEyUwY1v5sG75d72BbwHneMUSdnHmTmMYi967NgpwJ")
 // weth address B62qqKNnNRpCtgcBexw5khZSpk9K2d9Z7Wzcyir3WZcVd15Bz8eShVi
 // B62qqnBMstaKkscExmohrxHaRZgbGZdN5nw6MvbdpikSkUrQCgwiwvK
-let signerKey = PrivateKey.fromBase58("EKFAo5kssADMSFXSCjYRHKABVRzCAfgnyHTRZsMCHkQD7EPLhvAt")
+const signerKey = PrivateKey.fromBase58("EKFAo5kssADMSFXSCjYRHKABVRzCAfgnyHTRZsMCHkQD7EPLhvAt")
 
 // set up Mina instance and contract we interact with
 const Network = Mina.Network({
@@ -122,19 +121,19 @@ console.log("network", config.url)
 // const Network = Mina.Network(config.url);
 const fee = Number(config.fee) * 1e9 // in nanomina (1 billion = 1.0 mina)
 Mina.setActiveInstance(Network)
-let feepayerAddress = feepayerKey.toPublicKey()
-let zkPoolTokaAddress = zkPoolMinaTokaKey.toPublicKey()
-let zkFactoryAddress = zkFactoryKey.toPublicKey()
-let zkFactory = new PoolFactory(zkFactoryAddress)
-let zkPool = new Pool(zkPoolTokaAddress)
-let zkTokenAddress = zkTokenPrivateKey.toPublicKey()
-let zkToken = new FungibleToken(zkTokenAddress)
-let zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
-let zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
-let zkFaucetAddress = zkFaucetKey.toPublicKey()
-let zkFaucet = new Faucet(zkFaucetAddress, zkToken.deriveTokenId())
-let zkEthAddress = zkEthKey.toPublicKey()
-let zkEth = new Pool(zkEthAddress)
+const feepayerAddress = feepayerKey.toPublicKey()
+const zkPoolTokaAddress = zkPoolMinaTokaKey.toPublicKey()
+const zkFactoryAddress = zkFactoryKey.toPublicKey()
+const zkFactory = new PoolFactory(zkFactoryAddress)
+const zkPool = new Pool(zkPoolTokaAddress)
+const zkTokenAddress = zkTokenPrivateKey.toPublicKey()
+const zkToken = new FungibleToken(zkTokenAddress)
+const zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
+const zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
+const zkFaucetAddress = zkFaucetKey.toPublicKey()
+const zkFaucet = new Faucet(zkFaucetAddress, zkToken.deriveTokenId())
+const zkEthAddress = zkEthKey.toPublicKey()
+const zkEth = new Pool(zkEthAddress)
 
 console.log("tokenStandard", zkTokenAddress.toBase58())
 console.log("pool", zkPoolTokaAddress.toBase58())
@@ -230,7 +229,7 @@ async function deployToken() {
   try {
     console.log("deploy token standard")
 
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 4)
@@ -249,7 +248,7 @@ async function deployToken() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -264,7 +263,7 @@ async function deployPool() {
     const signature = Signature.create(zkTokenPrivateKey, zkPoolTokaAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 4)
@@ -272,7 +271,7 @@ async function deployPool() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkPoolMinaTokaKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkPoolMinaTokaKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -288,7 +287,7 @@ async function deployPoolToken() {
     const signature = Signature.create(zkTokenPrivateKey, poolAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 5)
@@ -303,7 +302,7 @@ async function deployPoolToken() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkPoolTokaTokbKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkPoolTokaTokbKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -315,7 +314,7 @@ async function deployPoolToken() {
 async function deployFactory() {
   try {
     console.log("deploy factory")
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 1)
@@ -330,7 +329,7 @@ async function deployFactory() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkFactoryKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkFactoryKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -346,7 +345,7 @@ async function deployPoolEth() {
     const signature = Signature.create(zkPoolMinaTokaKey, zkEthAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 4)
@@ -354,7 +353,7 @@ async function deployPoolEth() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkEthKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkEthKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -367,7 +366,7 @@ async function deployFaucet() {
   try {
     console.log("deploy faucet")
 
-    let tx = await Mina.transaction(
+    const tx = await Mina.transaction(
       { sender: feepayerAddress, fee },
       async () => {
         AccountUpdate.fundNewAccount(feepayerAddress, 1)
@@ -386,7 +385,7 @@ async function deployFaucet() {
       }
     )
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey, zkFaucetKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey, zkFaucetKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -398,16 +397,16 @@ async function deployFaucet() {
 async function addLiquidity() {
   try {
     console.log("add liquidity")
-    let amt = UInt64.from(5000 * 10 ** 9)
-    let amtMina = UInt64.from(20 * 10 ** 9)
+    const amt = UInt64.from(5000 * 10 ** 9)
+    const amtMina = UInt64.from(20 * 10 ** 9)
     const token = await zkPool.token1.fetch()
-    let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
+    const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       AccountUpdate.fundNewAccount(feepayerAddress, 2)
       await zkPool.supplyFirstLiquidities(amtMina, amt)
     })
     console.log("tx liquidity", tx.toPretty())
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkTokenPrivateKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -425,8 +424,8 @@ async function swapMina() {
     await fetchAccount({ publicKey: feepayerAddress })
     await fetchAccount({ publicKey: feepayerAddress, tokenId: zkToken.deriveTokenId() })
 
-    let amountIn = UInt64.from(1.3 * 10 ** 9)
-    let dexTokenHolder = new PoolTokenHolder(zkPoolTokaAddress, zkToken.deriveTokenId())
+    const amountIn = UInt64.from(1.3 * 10 ** 9)
+    const dexTokenHolder = new PoolTokenHolder(zkPoolTokaAddress, zkToken.deriveTokenId())
 
     const reserveIn = Mina.getBalance(zkPoolTokaAddress)
     const reserveOut = Mina.getBalance(zkPoolTokaAddress, zkToken.deriveTokenId())
@@ -436,7 +435,7 @@ async function swapMina() {
 
     const expectedOut = mulDiv(balanceMin, amountIn, balanceMax.add(amountIn))
 
-    let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
+    const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       await dexTokenHolder.swapFromMinaToToken(
         feepayerAddress,
         UInt64.from(5),
@@ -448,7 +447,7 @@ async function swapMina() {
       await zkToken.approveAccountUpdate(dexTokenHolder.self)
     })
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey]).send()
+    const sentTx = await tx.sign([feepayerKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -460,7 +459,7 @@ async function swapMina() {
 async function swapToken() {
   try {
     console.log("swap Token")
-    let amountIn = UInt64.from(20 * 10 ** 9)
+    const amountIn = UInt64.from(20 * 10 ** 9)
 
     await fetchAccount({ publicKey: zkPoolTokaAddress })
     await fetchAccount({ publicKey: zkPoolTokaAddress, tokenId: zkToken.deriveTokenId() })
@@ -475,12 +474,12 @@ async function swapToken() {
 
     const expectedOut = mulDiv(balanceMin, amountIn, balanceMax.add(amountIn))
 
-    let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
+    const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       await zkPool.swapFromTokenToMina(feepayerAddress, UInt64.from(5), amountIn, expectedOut, balanceMax, balanceMin)
     })
     await tx.prove()
     console.log("swap token proof", tx.toPretty())
-    let sentTx = await tx.sign([feepayerKey]).send()
+    const sentTx = await tx.sign([feepayerKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -492,11 +491,11 @@ async function swapToken() {
 async function upgrade() {
   try {
     console.log("upgrade")
-    let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
+    const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       //  await zkApp.updateVerificationKey(keyV2.verificationKey);
     })
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey, zkPoolMinaTokaKey]).send()
+    const sentTx = await tx.sign([feepayerKey, zkPoolMinaTokaKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -508,12 +507,12 @@ async function upgrade() {
 async function mintToken() {
   try {
     console.log("mintToken")
-    let tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
+    const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       AccountUpdate.fundNewAccount(feepayerAddress, 1)
       await zkToken.mint(feepayerAddress, UInt64.from(100_000 * 10 ** 9))
     })
     await tx.prove()
-    let sentTx = await tx.sign([feepayerKey]).send()
+    const sentTx = await tx.sign([feepayerKey]).send()
     if (sentTx.status === "pending") {
       console.log("hash", sentTx.hash)
     }
@@ -526,7 +525,7 @@ async function getEvent() {
   try {
     console.log("show event")
     await displayEvents(zkPool)
-    let dexTokenHolder = new PoolTokenHolder(zkPoolTokaAddress, zkToken.deriveTokenId())
+    const dexTokenHolder = new PoolTokenHolder(zkPoolTokaAddress, zkToken.deriveTokenId())
     await displayEvents(dexTokenHolder)
   } catch (err) {
     console.log(err)
@@ -534,7 +533,7 @@ async function getEvent() {
 }
 
 async function displayEvents(contract: SmartContract) {
-  let events = await contract.fetchEvents()
+  const events = await contract.fetchEvents()
   console.log(
     `events on ${contract.address.toBase58()} ${contract.tokenId}`,
     events.map((e) => {

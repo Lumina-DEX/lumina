@@ -1,10 +1,8 @@
 import {
-  Account,
   AccountUpdate,
   AccountUpdateForest,
   assert,
   Bool,
-  CircuitString,
   DeployArgs,
   Field,
   Int64,
@@ -12,17 +10,16 @@ import {
   Permissions,
   Provable,
   PublicKey,
-  Reducer,
   State,
   state,
-  Struct,
   TokenContractV2,
-  TokenId,
   Types,
   UInt64,
   VerificationKey
 } from "o1js"
-import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
+
+import { BalanceChangeEvent } from "../indexpool.js"
+
 import { FarmStorage } from "./FarmStorage"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
@@ -54,7 +51,7 @@ export class Farm extends TokenContractV2 {
     this.pool.set(args.pool)
     this.owner.set(args.owner)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proofOrSignature()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
@@ -105,12 +102,12 @@ export class Farm extends TokenContractV2 {
   }
 
   private checkPermissionsUpdate(update: AccountUpdate) {
-    let permissions = update.update.permissions
+    const permissions = update.update.permissions
 
-    let { access, receive } = permissions.value
-    let accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
-    let receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
-    let updateAllowed = accessIsNone.and(receiveIsNone)
+    const { access, receive } = permissions.value
+    const accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
+    const receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
+    const updateAllowed = accessIsNone.and(receiveIsNone)
 
     assert(
       updateAllowed.or(permissions.isSome.not()),

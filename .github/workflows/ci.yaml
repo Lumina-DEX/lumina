@@ -20,6 +20,8 @@ jobs:
       - name: Format
         run: bun run format:all
 
+      - name: Lint
+        run: bun run lint:all
   test:
     runs-on: ubuntu-latest
 
