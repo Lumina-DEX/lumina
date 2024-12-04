@@ -1,5 +1,16 @@
 # @lumina-dex/sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- db8892a: Release of the pre-audit contracts
+
+### Patch Changes
+
+- Updated dependencies [db8892a]
+  - @lumina-dex/contracts@0.2.0
+
 ## 0.1.1
 
 ### Patch Changes
