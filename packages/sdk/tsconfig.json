@@ -23,5 +23,5 @@
       }
     ]
   },
-  "include": ["src"]
+  "include": ["src", "scripts/web-worker-plugin.ts"]
 }

@@ -1,5 +1,5 @@
 import { defineBuildConfig } from "unbuild"
-import OMT from "./src/web-worker-plugin"
+import OMT from "./scripts/web-worker-plugin"
 
 export default defineBuildConfig({
 	sourcemap: true,

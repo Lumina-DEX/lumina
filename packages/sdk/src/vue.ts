@@ -1,2 +1,2 @@
 // Vue xstate bindings
-export * from "./machines/vue/xstate"
+export * from "./helpers/vue-xstate"
