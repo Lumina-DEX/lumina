@@ -41,11 +41,20 @@ import { useContext } from "react"
 import { LuminaContext } from "./somewhere"
 
 export function SomeComponent() {
+	// Grab a machine from the context
 	const { Wallet } = useContext(LuminaContext)
 	// Read the state of the Wallet machine
 	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
 	// Dispatch an event to the Wallet machine
 	const connect = () => Wallet.send({ type: "Connect" })
+	// Subscribe to state changes. Most of the times you won't need this.
+	useEffect(() => {
+		const subscription = Wallet.subscribe((snapshot) => {
+			// simple logging
+			console.log(snapshot)
+		})
+		return subscription.unsubscribe
+	}, [Wallet])
 
 	return (
 		<div>
@@ -66,12 +75,12 @@ This example uses `@vueuse/core`, but you can share the actor in other ways as w
 
 ```ts
 import {
-	createDex,
-	createWallet,
-	type LuminaContext as LC
+	dexMachine,
+	type LuminaContext as LC,
+	walletMachine
 } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { createContext } from "react"
+import { createSharedComposable } from "@vueuse/core"
 
 export const useLuminaDex = createSharedComposable(() => {
 	const Wallet = useActor(walletMachine)
