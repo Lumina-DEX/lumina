@@ -24,7 +24,6 @@ import {
   VerificationKey
 } from "o1js"
 import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
-import { FarmStorage } from "./FarmStorage.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
@@ -83,8 +82,8 @@ export class FarmRewardHolder extends SmartContract {
   async withdrawReward() {
     const sender = this.sender.getAndRequireSignatureV2()
     const tokenId = TokenId.derive(this.address)
-    const newStorage = new FarmStorage(sender, tokenId)
-    const points = await newStorage.withdrawReward()
+    // const newStorage = new FarmStorage(sender, tokenId)
+    // const points = await newStorage.withdrawReward()
 
     const tokenByPoints = this.tokenByPoints.getAndRequireEquals()
     const amount = tokenByPoints.mul(points)

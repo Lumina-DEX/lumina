@@ -24,7 +24,7 @@ import {
   VerificationKey
 } from "o1js"
 import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
-import { FarmStorage } from "./FarmStorage.js"
+import { Farm } from "./Farm.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
@@ -56,9 +56,9 @@ export class FarmPoolHolder extends SmartContract {
     this.owner.set(args.owner)
 
     let permissions = Permissions.default()
-    permissions.access = Permissions.proofOrSignature()
+    permissions.access = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
-    permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
+    permissions.setVerificationKey = Permissions.VerificationKey.impossibleDuringCurrentVersion()
     this.account.permissions.set(permissions)
   }
 
@@ -79,9 +79,9 @@ export class FarmPoolHolder extends SmartContract {
 
   @method
   async withdraw(amount: UInt64) {
-    const sender = this.sender.getAndRequireSignatureV2()
-    const tokenId = TokenId.derive(this.address)
-    const newStorage = new FarmStorage(sender, tokenId)
-    await newStorage.withdraw(amount)
+    const sender = this.sender.getUnconstrainedV2()
+    this.send({ to: sender, amount })
+    const farm = new Farm(this.address)
+    await farm.burnFarmToken(amount)
   }
 }
