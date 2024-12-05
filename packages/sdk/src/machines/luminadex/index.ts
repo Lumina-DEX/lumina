@@ -14,6 +14,7 @@ import {
 import { chainFaucets, luminadexFactories } from "../../constants/index"
 import type {
 	AddLiquidity,
+	FaucetSettings,
 	InitZkappInstance,
 	LuminaDexWorker,
 	MintToken,
@@ -101,14 +102,15 @@ export const createLuminaDexMachine = () => {
 					await worker.initZkappInstance(config)
 				}
 			),
-			claim: fromPromise(async ({ input }: { input: InputDexWorker & User }) => {
-				const { worker, user } = input
-				console.time("claim")
-				const faucet = { contract: "", pool: "" } // TODO: Get this from the input with context from the constants
-				const txJson = await worker.claim({ user, faucet })
-				console.timeEnd("claim")
-				return await sendTransaction(txJson)
-			}),
+			claim: fromPromise(
+				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) => {
+					const { worker, user, faucet } = input
+					console.time("claim")
+					const txJson = await worker.claim({ user, faucet })
+					console.timeEnd("claim")
+					return await sendTransaction(txJson)
+				}
+			),
 			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
 				const { worker, ...swapSettings } = input
 				console.time("swap")
@@ -585,7 +587,8 @@ export const createLuminaDexMachine = () => {
 							src: "claim",
 							input: ({ context, event }) => {
 								assertEvent(event, "ClaimTokensFromFaucet")
-								return { ...inputWorker(context), user: context.wallet.account }
+								const faucet = chainFaucets[context.wallet.network]
+								return { ...inputWorker(context), user: context.wallet.account, faucet }
 							},
 							onDone: {
 								target: "DEX.READY",

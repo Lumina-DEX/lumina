@@ -25,10 +25,10 @@ export const luminadexFactories = {
 
 // TODO: Add missing faucets
 export const chainFaucets = {
-	"mina:testnet": "abcdefgh", // testnet=mainnet
-	"mina:mainnet": "abcdefgh",
-	"mina:berkeley": "abcdefgh",
-	"zeko:testnet": "abcdefgh"
+	"mina:testnet": { address: "testnet-address", tokenId: "123" }, // testnet=mainnet
+	"mina:mainnet": { address: "testnet-address", tokenId: "123" },
+	"mina:berkeley": { address: "testnet-address-2", tokenId: "123" },
+	"zeko:testnet": { address: "zeko-test", tokenId: "123" }
 } as const
 
 // TODO: Additional token support

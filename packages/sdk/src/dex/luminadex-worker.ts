@@ -519,32 +519,29 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	return await proveTransaction(transaction)
 }
 
-type FaucetAddresses = {
-	contract: string
-	pool: string
+export type FaucetSettings = {
+	address: string
+	tokenId: string
 }
 
 // Faucet Operations
-const claim = async ({ user, faucet }: { user: string; faucet: FaucetAddresses }) => {
-	const { zkTokenId, zkToken } = await getZkTokenFromPool(faucet.pool)
-
-	const publicKeyFaucet = PublicKey.fromBase58(faucet.contract)
+const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings }) => {
+	const publicKeyFaucet = PublicKey.fromBase58(faucet.address)
 	const contracts = context().contracts
 
 	const zkFaucet = new contracts.Faucet(publicKeyFaucet)
-
+	const zkToken = new contracts.FungibleToken(PublicKey.fromBase58(faucet.tokenId))
 	const userKey = PublicKey.fromBase58(user)
-	const zkFaucetId = zkFaucet.deriveTokenId()
 
 	await Promise.all([
 		fetchAccount({ publicKey: zkFaucet.address }),
-		fetchAccount({ publicKey: zkFaucet.address, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: zkFaucet.address, tokenId: faucet.tokenId }),
 		fetchAccount({ publicKey: userKey })
 	])
 
 	const [acc, accFau] = await Promise.all([
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
-		fetchAccount({ publicKey: userKey, tokenId: zkFaucetId })
+		fetchAccount({ publicKey: userKey, tokenId: faucet.tokenId }),
+		fetchAccount({ publicKey: userKey, tokenId: zkFaucet.deriveTokenId() })
 	])
 
 	const newAcc = acc.account?.balance ? 0 : 1
