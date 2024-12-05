@@ -23,7 +23,6 @@ import {
 	type PoolTokenHolder,
 	SignerMerkleWitness
 } from "@lumina-dex/contracts"
-
 import { MINA_ADDRESS } from "../constants"
 import { fetchZippedContracts, readCache } from "./cache"
 

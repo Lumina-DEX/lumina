@@ -9,7 +9,6 @@ The easiest way to get started would be to combine the SDK with React context to
 
 ```jsx
 import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
-import { useSelector } from "@lumina-dex/sdk/react"
 import { createContext } from "react"
 
 const Wallet = createWallet()

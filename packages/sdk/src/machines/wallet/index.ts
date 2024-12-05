@@ -2,7 +2,7 @@ import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
 import { type ActorRefFromLogic, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
-import { type ChainNetwork, supportedTokens, urls } from "../../constants"
+import { type ChainNetwork, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
 import { fromCallback } from "../../helpers/xstate"
 
@@ -130,7 +130,7 @@ export const createWalletMachine = ({
 				const decimal = input.token?.decimal ?? 1e9
 				const settings = input.token
 					? { tokenId: TokenId.derive(PublicKey.fromBase58(input.token.address)), publicKey }
-					: { tokenId: supportedTokens.mina, publicKey }
+					: { publicKey }
 
 				const queries = Object.fromEntries(
 					input.networks.map((network) => [

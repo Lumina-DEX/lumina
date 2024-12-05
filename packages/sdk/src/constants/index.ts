@@ -25,15 +25,18 @@ export const luminadexFactories = {
 
 // TODO: Add missing faucets
 export const chainFaucets = {
-	"mina:testnet": { address: "testnet-address", tokenId: "123" }, // testnet=mainnet
-	"mina:mainnet": { address: "testnet-address", tokenId: "123" },
+	"mina:testnet": {
+		address: "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUAG",
+		tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n"
+	},
+	"mina:mainnet": { address: "NOT Implemented", tokenId: "Not Implemented" },
 	"mina:berkeley": { address: "testnet-address-2", tokenId: "123" },
 	"zeko:testnet": { address: "zeko-test", tokenId: "123" }
 } as const
 
 // TODO: Additional token support
 export const supportedTokens = {
-	mina: "wSHV2S4qX9jFsLjQo8r1BsMLH2ZRKsZx6EJd1sbozGPieEC4Jf"
+	toka: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n"
 } as const
 
 export const MINA_ADDRESS = "MINA"
