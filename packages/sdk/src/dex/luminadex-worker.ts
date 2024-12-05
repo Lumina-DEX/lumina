@@ -38,11 +38,7 @@ type Contracts = {
 }
 
 type ZkInstances = {
-	token: FungibleToken | null
-	pool: Pool | null
 	factory: PoolFactory | null
-	holder: PoolTokenHolder | null
-	faucet: Faucet | null
 }
 
 type Transaction = Mina.Transaction<false, false>
@@ -67,7 +63,7 @@ const getLuminaAddress = async (poolFactory: PoolFactory | null) => {
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	zk: { token: null, pool: null, factory: null, holder: null, faucet: null },
+	zk: { factory: null },
 	transaction: null
 }
 
@@ -126,11 +122,6 @@ const compileContract = async () => {
 	await contracts.Faucet.compile({ cache })
 }
 
-const fetchMinaAccountToken = async (pk: string) => {
-	const publicKey = PublicKey.fromBase58(pk)
-	return await fetchAccount({ publicKey, tokenId: context().zk.token?.deriveTokenId() })
-}
-
 const getZkTokenFromPool = async (pool: string) => {
 	const poolKey = PublicKey.fromBase58(pool)
 
@@ -149,40 +140,20 @@ const getZkTokenFromPool = async (pool: string) => {
 }
 
 export interface InitZkappInstance {
-	pool: string
-	faucet: string
 	factory: string
 }
-const initZkappInstance = async ({ pool, faucet, factory }: InitZkappInstance) => {
-	const { poolKey, zkTokenId, zkPoolTokenKey, zkToken, zkPool } = await getZkTokenFromPool(pool)
 
+const initZkappInstance = async ({ factory }: InitZkappInstance) => {
 	const factoryKey = PublicKey.fromBase58(factory)
 	const contracts = context().contracts
 
 	const zkFactory = new contracts.PoolFactory(factoryKey)
 
-	const zkHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
-
-	const publicKeyFaucet = PublicKey.fromBase58(faucet)
-	const zkFaucet = new contracts.Faucet(publicKeyFaucet, zkTokenId)
-
-	await Promise.all([
-		fetchAccount({ publicKey: poolKey }),
-		fetchAccount({ publicKey: zkPoolTokenKey }),
-		fetchAccount({ publicKey: factoryKey }),
-		fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
-		fetchAccount({ publicKey: publicKeyFaucet, tokenId: zkTokenId })
-	])
+	await fetchAccount({ publicKey: factoryKey })
 
 	workerState.send({
 		type: "SetZk",
-		zk: {
-			token: zkToken,
-			pool: zkPool,
-			factory: zkFactory,
-			holder: zkHolder,
-			faucet: zkFaucet
-		}
+		zk: { factory: zkFactory }
 	})
 }
 
@@ -548,21 +519,26 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	return await proveTransaction(transaction)
 }
 
+type FaucetAddresses = {
+	contract: string
+	pool: string
+}
+
 // Faucet Operations
-const claim = async ({ user }: { user: string }) => {
-	console.log("Network", Mina.getNetworkId())
-	console.log("Graphql", Mina.activeInstance.getNetworkState)
+const claim = async ({ user, faucet }: { user: string; faucet: FaucetAddresses }) => {
+	const { zkTokenId, zkToken } = await getZkTokenFromPool(faucet.pool)
 
-	const zk = context().zk
+	const publicKeyFaucet = PublicKey.fromBase58(faucet.contract)
+	const contracts = context().contracts
 
-	if (!zk.faucet || !zk.token) throw new Error("Faucet not initialized")
+	const zkFaucet = new contracts.Faucet(publicKeyFaucet)
 
 	const userKey = PublicKey.fromBase58(user)
-	const zkTokenId = zk.token.deriveTokenId()
-	const zkFaucetId = zk.faucet.deriveTokenId()
+	const zkFaucetId = zkFaucet.deriveTokenId()
+
 	await Promise.all([
-		fetchAccount({ publicKey: zk.faucet.address }),
-		fetchAccount({ publicKey: zk.faucet.address, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: zkFaucet.address }),
+		fetchAccount({ publicKey: zkFaucet.address, tokenId: zkTokenId }),
 		fetchAccount({ publicKey: userKey })
 	])
 
@@ -574,14 +550,11 @@ const claim = async ({ user }: { user: string }) => {
 	const newAcc = acc.account?.balance ? 0 : 1
 	const newFau = accFau.account?.balance ? 0 : 1
 	const total = newAcc + newFau
-	const token = await zk.faucet.token.fetch()
-	console.log("token", token?.toBase58())
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		if (!zk.faucet || !zk.token) throw new Error("Faucet not initialized")
 		AccountUpdate.fundNewAccount(userKey, total)
-		await zk.faucet.claim()
-		await zk.token.approveAccountUpdate(zk.faucet.self)
+		await zkFaucet.claim()
+		await zkToken.approveAccountUpdate(zkFaucet.self)
 	})
 
 	return await proveTransaction(transaction)
@@ -599,7 +572,7 @@ export const luminaDexWorker = {
 	compileContract,
 	initZkappInstance,
 	// Account & Balance Operations
-	fetchMinaAccountToken,
+	// fetchMinaAccountToken,
 	getReserves,
 	// Deployment Operations
 	deployPoolInstance,

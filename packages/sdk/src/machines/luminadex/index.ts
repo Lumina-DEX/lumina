@@ -104,7 +104,8 @@ export const createLuminaDexMachine = () => {
 			claim: fromPromise(async ({ input }: { input: InputDexWorker & User }) => {
 				const { worker, user } = input
 				console.time("claim")
-				const txJson = await worker.claim({ user })
+				const faucet = { contract: "", pool: "" } // TODO: Get this from the input with context from the constants
+				const txJson = await worker.claim({ user, faucet })
 				console.timeEnd("claim")
 				return await sendTransaction(txJson)
 			}),
