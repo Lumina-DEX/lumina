@@ -11,7 +11,6 @@ import {
   MerkleWitness,
   method,
   Permissions,
-  Poseidon,
   Provable,
   PublicKey,
   Reducer,
@@ -26,7 +25,6 @@ import {
   VerificationKey
 } from "o1js"
 import { BalanceChangeEvent, mulDiv, Pool, PoolTokenHolder } from "../indexpool.js"
-import { FarmReward } from "./FarmReward.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
@@ -34,12 +32,12 @@ export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
 }
 
 // support 65536 different depositor
-export class FarmMerkleWitness extends MerkleWitness(65536) {}
+export class SignerMerkleWitness extends MerkleWitness(65536) {}
 
 /**
  * Farm contract
  */
-export class FarmRewardHolder extends SmartContract {
+export class FarmReward extends TokenContractV2 {
   // Farming for one pool
   @state(PublicKey)
   pool = State<PublicKey>()
@@ -47,8 +45,6 @@ export class FarmRewardHolder extends SmartContract {
   owner = State<PublicKey>()
   @state(PublicKey)
   token = State<PublicKey>()
-  @state(Field)
-  merkleRoot = State<Field>()
 
   events = {
     upgrade: Field,
@@ -65,23 +61,31 @@ export class FarmRewardHolder extends SmartContract {
     this.owner.set(args.owner)
 
     let permissions = Permissions.default()
-    permissions.access = Permissions.proofOrSignature()
+    permissions.access = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
-    permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
+    permissions.setVerificationKey = Permissions.VerificationKey.impossibleDuringCurrentVersion()
     this.account.permissions.set(permissions)
   }
 
+  /** Approve `AccountUpdate`s that have been created outside of the token contract.
+   *
+   * @argument {AccountUpdateForest} updates - The `AccountUpdate`s to approve. Note that the forest size is limited by the base token contract, @see TokenContractV2.MAX_ACCOUNT_UPDATES The current limit is 9.
+   */
   @method
-  async withdrawReward(amount: UInt64, path: FarmMerkleWitness) {
+  async approveBase(updates: AccountUpdateForest): Promise<void> {
+    Bool(false).assertTrue("You can't manage the token")
+  }
+
+  /**
+   * Don't call this method directly, use withdrawReward from FarmRewardHolder
+   */
+  @method
+  async approveReward() {
     const sender = this.sender.getAndRequireSignatureV2()
-    const fieldSender = sender.toFields()
-    const hash = Poseidon.hash([fieldSender[0], fieldSender[1], amount.value])
-    const root = this.merkleRoot.getAndRequireEquals()
-    path.calculateRoot(hash).assertEquals(root, "Invalid request")
+    const senderBalance = AccountUpdate.create(sender, this.deriveTokenId())
+    senderBalance.account.balance.requireEquals(UInt64.zero)
 
-    const farmReward = new FarmReward(this.address)
-    farmReward.approveReward()
-
-    this.send({ to: sender, amount: amount })
+    // to prevent double withdraw we mint one token once a user withdraw
+    this.internal.mint({ address: senderBalance, amount: UInt64.one })
   }
 }
