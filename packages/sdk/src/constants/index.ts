@@ -11,6 +11,13 @@ export const urls = {
 	"zeko:testnet": "https://devnet.zeko.io/graphql"
 } as const
 
+export const archiveUrls = {
+	"mina:mainnet": "https://api.minascan.io/archive/mainnet/v1/graphql",
+	"mina:berkeley": "https://api.minascan.io/archive/devnet/v1/graphql",
+	"mina:testnet": "https://api.minascan.io/archive/devnet/v1/graphql",
+	"zeko:testnet": "https://devnet.zeko.io/graphql"
+} as const
+
 export const luminadexFactories = {
 	"mina:testnet": "B62qnHMCGiqjFzC25yuKBjxC5yXFqfozsfgrjR22Gk2BdjJrmQqNVqi"
 } as const

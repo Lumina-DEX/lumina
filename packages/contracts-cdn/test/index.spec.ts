@@ -65,10 +65,9 @@ describe("CDN Worker", () => {
 			const json = (await response.json()) as Record<string, any>
 			expect(json.tokens[0]).toStrictEqual({
 				address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-				poolAddress: "B62qjmz2oEe8ooqBmvj3a6fAbemfhk61rjxTYmUMP9A6LPdsBLmRAxK",
-				chainId: "mina:testnet",
+				poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 				tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
-				name: "Toka test token",
+				chainId: "mina:testnet",
 				symbol: "TOKA",
 				decimals: 9
 			})

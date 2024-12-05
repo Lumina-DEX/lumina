@@ -42,7 +42,7 @@ export default {
 		}
 		if (match?.data.path === "tokens" && match.params?.network) {
 			// Check for the cache
-			const cacheKey = new URL(`http://${match.params.network}.key${url.pathname}`)
+			const cacheKey = new URL(`http://token.key/${match.params.network}${url.pathname}`)
 			const cache = caches.default
 			const cacheResponse = await cache.match(cacheKey)
 			if (cacheResponse) return cacheResponse

@@ -37,7 +37,7 @@ const inputWorker = (context: LuminaDexMachineContext) => {
 
 const setContractError = (defaultMessage: string) => {
 	return {
-		target: "failed",
+		target: "FAILED",
 		// biome-ignore lint/suspicious/noExplicitAny: helper
 		actions: assign<LuminaDexMachineContext, ErrorActorEvent, any, any, any>(
 			({ context, event }) => {
