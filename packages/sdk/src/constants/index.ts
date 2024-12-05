@@ -18,8 +18,17 @@ export const archiveUrls = {
 	"zeko:testnet": "https://devnet.zeko.io/graphql"
 } as const
 
+// TODO: Add missing factories
 export const luminadexFactories = {
 	"mina:testnet": "B62qnHMCGiqjFzC25yuKBjxC5yXFqfozsfgrjR22Gk2BdjJrmQqNVqi"
+} as const
+
+// TODO: Add missing faucets
+export const chainFaucets = {
+	"mina:testnet": "abcdefgh", // testnet=mainnet
+	"mina:mainnet": "abcdefgh",
+	"mina:berkeley": "abcdefgh",
+	"zeko:testnet": "abcdefgh"
 } as const
 
 // TODO: Additional token support

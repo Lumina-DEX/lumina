@@ -15,7 +15,6 @@ import { createContext } from "react"
 const Wallet = createWallet()
 
 const Dex = createDex({
-	addresses: { faucet: "", factory: "", pool: "" },
 	wallet: Wallet,
 	frontendFee: { destination: "", amount: 0 }
 })
@@ -87,7 +86,6 @@ export const useLuminaDex = createSharedComposable(() => {
 
 	const Dex = useActor(dexMachine, {
 		input: {
-			addresses: { faucet: "", factory: "", pool: "" },
 			wallet: Wallet,
 			frontendFee: { destination: "", amount: 0 }
 		}
