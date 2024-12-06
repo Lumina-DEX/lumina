@@ -1,8 +1,7 @@
 import type { Networks } from "@lumina-dex/sdk"
 import { addRoute, createRouter, findRoute } from "rou3"
 import type { Env } from "../worker-configuration"
-import type { Token } from "./helper"
-import { createList } from "./tokenDb"
+import { type Token, createList } from "./helper"
 
 const doName = "database-test-1"
 const networks = ["mina:mainnet", "mina:testnet", "mina:berkeley", "zeko:mainnet", "zeko:testnet"]
@@ -41,8 +40,8 @@ export default {
 		//TODO: implement rate-limiting and bot protection here.
 
 		const url = new URL(request.url)
-		const post = findRoute(router, "POST", url.pathname)
-		if (post?.data.path === "token.post" && post.params?.network && request.method === "POST") {
+		const post = findRoute(router, request.method, url.pathname)
+		if (post?.data.path === "token.post" && post.params?.network) {
 			const network = post.params.network as Networks
 			if (!networks.includes(network)) {
 				return new Response("Not Found", { status: 404 })
@@ -66,7 +65,7 @@ export default {
 			return new Response("Token Inserted", { status: 201 })
 		}
 
-		const match = findRoute(router, "GET", url.pathname)
+		const match = findRoute(router, request.method, url.pathname)
 		if (match?.data.path === "cache") {
 			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/compiled.json`)
 			return serveAsset({ assetUrl, env, request, context })

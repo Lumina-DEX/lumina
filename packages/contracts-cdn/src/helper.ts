@@ -1,4 +1,4 @@
-import type { Networks } from "@lumina-dex/sdk"
+import type { Networks, TokenDbList } from "@lumina-dex/sdk"
 import { minaBerkeley, minaMainnet, minaTestnet, zekoMainnet, zekoTestnet } from "../drizzle/schema"
 
 export const getTable = (network: Networks) => {
@@ -27,3 +27,18 @@ export interface TokenExists extends Network {
 	address: string
 	poolAddress: string
 }
+
+const version = { major: 1, minor: 0, patch: 0 }
+const keywords = ["uniswap", "default", "list"]
+
+export const createList =
+	(network: Networks) =>
+	(data: Token[]): TokenDbList => {
+		return {
+			name: "Mina alpha",
+			timestamp: new Date().toJSON(),
+			version,
+			keywords,
+			tokens: data.map((t) => ({ ...t, chainId: network }))
+		}
+	}
