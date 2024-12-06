@@ -1,6 +1,6 @@
 import type { ProviderError, SendZkTransactionResult } from "@aurowallet/mina-provider"
 import type * as Comlink from "comlink"
-import type { InitZkappInstance, LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
+import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { Networks, Wallet } from "../wallet"
 
 type DexWorker = Comlink.Remote<LuminaDexWorker>
@@ -63,7 +63,7 @@ interface DexContext {
 	}
 }
 
-type ContractEvent = { type: "InitializeWorker" }
+type ContractEvent = { type: "InitializeWorker" } | { type: "REINITIALIZE_ZK" }
 
 type DexEvent =
 	// Swap
@@ -98,13 +98,11 @@ export interface LuminaDexMachineContext {
 	wallet: { actor: Wallet; account: string; network: Networks }
 	dex: DexContext
 	contract: ContractContext
-	addresses: InitZkappInstance
 	frontendFee: FrontendFee
 }
 
 export interface LuminaDexMachineInput {
 	wallet: Wallet
-	addresses: InitZkappInstance
 	frontendFee: FrontendFee
 }
 

@@ -1,97 +1,99 @@
-// Importing 'crypto' module
-// import crypto from 'crypto';
+import { unzipSync } from "fflate"
+import { luminaCdnOrigin } from "../constants"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>
 
-export const fetchFiles = async () => {
-	const currentLocation = self.location.origin
-	const headers = new Headers()
-	headers.append("Content-Encoding", "br, gzip, deflate")
-
-	// we don't load pk key on the frontend
-	const filter = (x: string) => {
-		return x.indexOf("-pk-") === -1 && x.indexOf(".header") === -1
-	}
-
-	const filesResponse = await fetch(`${currentLocation}/compiled.json`, { headers })
-	const json = (await filesResponse.json()) as string[]
-
-	const cacheList = await Promise.all(
-		json.filter(filter).map(async (file: string) => {
-			const result = await fetch(`${currentLocation}/cache/${file}.txt`, {
-				cache: "force-cache",
-				headers
-			})
-			const data = await result.arrayBuffer()
-			return { file, data: new Uint8Array(data) }
-		})
-	)
-	return cacheList.reduce((acc: CacheList, { file, data }) => {
+export const createCacheList = (cacheList: CachedFile[]) =>
+	cacheList.reduce((acc: CacheList, { file, data }) => {
 		acc[file] = { file, data }
 		return acc
 	}, {})
+
+const fetchWithRetry =
+	(retries = 3) => async (url: string, options: RequestInit): Promise<Response> => {
+		for (let i = 0; i < retries; i++) {
+			try {
+				const response = await fetch(url, options)
+				if (response.ok) return response
+			} catch (error) {
+				if (i === retries - 1) throw error
+				await new Promise(resolve => setTimeout(resolve, 500 * 2 ** i)) // Exponential backoff
+			}
+		}
+		throw new Error("Max retries reached")
+	}
+
+export const fetchCachedContracts = async () => {
+	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
+
+	console.time("Compiled Contracts")
+	const filesResponse = await fetch(`${luminaCdnOrigin}/api/cache`, { headers })
+	const json = (await filesResponse.json()) as string[]
+	console.timeEnd("Compiled Contracts")
+
+	console.time("CacheList")
+	const cacheList = await Promise.all(
+		json
+			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
+			.map(async (file: string) => {
+				console.time(`Fetch ${file}`)
+				const response = await fetchWithRetry(3)(`${luminaCdnOrigin}/cache/${file}.txt`, {
+					headers
+				})
+				console.timeEnd(`Fetch ${file}`)
+				return {
+					file,
+					data: new Uint8Array(await response.arrayBuffer())
+				}
+			})
+	)
+	console.timeEnd("CacheList")
+	return createCacheList(cacheList)
 }
 
-type CacheData = { persistentId: string; uniqueId: string; dataType: "string" | "bytes" }
+type CacheData = {
+	persistentId: string
+	uniqueId: string
+	dataType: "string" | "bytes"
+}
+
+export const fetchZippedContracts = async () => {
+	const response = await fetch(`${luminaCdnOrigin}/bundle.zip`)
+	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
+	const zipBuffer = await response.arrayBuffer()
+	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<
+		string,
+		Uint8Array
+	>
+	const cacheList = Object.entries(data).map(([file, data]) => ({
+		file: file.split(".")[0],
+		data: new Uint8Array(data)
+	}))
+	return createCacheList(cacheList)
+}
 
 export const readCache = (files: CacheList) => ({
 	read({ persistentId, dataType }: CacheData) {
+		// console.time(`Load Cache ${persistentId}`)
 		// read current uniqueId, return data if it matches
 		if (!files[persistentId]) {
 			console.log("not found : ", persistentId)
+			// console.timeEnd(`Load Cache ${persistentId}`)
 			return undefined
 		}
-
-		console.log("load : ", persistentId)
 
 		if (dataType === "string") {
 			const data = files[persistentId].data
-			// const hash = crypto.createHash('sha1').update(data).digest('hex');
-			// console.log(persistentId + " hash", hash);
+			// console.timeEnd(`Load Cache ${persistentId}`)
 			return data
 		}
 		console.log("data type not string : ", persistentId)
+		// console.timeEnd(`Load Cache ${persistentId}`)
 		return undefined
 	},
-	write({ persistentId, uniqueId, dataType }: CacheData, data: unknown) {
-		console.log("write")
-		console.log({ persistentId, uniqueId, dataType })
-	},
-	canWrite: false
-})
-
-export const readCache2 = async () => ({
-	async read({ persistentId, dataType }: CacheData) {
-		const currentLocation = self.location.origin
-
-		if (persistentId.indexOf("-pk-") > -1) {
-			return undefined
-		}
-
-		// read current uniqueId, return data if it matches
-		const currentId = await fetch(`${currentLocation}/cache/${persistentId}.txt`, {
-			cache: "force-cache"
-		})
-		if (!currentId) {
-			console.log("not found : ", persistentId)
-			return undefined
-		}
-
-		console.log("load : ", persistentId)
-
-		if (dataType === "string") {
-			const data = currentId.arrayBuffer()
-			// const hash = crypto.createHash('sha1').update(data).digest('hex');
-			// console.log(persistentId + " hash", hash);
-			return data
-		}
-		console.log("data type not string : ", persistentId)
-		return undefined
-	},
-	write({ persistentId, uniqueId, dataType }: CacheData, data: unknown) {
-		console.log("write")
-		console.log({ persistentId, uniqueId, dataType })
+	write({ persistentId, uniqueId, dataType }: CacheData) {
+		console.log("write", { persistentId, uniqueId, dataType })
 	},
 	canWrite: false
 })
