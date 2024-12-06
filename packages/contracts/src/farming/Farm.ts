@@ -164,17 +164,37 @@ export async function generateRewardRoot(start: UInt64, end: UInt64, farmAddress
   const events = await farm.fetchEvents(startC, endC)
 
   const userList = new Map()
+  const totalAccount = "0x0"
   for (let index = 0; index < events.length; index++) {
     const element = events[index]
     const data = element.event.data as any
     const sender = PublicKey.fromFields([Field.from(data[0]), Field.from(data[1])]).toBase58()
     const amount = UInt64.fromFields([data[3]])
     const time = element.blockHeight
+    const farmInfo = {
+      time: time.toBigint(),
+      amount: amount.toBigInt(),
+      deposit: element.type === "deposit",
+      total: 0n
+    }
     if (userList.has(sender)) {
       const user = userList.get(sender)
-      user.add(amount)
+      const lasEvent = user[user.index - 1]
+      farmInfo.total = farmInfo.deposit ? lasEvent.total + farmInfo.amount : lasEvent.total - farmInfo.amount
+      user.push(farmInfo)
     } else {
-      userList.set(sender, [amount])
+      farmInfo.total = farmInfo.deposit ? farmInfo.amount : -farmInfo.amount
+      userList.set(sender, [farmInfo])
+    }
+
+    if (userList.has(totalAccount)) {
+      const total = userList.get(totalAccount)
+      const lasEvent = total[total.index - 1]
+      farmInfo.total = farmInfo.deposit ? lasEvent.total + farmInfo.amount : lasEvent.total - farmInfo.amount
+      total.push(farmInfo)
+    } else {
+      farmInfo.total = farmInfo.deposit ? farmInfo.amount : -farmInfo.amount
+      userList.set(totalAccount, [farmInfo])
     }
   }
 }
