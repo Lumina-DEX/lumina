@@ -11,6 +11,7 @@ import {
   MerkleWitness,
   method,
   Permissions,
+  Poseidon,
   Provable,
   PublicKey,
   Reducer,
@@ -32,7 +33,7 @@ export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
 }
 
 // support 65536 different depositor
-export class SignerMerkleWitness extends MerkleWitness(65536) {}
+export class FarmMerkleWitness extends MerkleWitness(65536) {}
 
 /**
  * Farm contract
@@ -45,6 +46,8 @@ export class FarmReward extends TokenContractV2 {
   owner = State<PublicKey>()
   @state(PublicKey)
   token = State<PublicKey>()
+  @state(Field)
+  merkleRoot = State<Field>()
 
   events = {
     upgrade: Field,
@@ -63,7 +66,7 @@ export class FarmReward extends TokenContractV2 {
     let permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
-    permissions.setVerificationKey = Permissions.VerificationKey.impossibleDuringCurrentVersion()
+    permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
     this.account.permissions.set(permissions)
   }
 
@@ -76,14 +79,16 @@ export class FarmReward extends TokenContractV2 {
     Bool(false).assertTrue("You can't manage the token")
   }
 
-  /**
-   * Don't call this method directly, use withdrawReward from FarmRewardHolder
-   */
   @method
-  async approveReward() {
+  async withdrawReward(amount: UInt64, path: FarmMerkleWitness) {
     const sender = this.sender.getAndRequireSignatureV2()
     const senderBalance = AccountUpdate.create(sender, this.deriveTokenId())
     senderBalance.account.balance.requireEquals(UInt64.zero)
+    const fieldSender = sender.toFields()
+    const hash = Poseidon.hash([fieldSender[0], fieldSender[1], amount.value])
+    const root = this.merkleRoot.getAndRequireEquals()
+    path.calculateRoot(hash).assertEquals(root, "Invalid request")
+    this.send({ to: sender, amount: amount })
 
     // to prevent double withdraw we mint one token once a user withdraw
     this.internal.mint({ address: senderBalance, amount: UInt64.one })

@@ -20,6 +20,7 @@ import {
   TokenContractV2,
   TokenId,
   Types,
+  UInt32,
   UInt64,
   VerificationKey
 } from "o1js"
@@ -132,6 +133,10 @@ export class Farm extends TokenContractV2 {
 
   @method
   async deposit(amount: UInt64) {
+    const farmingInfo = this.farmingInfo.getAndRequireEquals()
+    // user can deposit only during this period
+    this.network.timestamp.requireBetween(farmingInfo.startTimestamp, farmingInfo.endTimestamp)
+
     const poolAddress = this.pool.getAndRequireEquals()
     const pool = new Pool(poolAddress)
     const sender = this.sender.getUnconstrainedV2()
@@ -142,9 +147,34 @@ export class Farm extends TokenContractV2 {
   }
 
   @method
-  async burnFarmToken(amount: UInt64) {
-    const sender = this.sender.getAndRequireSignatureV2()
+  async withdraw(amount: UInt64) {
+    const sender = this.sender.getUnconstrainedV2()
+    this.send({ to: sender, amount })
     this.internal.burn({ address: sender, amount })
     this.emitEvent("withdraw", new FarmingEvent({ sender, amount }))
+  }
+}
+
+export async function generateRewardRoot(start: UInt64, end: UInt64, farmAddress: PublicKey) {
+  const farm = new Farm(farmAddress)
+  const farmingInfo = farm.farmingInfo.getAndRequireEquals()
+  const endToUse = Provable.if(farmingInfo.endTimestamp.lessThanOrEqual(end), farmingInfo.endTimestamp, end)
+  const startC = UInt32.from(start.toBigInt())
+  const endC = UInt32.from(end.toBigInt())
+  const events = await farm.fetchEvents(startC, endC)
+
+  const userList = new Map()
+  for (let index = 0; index < events.length; index++) {
+    const element = events[index]
+    const data = element.event.data as any
+    const sender = PublicKey.fromFields([Field.from(data[0]), Field.from(data[1])]).toBase58()
+    const amount = UInt64.fromFields([data[3]])
+    const time = element.blockHeight
+    if (userList.has(sender)) {
+      const user = userList.get(sender)
+      user.add(amount)
+    } else {
+      userList.set(sender, [amount])
+    }
   }
 }
