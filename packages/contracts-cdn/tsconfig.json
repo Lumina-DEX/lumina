@@ -40,5 +40,12 @@
 		"skipLibCheck": true
 	},
 	"exclude": ["test"],
-	"include": ["worker-configuration.d.ts", "vitest.config.mts", "src/**/*.ts", "scripts/**/*.ts"]
+	"include": [
+		"worker-configuration.d.ts",
+		"vitest.config.mts",
+		"src/**/*.ts",
+		"test/**/*.ts",
+		"scripts/**/*.ts",
+		"drizzle"
+	]
 }

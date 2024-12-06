@@ -25,8 +25,8 @@ export const GetTransferAccountUpdateQuery = graphql(`
  * This will return null for a new account.
  */
 export const FetchAccountBalanceQuery = graphql(`
-  query FetchAccountBalance($publicKey: PublicKey!, $tokenId: TokenId){
-    account(publicKey: $publicKey, token: $tokenId ){
+  query FetchAccountBalance($tokenId: TokenId, $publicKey: PublicKey!,){
+    account(token: $tokenId, publicKey: $publicKey ){
       balance {
         total
       }

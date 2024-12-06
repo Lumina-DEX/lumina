@@ -1,12 +1,34 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "luminadex-contracts-cdn"
-main = "src/index.ts"
-compatibility_date = "2024-11-27"
+name                = "luminadex-contracts-cdn"
+main                = "src/test-cache.ts"
+compatibility_date  = "2024-11-27"
 compatibility_flags = ["nodejs_compat"]
+
+
+# Workers Static Assets
 assets = { directory = "./public", binding = "ASSETS" }
 
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 # Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
 [observability]
-enabled = true
+enabled = false
+
+# Bind a Durable Object. Durable objects are a scale-to-zero compute primitive based on the actor model.
+# Durable Objects can live for as long as needed. Use these when you need a long-running "server", such as in realtime apps.
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#durable-objects
+[[durable_objects.bindings]]
+name       = "TOKENLIST"
+class_name = "TokenList"
+
+# Durable Object migrations.
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
+[[migrations]]
+tag                = "v1"
+new_sqlite_classes = ["TokenList"]
+
+# We need rules so we can import migrations in the next steps
+[[rules]]
+type        = "Text"
+globs       = ["**/*.sql"]
+fallthrough = true

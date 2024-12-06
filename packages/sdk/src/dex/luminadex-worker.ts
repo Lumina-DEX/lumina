@@ -528,8 +528,8 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	const publicKeyFaucet = PublicKey.fromBase58(faucet.address)
 	const contracts = context().contracts
 
-	const zkFaucet = new contracts.Faucet(publicKeyFaucet)
 	const zkToken = new contracts.FungibleToken(PublicKey.fromBase58(faucet.tokenId))
+	const zkFaucet = new contracts.Faucet(publicKeyFaucet, zkToken.deriveTokenId())
 	const userKey = PublicKey.fromBase58(user)
 
 	await Promise.all([
