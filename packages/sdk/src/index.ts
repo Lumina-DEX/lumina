@@ -1,13 +1,17 @@
 // Export features
 export * from "./constants"
 export * from "./graphql/sequencer"
+export * from "./helpers/blockchain"
 export * from "./helpers/transfer"
 
 // Export machines
 export * from "./machines"
-export * from "./machines/luminadex"
+
+// Dex
 export * from "./machines/luminadex/types"
-export * from "./machines/wallet"
+// Wallet
+export { detectWalletChange } from "./machines/wallet/actors"
+export * from "./machines/wallet/types"
 
 // Re-Export xstate
 export * from "xstate"

@@ -1,25 +1,20 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
-import { type ActorRefFromLogic, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
-import { supportedTokens, urls } from "../../constants"
+import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
+import { urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
 import { fromCallback } from "../../helpers/xstate"
+import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
 
-export * from "./actors"
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
-type Balance = { testnet: Record<string, number>; mainnet: Record<string, number> }
-type TokenBalances = {
-	mina: Balance
-	zeko: Balance
-}
-
-type CustomToken = { tokenAddress: string; name: string }
-
-type FetchBalancePromise = { address: string; token?: CustomToken; networks: Networks[] }
-
+const emptyNetworkBalance = () => ({
+	testnet: { MINA: 0, ZEKO: 0 },
+	mainnet: { MINA: 0, ZEKO: 0 },
+	berkeley: { MINA: 0, ZEKO: 0 }
+})
 const toNumber = (n: unknown) => {
 	if (typeof n === "string") {
 		const t = Number.parseFloat(n)
@@ -29,25 +24,9 @@ const toNumber = (n: unknown) => {
 	return 0
 }
 
-type WalletMachine = ReturnType<typeof createWalletMachine>
-
-export type Wallet = ActorRefFromLogic<WalletMachine>
-
-export type WalletEvent =
-	| { type: "RequestNetworkChange"; network: Networks }
-	| { type: "WalletExtensionChangedNetwork"; network: Networks }
-	| { type: "Connect" }
-	| { type: "Disconnect" }
-	| { type: "SetAccount"; account: string }
-	| { type: "FetchBalance"; token?: CustomToken; networks: Networks[] }
-
-export type WalletEmit =
-	| { type: "NetworkChanged"; network: Networks }
-	| { type: "AccountChanged"; account: string }
-
-export const createWalletMachine = ({
-	createMinaClient
-}: { createMinaClient: (url: string) => Client }) =>
+export const createWalletMachine = (
+	{ createMinaClient }: { createMinaClient: (url: string) => Client }
+) =>
 	setup({
 		types: {
 			context: {} as {
@@ -116,12 +95,13 @@ export const createWalletMachine = ({
 			/**
 			 * Fetches the balance of the Mina wallet on given networks.
 			 */
-			fetchBalance: fromPromise<TokenBalances, FetchBalancePromise>(async ({ input }) => {
+			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) => {
 				const publicKey = input.address
-				const name = input.token?.name.toLocaleUpperCase() ?? "MINA"
+				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
+				const decimal = input.token?.decimal ?? 1e9
 				const settings = input.token
-					? { tokenId: TokenId.derive(PublicKey.fromBase58(input.token.tokenAddress)), publicKey }
-					: { tokenId: supportedTokens.mina, publicKey }
+					? { tokenId: TokenId.derive(PublicKey.fromBase58(input.token.address)), publicKey }
+					: { publicKey }
 
 				const queries = Object.fromEntries(
 					input.networks.map((network) => [
@@ -133,12 +113,12 @@ export const createWalletMachine = ({
 
 				return Object.keys(queries).reduce((acc, network, index) => {
 					const result = results[index]
-					const balance = toNumber(result.data?.account?.balance?.total) / 1e9
+					const balance = toNumber(result.data?.account?.balance?.total) / decimal
 					const [layer, netType] = (network as Networks).split(":") as [
 						"mina" | "zeko",
-						"testnet" | "mainnet"
+						"testnet" | "mainnet" | "berkeley"
 					]
-					if (!acc[layer]) acc[layer] = { testnet: {}, mainnet: {} }
+					if (!acc[layer]) acc[layer] = { testnet: {}, mainnet: {}, berkeley: {} }
 					acc[layer][netType][name] = balance
 					return acc
 				}, {} as TokenBalances)
@@ -175,8 +155,8 @@ export const createWalletMachine = ({
 		context: {
 			account: "",
 			currentNetwork: "mina:testnet",
-			zekoBalances: { testnet: { MINA: 0, ZEKO: 0 }, mainnet: { MINA: 0, ZEKO: 0 } },
-			minaBalances: { testnet: { MINA: 0, ZEKO: 0 }, mainnet: { MINA: 0, ZEKO: 0 } }
+			zekoBalances: emptyNetworkBalance(),
+			minaBalances: emptyNetworkBalance()
 		},
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },

@@ -1,6 +1,9 @@
-import type { EventObject } from "xstate"
+import type { ActorRefFromLogic, EventObject } from "xstate"
 import { fromCallback } from "../../helpers/xstate"
-import type { Wallet, WalletEmit } from "."
+import type { createWalletMachine } from "./machine"
+import type { WalletEmit } from "./types"
+
+export type WalletActorRef = ActorRefFromLogic<ReturnType<typeof createWalletMachine>>
 
 /**
  * This Actor listens to the Wallet machine and emits events.
@@ -9,7 +12,7 @@ import type { Wallet, WalletEmit } from "."
 export const detectWalletChange = fromCallback<
 	EventObject,
 	WalletEmit,
-	{ wallet: Wallet },
+	{ wallet: WalletActorRef },
 	WalletEmit
 >(({ sendBack, input: { wallet } }) => {
 	const nc = wallet.on("NetworkChanged", (emitted) => {

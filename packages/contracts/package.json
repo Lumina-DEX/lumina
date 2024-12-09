@@ -31,7 +31,6 @@
     "generate:docs": "pnpx typedoc src/indexpool.ts --out ../contracts-docs/dist",
     "build:tsc": "tsc --project tsc.tsconfig.json",
     "build": "rollup -c rollup.config.mjs",
-    "cache": "node build/src/cache.js",
     "format": "dprint check --verbose",
     "format:fix": "dprint fmt --verbose",
     "lint": "eslint src/* tests/*",

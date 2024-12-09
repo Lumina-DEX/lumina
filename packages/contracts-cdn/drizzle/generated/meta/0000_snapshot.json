@@ -1,0 +1,363 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "d4d6495f-5696-4a3f-aede-5fa7dfcf5fcc",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"tables": {
+		"TokenList_mina_berkeley": {
+			"name": "TokenList_mina_berkeley",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"poolAddress": {
+					"name": "poolAddress",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"TokenList_mina_berkeley.symbol_idx": {
+					"name": "TokenList_mina_berkeley.symbol_idx",
+					"columns": ["symbol"],
+					"isUnique": false
+				},
+				"TokenList_mina_berkeley.poolAddress": {
+					"name": "TokenList_mina_berkeley.poolAddress",
+					"columns": ["poolAddress"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"TokenList_mina_berkeley_address_poolAddress_pk": {
+					"columns": ["address", "poolAddress"],
+					"name": "TokenList_mina_berkeley_address_poolAddress_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"TokenList_mina_mainnet": {
+			"name": "TokenList_mina_mainnet",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"poolAddress": {
+					"name": "poolAddress",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"TokenList_mina_mainnet.symbol_idx": {
+					"name": "TokenList_mina_mainnet.symbol_idx",
+					"columns": ["symbol"],
+					"isUnique": false
+				},
+				"TokenList_mina_mainnet.poolAddress": {
+					"name": "TokenList_mina_mainnet.poolAddress",
+					"columns": ["poolAddress"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"TokenList_mina_mainnet_address_poolAddress_pk": {
+					"columns": ["address", "poolAddress"],
+					"name": "TokenList_mina_mainnet_address_poolAddress_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"TokenList_mina_testnet": {
+			"name": "TokenList_mina_testnet",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"poolAddress": {
+					"name": "poolAddress",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"TokenList_mina_testnet.symbol_idx": {
+					"name": "TokenList_mina_testnet.symbol_idx",
+					"columns": ["symbol"],
+					"isUnique": false
+				},
+				"TokenList_mina_testnet.poolAddress": {
+					"name": "TokenList_mina_testnet.poolAddress",
+					"columns": ["poolAddress"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"TokenList_mina_testnet_address_poolAddress_pk": {
+					"columns": ["address", "poolAddress"],
+					"name": "TokenList_mina_testnet_address_poolAddress_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"TokenList_zeko_mainnet": {
+			"name": "TokenList_zeko_mainnet",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"poolAddress": {
+					"name": "poolAddress",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"TokenList_zeko_mainnet.symbol_idx": {
+					"name": "TokenList_zeko_mainnet.symbol_idx",
+					"columns": ["symbol"],
+					"isUnique": false
+				},
+				"TokenList_zeko_mainnet.poolAddress": {
+					"name": "TokenList_zeko_mainnet.poolAddress",
+					"columns": ["poolAddress"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"TokenList_zeko_mainnet_address_poolAddress_pk": {
+					"columns": ["address", "poolAddress"],
+					"name": "TokenList_zeko_mainnet_address_poolAddress_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"TokenList_zeko_testnet": {
+			"name": "TokenList_zeko_testnet",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"poolAddress": {
+					"name": "poolAddress",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"TokenList_zeko_testnet.symbol_idx": {
+					"name": "TokenList_zeko_testnet.symbol_idx",
+					"columns": ["symbol"],
+					"isUnique": false
+				},
+				"TokenList_zeko_testnet.poolAddress": {
+					"name": "TokenList_zeko_testnet.poolAddress",
+					"columns": ["poolAddress"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"TokenList_zeko_testnet_address_poolAddress_pk": {
+					"columns": ["address", "poolAddress"],
+					"name": "TokenList_zeko_testnet_address_poolAddress_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}
