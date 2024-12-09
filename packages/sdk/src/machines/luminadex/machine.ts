@@ -341,7 +341,6 @@ export const createLuminaDexMachine = () => {
 			NetworkChanged: {
 				actions: enqueueActions(({ context, event, enqueue }) => {
 					enqueue.assign({ wallet: { ...context.wallet, network: event.network } })
-					enqueue.raise({ type: "REINITIALIZE_ZK" })
 				})
 			},
 
@@ -403,10 +402,7 @@ export const createLuminaDexMachine = () => {
 						}
 					},
 					CONTRACTS_READY: {
-						description: "The dex is ready.",
-						on: {
-							REINITIALIZE_ZK: "INITIALIZING_ZKAPP"
-						}
+						description: "The dex is ready."
 					},
 					FAILED: {
 						on: {

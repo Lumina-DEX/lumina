@@ -1,33 +1,20 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
-import { type ActorRefFromLogic, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
-import { type ChainNetwork, urls } from "../../constants"
+import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
+import { urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
 import { fromCallback } from "../../helpers/xstate"
+import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
 
-export * from "./actors"
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
-
-type Balance = {
-	[cn in ChainNetwork]: Record<string, number>
-}
-type TokenBalances = {
-	mina: Balance
-	zeko: Balance
-}
 
 const emptyNetworkBalance = () => ({
 	testnet: { MINA: 0, ZEKO: 0 },
 	mainnet: { MINA: 0, ZEKO: 0 },
 	berkeley: { MINA: 0, ZEKO: 0 }
 })
-
-type CustomToken = { address: string; symbol: string; decimal: number }
-
-type FetchBalancePromise = { address: string; token?: CustomToken; networks: Networks[] }
-
 const toNumber = (n: unknown) => {
 	if (typeof n === "string") {
 		const t = Number.parseFloat(n)
@@ -37,25 +24,9 @@ const toNumber = (n: unknown) => {
 	return 0
 }
 
-type WalletMachine = ReturnType<typeof createWalletMachine>
-
-export type Wallet = ActorRefFromLogic<WalletMachine>
-
-export type WalletEvent =
-	| { type: "RequestNetworkChange"; network: Networks }
-	| { type: "WalletExtensionChangedNetwork"; network: Networks }
-	| { type: "Connect" }
-	| { type: "Disconnect" }
-	| { type: "SetAccount"; account: string }
-	| { type: "FetchBalance"; token?: CustomToken; networks: Networks[] }
-
-export type WalletEmit =
-	| { type: "NetworkChanged"; network: Networks }
-	| { type: "AccountChanged"; account: string }
-
-export const createWalletMachine = ({
-	createMinaClient
-}: { createMinaClient: (url: string) => Client }) =>
+export const createWalletMachine = (
+	{ createMinaClient }: { createMinaClient: (url: string) => Client }
+) =>
 	setup({
 		types: {
 			context: {} as {
@@ -124,7 +95,7 @@ export const createWalletMachine = ({
 			/**
 			 * Fetches the balance of the Mina wallet on given networks.
 			 */
-			fetchBalance: fromPromise<TokenBalances, FetchBalancePromise>(async ({ input }) => {
+			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) => {
 				const publicKey = input.address
 				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
 				const decimal = input.token?.decimal ?? 1e9

@@ -1,8 +1,7 @@
 import { FungibleToken } from "@lumina-dex/contracts"
 import { fetchAccount, fetchEvents, Field, Mina, PublicKey, TokenId } from "o1js"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, urls } from "../constants"
-import {} from "../dex/cache"
-import type { Networks } from "../machines/wallet"
+import type { Networks } from "../machines/wallet/machine"
 
 export interface TokenDbToken {
 	address: string

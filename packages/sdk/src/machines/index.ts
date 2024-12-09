@@ -1,9 +1,21 @@
 import { Client, type ClientOptions, fetchExchange, Provider } from "urql"
-import { createActor } from "xstate"
+import {
+	type ActorOptions,
+	type AnyStateMachine,
+	type ConditionalRequired,
+	createActor,
+	type IsNotNever,
+	type RequiredActorOptionsKeys
+} from "xstate"
 import { getRetryExchange } from "../graphql/helpers"
-import { createLuminaDexMachine } from "./luminadex"
-import type { LuminaDexMachineInput } from "./luminadex/types"
-import { createWalletMachine } from "./wallet"
+import { createLuminaDexMachine } from "./luminadex/machine"
+import { createWalletMachine } from "./wallet/machine"
+
+type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<[
+	options?:
+		& ActorOptions<Machine>
+		& { [K in RequiredActorOptionsKeys<Machine>]: unknown }
+], IsNotNever<RequiredActorOptionsKeys<Machine>>>
 
 /**
  * GraphQL client
@@ -33,14 +45,17 @@ export { Provider }
  * ___________________________________________________________ */
 
 const walletMachine = createWalletMachine({ createMinaClient })
+
 export type WalletMachine = typeof walletMachine
 export type WalletActor = ReturnType<typeof createActor<WalletMachine>>
 
 export { walletMachine }
 
-export const createWallet = (): WalletActor => {
-	const wallet = createActor(walletMachine)
-	wallet.start()
+/**
+ * Create a Wallet actor and starts it.
+ */
+export const createWallet = (...[options]: MachineOptions<WalletMachine>): WalletActor => {
+	const wallet = createActor(walletMachine, options).start()
 	return wallet
 }
 
@@ -54,9 +69,11 @@ export { dexMachine }
 export type DexActor = ReturnType<typeof createActor<DexMachine>>
 export type DexMachine = typeof dexMachine
 
-export const createDex = (input: LuminaDexMachineInput): DexActor => {
-	const dex = createActor(dexMachine, { input })
-	dex.start()
+/**
+ * Create a Dex actor and starts it.
+ */
+export const createDex = (...[options]: MachineOptions<DexMachine>): DexActor => {
+	const dex = createActor(dexMachine, options).start()
 	return dex
 }
 
