@@ -32,6 +32,18 @@ export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   owner: PublicKey
 }
 
+export class ClaimEvent extends Struct({
+  user: PublicKey,
+  amount: UInt64
+}) {
+  constructor(value: {
+    user: PublicKey
+    amount: UInt64
+  }) {
+    super(value)
+  }
+}
+
 // support 65536 different depositor
 export class FarmMerkleWitness extends MerkleWitness(65536) {}
 
@@ -39,19 +51,14 @@ export class FarmMerkleWitness extends MerkleWitness(65536) {}
  * Farm contract
  */
 export class FarmReward extends TokenContractV2 {
-  // Farming for one pool
-  @state(PublicKey)
-  pool = State<PublicKey>()
   @state(PublicKey)
   owner = State<PublicKey>()
-  @state(PublicKey)
-  token = State<PublicKey>()
   @state(Field)
   merkleRoot = State<Field>()
 
   events = {
     upgrade: Field,
-    BalanceChange: BalanceChangeEvent
+    claim: ClaimEvent
   }
 
   async deploy(args: FarmingDeployProps) {
@@ -92,5 +99,16 @@ export class FarmReward extends TokenContractV2 {
 
     // to prevent double withdraw we mint one token once a user withdraw
     this.internal.mint({ address: senderBalance, amount: UInt64.one })
+    this.emitEvent("claim", new ClaimEvent({ user: sender, amount }))
+  }
+
+  @method
+  async withdrawDust() {
+    const sender = this.sender.getAndRequireSignatureV2()
+    this.owner.requireEquals(sender)
+    // only owner can winthdraw
+    const accountBalance = this.account.balance.getAndRequireEquals()
+    this.send({ to: sender, amount: accountBalance })
+    this.emitEvent("claim", new ClaimEvent({ user: sender, amount: accountBalance }))
   }
 }
