@@ -11,3 +11,11 @@ The durable object database is not distributed and exists in a single location. 
 3. Route users to the nearest durable object.
 4. Write to the closest do.
 5. Propagate writes with a workflow.
+
+### Test Cron triggers
+
+```
+npx wrangler dev --test-scheduled
+
+curl "http://localhost:8787/__scheduled?cron=*%2F3+*+*+*+*"
+```

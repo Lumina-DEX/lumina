@@ -4,20 +4,28 @@ export type ChainNetwork = "mainnet" | "berkeley" | "testnet"
 
 export type NetworkUri = `${NetworkLayer}:${ChainNetwork}`
 
-export const networks = ["mina:mainnet", "mina:berkeley", "mina:testnet", "zeko:testnet"] as const
+export const networks = [
+	"mina:mainnet",
+	"mina:berkeley",
+	"mina:testnet",
+	"zeko:testnet",
+	"zeko:mainnet"
+] as const
 
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
 	"mina:berkeley": "https://api.minascan.io/node/berkeley/v1/graphql",
 	"mina:testnet": "https://api.minascan.io/node/devnet/v1/graphql",
-	"zeko:testnet": "https://devnet.zeko.io/graphql"
+	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"zeko:mainnet": "https://devnet.zeko.io/graphql"
 } as const
 
 export const archiveUrls = {
 	"mina:mainnet": "https://api.minascan.io/archive/mainnet/v1/graphql",
 	"mina:berkeley": "https://api.minascan.io/archive/devnet/v1/graphql",
 	"mina:testnet": "https://api.minascan.io/archive/devnet/v1/graphql",
-	"zeko:testnet": "https://devnet.zeko.io/graphql"
+	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"zeko:mainnet": "https://devnet.zeko.io/graphql"
 } as const
 
 // TODO: Add missing factories
@@ -33,12 +41,8 @@ export const chainFaucets = {
 	},
 	"mina:mainnet": { address: "NOT Implemented", tokenId: "Not Implemented" },
 	"mina:berkeley": { address: "testnet-address-2", tokenId: "123" },
-	"zeko:testnet": { address: "zeko-test", tokenId: "123" }
-} as const
-
-// TODO: Additional token support
-export const supportedTokens = {
-	toka: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n"
+	"zeko:testnet": { address: "zeko-test", tokenId: "123" },
+	"zeko:mainnet": { address: "zeko-test", tokenId: "123" }
 } as const
 
 export const MINA_ADDRESS = "MINA"

@@ -16,7 +16,9 @@ export class TokenList extends DurableObject {
 		this.storage = ctx.storage
 		this.db = drizzle(this.storage)
 		migrate(this.db, migrations)
-		this.init()
+		if (env.ENVIRONMENT === "local") {
+			this.seed()
+		}
 	}
 
 	insertToken(network: Networks, token: Token | Token[]) {
@@ -52,16 +54,8 @@ export class TokenList extends DurableObject {
 		return result[0].count
 	}
 
-	async init() {
-		if ((await this.storage.get("seeded")) === true) return
+	async seed() {
 		this.insertToken("mina:testnet", [
-			{
-				address: "B62qqKNnNRpCtgcBexw5khZSpk9K2d9Z7Wzcyir3WZcVd15Bz8eShVi",
-				poolAddress: "B62qkrzCSQXVgjaWBc2evMGne2KMnx62MYFXdtQGKVc9G8eBQ1KYhk1",
-				tokenId: "yBtcFk2EJTBJh7Ubjbw7oeAmiPjSTNKbtSVHd1f7voV39HQaWK",
-				symbol: "WETH",
-				decimals: 9
-			},
 			{
 				address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 				poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
@@ -70,6 +64,5 @@ export class TokenList extends DurableObject {
 				decimals: 9
 			}
 		])
-		await this.storage.put("seeded", true)
 	}
 }

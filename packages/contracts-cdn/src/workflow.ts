@@ -1,4 +1,4 @@
-//WIP
+// The workflow isn't used, but the sync method is.
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import type { Env } from "../worker-configuration"
 
@@ -9,7 +9,9 @@ import type { Token } from "./helper"
 // Fetch all tokens from the blockchain from block latest block fetched to most recent.
 // Attempty to insert all the tokens in the database with onConflictDoNothing
 // Save the latest block fetched in the do storage.
-// TODO: Find a way to use o1js with workerd
+// TODO: We are using an external call because there's no way to use o1js with workerd.
+// We would need to get rid of eval, new Function and FinalizationRegistry to be able
+// to do so.
 export const sync = async ({ env, network }: { env: Env; network: Networks }) => {
 	console.log(`syncing ${network}`)
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)

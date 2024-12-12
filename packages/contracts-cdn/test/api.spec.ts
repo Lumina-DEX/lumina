@@ -11,8 +11,8 @@ describe("API", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const json = (await response.json()) as Record<string, any>
 		// biome-ignore lint/performance/noDelete: <explanation>
-		delete json.tokens[1].timestamp
-		expect(json.tokens[1]).toEqual({
+		delete json.tokens[0].timestamp
+		expect(json.tokens[0]).toEqual({
 			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 			poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 			tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
@@ -35,12 +35,12 @@ describe("API", () => {
 		expect(response.status).toBe(404)
 	})
 
-	it("can insert a token and return cached data", async () => {
+	it("can insert a token and bust the cache", async () => {
 		const request1 = createRequest("api/mina:testnet/tokens")
 
 		const response1 = await SELF.fetch(request1)
 		const json = (await response1.json()) as Record<string, unknown>
-		expect(json.tokens).toHaveLength(2)
+		expect(json.tokens).toHaveLength(1)
 
 		const request2 = new Request<unknown, IncomingRequestCfProperties>(
 			"http://example.com/api/mina:testnet/token",
@@ -61,6 +61,6 @@ describe("API", () => {
 		const request3 = createRequest("api/mina:testnet/tokens")
 		const response3 = await SELF.fetch(request3)
 		const json2 = (await response3.json()) as Record<string, unknown>
-		expect(json2.tokens).toHaveLength(2) //TODO: This should be 3 but the cache doesn't purge in the test somehow.
+		expect(json2.tokens).toHaveLength(2)
 	})
 })
