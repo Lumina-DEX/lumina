@@ -4,7 +4,6 @@ main                = "src/index.ts"
 compatibility_date  = "2024-11-27"
 compatibility_flags = ["nodejs_compat"]
 
-
 # Workers Static Assets
 assets = { directory = "./public", binding = "ASSETS" }
 
@@ -32,3 +31,12 @@ new_sqlite_classes = ["TokenList"]
 type        = "Text"
 globs       = ["**/*.sql"]
 fallthrough = true
+
+# # Worfklows are not working with vitest https://github.com/cloudflare/workers-sdk/issues/7414
+# [[workflows]]
+# # name of your workflow
+# name = "sync-blockchain"
+# # binding name env.MY_WORKFLOW
+# binding = "SYNC_BLOCKCHAIN"
+# # this is class that extends the Workflow class in src/index.ts
+# class_name = "SyncBlockchain"

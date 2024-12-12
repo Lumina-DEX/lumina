@@ -4,6 +4,8 @@ export type ChainNetwork = "mainnet" | "berkeley" | "testnet"
 
 export type NetworkUri = `${NetworkLayer}:${ChainNetwork}`
 
+export const networks = ["mina:mainnet", "mina:berkeley", "mina:testnet", "zeko:testnet"] as const
+
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
 	"mina:berkeley": "https://api.minascan.io/node/berkeley/v1/graphql",

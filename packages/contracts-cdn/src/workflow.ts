@@ -2,41 +2,39 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import type { Env } from "../worker-configuration"
 
-import { type Networks, internal_fetchAllPoolTokens } from "@lumina-dex/sdk"
+import type { Networks } from "@lumina-dex/sdk"
+import { networks } from "@lumina-dex/sdk/constants"
+import type { Token } from "./helper"
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic Type
-export const processSettledPromises = <T extends any[]>(
-	settledPromises: {
-		[P in keyof T]: PromiseSettledResult<T[P]>
+// Fetch all tokens from the blockchain from block latest block fetched to most recent.
+// Attempty to insert all the tokens in the database with onConflictDoNothing
+// Save the latest block fetched in the do storage.
+// TODO: Find a way to use o1js with workerd
+export const sync = async ({ env, network }: { env: Env; network: Networks }) => {
+	console.log(`syncing ${network}`)
+	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
+	const tokenList = env.TOKENLIST.get(id)
+
+	const request = new Request(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, {
+		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
+	})
+	const response = await fetch(request)
+	const tokens = (await response.json()) as Token[]
+	console.log({ tokens, network })
+	if (response.ok) {
+		if (tokens.length === 0) return
+		await tokenList.insertToken(network, tokens)
 	}
-): T => {
-	return settledPromises.map((result) => {
-		if (result.status === "rejected") throw new Error(result.reason)
-		return result.value
-	}) as T
-}
-const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllPoolTokens(network)
-	return processSettledPromises(tokens)
 }
 
-const sync = () => {
-	// Fetch all tokens from the blockchain from block latest block fetched to most recent.
-	// Attempty to insert all the tokens in the database with onConflictDoNothing
-	// Save the latest block fetched in the do storage.
-}
-
-// Create your own class that implements a Workflow
-export class SyncBlockchainState extends WorkflowEntrypoint<Env, Params> {
-	// Define a run() method
+export class SyncBlockchain extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
-		const id = this.env.TOKENLIST.idFromName("/path")
-		const stub = this.env.TOKENLIST.get(id)
-
-		step.do("sync mina:testnet", async () => {})
-		step.do("sync mina:mainnet", async () => {})
-		step.do("sync mina:berkeley", async () => {})
-		step.do("sync zeko:testnet", async () => {})
-		step.do("sync zeko:mainnet", async () => {})
+		await Promise.all(
+			networks.map(async (network) => {
+				step.do(`sync ${network}`, async () => {
+					await sync({ env: this.env, network })
+				})
+			})
+		)
 	}
 }

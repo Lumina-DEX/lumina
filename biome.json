@@ -12,7 +12,7 @@
 	},
 	"overrides": [
 		{
-			"include": ["packages/contracts/**"],
+			"include": ["packages/contracts/**", "packages/lumina-tokens/**"],
 			"linter": {
 				"enabled": false
 			}

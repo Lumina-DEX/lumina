@@ -6,6 +6,10 @@ export default defineWorkersConfig({
 		poolOptions: {
 			workers: {
 				singleWorker: true,
+				miniflare: {
+					// This is necessary to use scheduled with vitest
+					compatibilityFlags: ["service_binding_extra_handlers"]
+				},
 				wrangler: { configPath: "./wrangler.toml" }
 			}
 		}

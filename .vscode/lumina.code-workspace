@@ -13,6 +13,9 @@
         "name": "cdn"
       },
       {
+        "path": "../packages/lumina-tokens",
+      },
+      {
         "path": "../packages/dex-ui",
       },
       {

@@ -1,0 +1,9 @@
+{
+	"name": "luminadex-tokens",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"format": "dprint check",
+		"format:fix": "dprint fmt --verbose"
+	}
+}

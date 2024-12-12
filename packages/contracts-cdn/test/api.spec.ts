@@ -1,6 +1,5 @@
-import { createExecutionContext, env, waitOnExecutionContext } from "cloudflare:test"
+import { SELF } from "cloudflare:test"
 import { describe, expect, it } from "vitest"
-import worker from "../src"
 
 const createRequest = (url: string, method = "GET") =>
 	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, { method })
@@ -8,9 +7,7 @@ const createRequest = (url: string, method = "GET") =>
 describe("API", () => {
 	it("can return a list of tokens", async () => {
 		const request = createRequest("api/mina:testnet/tokens")
-		const ctx = createExecutionContext()
-		const response = await worker.fetch(request, env, ctx)
-		await waitOnExecutionContext(ctx)
+		const response = await SELF.fetch(request)
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const json = (await response.json()) as Record<string, any>
 		// biome-ignore lint/performance/noDelete: <explanation>
@@ -25,19 +22,23 @@ describe("API", () => {
 		})
 	})
 
+	it("can sync the blockchain state with a scheduled event", async () => {
+		//TODO: Find a way to mock the external call.
+		// const response = await SELF.scheduled()
+		// const json = (await response.json()) as Record<string, unknown>
+		// expect(json.tokens).toHaveLength(2)
+	})
+
 	it("returns a 404 when the network doesn't exists", async () => {
 		const request = createRequest("api/wtf/tokens")
-		const ctx = createExecutionContext()
-		const response = await worker.fetch(request, env, ctx)
-		await waitOnExecutionContext(ctx)
+		const response = await SELF.fetch(request)
 		expect(response.status).toBe(404)
 	})
 
 	it("can insert a token and return cached data", async () => {
 		const request1 = createRequest("api/mina:testnet/tokens")
-		const ctx = createExecutionContext()
 
-		const response1 = await worker.fetch(request1, env, ctx)
+		const response1 = await SELF.fetch(request1)
 		const json = (await response1.json()) as Record<string, unknown>
 		expect(json.tokens).toHaveLength(2)
 
@@ -54,11 +55,11 @@ describe("API", () => {
 				})
 			}
 		)
-		const response2 = await worker.fetch(request2, env, ctx)
+		const response2 = await SELF.fetch(request2)
 		expect(response2.status).toBe(201)
 
 		const request3 = createRequest("api/mina:testnet/tokens")
-		const response3 = await worker.fetch(request3, env, ctx)
+		const response3 = await SELF.fetch(request3)
 		const json2 = (await response3.json()) as Record<string, unknown>
 		expect(json2.tokens).toHaveLength(2) //TODO: This should be 3 but the cache doesn't purge in the test somehow.
 	})

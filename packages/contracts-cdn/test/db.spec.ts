@@ -119,7 +119,16 @@ describe("Read and write to the DO database", () => {
 				expect(notExists).toBe(false)
 			})
 		})
+
+		it("Can count the number of tokens", async () => {
+			await runInDurableObject(stub, (instance: TokenList) => {
+				insertTokens(instance)
+				const count = instance.count({ network: "mina:berkeley" })
+				expect(count).toBe(2)
+			})
+		})
 	})
+
 	describe("Error Handling", () => {
 		it("handles duplicate primary keys", async () => {
 			await runInDurableObject(stub, (instance: TokenList) => {

@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers"
 import type { Networks } from "@lumina-dex/sdk"
-import { and, eq, sql } from "drizzle-orm"
+import { and, count, eq, sql } from "drizzle-orm"
 import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite"
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
@@ -16,7 +16,7 @@ export class TokenList extends DurableObject {
 		this.storage = ctx.storage
 		this.db = drizzle(this.storage)
 		migrate(this.db, migrations)
-		this.seed()
+		this.init()
 	}
 
 	insertToken(network: Networks, token: Token | Token[]) {
@@ -46,7 +46,14 @@ export class TokenList extends DurableObject {
 		return this.db.select().from(table).all()
 	}
 
-	seed() {
+	count({ network }: Network) {
+		const table = getTable(network)
+		const result = this.db.select({ count: count() }).from(table).all()
+		return result[0].count
+	}
+
+	async init() {
+		if ((await this.storage.get("seeded")) === true) return
 		this.insertToken("mina:testnet", [
 			{
 				address: "B62qqKNnNRpCtgcBexw5khZSpk9K2d9Z7Wzcyir3WZcVd15Bz8eShVi",
@@ -63,5 +70,6 @@ export class TokenList extends DurableObject {
 				decimals: 9
 			}
 		])
+		await this.storage.put("seeded", true)
 	}
 }

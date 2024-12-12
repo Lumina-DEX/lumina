@@ -29,6 +29,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs"
     },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.mjs"
+    },
     "./vue": {
       "types": "./dist/vue.d.ts",
       "import": "./dist/vue.mjs"

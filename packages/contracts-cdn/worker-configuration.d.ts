@@ -5,6 +5,9 @@ import type { TokenList } from "./src/do"
 export interface Env {
 	TOKENLIST: DurableObjectNamespace<TokenList>
 	ASSETS: Fetcher
+	DO_TOKENLIST_NAME: string
+	LUMINA_TOKEN_ENDPOINT_URL: string
+	LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN: string
 }
 declare module "*.sql" {
 	const value: string

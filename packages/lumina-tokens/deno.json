@@ -1,0 +1,13 @@
+{
+	"tasks": {
+		"dev": "deno run --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test --watch src/main.ts",
+		"test": "deno test --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test test/unit.ts",
+		"deploy": "deployctl deploy"
+	},
+	"imports": {
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@^0.1.1"
+	},
+	"fmt": {
+		"semiColons": false
+	}
+}

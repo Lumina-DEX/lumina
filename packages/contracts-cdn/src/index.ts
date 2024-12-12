@@ -1,21 +1,27 @@
 import type { Networks } from "@lumina-dex/sdk"
+import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import type { Env } from "../worker-configuration"
 import { type Token, createList } from "./helper"
+import { sync } from "./workflow"
 
-const doName = "database-test-1"
-const networks = ["mina:mainnet", "mina:testnet", "mina:berkeley", "zeko:mainnet", "zeko:testnet"]
 const router = createRouter<{ path: string }>()
 
 addRoute(router, "GET", "/api/cache", { path: "cache" })
 addRoute(router, "GET", "/api/:network/tokens", { path: "tokens" })
 addRoute(router, "POST", "/api/:network/token", { path: "token.post" })
+addRoute(router, "GET", "/api/:network/tokens/count", { path: "tokens/count" })
 
 interface ServeAsset {
 	assetUrl: URL
 	env: Env
 	request: Request
 	context: ExecutionContext
+}
+
+const getDb = (env: Env) => {
+	const dbDO = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
+	return env.TOKENLIST.get(dbDO)
 }
 
 const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
@@ -36,36 +42,51 @@ const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
 }
 
 export default {
+	async scheduled(event, env) {
+		await Promise.all(networks.map((network) => sync({ env, network })))
+		console.log("Synced all networks")
+	},
 	async fetch(request, env, context): Promise<Response> {
 		//TODO: implement rate-limiting and bot protection here.
 
 		const url = new URL(request.url)
-		const post = findRoute(router, request.method, url.pathname)
-		if (post?.data.path === "token.post" && post.params?.network) {
-			const network = post.params.network as Networks
+		const match = findRoute(router, request.method, url.pathname)
+
+		if (match?.data.path === "tokens/count" && match.params?.network) {
+			const network = match.params.network as Networks
 			if (!networks.includes(network)) {
 				return new Response("Not Found", { status: 404 })
 			}
 
-			const dbDO = env.TOKENLIST.idFromName(doName)
-			const stub = env.TOKENLIST.get(dbDO)
+			const db = getDb(env)
+			const count = await db.count({ network })
+
+			return Response.json(count)
+		}
+
+		if (match?.data.path === "token.post" && match.params?.network) {
+			const network = match.params.network as Networks
+			if (!networks.includes(network)) {
+				return new Response("Not Found", { status: 404 })
+			}
+
+			const db = getDb(env)
 			const body = await request.json()
 			// Validate the data
 			const token = body as Token
-			const exists = await stub.tokenExists({
+			const exists = await db.tokenExists({
 				network,
 				address: token.address,
 				poolAddress: token.poolAddress
 			})
 			if (exists) return new Response("Token already exists", { status: 409 })
-			await stub.insertToken(network, token)
+			await db.insertToken(network, token)
 
-			const cacheKey = new URL(`http://token.key/${post.params.network}${url.pathname}`)
+			const cacheKey = new URL(`http://token.key/${match.params.network}${url.pathname}`)
 			context.waitUntil(caches.default.delete(cacheKey))
 			return new Response("Token Inserted", { status: 201 })
 		}
 
-		const match = findRoute(router, request.method, url.pathname)
 		if (match?.data.path === "cache") {
 			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/compiled.json`)
 			return serveAsset({ assetUrl, env, request, context })
@@ -85,9 +106,8 @@ export default {
 			}
 
 			// Fetch the Data from the database.
-			const dbDO = env.TOKENLIST.idFromName(doName)
-			const stub = env.TOKENLIST.get(dbDO)
-			const data = await stub.findAllTokens({ network })
+			const db = getDb(env)
+			const data = await db.findAllTokens({ network })
 
 			const tokens = createList(network)(data)
 			if (!tokens) return new Response("Not Found", { status: 404 })
