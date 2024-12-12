@@ -46,6 +46,7 @@ const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
 }
 
 const syncAllNetworks = async ({ env, context }: { env: Env; context: ExecutionContext }) => {
+	//TODO: Add retry policy
 	await Promise.all(networks.map((network) => sync({ env, network })))
 
 	for (const network of networks) {
