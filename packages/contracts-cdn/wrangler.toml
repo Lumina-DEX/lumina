@@ -32,6 +32,14 @@ type        = "Text"
 globs       = ["**/*.sql"]
 fallthrough = true
 
+# Schedule cron triggers:
+[triggers]
+# - At every 3rd minute
+# - At 3PM on first day of the month
+# - At 11:59PM on the last weekday of the month
+crons = ["0 0 * * *"]
+
+
 # # Worfklows are not working with vitest https://github.com/cloudflare/workers-sdk/issues/7414
 # [[workflows]]
 # # name of your workflow
