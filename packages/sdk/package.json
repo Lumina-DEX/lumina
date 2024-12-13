@@ -19,7 +19,8 @@
     "build": "unbuild",
     "test": "echo 'test succesful'",
     "schema:zeko:get": "gql-tada generate schema 'https://devnet.zeko.io/graphql' --output './src/graphql/sequencer.graphql'",
-    "schema:mina:get": "gql-tada generate schema 'https://api.minascan.io/node/devnet/v1/graphql' --output './src/graphql/mina.graphql'"
+    "schema:mina:get": "gql-tada generate schema 'https://api.minascan.io/node/devnet/v1/graphql' --output './src/graphql/mina.graphql'",
+    "schema:mina:archive:get": "gql-tada generate schema 'https://api.minascan.io/archive/devnet/v1/graphql' --output './src/graphql/mina-archive.graphql'"
   },
   "files": [
     "dist"

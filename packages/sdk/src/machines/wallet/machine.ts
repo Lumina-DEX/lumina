@@ -3,7 +3,7 @@ import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { urls } from "../../constants"
-import { FetchAccountBalanceQuery } from "../../graphql/sequencer"
+import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { fromCallback } from "../../helpers/xstate"
 import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
 

@@ -9,6 +9,8 @@ export interface Env {
 	DO_TOKENLIST_NAME: string
 	LUMINA_TOKEN_ENDPOINT_URL: string
 	LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN: string
+	KV: KVNamespace
+	SYNC_RATE_LIMITER: RateLimit
 }
 declare module "*.sql" {
 	const value: string

@@ -1,15 +1,17 @@
 import { retryExchange } from "@urql/exchange-retry"
 import { initGraphQLTada } from "gql.tada"
-import type { introspection } from "./sequencer-env"
+import type { introspection as minaArchiveSchema } from "./mina-archive-env"
+import type { introspection as minaSchema } from "./mina-env"
+import type { introspection as zekoSchema } from "./zeko-env"
 
 export type { FragmentOf, ResultOf, VariablesOf } from "gql.tada"
 export { readFragment } from "gql.tada"
 
-// GraphQL Tada initialization
-export const graphql = initGraphQLTada<{
-	introspection: introspection
-	scalars: { UInt64: string; PublicKey: string; TokenID: string }
-}>()
+type Scalars = { UInt64: string; PublicKey: string; TokenID: string }
+
+export const zeko = initGraphQLTada<{ introspection: zekoSchema; scalars: Scalars }>()
+export const mina = initGraphQLTada<{ introspection: minaSchema; scalars: Scalars }>()
+export const minaArchive = initGraphQLTada<{ introspection: minaArchiveSchema; scalars: Scalars }>()
 
 export const getRetryExchange = () =>
 	retryExchange({

@@ -9,10 +9,11 @@ type DexWorker = Comlink.Remote<LuminaDexWorker>
 export interface Token {
 	address: string
 	amount: string
+	decimal?: number
 }
 
 interface ContractContext {
-	worker: DexWorker | null
+	worker: DexWorker
 	error: Error | null
 }
 
@@ -64,7 +65,7 @@ interface DexContext {
 	}
 }
 
-type ContractEvent = { type: "InitializeWorker" }
+type ContractEvent = { type: "LoadContracts" }
 
 type DexEvent =
 	// Swap
@@ -96,7 +97,7 @@ type WalletEvents =
 export type LuminaDexMachineEvent = ContractEvent | DexEvent | WalletEvents
 
 export interface LuminaDexMachineContext {
-	wallet: { actor: WalletActorRef; account: string; network: Networks }
+	wallet: WalletActorRef
 	dex: DexContext
 	contract: ContractContext
 	frontendFee: FrontendFee

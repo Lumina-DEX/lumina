@@ -133,7 +133,7 @@ export type introspection_types = {
  * instead save to a .ts instead of a .d.ts file.
  */
 export type introspection = {
-  name: 'zeko-sequencer';
+  name: 'zeko';
   query: 'query';
   mutation: 'mutation';
   subscription: 'subscription';

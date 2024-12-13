@@ -1,4 +1,4 @@
-import { graphql } from "./helpers"
+import { zeko as graphql } from "./helpers"
 
 export const ProveTransferRequestMutation = graphql(`
   mutation ProveTransferRequest($transferRequestInput: TransferRequestInput!) {
@@ -20,16 +20,3 @@ export const GetTransferAccountUpdateQuery = graphql(`
     transferAccountUpdate(key: $key)
   }
 `)
-
-/**
- * This will return null for a new account.
- */
-export const FetchAccountBalanceQuery = graphql(`
-  query FetchAccountBalance($tokenId: TokenId, $publicKey: PublicKey!,){
-    account(token: $tokenId, publicKey: $publicKey ){
-      balance {
-        total
-      }
-    }
-  }
-  `)

@@ -16,7 +16,6 @@ const generateTokens = async (network: Networks) => {
 	const tokens = await internal_fetchAllPoolTokens(network)
 	return processSettledPromises(tokens)
 }
-
 Deno.serve(async (request) => {
 	try {
 		// Get the authorization header

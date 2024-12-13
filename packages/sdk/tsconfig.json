@@ -14,10 +14,22 @@
         "name": "gql.tada/ts-plugin",
         "schemas": [
           {
-            "name": "zeko-sequencer",
-            "schema": "./src/graphql/sequencer.graphql",
-            "tadaOutputLocation": "./src/graphql/sequencer-env.d.ts",
-            "tadaTurboLocation": "./src/graphql/sequeencer-cache.d.ts"
+            "name": "zeko",
+            "schema": "./src/graphql/zeko.graphql",
+            "tadaOutputLocation": "./src/graphql/zeko-env.d.ts",
+            "tadaTurboLocation": "./src/graphql/zeko-cache.d.ts"
+          },
+          {
+            "name": "mina",
+            "schema": "./src/graphql/mina.graphql",
+            "tadaOutputLocation": "./src/graphql/mina-env.d.ts",
+            "tadaTurboLocation": "./src/graphql/mina-cache.d.ts"
+          },
+          {
+            "name": "mina-archive",
+            "schema": "./src/graphql/mina-archive.graphql",
+            "tadaOutputLocation": "./src/graphql/mina-archive-env.d.ts",
+            "tadaTurboLocation": "./src/graphql/mina-archive-cache.d.ts"
           }
         ]
       }
