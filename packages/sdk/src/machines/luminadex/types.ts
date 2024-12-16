@@ -2,7 +2,7 @@ import type { ProviderError, SendZkTransactionResult } from "@aurowallet/mina-pr
 import type * as Comlink from "comlink"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
-import type { Networks } from "../wallet/types"
+import type { WalletEmit } from "../wallet/types"
 
 type DexWorker = Comlink.Remote<LuminaDexWorker>
 
@@ -14,6 +14,9 @@ export interface Token {
 
 interface ContractContext {
 	worker: DexWorker
+	loaded: {
+		[name in ContractName]: boolean
+	}
 	error: Error | null
 }
 
@@ -90,11 +93,7 @@ interface FrontendFee {
 	amount: number
 }
 
-type WalletEvents =
-	| { type: "NetworkChanged"; network: Networks }
-	| { type: "AccountChanged"; account: string }
-
-export type LuminaDexMachineEvent = ContractEvent | DexEvent | WalletEvents
+export type LuminaDexMachineEvent = ContractEvent | DexEvent | WalletEmit
 
 export interface LuminaDexMachineContext {
 	wallet: WalletActorRef
@@ -140,5 +139,13 @@ export interface PoolSettings {
 export interface User {
 	user: string
 }
+
+export type ContractName =
+	| "PoolFactory"
+	| "Pool"
+	| "PoolTokenHolder"
+	| "FungibleToken"
+	| "FungibleTokenAdmin"
+	| "Faucet"
 
 export type DexTransactionResult = SendZkTransactionResult | ProviderError | null

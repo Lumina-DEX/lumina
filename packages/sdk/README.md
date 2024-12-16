@@ -13,10 +13,10 @@ import { createContext } from "react"
 
 const Wallet = createWallet()
 
-const Dex = createDex({
+const Dex = createDex({ input: {
 	wallet: Wallet,
 	frontendFee: { destination: "", amount: 0 }
-})
+}})
 
 const Context: LC = { Dex, Wallet }
 

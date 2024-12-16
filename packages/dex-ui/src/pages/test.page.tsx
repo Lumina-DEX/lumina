@@ -4,10 +4,7 @@ import { createContext, useEffect } from "react"
 
 const Wallet = createWallet()
 
-const Dex = createDex({
-	wallet: Wallet,
-	frontendFee: { destination: "", amount: 0 }
-})
+const Dex = createDex({ input: { wallet: Wallet, frontendFee: { destination: "", amount: 0 } } })
 
 const Context: LC = { Dex, Wallet }
 

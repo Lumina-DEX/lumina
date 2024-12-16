@@ -14,8 +14,9 @@ import {
 import { chainFaucets, luminaCdnOrigin, luminadexFactories } from "../../constants/index"
 import type {
 	AddLiquidity,
+	CompileContract,
+	DeployPoolArgs,
 	FaucetSettings,
-	InitZkappInstance,
 	LuminaDexWorker,
 	MintToken,
 	SwapArgs,
@@ -29,14 +30,14 @@ import {
 } from "../../dex/utils"
 import { sendTransaction } from "../../helpers/transfer"
 import { isBetween } from "../../helpers/validation"
-import { detectWalletChange } from "../wallet/actors"
+import { detectWalletChange, type WalletActorRef } from "../wallet/actors"
 import type {
 	AddLiquiditySettings,
+	ContractName,
 	InputDexWorker,
 	LuminaDexMachineContext,
 	LuminaDexMachineEvent,
 	LuminaDexMachineInput,
-	PoolSettings,
 	RemoveLiquiditySettings,
 	SwapSettings,
 	Token,
@@ -45,10 +46,30 @@ import type {
 
 const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
 
-const walletNetwork = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.currentNetwork
+const walletNetwork = (c: { wallet: WalletActorRef }) =>
+	c.wallet.getSnapshot().context.currentNetwork
 const walletUser = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.account
 
 const inputWorker = (context: LuminaDexMachineContext) => ({ worker: context.contract.worker })
+
+const luminaDexFactory = (context: { wallet: WalletActorRef }) => {
+	const network = walletNetwork(context)
+	if (network !== "mina:testnet") throw new Error("Network not supported.")
+	return luminadexFactories[network]
+}
+
+const inputCompile = (
+	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
+) => ({ ...inputWorker(context), contract })
+
+const loaded = (
+	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
+) => ({
+	contract: {
+		...context.contract,
+		loaded: { ...context.contract.loaded, [contract]: true }
+	}
+})
 
 const setContractError = (defaultMessage: string) =>
 (
@@ -84,19 +105,18 @@ export const createLuminaDexMachine = () => {
 			calculatedAddLiquidity: ({ context }) => context.dex.addLiquidity.calculated !== null,
 			calculatedRemoveLiquidity: ({ context }) => context.dex.removeLiquidity.calculated !== null,
 			isTestnet: ({ context }) => !walletNetwork(context).includes("mainnet"),
-			contractsReady: stateIn({ contractSystem: "CONTRACTS_READY" })
+			allContractsReady: stateIn({ contractSystem: "CONTRACTS_READY" }),
+			contract: ({ context }, { contracts }: { contracts: ContractName[] }) =>
+				contracts.every(contract => context.contract.loaded[contract])
 		},
 		actors: {
 			detectWalletChange,
-			loadAndCompileContracts: fromPromise(
-				async ({ input: { worker } }: { input: InputDexWorker }) => {
-					await worker.loadContract()
-					await worker.compileContract()
-				}
-			),
-			initializeZkApp: fromPromise(
-				async ({ input: { worker, ...config } }: { input: InputDexWorker & InitZkappInstance }) => {
-					await worker.initZkappInstance(config)
+			loadContracts: fromPromise(async ({ input: { worker } }: { input: InputDexWorker }) => {
+				await worker.loadContracts()
+			}),
+			compileContract: fromPromise(
+				async ({ input: { worker, ...config } }: { input: InputDexWorker & CompileContract }) => {
+					await worker.compileContract(config)
 				}
 			),
 			claim: fromPromise(
@@ -138,15 +158,13 @@ export const createLuminaDexMachine = () => {
 				console.timeEnd("mint")
 				return await sendTransaction(txJson)
 			}),
-			deployPool: fromPromise(
-				async ({ input }: { input: InputDexWorker & User & PoolSettings }) => {
-					const { worker, user, tokenA, tokenB } = input
-					console.time("deployPool")
-					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB })
-					console.timeEnd("deployPool")
-					return await sendTransaction(txJson)
-				}
-			),
+			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) => {
+				const { worker, user, tokenA, tokenB, factory } = input
+				console.time("deployPool")
+				const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB, factory })
+				console.timeEnd("deployPool")
+				return await sendTransaction(txJson)
+			}),
 			deployToken: fromPromise(
 				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) => {
 					const { worker, symbol, user } = input
@@ -297,7 +315,18 @@ export const createLuminaDexMachine = () => {
 			return {
 				wallet,
 				frontendFee: { destination, amount },
-				contract: { worker, error: null },
+				contract: {
+					worker,
+					loaded: {
+						Faucet: false,
+						FungibleToken: false,
+						FungibleTokenAdmin: false,
+						Pool: false,
+						PoolFactory: false,
+						PoolTokenHolder: false
+					},
+					error: null
+				},
 				dex: {
 					error: null,
 					swap: {
@@ -343,10 +372,11 @@ export const createLuminaDexMachine = () => {
 			// TODO: What should happen when the network changes?
 			// Recalculate Settings if not null ? Re-initialize Contracts?
 			NetworkChanged: {
-				// actions: enqueueActions(({ context, event, enqueue }) => {
-				// 	 enqueue.assign({ wallet: { ...context.wallet, network: event.network } })
+				// actions: enqueueActions(({ context, enqueue }) => {
+				//  enqueue.assign({ wallet: { ...context.wallet, network: event.network } })
 				// })
 			},
+			// TODO: What should happen when the account changes?
 			AccountChanged: {
 				// actions: assign(({ context, event }) => ({
 				// 	wallet: { ...context.wallet, account: event.account }
@@ -360,33 +390,79 @@ export const createLuminaDexMachine = () => {
 				states: {
 					LOADING_CONTRACTS: {
 						invoke: {
-							src: "loadAndCompileContracts",
+							src: "loadContracts",
 							input: ({ context }) => inputWorker(context),
-							onDone: "INITIALIZING_ZKAPP",
+							onDone: "COMPILE_FUNGIBLE_TOKEN",
 							onError: {
 								target: "FAILED",
 								actions: assign(setContractError("Loading Contracts"))
 							}
 						}
 					},
-					INITIALIZING_ZKAPP: {
+					COMPILE_FUNGIBLE_TOKEN: {
 						invoke: {
-							src: "initializeZkApp",
-							input: ({ context }) => {
-								const network = walletNetwork(context)
-								if (network !== "mina:testnet") throw new Error("Network not supported.")
-								return { ...inputWorker(context), factory: luminadexFactories[network] }
-							},
-							onDone: "CONTRACTS_READY",
-							onError: {
-								target: "FAILED",
-								actions: assign(setContractError("Initializing zkapp"))
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "FungibleToken" }),
+							onDone: {
+								target: "COMPILE_POOL",
+								actions: assign(({ context }) => loaded({ context, contract: "FungibleToken" }))
 							}
 						}
 					},
-					CONTRACTS_READY: {
-						description: "The dex is ready."
+					COMPILE_POOL: {
+						invoke: {
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "Pool" }),
+							onDone: {
+								target: "COMPILE_POOL_TOKEN_HOLDER",
+								actions: assign(({ context }) => loaded({ context, contract: "Pool" }))
+							}
+						}
 					},
+					COMPILE_POOL_TOKEN_HOLDER: {
+						invoke: {
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "PoolTokenHolder" }),
+							onDone: {
+								target: "COMPILE_FUNGIBLE_TOKEN_ADMIN",
+								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
+							}
+						}
+					},
+					COMPILE_FUNGIBLE_TOKEN_ADMIN: {
+						invoke: {
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
+							onDone: {
+								target: "COMPILE_POOL_FACTORY",
+								actions: assign(({ context }) =>
+									loaded({ context, contract: "FungibleTokenAdmin" })
+								)
+							}
+						}
+					},
+					COMPILE_POOL_FACTORY: { // We don't need to target INITIALIZE_POOL_FACTORY as its done in the worker.
+						invoke: {
+							src: "compileContract",
+							input: ({ context }: { context: LuminaDexMachineContext }) =>
+								inputCompile({ context, contract: "PoolFactory" }),
+							onDone: {
+								target: "COMPILE_FAUCET",
+								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
+							}
+						}
+					},
+					COMPILE_FAUCET: {
+						invoke: {
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "Faucet" }),
+							onDone: {
+								target: "CONTRACTS_READY",
+								actions: assign(({ context }) => loaded({ context, contract: "Faucet" }))
+							}
+						}
+					},
+					CONTRACTS_READY: { description: "The dex is ready." },
 					FAILED: {
 						on: { LoadContracts: "LOADING_CONTRACTS" },
 						exit: assign(({ context }) => ({ contract: { ...context.contract, error: null } }))
@@ -408,7 +484,7 @@ export const createLuminaDexMachine = () => {
 							DeployPool: {
 								target: "DEPLOYING_POOL",
 								description: "Deploy a pool for a given token.",
-								guard: "contractsReady",
+								guard: "allContractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -423,7 +499,7 @@ export const createLuminaDexMachine = () => {
 							DeployToken: {
 								target: "DEPLOYING_TOKEN",
 								description: "Deploy a token.",
-								guard: "contractsReady",
+								guard: "allContractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -438,7 +514,7 @@ export const createLuminaDexMachine = () => {
 							ClaimTokensFromFaucet: {
 								target: "CLAIMING_FROM_FAUCET",
 								description: "Claim tokens from the faucet. Testnet Only.",
-								guard: and(["contractsReady", "isTestnet"]),
+								guard: and(["allContractsReady", "isTestnet"]),
 								actions: assign(({ context }) => ({
 									dex: { ...context.dex, claim: { transactionResult: null } }
 								}))
@@ -446,7 +522,7 @@ export const createLuminaDexMachine = () => {
 							MintToken: {
 								target: "MINTING",
 								description: "Mint a token to a given destination address.",
-								guard: "contractsReady",
+								guard: "allContractsReady",
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -457,7 +533,7 @@ export const createLuminaDexMachine = () => {
 							ChangeRemoveLiquiditySettings: {
 								target: "CALCULATING_REMOVE_LIQUIDITY_AMOUNT",
 								description: "Change the settings for adding liquidity.",
-								guard: "contractsReady",
+								guard: { type: "contract", params: { contracts: ["Pool", "FungibleToken"] } },
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -468,12 +544,12 @@ export const createLuminaDexMachine = () => {
 							RemoveLiquidity: {
 								target: "REMOVING_LIQUIDITY",
 								description: "Create and send a transaction to remove liquidity from a pool.",
-								guard: and(["calculatedRemoveLiquidity", "contractsReady"])
+								guard: and(["calculatedRemoveLiquidity", "allContractsReady"])
 							},
 							ChangeAddLiquiditySettings: {
 								target: "CALCULATING_ADD_LIQUIDITY_AMOUNT",
 								description: "Change the settings for adding liquidity.",
-								guard: "contractsReady",
+								guard: { type: "contract", params: { contracts: ["Pool", "FungibleToken"] } },
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -484,12 +560,12 @@ export const createLuminaDexMachine = () => {
 							AddLiquidity: {
 								target: "ADDING_LIQUIDITY",
 								description: "Create and send a transaction to add liquidity to a pool.",
-								guard: and(["calculatedAddLiquidity", "contractsReady"])
+								guard: and(["calculatedAddLiquidity", "allContractsReady"])
 							},
 							ChangeSwapSettings: {
 								target: "CALCULATING_SWAP_AMOUNT",
 								description: "Change the settings for a token swap.",
-								guard: "contractsReady",
+								guard: { type: "contract", params: { contracts: ["Pool", "FungibleToken"] } },
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -499,7 +575,7 @@ export const createLuminaDexMachine = () => {
 							},
 							Swap: {
 								target: "SWAPPING",
-								guard: and(["calculatedSwap", "contractsReady"]),
+								guard: and(["calculatedSwap", "allContractsReady"]),
 								description:
 									"Create and send a transaction to swap tokens. To be called after ChangeSwapSettings."
 							}
@@ -544,7 +620,8 @@ export const createLuminaDexMachine = () => {
 									...inputWorker(context),
 									tokenA: context.dex.deployPool.tokenA,
 									tokenB: context.dex.deployPool.tokenB,
-									user: walletUser(context)
+									user: walletUser(context),
+									factory: luminaDexFactory(context)
 								}
 							},
 							onDone: {
@@ -631,7 +708,8 @@ export const createLuminaDexMachine = () => {
 									amount: swap.calculated.amountIn,
 									minOut: swap.calculated.amountOut,
 									balanceOutMin: swap.calculated.balanceOutMin,
-									balanceInMax: swap.calculated.balanceInMax
+									balanceInMax: swap.calculated.balanceInMax,
+									factory: luminaDexFactory(context)
 								}
 							},
 							onDone: {

@@ -24,6 +24,7 @@ import {
 	SignerMerkleWitness
 } from "@lumina-dex/contracts"
 import { MINA_ADDRESS } from "../constants"
+import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
 
 // Types
@@ -36,33 +37,34 @@ type Contracts = {
 	Faucet: typeof Faucet
 }
 
-type ZkInstances = {
-	factory: PoolFactory | null
-}
-
 type Transaction = Mina.Transaction<false, false>
 type Nullable<T> = T | null
 
 type WorkerState = {
 	readonly contracts: Contracts
-	readonly zk: ZkInstances
 	readonly transaction: Nullable<Transaction>
 }
 
-let LuminaAddress = ""
+const las = new Map<string, string>()
 
-const getLuminaAddress = async (poolFactory: PoolFactory | null) => {
-	if (LuminaAddress.length > 0) return LuminaAddress
-	const la = (await poolFactory?.protocol.fetch())?.toBase58()
+const getLuminaAddress = async (
+	factory: string
+) => {
+	const cache = las.get(factory)
+	if (cache) return cache
+	const factoryKey = PublicKey.fromBase58(factory)
+	const contracts = context().contracts
+	const zkFactory = new contracts.PoolFactory(factoryKey)
+	// await fetchAccount({ publicKey: factoryKey }) TODO: Might be un-necessary
+	const la = (await zkFactory.protocol.fetch())?.toBase58()
 	if (!la) throw new Error("Lumina Address not found")
-	LuminaAddress = la
+	las.set(factory, la)
 	return la
 }
 
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	zk: { factory: null },
 	transaction: null
 }
 
@@ -70,7 +72,6 @@ const workerState = createStore({
 	context: initialState,
 	on: {
 		SetContracts: { contracts: (_, event: { contracts: Contracts }) => event.contracts },
-		SetZk: { zk: (_, event: { zk: ZkInstances }) => event.zk },
 		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction }
 	}
 })
@@ -85,7 +86,7 @@ const proveTransaction = async (transaction: Transaction) => {
 }
 
 // Contract Management
-const loadContract = async () => {
+const loadContracts = async () => {
 	const {
 		PoolFactory,
 		Pool,
@@ -108,17 +109,18 @@ const loadContract = async () => {
 	})
 }
 
-const compileContract = async () => {
-	const cacheFiles = await fetchZippedContracts()
-	const cache = readCache(cacheFiles)
+export interface CompileContract {
+	contract: ContractName
+}
+
+let cache: ReturnType<typeof readCache>
+const compileContract = async ({ contract }: CompileContract) => {
+	if (!cache) {
+		const cacheFiles = await fetchZippedContracts()
+		cache = readCache(cacheFiles)
+	}
 	const contracts = context().contracts
-	// Compile Contracts
-	await contracts.FungibleTokenAdmin.compile({ cache })
-	await contracts.FungibleToken.compile({ cache })
-	await contracts.PoolFactory.compile({ cache })
-	await contracts.PoolTokenHolder.compile({ cache })
-	await contracts.Pool.compile({ cache })
-	await contracts.Faucet.compile({ cache })
+	await contracts[contract].compile({ cache })
 }
 
 const getZkTokenFromPool = async (pool: string) => {
@@ -138,29 +140,14 @@ const getZkTokenFromPool = async (pool: string) => {
 	return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 }
 
-export interface InitZkappInstance {
+export interface DeployPoolArgs {
+	tokenA: string
+	tokenB: string
+	user: string
 	factory: string
 }
 
-const initZkappInstance = async ({ factory }: InitZkappInstance) => {
-	const factoryKey = PublicKey.fromBase58(factory)
-	const contracts = context().contracts
-
-	const zkFactory = new contracts.PoolFactory(factoryKey)
-
-	await fetchAccount({ publicKey: factoryKey })
-
-	workerState.send({
-		type: "SetZk",
-		zk: { factory: zkFactory }
-	})
-}
-
-const deployPoolInstance = async ({
-	tokenA,
-	tokenB,
-	user
-}: { user: string; tokenA: string; tokenB: string }) => {
+const deployPoolInstance = async ({ tokenA, tokenB, user, factory }: DeployPoolArgs) => {
 	const poolKey = PrivateKey.random()
 	console.log("pool key", poolKey.toBase58())
 	console.log("pool address", poolKey.toPublicKey().toBase58())
@@ -176,16 +163,18 @@ const deployPoolInstance = async ({
 	const witness = merkle.getWitness(0n)
 	const circuitWitness = new SignerMerkleWitness(witness)
 
-	const zk = context().zk
+	const factoryKey = PublicKey.fromBase58(factory)
+	const contracts = context().contracts
+	const zkFactory = new contracts.PoolFactory(factoryKey)
+	await fetchAccount({ publicKey: factoryKey })
 
 	const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 
 	const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-		if (!zk.factory) throw new Error("Factory not initialized")
 		AccountUpdate.fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (isMinaTokenPool) {
 			const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
-			await zk.factory.createPool(
+			await zkFactory.createPool(
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(token),
 				user1,
@@ -194,7 +183,7 @@ const deployPoolInstance = async ({
 			)
 		}
 		if (!isMinaTokenPool) {
-			await zk.factory.createPoolToken(
+			await zkFactory.createPoolToken(
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(tokenA),
 				PublicKey.fromBase58(tokenB),
@@ -312,13 +301,14 @@ export interface SwapArgs {
 	minOut: number
 	balanceOutMin: number
 	balanceInMax: number
+	factory: string
 }
 
 const swap = async (args: SwapArgs) => {
 	const { poolKey, zkTokenId } = await getZkTokenFromPool(args.pool)
-	const { zk, contracts } = context()
+	const { PoolTokenHolder } = context().contracts
 
-	const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
+	const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
 
 	const userKey = PublicKey.fromBase58(args.user)
 
@@ -335,7 +325,7 @@ const swap = async (args: SwapArgs) => {
 		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
 		fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
 		fetchAccount({
-			publicKey: await getLuminaAddress(zk.factory),
+			publicKey: await getLuminaAddress(args.factory),
 			tokenId: zkTokenId
 		})
 	])
@@ -564,9 +554,8 @@ export const luminaDexWorker = {
 	// getTransactionJSON,
 	// getDeploymentKey
 	// Contract Management
-	loadContract,
+	loadContracts,
 	compileContract,
-	initZkappInstance,
 	// Account & Balance Operations
 	// fetchMinaAccountToken,
 	getReserves,
