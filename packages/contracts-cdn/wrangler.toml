@@ -3,7 +3,7 @@ name                = "luminadex-contracts-cdn"
 main                = "src/index.ts"
 compatibility_date  = "2024-11-27"
 compatibility_flags = ["nodejs_compat"]
-vars                = { ENVIRONMENT = "production", DO_TOKENLIST_NAME = "db-prod-1" }
+vars                = { ENVIRONMENT = "production", DO_TOKENLIST_NAME = "db-prod-1", LUMINA_TOKEN_ENDPOINT_URL = "https://lumina-tokens.deno.dev" }
 # Workers Static Assets
 assets = { directory = "./public", binding = "ASSETS" }
 
@@ -34,11 +34,19 @@ fallthrough = true
 
 # Schedule cron triggers:
 [triggers]
-# - At every 3rd minute
-# - At 3PM on first day of the month
-# - At 11:59PM on the last weekday of the month
+# - At midnight everyday
 crons = ["0 0 * * *"]
 
+# KV Namespace currently un-used
+[[kv_namespaces]]
+binding = "KV"
+id      = "778f79ff359d43a9924f6c19a0f30aa9"
+
+[[unsafe.bindings]]
+name         = "SYNC_RATE_LIMITER"
+type         = "ratelimit"
+namespace_id = "1"
+simple       = { limit = 2, period = 10 }
 
 # # Worfklows are not working with vitest https://github.com/cloudflare/workers-sdk/issues/7414
 # [[workflows]]

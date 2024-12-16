@@ -1,4 +1,4 @@
-import { internal_fetchAllPoolTokens, networks } from "@lumina-dex/sdk"
+import { type Networks, internal_fetchAllPoolTokens, networks } from "@lumina-dex/sdk"
 
 // deno-lint-ignore no-explicit-any
 const processSettledPromises = <T extends any[]>(
@@ -12,11 +12,10 @@ const processSettledPromises = <T extends any[]>(
 	}) as T
 }
 
-const generateTokens = async (network: string) => {
+const generateTokens = async (network: Networks) => {
 	const tokens = await internal_fetchAllPoolTokens(network)
 	return processSettledPromises(tokens)
 }
-
 Deno.serve(async (request) => {
 	try {
 		// Get the authorization header
@@ -32,7 +31,7 @@ Deno.serve(async (request) => {
 
 		// Extract pathname from URL
 		const url = new URL(request.url)
-		const network = url.pathname.slice(1) // Remove leading slash
+		const network = url.pathname.slice(1) as Networks // Remove leading slash
 		if (networks.includes(network) === false) {
 			return new Response("Invalid Network", { status: 400 })
 		}

@@ -24,8 +24,7 @@ export class TokenList extends DurableObject {
 	insertToken(network: Networks, token: Token | Token[]) {
 		const table = getTable(network)
 		const toInsert = Array.isArray(token) ? token : [token]
-		const { sql, params } = this.db.insert(table).values(toInsert).onConflictDoNothing().toSQL()
-		this.storage.sql.exec(sql, ...params)
+		return this.db.insert(table).values(toInsert).onConflictDoNothing().returning().all()
 	}
 
 	findTokenBy({ network, by, value }: FindTokenBy) {

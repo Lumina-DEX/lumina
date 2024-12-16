@@ -1,7 +1,7 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:@lumina-dex/sdk@~0.1.1": "0.1.1_typescript@5.7.2_vue@3.5.13__typescript@5.7.2_xstate@5.19.0_@gql.tada+vue-support@1.0.1__typescript@5.7.2"
+    "npm:@lumina-dex/sdk@0.2.0": "0.2.0_typescript@5.7.2_vue@3.5.13__typescript@5.7.2_xstate@5.19.0_@gql.tada+vue-support@1.0.1__typescript@5.7.2"
   },
   "npm": {
     "@0no-co/graphql.web@1.0.12_graphql@16.9.0": {
@@ -75,15 +75,15 @@
     "@jridgewell/sourcemap-codec@1.5.0": {
       "integrity": "sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ=="
     },
-    "@lumina-dex/contracts@0.1.0_o1js@1.7.0": {
-      "integrity": "sha512-+O4Ov1IjY8syGT2hnW8HJRA33uPC2Afz12rlfJ1h4K5yZtrkxAV6Jfq1AChuH7ku5v3QhDB6+uP8GFwS4kXX2w==",
+    "@lumina-dex/contracts@0.2.0_o1js@1.7.0": {
+      "integrity": "sha512-UUv6YC+0sv6PPy4qZUnvwq/ZDk61L8OXvixqdaCCG4DU+nnZE3QynmZWSmc4zx2ekMyDBmsAKnDOk3IOgUnEQg==",
       "dependencies": [
         "mina-fungible-token",
         "o1js"
       ]
     },
-    "@lumina-dex/sdk@0.1.1_typescript@5.7.2_vue@3.5.13__typescript@5.7.2_xstate@5.19.0_@gql.tada+vue-support@1.0.1__typescript@5.7.2": {
-      "integrity": "sha512-UZXYdDefQp4zXpblIPp8glk2JpOxf5GuV62x0ZrToleQiUdcmloPqpy+4FVyFhWKYrC6SGkcdv14m3KNh1mfmQ==",
+    "@lumina-dex/sdk@0.2.0_typescript@5.7.2_vue@3.5.13__typescript@5.7.2_xstate@5.19.0_@gql.tada+vue-support@1.0.1__typescript@5.7.2": {
+      "integrity": "sha512-dHsKOT1zWUaqBU3txqfU48NQzR8SUe+0S2+H2easpZ/o1N7fmTAjOQ8Z0tveEeSpvjR5b5p41VE4h9BhoUDFpw==",
       "dependencies": [
         "@aurowallet/mina-provider",
         "@gql.tada/vue-support",
@@ -93,6 +93,7 @@
         "@xstate/react",
         "@xstate/store",
         "comlink",
+        "fflate",
         "gql.tada",
         "o1js",
         "typescript",
@@ -281,6 +282,9 @@
     "eventemitter3@4.0.7": {
       "integrity": "sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw=="
     },
+    "fflate@0.8.2": {
+      "integrity": "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A=="
+    },
     "gql.tada@1.8.10_typescript@5.7.2_@0no-co+graphqlsp@1.12.16__graphql@16.9.0__typescript@5.7.2_@gql.tada+vue-support@1.0.1__typescript@5.7.2": {
       "integrity": "sha512-FrvSxgz838FYVPgZHGOSgbpOjhR+yq44rCzww3oOPJYi0OvBJjAgCiP6LEokZIYND2fUTXzQAyLgcvgw1yNP5A==",
       "dependencies": [
@@ -448,7 +452,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@lumina-dex/sdk@~0.1.1"
+      "npm:@lumina-dex/sdk@0.2.0"
     ]
   }
 }

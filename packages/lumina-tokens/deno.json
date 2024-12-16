@@ -1,13 +1,19 @@
 {
 	"tasks": {
 		"dev": "deno run --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test --watch src/main.ts",
-		"test": "deno test --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test test/unit.ts",
-		"deploy": "deployctl deploy"
+		"deploy": "deployctl deploy --project=lumina-tokens --env-file=.env",
+		"deploy:prod": "deployctl deploy --prod --project=lumina-tokens --env-file=.env"
 	},
 	"imports": {
-		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@^0.1.1"
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.2.0"
 	},
 	"fmt": {
 		"semiColons": false
+	},
+	"deploy": {
+		"project": "4a0bfe07-dea4-448a-9f9f-f11622601d7a",
+		"exclude": ["**/node_modules"],
+		"include": [],
+		"entrypoint": "src/main.ts"
 	}
 }

@@ -3,7 +3,7 @@ import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import type { Env } from "../worker-configuration"
 import { type Token, createList } from "./helper"
-import { sync } from "./workflow"
+import { auth, getDb, headers, notFound, serveAsset, sync, tokenCacheKey } from "./http"
 
 const router = createRouter<{ path: string }>()
 
@@ -11,92 +11,66 @@ addRoute(router, "GET", "/api/cache", { path: "cache" })
 addRoute(router, "GET", "/api/:network/tokens", { path: "tokens" })
 addRoute(router, "POST", "/api/:network/token", { path: "token.post" })
 addRoute(router, "GET", "/api/:network/tokens/count", { path: "tokens/count" })
+addRoute(router, "POST", "/api/:network/pool", { path: "pool.post" })
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
-
-interface ServeAsset {
-	assetUrl: URL
-	env: Env
-	request: Request
-	context: ExecutionContext
-}
-
-const getDb = (env: Env) => {
-	const dbDO = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
-	return env.TOKENLIST.get(dbDO)
-}
-
-/**
- * Serve an asset if it exists or return a 404. Use cache if possible.
- */
-const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
-	//Cache Key must be a Request to avoid leaking headers to other users.
-	const cacheKey = new Request(assetUrl.toString(), request)
-	const cache = caches.default
-	const cacheResponse = await cache.match(cacheKey)
-	if (cacheResponse?.ok) return cacheResponse
-
-	const assetResponse = await env.ASSETS.fetch(assetUrl)
-	const response = new Response(assetResponse.body, assetResponse)
-	//Here we can control the cache headers precisely.
-	if (response.ok) {
-		response.headers.append("Cache-Control", "s-maxage=10")
-		context.waitUntil(cache.put(cacheKey, response.clone()))
-	}
-	return response
-}
-
-const syncAllNetworks = async ({ env, context }: { env: Env; context: ExecutionContext }) => {
-	//TODO: Add retry policy
-	await Promise.all(networks.map((network) => sync({ env, network })))
-
-	for (const network of networks) {
-		const cacheKey = tokenCacheKey(network)
-		context.waitUntil(caches.default.delete(cacheKey))
-	}
-	console.log("Synced all networks")
-}
-
-const tokenCacheKey = (network: string) => new URL(`http://token.key/${network}`)
 
 export default {
 	async scheduled(event, env, context) {
-		await syncAllNetworks({ env, context })
+		await Promise.all(networks.map((network) => sync({ env, network, context })))
+		console.log("Synced all networks")
 	},
 	async fetch(request, env, context): Promise<Response> {
 		//TODO: implement rate-limiting and bot protection here.
-
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
 
 		// Manually trigger the Scheduled event for Auth users
-		if (
-			match?.data.path === "scheduled" &&
-			request.headers.get("Authorization") === `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}`
-		) {
-			await syncAllNetworks({ env, context })
-			return new Response("Synced all networks", { status: 200 })
+		if (match?.data.path === "scheduled" && auth({ env, request })) {
+			await Promise.all(networks.map((network) => sync({ env, network, context })))
+			return new Response("Synced all networks", { headers, status: 200 })
 		}
 
-		// Count the amount of tokens for a given network
-		if (match?.data.path === "tokens/count" && match.params?.network) {
+		// Sync a network
+		if (match?.data.path === "pool.post" && match.params?.network) {
 			const network = match.params.network as Networks
-			if (!networks.includes(network)) {
-				return new Response("Not Found", { status: 404 })
+			if (!networks.includes(network)) return notFound()
+			const { success } = await env.SYNC_RATE_LIMITER.limit({ key: "sync" })
+			if (!success) return new Response("Rate limited", { headers, status: 429 })
+
+			const { readable, writable } = new TransformStream()
+			const writer = writable.getWriter()
+			const response = new Response(readable, {
+				headers: {
+					...headers,
+					"Content-Type": "text/event-stream",
+					"Cache-Control": "no-cache",
+					Connection: "keep-alive",
+					"Transfer-Encoding": "chunked"
+				}
+			})
+
+			const encoder = new TextEncoder()
+			writer.write(encoder.encode(`Starting sync for ${network}...\n`))
+
+			async function respondWithStream() {
+				try {
+					await sync({ env, network, context })
+					await writer.write(encoder.encode(`Sync completed for ${network}`))
+				} catch {
+					await writer.write(encoder.encode("Error during sync"))
+				} finally {
+					await writer.close()
+				}
 			}
 
-			const db = getDb(env)
-			const count = await db.count({ network })
-
-			return Response.json(count)
+			respondWithStream()
+			return response
 		}
 
 		// Add a new token to the database and purge the cache
-		if (match?.data.path === "token.post" && match.params?.network) {
+		if (match?.data.path === "token.post" && match.params?.network && auth({ env, request })) {
 			const network = match.params.network as Networks
-			if (!networks.includes(network)) {
-				return new Response("Not Found", { status: 404 })
-			}
-
+			if (!networks.includes(network)) return notFound()
 			const db = getDb(env)
 			const body = await request.json()
 			// Validate the data
@@ -106,21 +80,30 @@ export default {
 				address: token.address,
 				poolAddress: token.poolAddress
 			})
-			if (exists) return new Response("Token already exists", { status: 409 })
+			if (exists) return new Response("Token already exists", { headers, status: 409 })
 			await db.insertToken(network, token)
 
 			const cacheKey = tokenCacheKey(match.params.network)
 			context.waitUntil(caches.default.delete(cacheKey))
-			return new Response("Token Inserted", { status: 201 })
+			return new Response("Token Inserted", { headers, status: 201 })
+		}
+
+		// Count the amount of tokens for a given network
+		if (match?.data.path === "tokens/count" && match.params?.network) {
+			const network = match.params.network as Networks
+			if (!networks.includes(network)) return notFound()
+
+			const db = getDb(env)
+			const count = await db.count({ network })
+
+			return Response.json(count)
 		}
 
 		// Return the token list for a given network
 		if (match?.data.path === "tokens" && match.params?.network) {
 			// Check for the cache
 			const network = match.params.network as Networks
-			if (!networks.includes(network)) {
-				return new Response("Not Found", { status: 404 })
-			}
+			if (!networks.includes(network)) return notFound()
 
 			const cacheKey = tokenCacheKey(match.params.network)
 			const cache = caches.default
@@ -134,8 +117,8 @@ export default {
 			const data = await db.findAllTokens({ network })
 
 			const tokens = createList(network)(data)
-			if (!tokens) return new Response("Not Found", { status: 404 })
-			const response = Response.json(tokens)
+			if (!tokens) return notFound()
+			const response = Response.json(tokens, { headers })
 			response.headers.append("Cache-Control", "s-maxage=3600") // 1 hour
 			context.waitUntil(cache.put(cacheKey, response.clone()))
 			data[Symbol.dispose]() //TODO: Use using keyword
