@@ -2,4 +2,4 @@
 "@lumina-dex/sdk": patch
 ---
 
-fix sdk wallet balance fetching
+The Wallet SDK now correctly fetch the balance for the MINA token.
