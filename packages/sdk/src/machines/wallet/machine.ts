@@ -99,9 +99,10 @@ export const createWalletMachine = (
 				const publicKey = input.address
 				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
 				const decimal = input.token?.decimal ?? 1e9
-				const settings = input.token
-					? { tokenId: TokenId.derive(PublicKey.fromBase58(input.token.address)), publicKey }
-					: { publicKey }
+				const settings = {
+					tokenId: input.token ? TokenId.derive(PublicKey.fromBase58(input.token.address)) : null,
+					publicKey
+				}
 
 				const queries = Object.fromEntries(
 					input.networks.map((network) => [
