@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.2.2
+
+### Patch Changes
+
+- 12480cf: Detect mina:devnet and add a fallback for unknown networks.
+
 ## 0.2.1
 
 ### Patch Changes
