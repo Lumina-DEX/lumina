@@ -15,6 +15,7 @@ const emptyNetworkBalance = () => ({
 	mainnet: { MINA: 0, ZEKO: 0 },
 	berkeley: { MINA: 0, ZEKO: 0 }
 })
+
 const toNumber = (n: unknown) => {
 	if (typeof n === "string") {
 		const t = Number.parseFloat(n)
@@ -22,6 +23,13 @@ const toNumber = (n: unknown) => {
 	}
 	if (typeof n === "number") return n
 	return 0
+}
+
+const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
+	if (Object.keys(urls).includes(networkId)) return networkId as Networks
+	if (networkId === "mina:devnet") return "mina:testnet"
+	console.log("Unknown network, falling back to mina:testnet", networkId)
+	return "mina:testnet"
 }
 
 export const createWalletMachine = (
@@ -45,10 +53,7 @@ export const createWalletMachine = (
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
 				window.mina.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
 					console.log("User manually changed network", networkID)
-					sendBack({
-						type: "WalletExtensionChangedNetwork",
-						network: networkID as Networks
-					})
+					sendBack({ type: "WalletExtensionChangedNetwork", network: toNetwork(networkID) })
 				})
 				window.mina.on("accountsChanged", (accounts: string[]) => {
 					console.log("User manually changed account", accounts)
@@ -79,8 +84,7 @@ export const createWalletMachine = (
 					if (accounts instanceof Error) throw accounts
 					console.log("Connected wallet", accounts)
 					const { networkID } = await window.mina.requestNetwork()
-					const currentNetwork = networkID as Networks
-					return { currentNetwork, accounts }
+					return { currentNetwork: toNetwork(networkID), accounts }
 				} catch (e: unknown) {
 					if (e instanceof Error) {
 						console.log(e.message)
@@ -144,8 +148,8 @@ export const createWalletMachine = (
 		},
 		actions: {
 			setWalletNetwork: enqueueActions(({ enqueue }, { network }: { network: Networks }) => {
-				const url = urls[network]
-				console.log("Setting network to", url)
+				const url = urls[network] ?? urls["mina:testnet"]
+				console.log("Setting network to", { network, url })
 				Mina.setActiveInstance(Mina.Network(url))
 				enqueue.assign({ currentNetwork: network })
 				enqueue.emit({ type: "NetworkChanged", network })
