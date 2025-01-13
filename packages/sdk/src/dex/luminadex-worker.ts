@@ -221,7 +221,8 @@ const deployToken = async ({ user, tokenKey, tokenAdminKey, symbol }: DeployToke
 		})
 		await zkToken.deploy({
 			symbol,
-			src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
+			src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+			allowUpdates: true
 		})
 		await zkToken.initialize(tokenAdminPrivateKey.toPublicKey(), UInt8.from(9), Bool(false))
 	})

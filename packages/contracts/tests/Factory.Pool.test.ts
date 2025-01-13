@@ -102,7 +102,8 @@ describe("Pool Factory Mina", () => {
       })
       await zkToken.deploy({
         symbol: "LTA",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+        allowUpdates: false
       })
       await zkToken.initialize(
         zkTokenAdminAddress,
@@ -114,12 +115,12 @@ describe("Pool Factory Mina", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn.sign([deployerKey, zkAppPrivateKey, zkTokenAdminPrivateKey, zkTokenPrivateKey]).send()
 
-    const signature = Signature.create(zkTokenPrivateKey, zkPoolAddress.toFields())
+    const signature = Signature.create(bobKey, zkPoolAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
     const txn3 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(zkPoolAddress, zkTokenAddress, zkTokenAddress, signature, circuitWitness)
+      await zkApp.createPool(zkPoolAddress, zkTokenAddress, bobAccount, signature, circuitWitness)
     })
 
     console.log("Pool creation au", txn3.transaction.accountUpdates.length)
@@ -140,7 +141,8 @@ describe("Pool Factory Mina", () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await zkTokenNew.deploy({
         symbol: "TWO",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+        allowUpdates: false
       })
       await zkTokenNew.initialize(
         zkTokenAdminAddress,
@@ -155,12 +157,12 @@ describe("Pool Factory Mina", () => {
     const newPoolKey = PrivateKey.random()
     const poolAddress = newPoolKey.toPublicKey()
     const newTokenAddress = newTokenKey.toPublicKey()
-    const signature = Signature.create(newTokenKey, poolAddress.toFields())
+    const signature = Signature.create(bobKey, poolAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
     const txn1 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(poolAddress, newTokenAddress, newTokenAddress, signature, circuitWitness)
+      await zkApp.createPool(poolAddress, newTokenAddress, bobAccount, signature, circuitWitness)
     })
     await txn1.prove()
     await txn1.sign([deployerKey, newPoolKey]).send()
@@ -173,9 +175,9 @@ describe("Pool Factory Mina", () => {
     await txn2.prove()
     await txn2.sign([deployerKey, newTokenKey]).send()
 
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await newPool.supplyFirstLiquidities(amt, amtToken)
     })
@@ -185,7 +187,7 @@ describe("Pool Factory Mina", () => {
     await txn.sign([senderKey]).send()
 
     const liquidityUser = Mina.getBalance(senderAccount, newPool.deriveTokenId())
-    const expected = amt.value.add(amtToken.value).sub(Pool.minimunLiquidity.value)
+    const expected = amt.value.add(amtToken.value).sub(Pool.minimumLiquidity.value)
     console.log("liquidity user", liquidityUser.toString())
     expect(liquidityUser.value).toEqual(expected)
 
@@ -198,12 +200,12 @@ describe("Pool Factory Mina", () => {
 
   it("failed deploy for same token", async () => {
     const newPoolKey = PrivateKey.random()
-    const signature = Signature.create(zkTokenPrivateKey, newPoolKey.toPublicKey().toFields())
-    const witness = merkle.getWitness(0n)
+    const signature = Signature.create(aliceKey, newPoolKey.toPublicKey().toFields())
+    const witness = merkle.getWitness(1n)
     const circuitWitness = new SignerMerkleWitness(witness)
     const txn1 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(newPoolKey.toPublicKey(), zkTokenAddress, zkTokenAddress, signature, circuitWitness)
+      await zkApp.createPool(newPoolKey.toPublicKey(), zkTokenAddress, aliceAccount, signature, circuitWitness)
     })
     await txn1.prove()
     await expect(txn1.sign([deployerKey, newPoolKey]).send()).rejects.toThrow()
@@ -219,8 +221,8 @@ describe("Pool Factory Mina", () => {
   })
 
   it("cant transfer circulation supply", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -265,7 +267,7 @@ describe("Pool Factory Mina", () => {
   })
 
   it("cant mint token", async () => {
-    const txn = await Mina.transaction(senderAccount, async () => {
+    let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.internal.mint({ address: senderAccount, amount: UInt64.one })
       await zkPool.approveAccountUpdate(zkPool.self)
