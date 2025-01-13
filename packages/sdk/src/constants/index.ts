@@ -2,7 +2,7 @@ type NetworkLayer = "mina" | "zeko"
 
 export type ChainNetwork = "mainnet" | "berkeley" | "testnet"
 
-export type NetworkUri = `${NetworkLayer}:${ChainNetwork}`
+export type NetworkUri = Exclude<`${NetworkLayer}:${ChainNetwork}`, "zeko:berkeley">
 
 export const networks = [
 	"mina:mainnet",

@@ -1,5 +1,5 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
-import { Mina, PublicKey, TokenId } from "o1js"
+import { Mina } from "o1js"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { urls } from "../../constants"
@@ -11,9 +11,11 @@ export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
 const emptyNetworkBalance = () => ({
-	testnet: { MINA: 0, ZEKO: 0 },
-	mainnet: { MINA: 0, ZEKO: 0 },
-	berkeley: { MINA: 0, ZEKO: 0 }
+	"mina:testnet": { MINA: 0 },
+	"mina:mainnet": { MINA: 0 },
+	"mina:berkeley": { MINA: 0 },
+	"zeko:mainnet": { MINA: 0 },
+	"zeko:testnet": { MINA: 0 }
 })
 
 const toNumber = (n: unknown) => {
@@ -40,8 +42,7 @@ export const createWalletMachine = (
 			context: {} as {
 				account: string
 				currentNetwork: Networks
-				zekoBalances: Balance
-				minaBalances: Balance
+				balances: Balance
 			},
 			emitted: {} as WalletEmit,
 			events: {} as WalletEvent
@@ -104,7 +105,7 @@ export const createWalletMachine = (
 				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
 				const decimal = input.token?.decimal ?? 1e9
 				const settings = {
-					tokenId: input.token ? TokenId.derive(PublicKey.fromBase58(input.token.address)) : null,
+					tokenId: input.token ? input.token.tokenId : null,
 					publicKey
 				}
 
@@ -116,17 +117,22 @@ export const createWalletMachine = (
 				)
 				const results = await Promise.all(Object.values(queries))
 
-				return Object.keys(queries).reduce((acc, network, index) => {
-					const result = results[index]
-					const balance = toNumber(result.data?.account?.balance?.total) / decimal
-					const [layer, netType] = (network as Networks).split(":") as [
-						"mina" | "zeko",
-						"testnet" | "mainnet" | "berkeley"
-					]
-					if (!acc[layer]) acc[layer] = { testnet: {}, mainnet: {}, berkeley: {} }
-					acc[layer][netType][name] = balance
-					return acc
-				}, {} as TokenBalances)
+				return Object.keys(queries).reduce(
+					(acc, network, index) => {
+						const result = results[index]
+						const balance = toNumber(result.data?.account?.balance?.total) / decimal
+						const [layer, netType] = (network as Networks).split(":") as [
+							"mina" | "zeko",
+							"testnet" | "mainnet" | "berkeley"
+						]
+						acc[layer][netType][name] = balance
+						return acc
+					},
+					{
+						mina: { mainnet: {}, testnet: {}, berkeley: {} },
+						zeko: { mainnet: {}, testnet: {} }
+					} as TokenBalances
+				)
 			}),
 			/**
 			 * Changes the network of the Mina wallet.
@@ -160,8 +166,7 @@ export const createWalletMachine = (
 		context: {
 			account: "",
 			currentNetwork: "mina:testnet",
-			zekoBalances: emptyNetworkBalance(),
-			minaBalances: emptyNetworkBalance()
+			balances: emptyNetworkBalance()
 		},
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },
@@ -213,19 +218,36 @@ export const createWalletMachine = (
 							return { address: context.account, token: event.token, networks: event.networks }
 						}
 						// TODO: Hardcoded testnet
-						return { address: context.account, networks: ["mina:testnet", "zeko:testnet"] }
+						return { address: context.account, networks: ["mina:testnet"] }
 					},
 					onDone: {
 						target: "READY",
 						actions: assign({
-							minaBalances: ({ context, event }) =>
-								"mina" in event.output
-									? { ...context.minaBalances, ...event.output.mina }
-									: context.minaBalances,
-							zekoBalances: ({ context, event }) =>
-								"zeko" in event.output
-									? { ...context.zekoBalances, ...event.output.zeko }
-									: context.zekoBalances
+							balances: ({ context, event }) => {
+								const r = event.output
+								return {
+									"mina:mainnet": {
+										...context.balances["mina:mainnet"],
+										...event.output.mina.mainnet
+									},
+									"mina:testnet": {
+										...context.balances["mina:testnet"],
+										...event.output.mina.testnet
+									},
+									"mina:berkeley": {
+										...context.balances["mina:berkeley"],
+										...event.output.mina.berkeley
+									},
+									"zeko:mainnet": {
+										...context.balances["zeko:mainnet"],
+										...event.output.zeko.mainnet
+									},
+									"zeko:testnet": {
+										...context.balances["zeko:testnet"],
+										...event.output.zeko.testnet
+									}
+								}
+							}
 						})
 					}
 				}
