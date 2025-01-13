@@ -10,7 +10,7 @@ import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
-const emptyNetworkBalance = () => ({
+const emptyNetworkBalance = (): Balance => ({
 	"mina:testnet": { MINA: 0 },
 	"mina:mainnet": { MINA: 0 },
 	"mina:berkeley": { MINA: 0 },
@@ -105,6 +105,7 @@ export const createWalletMachine = (
 				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
 				const decimal = input.token?.decimal ?? 1e9
 				const settings = { tokenId: input.token ? input.token.tokenId : null, publicKey }
+
 				const queries = Object.fromEntries(
 					input.networks.map((network) => [
 						network,
@@ -219,31 +220,28 @@ export const createWalletMachine = (
 					onDone: {
 						target: "READY",
 						actions: assign({
-							balances: ({ context, event }) => {
-								const r = event.output
-								return {
-									"mina:mainnet": {
-										...context.balances["mina:mainnet"],
-										...event.output.mina.mainnet
-									},
-									"mina:testnet": {
-										...context.balances["mina:testnet"],
-										...event.output.mina.testnet
-									},
-									"mina:berkeley": {
-										...context.balances["mina:berkeley"],
-										...event.output.mina.berkeley
-									},
-									"zeko:mainnet": {
-										...context.balances["zeko:mainnet"],
-										...event.output.zeko.mainnet
-									},
-									"zeko:testnet": {
-										...context.balances["zeko:testnet"],
-										...event.output.zeko.testnet
-									}
+							balances: ({ context, event }) => ({
+								"mina:mainnet": {
+									...context.balances["mina:mainnet"],
+									...event.output.mina.mainnet
+								},
+								"mina:testnet": {
+									...context.balances["mina:testnet"],
+									...event.output.mina.testnet
+								},
+								"mina:berkeley": {
+									...context.balances["mina:berkeley"],
+									...event.output.mina.berkeley
+								},
+								"zeko:mainnet": {
+									...context.balances["zeko:mainnet"],
+									...event.output.zeko.mainnet
+								},
+								"zeko:testnet": {
+									...context.balances["zeko:testnet"],
+									...event.output.zeko.testnet
 								}
-							}
+							})
 						})
 					}
 				}
