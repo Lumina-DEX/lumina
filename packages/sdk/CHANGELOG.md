@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.3.0
+
+### Minor Changes
+
+- d034806: Fix the fetch of the balance and change the data structure of the wallet balance.
+
 ## 0.2.2
 
 ### Patch Changes
