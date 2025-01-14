@@ -1,5 +1,5 @@
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
-import { MerkleTree, Poseidon, PublicKey, Signature, VerificationKey } from "o1js"
+import { MerkleTree, Poseidon, PublicKey, Signature, UInt64, VerificationKey } from "o1js"
 import { AccountUpdate, Bool, Cache, Mina, PrivateKey, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
