@@ -18,6 +18,7 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
+
 import { FungibleToken } from "../indexpool.js"
 
 export const contractData =
@@ -120,7 +121,7 @@ export class PoolFactory extends TokenContract {
     this.protocol.set(args.protocol)
     this.delegator.set(args.delegator)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proofOrSignature()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofOrSignature()
@@ -248,7 +249,7 @@ export class PoolFactory extends TokenContract {
     path: SignerMerkleWitness,
     isTokenPool: boolean
   ) {
-    let tokenAccount = AccountUpdate.create(token, this.deriveTokenId())
+    const tokenAccount = AccountUpdate.create(token, this.deriveTokenId())
     // if the balance is not zero, so a pool already exist for this token
     tokenAccount.account.balance.requireEquals(UInt64.zero)
 
@@ -322,11 +323,11 @@ export class PoolFactory extends TokenContract {
   }
 
   private createState(token0: PublicKey, token1: PublicKey): { isSome: Bool; value: Field }[] {
-    let token0Fields = token0.toFields()
-    let token1Fields = token1.toFields()
-    let poolFactory = this.address.toFields()
-    let protocol = this.protocol.getAndRequireEquals()
-    let protocolFields = protocol.toFields()
+    const token0Fields = token0.toFields()
+    const token1Fields = token1.toFields()
+    const poolFactory = this.address.toFields()
+    const protocol = this.protocol.getAndRequireEquals()
+    const protocolFields = protocol.toFields()
 
     return [
       { isSome: Bool(true), value: token0Fields[0] },

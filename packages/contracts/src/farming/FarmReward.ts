@@ -1,10 +1,28 @@
-import { AccountUpdate, AccountUpdateForest, Bool, DeployArgs, Field, MerkleWitness, method, Permissions, Poseidon, Provable, PublicKey, State, state, Struct, TokenContract, UInt64, VerificationKey } from "o1js"
+import {
+  AccountUpdate,
+  AccountUpdateForest,
+  Bool,
+  DeployArgs,
+  Field,
+  MerkleWitness,
+  method,
+  Permissions,
+  Poseidon,
+  PublicKey,
+  State,
+  state,
+  Struct,
+  TokenContract,
+  UInt64,
+  VerificationKey
+} from "o1js"
+
 import { UpdateVerificationKeyEvent } from "../indexpool"
 
 export interface FarmRewardDeployProps extends Exclude<DeployArgs, undefined> {
-  merkleRoot: Field,
-  token: PublicKey,
-  owner: PublicKey,
+  merkleRoot: Field
+  token: PublicKey
+  owner: PublicKey
   timeUnlock: UInt64
 }
 
@@ -33,13 +51,13 @@ export class ClaimEvent extends Struct({
 /**
  * support 2^32 different claimer (easily adjustable)
  */
-export const claimerNumber = 32;
-export class FarmMerkleWitness extends MerkleWitness(claimerNumber) { }
+export const claimerNumber = 32
+export class FarmMerkleWitness extends MerkleWitness(claimerNumber) {}
 
 /**
  * we can't withdraw dust or upgrade the contract before 2 weeks
  */
-export const minTime = UInt64.from(1_209_600_000);
+export const minTime = UInt64.from(1_209_600_000)
 
 /**
  * Farm reward contract
@@ -67,15 +85,15 @@ export class FarmReward extends TokenContract {
 
     args.merkleRoot.equals(Field(0)).assertFalse("Merkle root is empty")
     args.owner.isEmpty().assertFalse("Owner is empty")
-    const timeSub = args.timeUnlock.sub(minTime);
-    this.network.timestamp.requireBetween(UInt64.zero, timeSub);
+    const timeSub = args.timeUnlock.sub(minTime)
+    this.network.timestamp.requireBetween(UInt64.zero, timeSub)
 
     this.owner.set(args.owner)
     this.merkleRoot.set(args.merkleRoot)
     this.timeUnlock.set(args.timeUnlock)
     this.token.set(args.token)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
@@ -98,8 +116,8 @@ export class FarmReward extends TokenContract {
    */
   @method
   async updateVerificationKey(vk: VerificationKey) {
-    const timeUnlock = this.timeUnlock.getAndRequireEquals();
-    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT());
+    const timeUnlock = this.timeUnlock.getAndRequireEquals()
+    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT())
 
     const owner = await this.owner.getAndRequireEquals()
 
@@ -112,7 +130,7 @@ export class FarmReward extends TokenContract {
 
   @method
   async claimReward(amount: UInt64, path: FarmMerkleWitness) {
-    const farmReward = new FarmReward(this.address);
+    const farmReward = new FarmReward(this.address)
     const sender = this.sender.getAndRequireSignature()
     const senderBalance = AccountUpdate.create(sender, farmReward.deriveTokenId())
     senderBalance.account.balance.requireEquals(UInt64.zero)
@@ -120,26 +138,25 @@ export class FarmReward extends TokenContract {
     const hash = Poseidon.hash([fieldSender[0], fieldSender[1], amount.value])
     const root = this.merkleRoot.getAndRequireEquals()
     path.calculateRoot(hash).assertEquals(root, "Invalid request")
-    this.send({ to: sender, amount: amount });
+    this.send({ to: sender, amount: amount })
 
     // to prevent double withdraw we mint one token once a user withdraw
     this.internal.mint({ address: sender, amount: UInt64.one })
     this.emitEvent("mint", new MintEvent({ sender }))
     this.emitEvent("claim", new ClaimEvent({ user: sender, amount }))
-
   }
 
   @method
   async withdrawDust() {
-    const timeUnlock = this.timeUnlock.getAndRequireEquals();
-    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT());
+    const timeUnlock = this.timeUnlock.getAndRequireEquals()
+    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT())
 
     const sender = this.sender.getAndRequireSignature()
     this.owner.requireEquals(sender)
     // only owner can withdraw dust
     const accountBalance = this.account.balance.getAndRequireEquals()
     const accountUpdate = this.send({ to: sender, amount: accountBalance })
-    accountUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent;
+    accountUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
     this.emitEvent("claim", new ClaimEvent({ user: sender, amount: accountBalance }))
   }
 
@@ -148,8 +165,8 @@ export class FarmReward extends TokenContract {
    */
   @method
   async mint(sender: PublicKey) {
-    const caller = this.sender.getAndRequireSignature();
-    caller.assertEquals(sender);
+    const caller = this.sender.getAndRequireSignature()
+    caller.assertEquals(sender)
     // check user never withdraw
     const senderBalance = AccountUpdate.create(sender, this.deriveTokenId())
     senderBalance.account.balance.requireEquals(UInt64.zero)
