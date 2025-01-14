@@ -54,7 +54,7 @@ export class Faucet extends TokenContract {
 
     const token = new FungibleToken(tokenAddress)
 
-    const sender = this.sender.getUnconstrainedV2()
+    const sender = this.sender.getUnconstrained()
 
     const senderToken = AccountUpdate.create(sender, this.deriveTokenId())
     // if the balance is not zero, so the sender already claim

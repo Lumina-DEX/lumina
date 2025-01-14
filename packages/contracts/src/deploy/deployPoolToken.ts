@@ -227,7 +227,8 @@ async function deployToken() {
         })
         await zkToken.deploy({
           symbol: "TOKB",
-          src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
+          src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+          allowUpdates: true
         })
         await zkToken.initialize(
           zkTokenAdminAddress,

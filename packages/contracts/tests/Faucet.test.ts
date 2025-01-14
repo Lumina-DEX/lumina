@@ -69,7 +69,6 @@ describe("Faucet", () => {
     zkToken = new FungibleToken(zkTokenAddress)
 
     zkFaucet = new Faucet(zkFaucetAddress, zkToken.deriveTokenId())
-    console.log(zkFaucet)
     const faucetAmount = UInt64.from(100 * 10 ** 9)
 
     const txn = await Mina.transaction(deployerAccount, async () => {
@@ -79,7 +78,8 @@ describe("Faucet", () => {
       })
       await zkToken.deploy({
         symbol: "FAU",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+        allowUpdates: false
       })
       await zkToken.initialize(
         zkTokenAdminAddress,
@@ -102,7 +102,7 @@ describe("Faucet", () => {
   })
 
   it("claim faucet", async () => {
-    const amt = UInt64.from(1000 * 10 ** 9)
+    let amt = UInt64.from(1000 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       await zkToken.mint(zkFaucetAddress, amt)
     })
@@ -119,7 +119,7 @@ describe("Faucet", () => {
     await txn.sign([bobKey]).send()
 
     const faucetAmount = UInt64.from(100 * 10 ** 9)
-    const balanceBob = Mina.getBalance(bobAccount, zkToken.deriveTokenId())
+    let balanceBob = Mina.getBalance(bobAccount, zkToken.deriveTokenId())
     expect(balanceBob.value).toEqual(faucetAmount.value)
 
     txn = await Mina.transaction(bobAccount, async () => {
