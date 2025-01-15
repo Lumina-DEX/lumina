@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.3.1
+
+### Patch Changes
+
+- bae9b40: Replace SharedWorker with Worker
+
 ## 0.3.0
 
 ### Minor Changes
