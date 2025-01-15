@@ -1,0 +1,16 @@
+{
+	"markdown": {},
+	"typescript": {
+		"lineWidth": 150,
+		"trailingCommas": "never",
+		"semiColons": "asi"	
+	},
+	"markup": {
+	},
+	"excludes": ["**/node_modules"],
+	"plugins": [
+		"https://plugins.dprint.dev/markdown-0.17.8.wasm",
+	    "https://plugins.dprint.dev/typescript-0.93.3.wasm",
+		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.18.0.wasm"
+	]
+}

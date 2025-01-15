@@ -19,6 +19,9 @@
         "path": "../packages/dex-ui",
       },
       {
+        "path": "../packages/sdk-test",
+      },
+      {
         "path": "../packages/contracts-docs",
       },
       {
