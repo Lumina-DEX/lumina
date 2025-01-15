@@ -24,6 +24,10 @@ const fetchWithRetry =
 		throw new Error("Max retries reached")
 	}
 
+/**
+ * Fetch cache contracts one by one with Promise.all
+ * @returns CacheList
+ */
 export const fetchCachedContracts = async () => {
 	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
 
@@ -58,6 +62,10 @@ type CacheData = {
 	dataType: "string" | "bytes"
 }
 
+/**
+ * Fetch zipped contracts and unzip them. This is faster than fetchCachedContracts.
+ * @returns CacheList
+ */
 export const fetchZippedContracts = async () => {
 	const response = await fetch(`${luminaCdnOrigin}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
@@ -75,20 +83,22 @@ export const fetchZippedContracts = async () => {
 
 export const readCache = (files: CacheList) => ({
 	read({ persistentId, dataType }: CacheData) {
+		const id = persistentId.replaceAll("_", "")
 		// console.time(`Load Cache ${persistentId}`)
 		// read current uniqueId, return data if it matches
-		if (!files[persistentId]) {
-			console.log("not found : ", persistentId)
+		if (!files[id]) {
+			console.log("CACHE: Not found", id)
 			// console.timeEnd(`Load Cache ${persistentId}`)
 			return undefined
 		}
 
 		if (dataType === "string") {
-			const data = files[persistentId].data
+			console.log("CACHE: Found", id)
+			const data = files[id].data
 			// console.timeEnd(`Load Cache ${persistentId}`)
 			return data
 		}
-		console.log("data type not string : ", persistentId)
+		console.log("CACHE: data type not string : ", id)
 		// console.timeEnd(`Load Cache ${persistentId}`)
 		return undefined
 	},

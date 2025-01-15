@@ -117,6 +117,7 @@ let cache: ReturnType<typeof readCache>
 const compileContract = async ({ contract }: CompileContract) => {
 	if (!cache) {
 		const cacheFiles = await fetchZippedContracts()
+		console.log({ cacheFiles })
 		cache = readCache(cacheFiles)
 	}
 	const contracts = context().contracts
@@ -574,8 +575,11 @@ export const luminaDexWorker = {
 }
 
 // Shared Worker
-self.addEventListener("connect", (e) => {
-	Comlink.expose(luminaDexWorker, (e as MessageEvent).ports[0])
-})
+// self.addEventListener("connect", (e) => {
+// 	Comlink.expose(luminaDexWorker, (e as MessageEvent).ports[0])
+// })
+
+// Worker
+Comlink.expose(luminaDexWorker)
 
 export type LuminaDexWorker = typeof luminaDexWorker

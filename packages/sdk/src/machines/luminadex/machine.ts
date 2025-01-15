@@ -116,7 +116,9 @@ export const createLuminaDexMachine = () => {
 			}),
 			compileContract: fromPromise(
 				async ({ input: { worker, ...config } }: { input: InputDexWorker & CompileContract }) => {
+					console.time(config.contract)
 					await worker.compileContract(config)
+					console.timeEnd(config.contract)
 				}
 			),
 			claim: fromPromise(
@@ -307,11 +309,11 @@ export const createLuminaDexMachine = () => {
 			input: { wallet, frontendFee: { destination, amount } }
 		}) => {
 			if (!isBetween(0, 15)(amount)) throw new Error("The Frontend Fee must be between 0 and 15.")
-			const sharedWorker = new SharedWorker(
+			const nsWorker = new Worker(
 				new URL("../../dex/luminadex-worker.ts", import.meta.url),
 				{ type: "module" }
 			)
-			const worker = Comlink.wrap<LuminaDexWorker>(sharedWorker.port)
+			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
 			return {
 				wallet,
 				frontendFee: { destination, amount },
