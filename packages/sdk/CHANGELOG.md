@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.3.2
+
+### Patch Changes
+
+- ed22fd6: Add log statements to the worker.
+
 ## 0.3.1
 
 ### Patch Changes
