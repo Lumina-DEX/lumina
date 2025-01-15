@@ -18,7 +18,7 @@
 		"vite": "^6.0.3"
 	},
 	"dependencies": {
-		"@lumina-dex/sdk": "file:../sdk/lumina-dex-sdk-0.3.04.tgz",
+		"@lumina-dex/sdk": "workspace:^",
 		"@tanstack/react-router": "^1.97.0",
 		"@tanstack/router-devtools": "^1.97.0",
 		"@xstate/react": "^4.1.3",

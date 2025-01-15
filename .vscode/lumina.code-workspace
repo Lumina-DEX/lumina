@@ -19,7 +19,10 @@
         "path": "../packages/dex-ui",
       },
       {
-        "path": "../packages/sdk-test",
+        "path": "../packages/sdk-test-vue",
+      },
+      {
+        "path": "../packages/sdk-test-react",
       },
       {
         "path": "../packages/contracts-docs",

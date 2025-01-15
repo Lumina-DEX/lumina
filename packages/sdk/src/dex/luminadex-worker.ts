@@ -87,6 +87,7 @@ const proveTransaction = async (transaction: Transaction) => {
 
 // Contract Management
 const loadContracts = async () => {
+	console.log("WORKER: Importing contracts ...")
 	const {
 		PoolFactory,
 		Pool,
@@ -107,6 +108,7 @@ const loadContracts = async () => {
 			Faucet
 		}
 	})
+	console.log("WORKER: Loaded contracts")
 }
 
 export interface CompileContract {
@@ -121,7 +123,14 @@ const compileContract = async ({ contract }: CompileContract) => {
 		cache = readCache(cacheFiles)
 	}
 	const contracts = context().contracts
-	await contracts[contract].compile({ cache })
+	console.log("WORKER: Compiling contract", contract)
+	try {
+		await contracts[contract].compile({ cache })
+		console.log("WORKER: Compiled contract successfully")
+	} catch (error) {
+		console.error("WORKER: Contract compilation failed:", error)
+		throw error
+	}
 }
 
 const getZkTokenFromPool = async (pool: string) => {
@@ -580,6 +589,8 @@ export const luminaDexWorker = {
 // })
 
 // Worker
+console.log("WORKER: Initializing LuminaDex")
 Comlink.expose(luminaDexWorker)
+console.log("WORKER: Comlink exposed")
 
 export type LuminaDexWorker = typeof luminaDexWorker

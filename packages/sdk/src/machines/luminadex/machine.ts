@@ -112,6 +112,7 @@ export const createLuminaDexMachine = () => {
 		actors: {
 			detectWalletChange,
 			loadContracts: fromPromise(async ({ input: { worker } }: { input: InputDexWorker }) => {
+				console.log("Loading Contracts", worker)
 				await worker.loadContracts()
 			}),
 			compileContract: fromPromise(
@@ -309,10 +310,9 @@ export const createLuminaDexMachine = () => {
 			input: { wallet, frontendFee: { destination, amount } }
 		}) => {
 			if (!isBetween(0, 15)(amount)) throw new Error("The Frontend Fee must be between 0 and 15.")
-			const nsWorker = new Worker(
-				new URL("../../dex/luminadex-worker.ts", import.meta.url),
-				{ type: "module" }
-			)
+			const nsWorker = new Worker(new URL("../../dex/luminadex-worker.ts", import.meta.url), {
+				type: "module"
+			})
 			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
 			return {
 				wallet,

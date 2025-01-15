@@ -10,7 +10,7 @@
 		"postinstall": "nuxt prepare"
 	},
 	"dependencies": {
-		"@lumina-dex/sdk": "file:../sdk/lumina-dex-sdk-0.3.04.tgz",
+		"@lumina-dex/sdk": "workspace:^",
 		"nuxt": "^3.15.1",
 		"vue": "latest",
 		"vue-router": "latest"
