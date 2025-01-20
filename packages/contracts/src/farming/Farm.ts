@@ -6,6 +6,7 @@ import {
   method,
   Mina,
   Permissions,
+  Provable,
   PublicKey,
   State,
   state,
@@ -14,7 +15,6 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
-
 import { Pool, UpdateVerificationKeyEvent } from "../indexpool.js"
 
 export class FarmingInfo extends Struct({
@@ -53,12 +53,27 @@ export class BurnEvent extends Struct({
   }
 }
 
+export class UpdateInitEvent extends Struct({
+  owner: PublicKey
+}) {
+  constructor(value: {
+    owner: PublicKey
+  }) {
+    super(value)
+  }
+}
+
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
   pool: PublicKey
   owner: PublicKey
   startSlot: UInt64
   endSlot: UInt64
 }
+
+/**
+ * we can't upgrade the contract before 1 day
+ */
+export const minTimeUnlockFarm = UInt64.from(86_400_000)
 
 /**
  * Farm contract
@@ -73,9 +88,12 @@ export class Farm extends TokenContract {
   startTimestamp = State<UInt64>()
   @state(UInt64)
   endTimestamp = State<UInt64>()
+  @state(UInt64)
+  timeUnlock = State<UInt64>()
 
   events = {
     upgrade: UpdateVerificationKeyEvent,
+    upgradeInited: UpdateInitEvent,
     deposit: FarmingEvent,
     burn: BurnEvent
   }
@@ -102,7 +120,7 @@ export class Farm extends TokenContract {
     this.startTimestamp.set(startTimestamp)
     this.endTimestamp.set(endTimestamp)
 
-    const permissions = Permissions.default()
+    let permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
@@ -119,11 +137,33 @@ export class Farm extends TokenContract {
   }
 
   /**
+   * Init Upgrade to a new version
+   * @param vk new verification key
+   */
+  @method
+  async initUpdate(startTime: UInt64) {
+    const owner = await this.owner.getAndRequireEquals()
+    // only owner can init a update
+    AccountUpdate.createSigned(owner)
+
+    this.network.timestamp.requireBetween(UInt64.zero, startTime)
+
+    // owner need to wait minimum 1 day before update this contract
+    const timeUnlock = startTime.add(minTimeUnlockFarm)
+    this.timeUnlock.set(timeUnlock)
+    this.emitEvent("upgradeInited", new UpdateInitEvent({ owner }))
+  }
+
+  /**
    * Upgrade to a new version
    * @param vk new verification key
    */
   @method
   async updateVerificationKey(vk: VerificationKey) {
+    const timeUnlock = this.timeUnlock.getAndRequireEquals()
+    timeUnlock.assertGreaterThan(UInt64.zero, "Time unlock is not defined")
+    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT())
+
     const owner = await this.owner.getAndRequireEquals()
 
     // only owner can update a pool

@@ -1,5 +1,4 @@
 import { AccountUpdate, Bool, method, Permissions, Poseidon, UInt64 } from "o1js"
-
 import { ClaimEvent, FarmMerkleWitness, FarmReward, FarmRewardDeployProps } from "./FarmReward"
 
 /**
@@ -13,7 +12,7 @@ export class FarmRewardTokenHolder extends FarmReward {
 
     args.token.isEmpty().assertFalse("Token is empty")
 
-    const permissions = Permissions.default()
+    let permissions = Permissions.default()
     permissions.access = Permissions.none()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()

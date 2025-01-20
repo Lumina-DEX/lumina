@@ -15,19 +15,19 @@ import {
 } from "o1js"
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
-import { FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder, SignerMerkleWitness } from "../dist"
 import {
-  claimerNumber,
-  Farm,
-  FarmMerkleWitness,
-  FarmReward,
-  FarmRewardTokenHolder,
-  FarmTokenHolder,
-  minTime
+  FarmingEvent,
+  FungibleToken,
+  FungibleTokenAdmin,
+  minTimeUnlockFarmReward,
+  Pool,
+  PoolFactory,
+  PoolTokenHolder,
+  SignerMerkleWitness
 } from "../dist"
+import { claimerNumber, Farm, FarmMerkleWitness, FarmReward, FarmRewardTokenHolder, FarmTokenHolder } from "../dist"
 
 let proofsEnabled = false
-
 describe("Farming pool token", () => {
   let deployerAccount: Mina.TestPublicKey,
     deployerKey: PrivateKey,
@@ -371,20 +371,18 @@ describe("Farming pool token", () => {
     const farmRewardTokenHolder = new FarmRewardTokenHolder(key.toPublicKey(), zkToken2.deriveTokenId())
     // add more token for test
     const amountReward = dataReward.totalReward * 10n
-    const timeUnlock = UInt64.from(Date.now()).add(minTime.mul(2))
+    const timeUnlock = UInt64.from(Date.now()).add(minTimeUnlockFarmReward.mul(2))
     txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await farmReward.deploy({
         owner: deployerAccount,
         merkleRoot: dataReward.merkle.getRoot(),
-        token: zkTokenAddress2,
-        timeUnlock
+        token: zkTokenAddress2
       })
       await farmRewardTokenHolder.deploy({
         owner: deployerAccount,
         merkleRoot: dataReward.merkle.getRoot(),
-        token: zkTokenAddress2,
-        timeUnlock
+        token: zkTokenAddress2
       })
       await zkToken2.approveAccountUpdate(farmRewardTokenHolder.self)
       // we deploy and fund reward in one transaction
@@ -442,27 +440,9 @@ describe("Farming pool token", () => {
     await txn.prove()
     await txn.sign([aliceKey]).send()
 
-    // withdraw the dust
-    const balanceBeforeDeployer = Mina.getBalance(deployerAccount, zkToken2.deriveTokenId())
-    txn = await Mina.transaction(deployerAccount, async () => {
-      await farmRewardTokenHolder.withdrawDust()
-      await zkToken2.approveAccountUpdate(farmRewardTokenHolder.self)
-    })
-    await txn.prove()
-    // we need to wait more to withdraw due to time lock of 2 weeks min
-    await expect(txn.sign([deployerKey]).send()).rejects.toThrow()
-    local.setGlobalSlot(20000)
-    txn = await Mina.transaction(deployerAccount, async () => {
-      await farmRewardTokenHolder.withdrawDust()
-      await zkToken2.approveAccountUpdate(farmRewardTokenHolder.self)
-    })
-    await txn.prove()
-    await txn.sign([deployerKey]).send()
-    const balanceAfterDeployer = Mina.getBalance(deployerAccount, zkToken2.deriveTokenId())
     const amountDust = Field.from(amountReward).sub(Field.from(dataBob.reward)).sub(Field.from(dataAlice.reward))
-    expect(balanceAfterDeployer.sub(balanceBeforeDeployer).value).toEqual(amountDust)
     const balanceContract = Mina.getBalance(key.toPublicKey(), zkToken2.deriveTokenId())
-    expect(balanceContract.value).toEqual(Field(0))
+    expect(balanceContract.value).toEqual(amountDust)
   })
 
   async function mintToken(user: PublicKey) {

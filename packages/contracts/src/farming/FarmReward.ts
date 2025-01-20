@@ -6,8 +6,10 @@ import {
   Field,
   MerkleWitness,
   method,
+  Mina,
   Permissions,
   Poseidon,
+  Provable,
   PublicKey,
   State,
   state,
@@ -16,14 +18,13 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
-
 import { UpdateVerificationKeyEvent } from "../indexpool"
+import { UpdateInitEvent } from "./Farm"
 
 export interface FarmRewardDeployProps extends Exclude<DeployArgs, undefined> {
   merkleRoot: Field
   token: PublicKey
   owner: PublicKey
-  timeUnlock: UInt64
 }
 
 export class MintEvent extends Struct({
@@ -55,9 +56,9 @@ export const claimerNumber = 32
 export class FarmMerkleWitness extends MerkleWitness(claimerNumber) {}
 
 /**
- * we can't withdraw dust or upgrade the contract before 2 weeks
+ * we can't upgrade the contract before 1 day
  */
-export const minTime = UInt64.from(1_209_600_000)
+export const minTimeUnlockFarmReward = UInt64.from(86_400_000)
 
 /**
  * Farm reward contract
@@ -73,7 +74,8 @@ export class FarmReward extends TokenContract {
   timeUnlock = State<UInt64>()
 
   events = {
-    upgrade: Field,
+    upgrade: UpdateVerificationKeyEvent,
+    upgradeInited: UpdateInitEvent,
     claim: ClaimEvent,
     mint: MintEvent
   }
@@ -85,15 +87,12 @@ export class FarmReward extends TokenContract {
 
     args.merkleRoot.equals(Field(0)).assertFalse("Merkle root is empty")
     args.owner.isEmpty().assertFalse("Owner is empty")
-    const timeSub = args.timeUnlock.sub(minTime)
-    this.network.timestamp.requireBetween(UInt64.zero, timeSub)
 
     this.owner.set(args.owner)
     this.merkleRoot.set(args.merkleRoot)
-    this.timeUnlock.set(args.timeUnlock)
     this.token.set(args.token)
 
-    const permissions = Permissions.default()
+    let permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
@@ -111,12 +110,31 @@ export class FarmReward extends TokenContract {
   }
 
   /**
+   * Init Upgrade to a new version
+   * @param vk new verification key
+   */
+  @method
+  async initUpdate(startTime: UInt64) {
+    const owner = await this.owner.getAndRequireEquals()
+    // only owner can init a update
+    AccountUpdate.createSigned(owner)
+
+    this.network.timestamp.requireBetween(UInt64.zero, startTime)
+
+    // owner need to wait minimum 1 day before update this contract
+    const timeUnlock = startTime.add(minTimeUnlockFarmReward)
+    this.timeUnlock.set(timeUnlock)
+    this.emitEvent("upgradeInited", new UpdateInitEvent({ owner }))
+  }
+
+  /**
    * Upgrade to a new version
    * @param vk new verification key
    */
   @method
   async updateVerificationKey(vk: VerificationKey) {
     const timeUnlock = this.timeUnlock.getAndRequireEquals()
+    timeUnlock.assertGreaterThan(UInt64.zero, "Time unlock is not defined")
     this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT())
 
     const owner = await this.owner.getAndRequireEquals()
@@ -144,20 +162,6 @@ export class FarmReward extends TokenContract {
     this.internal.mint({ address: sender, amount: UInt64.one })
     this.emitEvent("mint", new MintEvent({ sender }))
     this.emitEvent("claim", new ClaimEvent({ user: sender, amount }))
-  }
-
-  @method
-  async withdrawDust() {
-    const timeUnlock = this.timeUnlock.getAndRequireEquals()
-    this.network.timestamp.requireBetween(timeUnlock, UInt64.MAXINT())
-
-    const sender = this.sender.getAndRequireSignature()
-    this.owner.requireEquals(sender)
-    // only owner can withdraw dust
-    const accountBalance = this.account.balance.getAndRequireEquals()
-    const accountUpdate = this.send({ to: sender, amount: accountBalance })
-    accountUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
-    this.emitEvent("claim", new ClaimEvent({ user: sender, amount: accountBalance }))
   }
 
   /**
