@@ -186,7 +186,6 @@ const handleClaimFromFaucet = () => {
 
 const fetchTokenBalances = async () => {
   const result = await fetchPoolTokenList("mina:testnet")
-  console.log(result)
   tokens.value = result.tokens
   for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
     Wallet.send({
@@ -203,7 +202,6 @@ onMounted(() => {
 
 const end = Wallet.actorRef.subscribe(state => {
   if (state.value === "READY") {
-    console.log("Wallet Ready")
     fetchTokenBalances()
     end.unsubscribe()
   }

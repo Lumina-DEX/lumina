@@ -140,8 +140,7 @@ export const createWalletMachine = (
 			changeNetwork: fromPromise<{ currentNetwork: Networks }, { switchTo: Networks }>(
 				async ({ input: { switchTo } }) => {
 					logger.info("Change Network ...")
-					// //TODO: Testnet is hardcoded for now
-					if (switchTo.includes("mainnet")) console.error("Mainnet is not supported")
+					if (switchTo.includes("mainnet")) logger.error("Mainnet is not supported")
 					if (!switchTo.startsWith("mina")) {
 						// TODO: this might not be necessary
 						await window.mina.addChain({ url: urls[switchTo], name: switchTo })
