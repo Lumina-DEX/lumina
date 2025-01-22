@@ -8,7 +8,7 @@ import {
 	type RequiredActorOptionsKeys
 } from "xstate"
 import { getRetryExchange } from "../graphql/helpers"
-import { createLuminaDexMachine } from "./luminadex/machine"
+import { canDoDexAction, createLuminaDexMachine } from "./luminadex/machine"
 import { createWalletMachine } from "./wallet/machine"
 
 type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<[
@@ -64,7 +64,7 @@ export const createWallet = (...[options]: MachineOptions<WalletMachine>): Walle
  * ___________________________________________________________ */
 
 const dexMachine = createLuminaDexMachine()
-export { dexMachine }
+export { canDoDexAction, dexMachine }
 
 export type DexActor = ReturnType<typeof createActor<DexMachine>>
 export type DexMachine = typeof dexMachine

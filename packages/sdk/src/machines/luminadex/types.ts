@@ -95,7 +95,31 @@ interface FrontendFee {
 
 export type LuminaDexMachineEvent = ContractEvent | DexEvent | WalletEmit
 
+export interface Can {
+	// [Pool, FungibleToken]
+	changeSwapSettings: boolean
+	// [Pool, FungibleToken, PoolTokenHolder] calculatedSwap
+	swap: boolean
+	// [Pool, FungibleToken] calculatedAddLiquidity
+	changeAddLiquiditySettings: boolean
+	// [Pool, FungibleToken]
+	addLiquidity: boolean
+	// [Pool, FungibleToken]
+	changeRemoveLiquiditySettings: boolean
+	// [Pool, FungibleToken, PoolTokenHolder] calculatedRemoveLiquidity
+	removeLiquidity: boolean
+	// [PoolFactory]
+	deployPool: boolean
+	// [FungibleToken, FungibleTokenAdmin]
+	deployToken: boolean
+	// [FungibleToken]
+	mintToken: boolean
+	// [FungibleToken, Faucet]
+	claim: boolean
+}
+
 export interface LuminaDexMachineContext {
+	can: Can
 	wallet: WalletActorRef
 	dex: DexContext
 	contract: ContractContext

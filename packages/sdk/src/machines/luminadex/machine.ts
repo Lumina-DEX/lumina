@@ -35,6 +35,7 @@ import { isBetween } from "../../helpers/validation"
 import { detectWalletChange, type WalletActorRef } from "../wallet/actors"
 import type {
 	AddLiquiditySettings,
+	Can,
 	ContractName,
 	InputDexWorker,
 	LuminaDexMachineContext,
@@ -69,12 +70,15 @@ const inputCompile = (
 
 const loaded = (
 	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => ({
-	contract: {
-		...context.contract,
-		loaded: { ...context.contract.loaded, [contract]: true }
+) => {
+	const c = {
+		contract: {
+			...context.contract,
+			loaded: { ...context.contract.loaded, [contract]: true }
+		}
 	}
-})
+	return c
+}
 
 const setContractError = (defaultMessage: string) =>
 (
@@ -110,6 +114,25 @@ const act = async <T>(label: string, body: () => Promise<T>) => {
 		stop()
 	}
 }
+
+export const canDoDexAction = (context: LuminaDexMachineContext) => {
+	const loaded = context.contract.loaded
+	return {
+		changeSwapSettings: loaded.Pool && loaded.FungibleToken,
+		swap: loaded.Pool && loaded.FungibleToken && context.dex.swap.calculated !== null,
+		changeAddLiquiditySettings: loaded.Pool && loaded.FungibleToken,
+		addLiquidity: loaded.Pool && loaded.FungibleToken
+			&& context.dex.addLiquidity.calculated !== null,
+		changeRemoveLiquiditySettings: loaded.Pool && loaded.FungibleToken,
+		removeLiquidity: loaded.Pool && loaded.FungibleToken && loaded.PoolTokenHolder
+			&& context.dex.removeLiquidity.calculated !== null,
+		deployPool: loaded.PoolFactory,
+		deployToken: loaded.FungibleToken && loaded.FungibleTokenAdmin,
+		mintToken: loaded.FungibleToken,
+		claim: loaded.FungibleToken && loaded.Faucet
+	} satisfies Record<keyof Can, boolean>
+}
+
 export const createLuminaDexMachine = () => {
 	return setup({
 		types: {
@@ -157,9 +180,7 @@ export const createLuminaDexMachine = () => {
 			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) =>
 				act("addLiquidity", async () => {
 					const { worker, ...config } = input
-					console.time("addLiquidity")
 					const txJson = await worker.addLiquidity(config)
-					console.timeEnd("addLiquidity")
 					return await sendTransaction(txJson)
 				})
 			),
@@ -167,9 +188,7 @@ export const createLuminaDexMachine = () => {
 				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
 					return act("removeLiquidity", async () => {
 						const { worker, ...config } = input
-						console.time("removeLiquidity")
 						const txJson = await worker.withdrawLiquidity(config)
-						console.timeEnd("removeLiquidity")
 						return await sendTransaction(txJson)
 					})
 				}
@@ -339,6 +358,18 @@ export const createLuminaDexMachine = () => {
 			})
 			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
 			return {
+				can: {
+					changeSwapSettings: false,
+					swap: false,
+					changeAddLiquiditySettings: false,
+					addLiquidity: false,
+					changeRemoveLiquiditySettings: false,
+					removeLiquidity: false,
+					deployPool: false,
+					deployToken: false,
+					mintToken: false,
+					claim: false
+				},
 				wallet,
 				frontendFee: { destination, amount },
 				contract: {

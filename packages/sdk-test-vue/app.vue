@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {
+  canDoDexAction,
   dexMachine,
   fetchPoolTokenList,
   type Networks,
@@ -23,7 +24,7 @@ const Dex = useActor(dexMachine, {
 const walletState = computed(() => Wallet.snapshot.value.value)
 const dexStatus = computed(() => Dex.snapshot.value.value)
 const dexError = computed(() => Dex.snapshot.value.context.dex.error)
-
+const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:testnet"]
 )
@@ -218,6 +219,7 @@ const end = Wallet.actorRef.subscribe(state => {
     </div>
     <div>Wallet State: {{ walletState }}</div>
     <div>Dex Status: {{ dexStatus }}</div>
+    <div>Can Do: {{ canDo }}</div>
     <div v-if="dexError">Error: {{ dexError }}</div>
     <h2>Available Tokens</h2>
     <pre>{{ tokens }}</pre>
