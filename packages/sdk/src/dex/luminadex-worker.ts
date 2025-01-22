@@ -24,11 +24,12 @@ import {
 	SignerMerkleWitness
 } from "@lumina-dex/contracts"
 import { MINA_ADDRESS, type NetworkUri, urls } from "../constants"
-import { prefixedLogger } from "../helpers/logs"
+import { createMeasure, prefixedLogger } from "../helpers/logs"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
 
 const logger = prefixedLogger("[DEX WORKER]")
+const measure = createMeasure(logger)
 // Types
 type Contracts = {
 	Pool: typeof Pool
@@ -82,9 +83,11 @@ const context = () => workerState.getSnapshot().context
 
 // Transaction Helper
 const proveTransaction = async (transaction: Transaction) => {
+	const stop = measure("proof")
 	logger.start("Proving transaction", transaction)
 	workerState.send({ type: "SetTransaction", transaction })
 	await transaction.prove()
+	stop()
 	const txjson = transaction.toJSON()
 	logger.success("Transaction proved", txjson)
 	return txjson

@@ -12,16 +12,21 @@ export interface Token {
 	decimal?: number
 }
 
+interface LuminaError {
+	message: string
+	error: unknown
+}
+
 interface ContractContext {
 	worker: DexWorker
 	loaded: {
 		[name in ContractName]: boolean
 	}
-	error: Error | null
+	error: LuminaError | null
 }
 
 interface DexContext {
-	error: Error | null
+	error: LuminaError | null
 	addLiquidity: {
 		transactionResult: DexTransactionResult
 		calculated: {

@@ -8,6 +8,7 @@ import {
   walletMachine
 } from "@lumina-dex/sdk"
 import { useActor } from "@lumina-dex/sdk/vue"
+import type { Reactive } from "vue"
 
 const Wallet = useActor(walletMachine)
 
@@ -23,7 +24,10 @@ const Dex = useActor(dexMachine, {
 
 const walletState = computed(() => Wallet.snapshot.value.value)
 const dexStatus = computed(() => Dex.snapshot.value.value)
-const dexError = computed(() => Dex.snapshot.value.context.dex.error)
+const dexError = computed(() => ({
+  dexError: Dex.snapshot.value.context.dex.error,
+  contractError: Dex.snapshot.value.context.contract.error
+}))
 const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:testnet"]
@@ -71,11 +75,13 @@ const deployPoolSettings = computed(() =>
 const deployTokenSettings = computed(() =>
   Dex.snapshot.value.context.dex.deployToken
 )
-const deployForm = reactive({
+
+const deployPoolForm = reactive({
   tokenA: "",
-  tokenB: "",
-  symbol: ""
+  tokenB: ""
 })
+
+const deployTokenForm = reactive({ symbol: "" })
 
 const mintSettings = computed(() => Dex.snapshot.value.context.dex.mint)
 const mintForm = reactive({
@@ -154,8 +160,8 @@ const handleDeployPool = () => {
   Dex.send({
     type: "DeployPool",
     settings: {
-      tokenA: deployForm.tokenA,
-      tokenB: deployForm.tokenB
+      tokenA: deployPoolForm.tokenA,
+      tokenB: deployPoolForm.tokenB
     }
   })
 }
@@ -164,7 +170,7 @@ const handleDeployToken = () => {
   Dex.send({
     type: "DeployToken",
     settings: {
-      symbol: deployForm.symbol
+      symbol: deployTokenForm.symbol
     }
   })
 }
@@ -206,6 +212,9 @@ const end = Wallet.actorRef.subscribe(state => {
     end.unsubscribe()
   }
 })
+
+const notEmpty = (obj: Reactive<unknown>) =>
+  Object.values(obj).every(a => typeof a === "string" ? a.length > 0 : true)
 </script>
 
 <template>
@@ -218,7 +227,7 @@ const end = Wallet.actorRef.subscribe(state => {
     <div>Wallet State: {{ walletState }}</div>
     <div>Dex Status: {{ dexStatus }}</div>
     <div>Can Do: {{ canDo }}</div>
-    <div v-if="dexError">Error: {{ dexError }}</div>
+    <div>Error: {{ dexError }}</div>
     <h2>Available Tokens</h2>
     <pre>{{ tokens }}</pre>
     <h2>Swap</h2>
@@ -233,8 +242,13 @@ const end = Wallet.actorRef.subscribe(state => {
         type="number"
         placeholder="Slippage %"
       >
-      <button @click="handleCalculateSwap">Calculate Swap</button>
-      <button @click="handleSwap">Swap</button>
+      <button
+        :disabled="!(canDo.changeSwapSettings && notEmpty(swapForm))"
+        @click="handleCalculateSwap"
+      >
+        Calculate Swap
+      </button>
+      <button :disabled="!canDo.swap" @click="handleSwap">Swap</button>
     </div>
 
     <h2>Add Liquidity</h2>
@@ -262,8 +276,18 @@ const end = Wallet.actorRef.subscribe(state => {
         type="number"
         placeholder="Slippage %"
       >
-      <button @click="handleAddLiquidity">Calculate Liquidity</button>
-      <button @click="addLiquidity">Add Liquidity</button>
+      <button
+        :disabled="
+          !(canDo.changeAddLiquiditySettings
+          && notEmpty(addLiquidityForm))
+        "
+        @click="handleAddLiquidity"
+      >
+        Calculate Liquidity
+      </button>
+      <button :disabled="!canDo.addLiquidity" @click="addLiquidity">
+        Add Liquidity
+      </button>
     </div>
 
     <h2>Remove Liquidity</h2>
@@ -291,23 +315,44 @@ const end = Wallet.actorRef.subscribe(state => {
         type="number"
         placeholder="Slippage %"
       >
-      <button @click="calculateRemoveLiquidity">
+      <button
+        :disabled="
+          !(canDo.changeRemoveLiquiditySettings
+          && notEmpty(removeLiquidityForm))
+        "
+        @click="handleRemoveLiquidity"
+      >
         Calculate Remove Liquidity
       </button>
-      <button @click="handleRemoveLiquidity">Remove Liquidity</button>
+      <button
+        :disabled="!canDo.removeLiquidity"
+        @click="calculateRemoveLiquidity"
+      >
+        Remove Liquidity
+      </button>
     </div>
 
     <h2>Deploy</h2>
     <pre>{{ deployPoolSettings }}</pre>
     <pre>{{ deployTokenSettings }}</pre>
     <div>
-      <input v-model="deployForm.tokenA" placeholder="Token A Address">
-      <input v-model="deployForm.tokenB" placeholder="Token B Address">
-      <button @click="handleDeployPool">Deploy Pool</button>
+      <input v-model="deployPoolForm.tokenA" placeholder="Token A Address">
+      <input v-model="deployPoolForm.tokenB" placeholder="Token B Address">
+      <button
+        :disabled="!(canDo.deployPool && notEmpty(deployPoolForm))"
+        @click="handleDeployPool"
+      >
+        Deploy Pool
+      </button>
     </div>
     <div>
-      <input v-model="deployForm.symbol" placeholder="Token Symbol">
-      <button @click="handleDeployToken">Deploy Token</button>
+      <input v-model="deployTokenForm.symbol" placeholder="Token Symbol">
+      <button
+        :disabled="!(canDo.deployToken && notEmpty(deployTokenForm))"
+        @click="handleDeployToken"
+      >
+        Deploy Token
+      </button>
     </div>
 
     <h2>Mint Token</h2>
@@ -316,13 +361,20 @@ const end = Wallet.actorRef.subscribe(state => {
       <input v-model="mintForm.to" placeholder="To Address">
       <input v-model="mintForm.token" placeholder="Token Address">
       <input v-model="mintForm.amount" type="number" placeholder="Amount">
-      <button @click="handleMintToken">Mint Token</button>
+      <button
+        :disabled="!(canDo.mintToken && notEmpty(mintForm))"
+        @click="handleMintToken"
+      >
+        Mint Token
+      </button>
     </div>
 
     <h2>Faucet</h2>
     <pre>{{ claimSettings }}</pre>
     <div>
-      <button @click="handleClaimFromFaucet">Claim From Faucet</button>
+      <button :disabled="!canDo.claim" @click="handleClaimFromFaucet">
+        Claim From Faucet
+      </button>
     </div>
   </div>
 </template>

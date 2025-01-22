@@ -80,38 +80,32 @@ const loaded = (
 	return c
 }
 
-const setContractError = (defaultMessage: string) =>
+const setContractError = (message: string) =>
 (
 	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
 ) => {
-	if (event.error instanceof Error) {
-		return { contract: { ...context.contract, error: event.error } }
-	}
-	return { contract: { ...context.contract, error: new Error(defaultMessage) } }
+	return { contract: { ...context.contract, error: { message, error: event.error } } }
 }
 
-const setDexError = (defaultMessage: string) =>
+const setDexError = (message: string) =>
 (
 	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
 ) => {
-	if (event.error instanceof Error) {
-		return { contract: { ...context.contract, error: event.error } }
-	}
-	return { contract: { ...context.contract, error: new Error(defaultMessage) } }
+	return { dex: { ...context.dex, error: { message, error: event.error } } }
 }
 
 const resetSettings = { calculated: null, transactionResult: null } as const
-const act = async <T>(label: string, body: () => Promise<T>) => {
+
+const act = async <T>(label: string, body: (stop: () => void) => Promise<T>) => {
 	const stop = measure(label)
 	logger.start(label)
 	try {
-		const result = await body()
+		const result = await body(stop)
 		return result
 	} catch (e) {
 		logger.error(`${label} Error:`, e)
-		throw e
-	} finally {
 		stop()
+		throw e
 	}
 }
 
@@ -164,52 +158,58 @@ export const createLuminaDexMachine = () => {
 			),
 			claim: fromPromise(
 				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) =>
-					act("claim", async () => {
+					act("claim", async (stop) => {
 						const { worker, user, faucet } = input
 						const txJson = await worker.claim({ user, faucet })
+						stop()
 						return await sendTransaction(txJson)
 					})
 			),
 			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
-				return act("swap", async () => {
+				return act("swap", async (stop) => {
 					const { worker, ...swapSettings } = input
 					const txJson = await worker.swap(swapSettings)
+					stop()
 					return await sendTransaction(txJson)
 				})
 			}),
 			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) =>
-				act("addLiquidity", async () => {
+				act("addLiquidity", async (stop) => {
 					const { worker, ...config } = input
 					const txJson = await worker.addLiquidity(config)
+					stop()
 					return await sendTransaction(txJson)
 				})
 			),
 			removeLiquidity: fromPromise(
 				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
-					return act("removeLiquidity", async () => {
+					return act("removeLiquidity", async (stop) => {
 						const { worker, ...config } = input
 						const txJson = await worker.withdrawLiquidity(config)
+						stop()
 						return await sendTransaction(txJson)
 					})
 				}
 			),
 			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) =>
-				act("mintToken", async () => {
+				act("mintToken", async (stop) => {
 					const { worker, ...config } = input
 					const txJson = await worker.mintToken(config)
+					stop()
 					return await sendTransaction(txJson)
 				})
 			),
 			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) =>
-				act("deployPool", async () => {
+				act("deployPool", async (stop) => {
 					const { worker, user, tokenA, tokenB, factory } = input
 					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB, factory })
+					stop()
 					return await sendTransaction(txJson)
 				})
 			),
 			deployToken: fromPromise(
 				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) =>
-					act("deployToken", async () => {
+					act("deployToken", async (stop) => {
 						const { worker, symbol, user } = input
 						// TokenKey
 						const tk = PrivateKey.random()
@@ -221,6 +221,7 @@ export const createLuminaDexMachine = () => {
 						const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
 
 						const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
+						stop()
 						const transactionOutput = await sendTransaction(txJson)
 						return {
 							transactionOutput,

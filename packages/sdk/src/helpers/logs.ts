@@ -23,8 +23,11 @@ export const prefixedLogger = (prefix: string) =>
 
 export const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	const start = performance.now()
+	let done = false
 	return () => {
+		if (done) return
 		const end = performance.now()
 		l.warn(`${label}: ${end - start} ms`)
+		done = true
 	}
 }
