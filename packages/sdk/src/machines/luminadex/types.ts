@@ -85,7 +85,7 @@ type DexEvent =
 	| { type: "DeployToken"; settings: { symbol: string } }
 	// Mint
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
-	// Claimå
+	// Claim
 	| { type: "ClaimTokensFromFaucet" }
 
 interface FrontendFee {
@@ -114,6 +114,7 @@ export interface InputDexWorker {
 export interface SwapSettings {
 	pool: string
 	from: Token
+	to: string
 	slippagePercent: number
 }
 

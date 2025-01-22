@@ -1,4 +1,4 @@
-import * as React from "react"
+import { useCallback, useContext, useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { LuminaContext } from "../main"
 import { useSelector } from "@lumina-dex/sdk/react"
@@ -9,16 +9,16 @@ export const Route = createFileRoute("/")({
 })
 
 function HomeComponent() {
-	const { Wallet, Dex } = React.useContext(LuminaContext)
+	const { Wallet, Dex } = useContext(LuminaContext)
 
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
 
 	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:testnet"])
 
-	const [tokens, setTokens] = React.useState<TokenDbToken[]>([])
+	const [tokens, setTokens] = useState<TokenDbToken[]>([])
 
-	const fetchTokenBalances = async () => {
+	const fetchTokenBalances = useCallback(async () => {
 		const result = await fetchPoolTokenList("mina:testnet")
 		console.log(result)
 		setTokens(result.tokens)
@@ -29,19 +29,36 @@ function HomeComponent() {
 				token: { address, decimal: 10 ** decimals, tokenId, symbol }
 			})
 		}
-	}
+	}, [Wallet, tokens])
 
-	React.useEffect(() => {
+	const swapSettings = useCallback(() => {
+		Dex.send({
+			type: "ChangeSwapSettings",
+			settings: {
+				pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
+				slippagePercent: 1,
+				to: "MINA",
+				from: {
+					address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+					amount: "1",
+					decimal: 10 ** 9
+				}
+			}
+		})
+	}, [Dex])
+
+	const [loaded, setLoaded] = useState(false)
+	useEffect(() => {
 		Wallet.send({ type: "Connect" })
-	}, [Wallet])
-
-	const end = Wallet.subscribe((state) => {
-		if (state.value === "READY") {
-			console.log("Wallet Ready")
-			fetchTokenBalances()
-			end.unsubscribe()
-		}
-	})
+		const end = Wallet.subscribe(() => {
+			if (loaded === false) {
+				setLoaded(true)
+				console.log("Wallet Ready")
+				fetchTokenBalances()
+				end.unsubscribe()
+			}
+		})
+	}, [Wallet, loaded, fetchTokenBalances])
 
 	return (
 		<div>
@@ -55,6 +72,11 @@ function HomeComponent() {
 					Fetch Balances
 				</button>
 				Mina Balances{JSON.stringify(minaBalances)}
+			</div>
+			<div>
+				<button type="button" onClick={swapSettings}>
+					SwapSettings
+				</button>
 			</div>
 		</div>
 	)

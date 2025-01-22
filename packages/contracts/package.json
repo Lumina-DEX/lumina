@@ -65,7 +65,7 @@
     "node": ">=18.14.0"
   },
   "dependencies": {
-    "mina-fungible-token": "^1.0.0",
+    "mina-fungible-token": "1.0.0",
     "o1js": "1.7.0"
   }
 }

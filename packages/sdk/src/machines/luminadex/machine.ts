@@ -5,6 +5,7 @@ import {
 	and,
 	assertEvent,
 	assign,
+	enqueueActions,
 	type ErrorActorEvent,
 	fromPromise,
 	setup,
@@ -28,6 +29,7 @@ import {
 	getAmountOutFromLiquidity,
 	getFirstAmountLiquidityOut
 } from "../../dex/utils"
+import { createMeasure, prefixedLogger } from "../../helpers/logs"
 import { sendTransaction } from "../../helpers/transfer"
 import { isBetween } from "../../helpers/validation"
 import { detectWalletChange, type WalletActorRef } from "../wallet/actors"
@@ -43,6 +45,9 @@ import type {
 	Token,
 	User
 } from "./types"
+
+const logger = prefixedLogger("[DEX]")
+const measure = createMeasure(logger)
 
 const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
 
@@ -92,7 +97,19 @@ const setDexError = (defaultMessage: string) =>
 }
 
 const resetSettings = { calculated: null, transactionResult: null } as const
-
+const act = async <T>(label: string, body: () => Promise<T>) => {
+	const stop = measure(label)
+	logger.start(label)
+	try {
+		const result = await body()
+		return result
+	} catch (e) {
+		logger.error(`${label} Error:`, e)
+		throw e
+	} finally {
+		stop()
+	}
+}
 export const createLuminaDexMachine = () => {
 	return setup({
 		types: {
@@ -112,188 +129,195 @@ export const createLuminaDexMachine = () => {
 		actors: {
 			detectWalletChange,
 			loadContracts: fromPromise(async ({ input: { worker } }: { input: InputDexWorker }) => {
-				console.log("Loading Contracts", worker)
-				await worker.loadContracts()
+				act("loadContracts", async () => {
+					await worker.loadContracts()
+				})
 			}),
 			compileContract: fromPromise(
-				async ({ input: { worker, ...config } }: { input: InputDexWorker & CompileContract }) => {
-					console.time(config.contract)
-					await worker.compileContract(config)
-					console.timeEnd(config.contract)
-				}
+				async ({ input: { worker, ...config } }: { input: InputDexWorker & CompileContract }) =>
+					act(config.contract, async () => {
+						await worker.compileContract(config)
+					})
 			),
 			claim: fromPromise(
-				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) => {
-					const { worker, user, faucet } = input
-					console.time("claim")
-					const txJson = await worker.claim({ user, faucet })
-					console.timeEnd("claim")
-					return await sendTransaction(txJson)
-				}
+				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) =>
+					act("claim", async () => {
+						const { worker, user, faucet } = input
+						const txJson = await worker.claim({ user, faucet })
+						return await sendTransaction(txJson)
+					})
 			),
 			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
-				const { worker, ...swapSettings } = input
-				console.time("swap")
-				const txJson = await worker.swap(swapSettings)
-				console.timeEnd("swap")
-				return await sendTransaction(txJson)
+				return act("swap", async () => {
+					const { worker, ...swapSettings } = input
+					const txJson = await worker.swap(swapSettings)
+					return await sendTransaction(txJson)
+				})
 			}),
-			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) => {
-				const { worker, ...config } = input
-				console.time("addLiquidity")
-				const txJson = await worker.addLiquidity(config)
-				console.timeEnd("addLiquidity")
-				return await sendTransaction(txJson)
-			}),
+			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) =>
+				act("addLiquidity", async () => {
+					const { worker, ...config } = input
+					console.time("addLiquidity")
+					const txJson = await worker.addLiquidity(config)
+					console.timeEnd("addLiquidity")
+					return await sendTransaction(txJson)
+				})
+			),
 			removeLiquidity: fromPromise(
 				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
-					const { worker, ...config } = input
-					console.time("removeLiquidity")
-					const txJson = await worker.withdrawLiquidity(config)
-					console.timeEnd("removeLiquidity")
-					return await sendTransaction(txJson)
+					return act("removeLiquidity", async () => {
+						const { worker, ...config } = input
+						console.time("removeLiquidity")
+						const txJson = await worker.withdrawLiquidity(config)
+						console.timeEnd("removeLiquidity")
+						return await sendTransaction(txJson)
+					})
 				}
 			),
-			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) => {
-				const { worker, ...config } = input
-				console.time("mint")
-				const txJson = await worker.mintToken(config)
-				console.timeEnd("mint")
-				return await sendTransaction(txJson)
-			}),
-			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) => {
-				const { worker, user, tokenA, tokenB, factory } = input
-				console.time("deployPool")
-				const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB, factory })
-				console.timeEnd("deployPool")
-				return await sendTransaction(txJson)
-			}),
+			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) =>
+				act("mintToken", async () => {
+					const { worker, ...config } = input
+					const txJson = await worker.mintToken(config)
+					return await sendTransaction(txJson)
+				})
+			),
+			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) =>
+				act("deployPool", async () => {
+					const { worker, user, tokenA, tokenB, factory } = input
+					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB, factory })
+					return await sendTransaction(txJson)
+				})
+			),
 			deployToken: fromPromise(
-				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) => {
-					const { worker, symbol, user } = input
-					console.time("deployToken")
-					// TokenKey
-					const tk = PrivateKey.random()
-					const tokenKey = tk.toBase58()
-					const tokenKeyPublic = tk.toPublicKey().toBase58()
-					// TokenAdminKey
-					const tak = PrivateKey.random()
-					const tokenAdminKey = tak.toBase58()
-					const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
+				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) =>
+					act("deployToken", async () => {
+						const { worker, symbol, user } = input
+						// TokenKey
+						const tk = PrivateKey.random()
+						const tokenKey = tk.toBase58()
+						const tokenKeyPublic = tk.toPublicKey().toBase58()
+						// TokenAdminKey
+						const tak = PrivateKey.random()
+						const tokenAdminKey = tak.toBase58()
+						const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
 
-					const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
-					console.timeEnd("deployToken")
-					const transactionOutput = await sendTransaction(txJson)
-					return {
-						transactionOutput,
-						token: { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
-					}
-				}
+						const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
+						const transactionOutput = await sendTransaction(txJson)
+						return {
+							transactionOutput,
+							token: { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
+						}
+					})
 			),
 			calculateSwapAmount: fromPromise(
 				async ({ input }: { input: InputDexWorker & SwapSettings }) => {
-					const { worker, pool, slippagePercent, from } = input
-					const reserves = await worker.getReserves(pool)
-					const settings = { from, slippagePercent }
-					if (reserves.token0.amount && reserves.token1.amount) {
-						const amountIn = amount(from)
-						const ok = reserves.token0.address === from.address
-						const balanceIn = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-						const balanceOut = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
-						const swapAmount = getAmountOut({
-							amountIn,
-							balanceIn,
-							balanceOut,
-							slippagePercent
-						})
+					return act("calculateSwapAmount", async () => {
+						const { worker, pool, slippagePercent, from } = input
+						const reserves = await worker.getReserves(pool)
+						const settings = { from, slippagePercent }
+						if (reserves.token0.amount && reserves.token1.amount) {
+							const amountIn = amount(from)
+							const ok = reserves.token0.address === from.address
+							const balanceIn = Number.parseInt(
+								ok ? reserves.token0.amount : reserves.token1.amount
+							)
+							const balanceOut = Number.parseInt(
+								ok ? reserves.token1.amount : reserves.token0.amount
+							)
+							const swapAmount = getAmountOut({
+								amountIn,
+								balanceIn,
+								balanceOut,
+								slippagePercent
+							})
+							return { swapAmount, settings }
+						}
+						const swapAmount = {
+							amountIn: 0,
+							amountOut: 0,
+							balanceOutMin: 0,
+							balanceInMax: 0
+						}
 						return { swapAmount, settings }
-					}
-					const swapAmount = {
-						amountIn: 0,
-						amountOut: 0,
-						balanceOutMin: 0,
-						balanceInMax: 0
-					}
-					return { swapAmount, settings }
+					})
 				}
 			),
 			calculateAddLiquidityAmount: fromPromise(
 				async ({ input }: { input: InputDexWorker & AddLiquiditySettings }) => {
-					const { worker, pool, tokenA, tokenB, slippagePercent } = input
-					const reserves = await worker.getReserves(pool)
+					return act("calculateAddLiquidityAmount", async () => {
+						const { worker, pool, tokenA, tokenB, slippagePercent } = input
+						const reserves = await worker.getReserves(pool)
 
-					const ok = reserves.token0.address === tokenA.address
+						const ok = reserves.token0.address === tokenA.address
 
-					if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-						const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-						const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
+							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
 
-						const liquidity = Number.parseInt(reserves.liquidity)
+							const liquidity = Number.parseInt(reserves.liquidity)
 
-						if (liquidity > 0) {
+							if (liquidity > 0) {
+								const amountAIn = amount(ok ? tokenA : tokenB)
+								const liquidityAmount = getAmountLiquidityOut({
+									amountAIn,
+									balanceA,
+									balanceB,
+									supply: liquidity,
+									slippagePercent
+								})
+								return liquidityAmount
+							}
+
 							const amountAIn = amount(ok ? tokenA : tokenB)
-							console.log("amountAIn", amountAIn)
-							const liquidityAmount = getAmountLiquidityOut({
-								amountAIn,
-								balanceA,
-								balanceB,
-								supply: liquidity,
-								slippagePercent
-							})
-							console.log("Calculated liquidityAmount", liquidityAmount)
+							const amountBIn = amount(ok ? tokenB : tokenA)
+							const liquidityAmount = getFirstAmountLiquidityOut({ amountAIn, amountBIn })
 							return liquidityAmount
 						}
-
-						const amountAIn = amount(ok ? tokenA : tokenB)
-						const amountBIn = amount(ok ? tokenB : tokenA)
-						const liquidityAmount = getFirstAmountLiquidityOut({ amountAIn, amountBIn })
-						console.log("Calculated liquidityAmount", { liquidityAmount })
+						const liquidityAmount = {
+							amountAIn: 0,
+							amountBIn: 0,
+							balanceAMax: 0,
+							balanceBMax: 0,
+							supplyMin: 0,
+							liquidity: 0
+						}
 						return liquidityAmount
-					}
-					const liquidityAmount = {
-						amountAIn: 0,
-						amountBIn: 0,
-						balanceAMax: 0,
-						balanceBMax: 0,
-						supplyMin: 0,
-						liquidity: 0
-					}
-					return liquidityAmount
+					})
 				}
 			),
 			calculateRemoveLiquidityAmount: fromPromise(
 				async ({ input }: { input: InputDexWorker & RemoveLiquiditySettings }) => {
-					const { worker, pool, tokenA, tokenB, slippagePercent } = input
-					const reserves = await worker.getReserves(pool)
+					return act("calculateRemoveLiquidityAmount", async () => {
+						const { worker, pool, tokenA, tokenB, slippagePercent } = input
+						const reserves = await worker.getReserves(pool)
 
-					const ok = reserves.token0.address === tokenA.address
+						const ok = reserves.token0.address === tokenA.address
 
-					if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-						const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-						const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
+							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
 
-						const supply = Number.parseInt(reserves.liquidity)
-						const liquidity = amount(ok ? tokenA : tokenB)
-						console.log("liquidity (fromAmount)", liquidity)
-						const liquidityAmount = getAmountOutFromLiquidity({
-							liquidity,
-							balanceA,
-							balanceB,
-							supply,
-							slippagePercent
-						})
-						console.log("Calculated liquidityAmount", liquidityAmount)
+							const supply = Number.parseInt(reserves.liquidity)
+							const liquidity = amount(ok ? tokenA : tokenB)
+							const liquidityAmount = getAmountOutFromLiquidity({
+								liquidity,
+								balanceA,
+								balanceB,
+								supply,
+								slippagePercent
+							})
+							return liquidityAmount
+						}
+						const liquidityAmount = {
+							amountAOut: 0,
+							amountBOut: 0,
+							balanceAMin: 0,
+							balanceBMin: 0,
+							supplyMax: 0,
+							liquidity: 0
+						}
 						return liquidityAmount
-					}
-					const liquidityAmount = {
-						amountAOut: 0,
-						amountBOut: 0,
-						balanceAMin: 0,
-						balanceBMin: 0,
-						supplyMax: 0,
-						liquidity: 0
-					}
-					return liquidityAmount
+					})
 				}
 			)
 		},
@@ -334,6 +358,7 @@ export const createLuminaDexMachine = () => {
 					swap: {
 						pool: "",
 						from: { address: "", amount: "" },
+						to: "",
 						slippagePercent: 0,
 						...resetSettings
 					},
@@ -371,19 +396,12 @@ export const createLuminaDexMachine = () => {
 			input: ({ context }) => ({ wallet: context.wallet })
 		}),
 		on: {
-			// TODO: What should happen when the network changes?
-			// Recalculate Settings if not null ? Re-initialize Contracts?
 			NetworkChanged: {
-				// actions: enqueueActions(({ context, enqueue }) => {
-				//  enqueue.assign({ wallet: { ...context.wallet, network: event.network } })
-				// })
+				actions: enqueueActions(({ context, event }) => {
+					context.contract.worker.minaInstance(event.network)
+				})
 			},
-			// TODO: What should happen when the account changes?
-			AccountChanged: {
-				// actions: assign(({ context, event }) => ({
-				// 	wallet: { ...context.wallet, account: event.account }
-				// }))
-			}
+			AccountChanged: {}
 		},
 		type: "parallel",
 		states: {
@@ -707,6 +725,7 @@ export const createLuminaDexMachine = () => {
 									user: walletUser(context),
 									pool: swap.pool,
 									from: swap.from.address,
+									to: swap.to,
 									amount: swap.calculated.amountIn,
 									minOut: swap.calculated.amountOut,
 									balanceOutMin: swap.calculated.balanceOutMin,
@@ -825,6 +844,7 @@ export const createLuminaDexMachine = () => {
 									...inputWorker(context),
 									pool: swap.pool,
 									from: swap.from,
+									to: swap.to,
 									slippagePercent: swap.slippagePercent
 								}
 							},
@@ -900,7 +920,7 @@ export const createLuminaDexMachine = () => {
 									dex: {
 										...context.dex,
 										removeLiquidity: {
-											...context.dex.addLiquidity,
+											...context.dex.removeLiquidity,
 											calculated: {
 												...event.output
 											}

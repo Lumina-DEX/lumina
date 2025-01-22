@@ -4,8 +4,9 @@
 	"type": "module",
 	"scripts": {
 		"typecheck": "tsc --noEmit",
-		"dev": "vite --port=3001",
+		"dev": "vite --port=3003",
 		"build": "vite build",
+		"deploy:cf": "wrangler pages deploy dist/",
 		"serve": "vite preview",
 		"start": "vite"
 	},
@@ -14,7 +15,8 @@
 		"@types/react": "^18.3.3",
 		"@types/react-dom": "^18.3.0",
 		"@vitejs/plugin-react": "^4.3.2",
-		"vite": "^6.0.3"
+		"vite": "^6.0.3",
+		"wrangler": "^3.60.3"
 	},
 	"dependencies": {
 		"@lumina-dex/sdk": "workspace:^",

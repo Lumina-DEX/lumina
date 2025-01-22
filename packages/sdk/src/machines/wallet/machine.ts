@@ -4,8 +4,11 @@ import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
+import { prefixedLogger } from "../../helpers/logs"
 import { fromCallback } from "../../helpers/xstate"
 import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
+
+const logger = prefixedLogger("[WALLET]")
 
 export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
@@ -30,7 +33,7 @@ const toNumber = (n: unknown) => {
 const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
 	if (Object.keys(urls).includes(networkId)) return networkId as Networks
 	if (networkId === "mina:devnet") return "mina:testnet"
-	console.log("Unknown network, falling back to mina:testnet", networkId)
+	logger.info("Unknown network, falling back to mina:testnet", networkId)
 	return "mina:testnet"
 }
 
@@ -53,13 +56,13 @@ export const createWalletMachine = (
 			 */
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
 				window.mina.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
-					console.log("User manually changed network", networkID)
+					logger.info("User manually changed network", networkID)
 					sendBack({ type: "WalletExtensionChangedNetwork", network: toNetwork(networkID) })
 				})
 				window.mina.on("accountsChanged", (accounts: string[]) => {
-					console.log("User manually changed account", accounts)
+					logger.info("User manually changed account", accounts)
 					if (accounts.length === 0) {
-						console.log("User disconnected account")
+						logger.info("User disconnected account")
 						sendBack({ type: "Disconnect" })
 					}
 					if (accounts.length > 0) {
@@ -67,7 +70,7 @@ export const createWalletMachine = (
 					}
 				})
 				return () => {
-					console.log("Removing listeners...")
+					logger.info("Removing listeners...")
 					window.mina.removeAllListeners()
 				}
 			}),
@@ -79,21 +82,21 @@ export const createWalletMachine = (
 				accounts: string[]
 			}>(async () => {
 				try {
-					console.log("Connecting wallet ...")
+					logger.info("Connecting wallet ...")
 					// Accounts is an array of string Mina addresses.
 					const accounts = await window.mina.requestAccounts()
 					if (accounts instanceof Error) throw accounts
-					console.log("Connected wallet", accounts)
+					logger.success("Connected wallet", accounts)
 					const { networkID } = await window.mina.requestNetwork()
 					return { currentNetwork: toNetwork(networkID), accounts }
 				} catch (e: unknown) {
 					if (e instanceof Error) {
-						console.log(e.message)
+						logger.error(e.message)
 					}
 					if ((e as ProviderError).code === 4001) {
-						console.log("User rejected request")
+						logger.error("User rejected request")
 					}
-					console.log(e)
+					logger.error(e)
 					throw e
 				}
 			}),
@@ -136,7 +139,7 @@ export const createWalletMachine = (
 			 */
 			changeNetwork: fromPromise<{ currentNetwork: Networks }, { switchTo: Networks }>(
 				async ({ input: { switchTo } }) => {
-					console.log("Change Network ...")
+					logger.info("Change Network ...")
 					// //TODO: Testnet is hardcoded for now
 					if (switchTo.includes("mainnet")) console.error("Mainnet is not supported")
 					if (!switchTo.startsWith("mina")) {
@@ -152,7 +155,7 @@ export const createWalletMachine = (
 		actions: {
 			setWalletNetwork: enqueueActions(({ enqueue }, { network }: { network: Networks }) => {
 				const url = urls[network] ?? urls["mina:testnet"]
-				console.log("Setting network to", { network, url })
+				logger.info("Setting network to", { network, url })
 				Mina.setActiveInstance(Mina.Network(url))
 				enqueue.assign({ currentNetwork: network })
 				enqueue.emit({ type: "NetworkChanged", network })

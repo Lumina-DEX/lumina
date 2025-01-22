@@ -266,7 +266,7 @@ describe("Pool Factory Token", () => {
       // await zkToken1.approveAccountUpdate(tokenHolder.self);
     })
     console.log("Withdraw liquidity", txn.toPretty())
-    console.log("Withdraw liquidity au", txn.transaction.accountUpdates.length)
+    console.log("w liquidity au", txn.transaction.accountUpdates.length)
 
     await txn.prove()
     await txn.sign([senderKey]).send()

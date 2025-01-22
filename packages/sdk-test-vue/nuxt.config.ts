@@ -12,6 +12,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4
   },
+  nitro: { static: true },
   ssr: false,
   routeRules: {
     "/**": { headers: webWorkerHeaders }

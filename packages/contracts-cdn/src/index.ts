@@ -119,7 +119,7 @@ export default {
 			const tokens = createList(network)(data)
 			if (!tokens) return notFound()
 			const response = Response.json(tokens, { headers })
-			response.headers.append("Cache-Control", "s-maxage=3600") // 1 hour
+			// response.headers.append("Cache-Control", "s-maxage=60") // We don't want the user to cache the response in his browser.
 			context.waitUntil(cache.put(cacheKey, response.clone()))
 			data[Symbol.dispose]() //TODO: Use using keyword
 			return response
