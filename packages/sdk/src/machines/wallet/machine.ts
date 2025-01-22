@@ -154,8 +154,8 @@ export const createWalletMachine = (
 		actions: {
 			setWalletNetwork: enqueueActions(({ enqueue }, { network }: { network: Networks }) => {
 				const url = urls[network] ?? urls["mina:testnet"]
-				logger.info("Setting network to", { network, url })
 				Mina.setActiveInstance(Mina.Network(url))
+				logger.success("Network set to", { network, url })
 				enqueue.assign({ currentNetwork: network })
 				enqueue.emit({ type: "NetworkChanged", network })
 			})

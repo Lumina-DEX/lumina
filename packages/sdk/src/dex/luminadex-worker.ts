@@ -126,15 +126,14 @@ export interface CompileContract {
 let cache: ReturnType<typeof readCache>
 const compileContract = async ({ contract }: CompileContract) => {
 	if (!cache) {
-		logger.start("Downloading cached contracts ...")
 		const cacheFiles = await fetchZippedContracts()
 		cache = readCache(cacheFiles)
 	}
 	const contracts = context().contracts
-	logger.info("Compiling contract", contract)
+	logger.start("Compiling contract", contract)
 	try {
 		await contracts[contract].compile({ cache })
-		logger.success("Compiled contract successfully")
+		logger.success("Compiled contract successfully", contract)
 	} catch (error) {
 		logger.error("Contract compilation failed:", error)
 		throw error

@@ -101,6 +101,8 @@ const act = async <T>(label: string, body: (stop: () => void) => Promise<T>) => 
 	logger.start(label)
 	try {
 		const result = await body(stop)
+		logger.success(label)
+		stop()
 		return result
 	} catch (e) {
 		logger.error(`${label} Error:`, e)
@@ -458,6 +460,10 @@ export const createLuminaDexMachine = () => {
 							onDone: {
 								target: "COMPILE_POOL",
 								actions: assign(({ context }) => loaded({ context, contract: "FungibleToken" }))
+							},
+							onError: {
+								target: "FAILED",
+								actions: assign(setContractError("Compile Contracts"))
 							}
 						}
 					},
