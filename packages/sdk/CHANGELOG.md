@@ -1,5 +1,14 @@
 # @lumina-dex/sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- e637ceb: - Change the swap interface by adding a to parameter. This is a breaking change.
+  - Add canDoDexAction.
+  - Add logs.
+  - Fix many functionalities.
+
 ## 0.3.2
 
 ### Patch Changes
