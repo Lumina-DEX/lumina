@@ -1,4 +1,5 @@
 import type { ActorRefFromLogic, EventObject } from "xstate"
+import { logger } from "../../helpers/logs"
 import { fromCallback } from "../../helpers/xstate"
 import type { createWalletMachine } from "./machine"
 import type { WalletEmit } from "./types"
@@ -16,12 +17,12 @@ export const detectWalletChange = fromCallback<
 	WalletEmit
 >(({ sendBack, input: { wallet } }) => {
 	const nc = wallet.on("NetworkChanged", (emitted) => {
-		console.log("NetworkChanged received by actor", emitted)
+		logger.info("NetworkChanged received by actor", emitted)
 		sendBack({ type: "NetworkChanged", network: emitted.network })
 	})
 
 	const ac = wallet.on("AccountChanged", (emitted) => {
-		console.log("AccountChanged received by actor", emitted)
+		logger.info("AccountChanged received by actor", emitted)
 		sendBack({ type: "AccountChanged", account: emitted.account })
 	})
 

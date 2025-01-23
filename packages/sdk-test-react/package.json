@@ -1,0 +1,30 @@
+{
+	"name": "sdk-test-react",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"dev": "vite --port=3003",
+		"build": "vite build",
+		"deploy:cf": "wrangler pages deploy dist/",
+		"serve": "vite preview",
+		"start": "vite"
+	},
+	"devDependencies": {
+		"@tanstack/router-plugin": "^1.97.0",
+		"@types/react": "^18.3.3",
+		"@types/react-dom": "^18.3.0",
+		"@vitejs/plugin-react": "^4.3.2",
+		"vite": "^6.0.3",
+		"wrangler": "^3.60.3"
+	},
+	"dependencies": {
+		"@lumina-dex/sdk": "workspace:^",
+		"@tanstack/react-router": "^1.97.0",
+		"@tanstack/router-devtools": "^1.97.0",
+		"@xstate/react": "^4.1.3",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"xstate": "^5.18.2"
+	}
+}

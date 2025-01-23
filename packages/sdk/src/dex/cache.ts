@@ -1,8 +1,11 @@
 import { unzipSync } from "fflate"
 import { luminaCdnOrigin } from "../constants"
+import { prefixedLogger } from "../helpers/logs"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>
+
+const logger = prefixedLogger("[CACHE]")
 
 export const createCacheList = (cacheList: CachedFile[]) =>
 	cacheList.reduce((acc: CacheList, { file, data }) => {
@@ -24,31 +27,27 @@ const fetchWithRetry =
 		throw new Error("Max retries reached")
 	}
 
+/**
+ * Fetch cache contracts one by one with Promise.all
+ * @returns CacheList
+ */
 export const fetchCachedContracts = async () => {
 	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
-
-	console.time("Compiled Contracts")
 	const filesResponse = await fetch(`${luminaCdnOrigin}/api/cache`, { headers })
 	const json = (await filesResponse.json()) as string[]
-	console.timeEnd("Compiled Contracts")
-
-	console.time("CacheList")
 	const cacheList = await Promise.all(
 		json
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
-				console.time(`Fetch ${file}`)
 				const response = await fetchWithRetry(3)(`${luminaCdnOrigin}/cache/${file}.txt`, {
 					headers
 				})
-				console.timeEnd(`Fetch ${file}`)
 				return {
 					file,
 					data: new Uint8Array(await response.arrayBuffer())
 				}
 			})
 	)
-	console.timeEnd("CacheList")
 	return createCacheList(cacheList)
 }
 
@@ -58,6 +57,10 @@ type CacheData = {
 	dataType: "string" | "bytes"
 }
 
+/**
+ * Fetch zipped contracts and unzip them. This is faster than fetchCachedContracts.
+ * @returns CacheList
+ */
 export const fetchZippedContracts = async () => {
 	const response = await fetch(`${luminaCdnOrigin}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
@@ -75,25 +78,26 @@ export const fetchZippedContracts = async () => {
 
 export const readCache = (files: CacheList) => ({
 	read({ persistentId, dataType }: CacheData) {
-		// console.time(`Load Cache ${persistentId}`)
-		// read current uniqueId, return data if it matches
-		if (!files[persistentId]) {
-			console.log("not found : ", persistentId)
-			// console.timeEnd(`Load Cache ${persistentId}`)
+		const id = persistentId.replaceAll("_", "")
+		if (!files[id]) {
+			logger.warn(`${id} not found.`)
 			return undefined
 		}
 
 		if (dataType === "string") {
-			const data = files[persistentId].data
-			// console.timeEnd(`Load Cache ${persistentId}`)
+			logger.debug(`${id} found.`)
+			const data = files[id].data
 			return data
 		}
-		console.log("data type not string : ", persistentId)
-		// console.timeEnd(`Load Cache ${persistentId}`)
+		logger.error(`${id} data type is not a string : not supported.`)
 		return undefined
 	},
 	write({ persistentId, uniqueId, dataType }: CacheData) {
-		console.log("write", { persistentId, uniqueId, dataType })
+		logger.warn("writing to the cache, this should not happen.", {
+			persistentId,
+			uniqueId,
+			dataType
+		})
 	},
 	canWrite: false
 })

@@ -1,5 +1,32 @@
 # @lumina-dex/sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- e637ceb: - Change the swap interface by adding a to parameter. This is a breaking change.
+  - Add canDoDexAction.
+  - Add logs.
+  - Fix many functionalities.
+
+## 0.3.2
+
+### Patch Changes
+
+- ed22fd6: Add log statements to the worker.
+
+## 0.3.1
+
+### Patch Changes
+
+- bae9b40: Replace SharedWorker with Worker
+
+## 0.3.0
+
+### Minor Changes
+
+- d034806: Fix the fetch of the balance and change the data structure of the wallet balance.
+
 ## 0.2.2
 
 ### Patch Changes

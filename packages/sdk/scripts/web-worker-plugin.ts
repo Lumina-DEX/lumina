@@ -19,7 +19,7 @@ const defaultOpts: Required<OMTOptions> = {
 // - new URL('...', import.meta.url)
 // - new URL("...", import.meta.url)
 const workerRegexpForTransform =
-	/(new\s+SharedWorker\()\s*(('.*?'|".*?")|import\.meta\.url|new\s+URL\(('.*?'|".*?"),\s*import\.meta\.url\))/gs
+	/(new\s+Worker\()\s*(('.*?'|".*?")|import\.meta\.url|new\s+URL\(('.*?'|".*?"),\s*import\.meta\.url\))/gs
 
 let longWarningAlreadyShown = false
 

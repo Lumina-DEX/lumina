@@ -1,4 +1,5 @@
 import { AccountUpdate, Field, Mina, PublicKey, type Types } from "o1js"
+import { logger } from "./logs"
 
 export const l1NodeUrl = "https://api.minascan.io/node/devnet/v1/graphql"
 
@@ -63,7 +64,7 @@ export const applyAccountUpdates = (tx: Mina.Transaction<false, false>, accountU
 	// Append proved account update to the command
 	for (const accountUpdate of JSON.parse(accountUpdates) as Types.Json.AccountUpdate[]) {
 		const au = AccountUpdate.fromJSON(accountUpdate)
-		console.log({ accountUpdate, au })
+		logger.info({ accountUpdate, au })
 		tx.transaction.accountUpdates.push(au)
 	}
 	return tx
@@ -76,6 +77,7 @@ export const sendTransaction = async (tx: Mina.Transaction<false, false> | strin
 		onlySign: false, // only sign zkCommond, not broadcast.
 		transaction
 	})
-	// Save the hash in localStorage to track the state
+	// TODO: Save the hash in localStorage to track the state
+	logger.success("Transaction sent", updateResult)
 	return updateResult
 }

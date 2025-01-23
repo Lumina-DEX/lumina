@@ -12,16 +12,21 @@ export interface Token {
 	decimal?: number
 }
 
+interface LuminaError {
+	message: string
+	error: unknown
+}
+
 interface ContractContext {
 	worker: DexWorker
 	loaded: {
 		[name in ContractName]: boolean
 	}
-	error: Error | null
+	error: LuminaError | null
 }
 
 interface DexContext {
-	error: Error | null
+	error: LuminaError | null
 	addLiquidity: {
 		transactionResult: DexTransactionResult
 		calculated: {
@@ -85,7 +90,7 @@ type DexEvent =
 	| { type: "DeployToken"; settings: { symbol: string } }
 	// Mint
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
-	// Claimå
+	// Claim
 	| { type: "ClaimTokensFromFaucet" }
 
 interface FrontendFee {
@@ -95,7 +100,31 @@ interface FrontendFee {
 
 export type LuminaDexMachineEvent = ContractEvent | DexEvent | WalletEmit
 
+export interface Can {
+	// [Pool, FungibleToken]
+	changeSwapSettings: boolean
+	// [Pool, FungibleToken, PoolTokenHolder] calculatedSwap
+	swap: boolean
+	// [Pool, FungibleToken] calculatedAddLiquidity
+	changeAddLiquiditySettings: boolean
+	// [Pool, FungibleToken]
+	addLiquidity: boolean
+	// [Pool, FungibleToken]
+	changeRemoveLiquiditySettings: boolean
+	// [Pool, FungibleToken, PoolTokenHolder] calculatedRemoveLiquidity
+	removeLiquidity: boolean
+	// [PoolFactory]
+	deployPool: boolean
+	// [FungibleToken, FungibleTokenAdmin]
+	deployToken: boolean
+	// [FungibleToken]
+	mintToken: boolean
+	// [FungibleToken, Faucet]
+	claim: boolean
+}
+
 export interface LuminaDexMachineContext {
+	can: Can
 	wallet: WalletActorRef
 	dex: DexContext
 	contract: ContractContext
@@ -114,6 +143,7 @@ export interface InputDexWorker {
 export interface SwapSettings {
 	pool: string
 	from: Token
+	to: string
 	slippagePercent: number
 }
 
