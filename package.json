@@ -21,7 +21,7 @@
 		"dprint": "^0.47.5",
 		"lage": "^2.11.15",
 		"lint-staged": "^15.2.10",
-		"o1js": "^2.*",
+		"o1js": "^2.2.0",
 		"simple-git-hooks": "^2.11.1",
 		"taze": "^0.18.0",
 		"typescript": "^5.6.3"
