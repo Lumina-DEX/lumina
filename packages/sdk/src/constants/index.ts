@@ -30,7 +30,7 @@ export const archiveUrls = {
 
 // TODO: Add missing factories
 export const luminadexFactories = {
-	"mina:testnet": "B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq"
+	"mina:testnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"
 } as const
 
 // TODO: Add missing faucets
