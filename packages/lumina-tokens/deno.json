@@ -5,7 +5,7 @@
 		"deploy:prod": "deployctl deploy --prod --project=lumina-tokens --env-file=.env"
 	},
 	"imports": {
-		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.2.0"
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.5.0"
 	},
 	"fmt": {
 		"semiColons": false
