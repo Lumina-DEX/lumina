@@ -53,9 +53,11 @@ export const internal_fetchAllPoolEvents = async (network: Networks) => {
 /**
  * Internal function to fetch all pool events from the contract.
  */
-export const internal_fetchAllPoolFactoryEvents = async (network: Networks) => {
+export const internal_fetchAllPoolFactoryEvents = async (
+	{ network, factory }: { network: Networks; factory?: string }
+) => {
 	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = luminadexFactories[network as "mina:testnet"] // TODO: Support all factories
+	const factoryAddress = factory ?? luminadexFactories[network as "mina:testnet"] // TODO: Support all factories
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
 	return await zkFactory.fetchEvents()
 }
@@ -134,8 +136,10 @@ export const internal_fetchAllPoolTokens = async (network: Networks) => {
 /**
  * Internal function to fetch all tokens from the pool factory.
  */
-export const internal_fetchAllTokensFromPoolFactory = async (network: Networks) => {
-	const events = await internal_fetchAllPoolFactoryEvents(network)
+export const internal_fetchAllTokensFromPoolFactory = async (
+	{ network, factory }: { network: Networks; factory?: string }
+) => {
+	const events = await internal_fetchAllPoolFactoryEvents({ network, factory })
 	Mina.setActiveInstance(minaNetwork(network))
 	const promises = events.filter(event => event.type === "poolAdded").map(async (event) => {
 		const data = event.event.data as unknown as PoolAddedEventData

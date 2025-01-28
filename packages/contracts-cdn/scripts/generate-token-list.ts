@@ -21,7 +21,7 @@ export const processSettledPromises = <T extends any[]>(
 	}) as T
 }
 const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllTokensFromPoolFactory(network)
+	const tokens = await internal_fetchAllTokensFromPoolFactory({ network })
 	const success = processSettledPromises(tokens)
 	console.log(success)
 

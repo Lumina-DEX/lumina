@@ -1,4 +1,4 @@
-import { type Networks, internal_fetchAllPoolTokens, networks } from "@lumina-dex/sdk"
+import { type Networks, internal_fetchAllTokensFromPoolFactory, networks } from "@lumina-dex/sdk"
 
 // deno-lint-ignore no-explicit-any
 const processSettledPromises = <T extends any[]>(
@@ -13,9 +13,10 @@ const processSettledPromises = <T extends any[]>(
 }
 
 const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllPoolTokens(network)
+	const tokens = await internal_fetchAllTokensFromPoolFactory({ network })
 	return processSettledPromises(tokens)
 }
+
 Deno.serve(async (request) => {
 	try {
 		// Get the authorization header
