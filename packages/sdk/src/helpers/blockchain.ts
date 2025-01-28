@@ -96,8 +96,10 @@ const toTokens = async (
 	}
 ) => {
 	// // console.log([poolAddress.toJSON(), token1Address.toJSON()])
-	const pool = await fetchAccount({ publicKey: poolAddress })
-	const token = await fetchAccount({ publicKey: token1Address })
+	const [pool, token] = await Promise.all([
+		fetchAccount({ publicKey: poolAddress }),
+		fetchAccount({ publicKey: token1Address })
+	])
 	// // console.log({ pool, token })
 	if (pool.error) throw pool.error
 	if (token.error) throw token.error
