@@ -23,7 +23,7 @@ export const processSettledPromises = <T extends any[]>(
 const generateTokens = async (network: Networks) => {
 	const tokens = await internal_fetchAllTokensFromPoolFactory(network)
 	const success = processSettledPromises(tokens)
-	console.log(tokens)
+	console.log(success)
 
 	// const __dirname = path.dirname(new URL(import.meta.url).pathname)
 	// const genDir = path.resolve(__dirname, "../generated")
