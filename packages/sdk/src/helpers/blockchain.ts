@@ -51,19 +51,23 @@ const parsePoolEvents = (data: string[]) => {
 				get sender() {
 					return pk(1, 2)
 				},
-				get poolAddress() {
+				get signer() {
 					return pk(3, 4)
 				},
-				get token0Address() {
+				get poolAddress() {
 					return pk(5, 6)
 				},
-				get token1Address() {
+				get token0Address() {
 					return pk(7, 8)
+				},
+				get token1Address() {
+					return pk(9, 10)
 				}
 			}[prop]
 		}
 	}) as {
 		sender: PublicKey
+		signer: PublicKey
 		poolAddress: PublicKey
 		token0Address: PublicKey
 		token1Address: PublicKey
