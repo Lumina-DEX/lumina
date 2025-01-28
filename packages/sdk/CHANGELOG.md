@@ -1,5 +1,16 @@
 # @lumina-dex/sdk
 
+## 0.5.0
+
+### Minor Changes
+
+- f4fe1a8: Upgrade to o1js ^2.2.0 with new versions of contracts. Add cdn reset feature and cdn-sdk sync.
+
+### Patch Changes
+
+- Updated dependencies [f4fe1a8]
+  - @lumina-dex/contracts@0.3.0
+
 ## 0.4.0
 
 ### Minor Changes
