@@ -1,4 +1,4 @@
-import { FungibleToken } from "@lumina-dex/contracts"
+import { FungibleToken, PoolCreationEvent, PoolFactory } from "@lumina-dex/contracts"
 import { fetchAccount, fetchEvents, Field, Mina, PublicKey, TokenId } from "o1js"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, urls } from "../constants"
 import type { Networks } from "../machines/wallet/machine"
@@ -37,7 +37,8 @@ export const internal_fetchAllPoolEvents = async (network: Networks) => {
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = luminadexFactories[network as "mina:testnet"] // TODO: Support all factories
 	if (!factoryAddress) throw new Error("Factory address not found")
-	return await fetchEvents({ publicKey: factoryAddress })
+	const zkfactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
+	return await zkfactory.fetchEvents()
 }
 
 const parsePoolEvents = (data: string[]) => {
@@ -73,6 +74,7 @@ const parsePoolEvents = (data: string[]) => {
 		token1Address: PublicKey
 	}
 }
+
 /**
 
  * Internal function to fetch all pool tokens.
@@ -85,12 +87,14 @@ export const internal_fetchAllPoolTokens = async (network: Networks) => {
 	// const cacheFiles = await fetchZippedContracts()
 	// const cache = readCache(cacheFiles)
 	// const tokenContract = FungibleToken
-	console.log("Event data:", events.map((event) => event.events[0].data))
-	const promises = events.map(async (event) => {
-		const data = event.events[0].data
-		console.log({ data })
-		const { poolAddress, token1Address } = parsePoolEvents(data)
-		// console.log([poolAddress.toJSON(), token1Address.toJSON()])
+	// console.log("Event data:", events.map((event) => event.event.data))
+	const listPools: any[] = []
+	events.filter(x => x.type === "poolAdded").map(async (event) => {
+		const data = event.event.data as unknown as PoolCreationEvent
+		const poolAddress = data.poolAddress
+		const token1Address = data.token1Address
+		// const { poolAddress, token1Address } = [parsePoolEvents(data)]
+		console.log("pool data", [poolAddress.toBase58(), token1Address.toBase58()])
 		const pool = await fetchAccount({ publicKey: poolAddress })
 		const token = await fetchAccount({ publicKey: token1Address })
 		// console.log({ pool, token })
@@ -100,7 +104,7 @@ export const internal_fetchAllPoolTokens = async (network: Networks) => {
 		const tokenId = TokenId.toBase58(new FungibleToken(token1Address).deriveTokenId())
 		console.log({ tokenId, symbol })
 
-		return {
+		const newPool = {
 			address: token1Address.toBase58(),
 			poolAddress: poolAddress.toBase58(),
 			tokenId,
@@ -108,8 +112,9 @@ export const internal_fetchAllPoolTokens = async (network: Networks) => {
 			symbol,
 			decimals: 9
 		}
+		listPools.push(newPool)
 	})
-	return await Promise.allSettled(promises)
+	return listPools
 }
 
 export const fetchPoolTokenList = async (network: Networks) => {
