@@ -96,12 +96,7 @@ const toTokens = async (
 	}
 ) => {
 	// // console.log([poolAddress.toJSON(), token1Address.toJSON()])
-	const [pool, token] = await Promise.all([
-		fetchAccount({ publicKey: poolAddress }),
-		fetchAccount({ publicKey: token1Address })
-	])
-	// // console.log({ pool, token })
-	if (pool.error) throw pool.error
+	const token = await fetchAccount({ publicKey: token1Address })
 	if (token.error) throw token.error
 	const symbol = token?.account?.tokenSymbol ?? "UNKNOWN_TOKEN_SYMBOL"
 	const tokenId = TokenId.toBase58(new FungibleToken(token1Address).deriveTokenId())
