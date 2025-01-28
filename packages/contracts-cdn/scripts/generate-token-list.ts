@@ -1,5 +1,5 @@
 import type { Networks } from "@lumina-dex/sdk"
-import { internal_fetchAllPoolTokens } from "../../sdk/src/helpers/blockchain"
+import { internal_fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
 
 // type CreateTuple<
 // 	Length extends number,
@@ -21,7 +21,7 @@ export const processSettledPromises = <T extends any[]>(
 	}) as T
 }
 const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllPoolTokens(network)
+	const tokens = await internal_fetchAllTokensFromPoolFactory(network)
 	const success = processSettledPromises(tokens)
 	console.log(tokens)
 

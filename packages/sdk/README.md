@@ -138,6 +138,6 @@ import {
 	internal_fetchAllPoolTokens
 } from "@lumina-dex/sdk"
 
-const events = await internal_fetchAllPoolEvents("mina:testnet")
-const tokens = await internal_fetchAllPoolTokens("mina:testnet")
+const events = await internal_fetchAllPoolFactoryEvents("mina:testnet")
+const tokens = await internal_fetchAllTokensFromPoolFactory("mina:testnet")
 ```

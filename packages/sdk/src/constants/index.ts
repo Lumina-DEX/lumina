@@ -38,7 +38,7 @@ export const chainFaucets = {
 	"mina:testnet": {
 		address: "B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq",
 		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
-		tokenId: ""
+		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn"
 	},
 	"mina:mainnet": { address: "NOT Implemented", tokenAddress: "", tokenId: "" },
 	"mina:berkeley": { address: "testnet-address-2", tokenAddress: "", tokenId: "" },
