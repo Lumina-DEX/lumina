@@ -41,7 +41,7 @@ export const internal_fetchAllPoolEvents = async (network: Networks) => {
 }
 
 const parsePoolEvents = (data: string[]) => {
-	const pk = (a: number, b: number) => {
+	const pubk = (a: number, b: number) => {
 		return PublicKey.fromFields([Field.from(data[a]), Field.from(data[b])])
 	}
 
@@ -49,19 +49,19 @@ const parsePoolEvents = (data: string[]) => {
 		get: (_, prop: string) => {
 			return {
 				get sender() {
-					return pk(1, 2)
+					return pubk(1, 2)
 				},
 				get signer() {
-					return pk(3, 4)
+					return pubk(3, 4)
 				},
 				get poolAddress() {
-					return pk(5, 6)
+					return pubk(5, 6)
 				},
 				get token0Address() {
-					return pk(7, 8)
+					return pubk(7, 8)
 				},
 				get token1Address() {
-					return pk(9, 10)
+					return pubk(9, 10)
 				}
 			}[prop]
 		}
@@ -79,24 +79,31 @@ const parsePoolEvents = (data: string[]) => {
  */
 export const internal_fetchAllPoolTokens = async (network: Networks) => {
 	const events = await internal_fetchAllPoolEvents(network)
+	console.log(JSON.stringify(events))
 	Mina.setActiveInstance(minaNetwork(network))
 	// Compiling appears to be optional to derive the token ID.
 	// const cacheFiles = await fetchZippedContracts()
 	// const cache = readCache(cacheFiles)
 	// const tokenContract = FungibleToken
+	console.log("Event data:", events.map((event) => event.events[0].data))
 	const promises = events.map(async (event) => {
 		const data = event.events[0].data
+		console.log({ data })
 		const { poolAddress, token1Address } = parsePoolEvents(data)
-
+		// console.log([poolAddress.toJSON(), token1Address.toJSON()])
 		const pool = await fetchAccount({ publicKey: poolAddress })
 		const token = await fetchAccount({ publicKey: token1Address })
+		// console.log({ pool, token })
 		if (pool.error) throw pool.error
 		if (token.error) throw token.error
 		const symbol = token?.account?.tokenSymbol ?? "UNKNOWN_TOKEN_SYMBOL"
+		const tokenId = TokenId.toBase58(new FungibleToken(token1Address).deriveTokenId())
+		console.log({ tokenId, symbol })
+
 		return {
 			address: token1Address.toBase58(),
 			poolAddress: poolAddress.toBase58(),
-			tokenId: TokenId.toBase58(new FungibleToken(token1Address).deriveTokenId()),
+			tokenId,
 			chainId: network,
 			symbol,
 			decimals: 9
