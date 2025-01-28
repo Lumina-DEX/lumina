@@ -1,40 +1,46 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Lumina MVP
 
-## Getting Started
+First iteration of LuminaDex, allows you to create Mina/Fungible Token pools.
 
-First, run the development server:
+Adding/withdrawing liquidities, or swapping, each action requires only one transaction.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+These actions can be performed concurrently with other users.
+
+## Licensing
+
+Business Source License 1.1
+
+Licensor: Lumina Labs
+
+## Test
+
+```
+cd contracts
+npm run testmina
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+docker run -it --env NETWORK_TYPE="single-node" --env PROOF_LEVEL="full" --env LOG_LEVEL="Info" -p 3085:3085 -p 5433:5432 -p 8080:8080 -p 8181:8181 -p 8282:8282 o1labs/mina-local-network:compatible-latest-devnet
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Lastest Improvment
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Pool factory, to create only one pool by pair, avoids liquidity fragmentation.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+0.05% for Lumina as creator and maintainer of the protocol
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+0.25% for liquidity providers
 
-## Learn More
+between 0-0.15% for frontend operators
 
-To learn more about Next.js, take a look at the following resources:
+## Testnet address
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+TOKA="B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"\
+TOKB="B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW"\
+TOKEN_ADMIN="B62qkQVZ9eokTmHcWtwXimhL43mw9LwzBfAx1jCschRp3SsJ9ENKDZN"\
+FACTORY="B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"\
+// not deployed yet POOL_TOKA_TOKB="B62qoctdst7JCvZ1qNRU3Ws8SgzAHgXNZcT5yZQLQ19gedsGTYJpryH"\
+POOL_TOKA_MINA="B62qq47Pu4rmDAs86jRLcwDRD3XDheJU9dmRq5pfSpfWYi2aY7b1KNH"\
+// not deployed yet POOL_ETH_MINA="B62qozByN9o4U82xcKvY2kTJJhnHf9cSFi2GPhbmcvgCQ4sd7U7d1Ut"\
+FAUCET="B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq"\
+OWNER="B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"\
+PROTOCOL="B62qpBKidvBH2YEWCwwkzLMFoBWa2fZknj6K5YWdqF5wAiLgoTExh42"\
+DELEGATOR="B62qmibKL59uByUjbWmXYBPLhhs5GbUYSBWGThsEqkHkdNcU7FCdfYy"
