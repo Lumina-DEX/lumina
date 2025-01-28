@@ -53,7 +53,14 @@ export class TokenList extends DurableObject {
 		return result[0].count
 	}
 
+	reset({ network }: Network) {
+		const table = getTable(network)
+		const result = this.db.delete(table).returning().all()
+		return result
+	}
+
 	async seed() {
+		//This is only used for local development and tests
 		this.insertToken("mina:testnet", [
 			{
 				address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",

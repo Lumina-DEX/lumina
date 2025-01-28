@@ -685,6 +685,12 @@ export const createLuminaDexMachine = () => {
 							onDone: {
 								target: "DEX.READY",
 								actions: [
+									({ context }) => {
+										logger.info("Syncing pools with CDN...")
+										fetch(`${luminaCdnOrigin}/api/${walletNetwork(context)}/sync`, {
+											method: "POST"
+										})
+									},
 									assign(({ context, event }) => ({
 										dex: {
 											...context.dex,

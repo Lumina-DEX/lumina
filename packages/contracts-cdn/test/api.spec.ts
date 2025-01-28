@@ -2,7 +2,10 @@ import { SELF, env, fetchMock } from "cloudflare:test"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
 
 const createRequest = (url: string, method = "GET") =>
-	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, { method })
+	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, {
+		method,
+		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
+	})
 
 beforeAll(() => {
 	fetchMock.activate()
@@ -19,7 +22,7 @@ describe("API", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const json = (await response.json()) as Record<string, any>
 		// biome-ignore lint/performance/noDelete: <explanation>
-		delete json.tokens[0].timestamp
+		delete json.tokens[0]?.timestamp
 		expect(json.tokens[0]).toEqual({
 			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 			poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
@@ -36,7 +39,8 @@ describe("API", () => {
 		// 	.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 		// 	.intercept({ path: () => true })
 		// 	.reply(200, [])
-		// 	.times(4)
+		// 	.times(2)
+		await SELF.scheduled()
 		// const controller = createScheduledController()
 		// const ctx = createExecutionContext()
 		// await worker.scheduled(controller, env, ctx)
@@ -50,7 +54,7 @@ describe("API", () => {
 			.intercept({ path: `/${network}` })
 			.reply(200, [])
 			.times(1)
-		const request = createRequest(`api/${network}/pool`, "POST")
+		const request = createRequest(`api/${network}/sync`, "POST")
 		const response = await SELF.fetch(request)
 
 		const decoder = new TextDecoder()
@@ -100,5 +104,31 @@ describe("API", () => {
 		const response3 = await SELF.fetch(request3)
 		const json2 = (await response3.json()) as Record<string, unknown>
 		expect(json2.tokens).toHaveLength(2)
+	})
+
+	it("can reset the network state", async () => {
+		const network = "mina:testnet"
+		fetchMock
+			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
+			.intercept({ path: `/${network}` })
+			.reply(200, [])
+			.times(1)
+
+		//Verify that we have a seeded token
+		const request1 = createRequest("api/mina:testnet/tokens")
+		const response1 = await SELF.fetch(request1)
+		const json = (await response1.json()) as Record<string, unknown>
+		expect(json.tokens).toHaveLength(1)
+
+		//Reset the network
+		const request2 = createRequest(`api/${network}/reset`, "POST")
+		const response2 = await SELF.fetch(request2)
+		expect(response2.status).toBe(200)
+
+		//Verify that we have no tokens
+		const request3 = createRequest("api/mina:testnet/tokens")
+		const response3 = await SELF.fetch(request3)
+		const json3 = (await response3.json()) as Record<string, unknown>
+		expect(json3.tokens).toHaveLength(0)
 	})
 })

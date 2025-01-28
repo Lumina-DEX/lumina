@@ -8,10 +8,14 @@ import { auth, getDb, headers, notFound, serveAsset, sync, tokenCacheKey } from 
 const router = createRouter<{ path: string }>()
 
 addRoute(router, "GET", "/api/cache", { path: "cache" })
+
 addRoute(router, "GET", "/api/:network/tokens", { path: "tokens" })
-addRoute(router, "POST", "/api/:network/token", { path: "token.post" })
 addRoute(router, "GET", "/api/:network/tokens/count", { path: "tokens/count" })
-addRoute(router, "POST", "/api/:network/pool", { path: "pool.post" })
+addRoute(router, "POST", "/api/:network/token", { path: "token.post" })
+
+addRoute(router, "POST", "/api/:network/sync", { path: "sync" })
+addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
+
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 
 export default {
@@ -30,8 +34,18 @@ export default {
 			return new Response("Synced all networks", { headers, status: 200 })
 		}
 
+		// Reset the database for a given network
+		if (match?.data.path === "reset" && match.params?.network && auth({ env, request })) {
+			const network = match.params.network as Networks
+			if (!networks.includes(network)) return notFound()
+			const db = getDb(env)
+			await db.reset({ network })
+			await sync({ env, network, context })
+			return new Response("Database reset and synced", { headers, status: 200 })
+		}
+
 		// Sync a network
-		if (match?.data.path === "pool.post" && match.params?.network) {
+		if (match?.data.path === "sync" && match.params?.network) {
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 			const { success } = await env.SYNC_RATE_LIMITER.limit({ key: "sync" })

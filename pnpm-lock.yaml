@@ -47,7 +47,7 @@ importers:
   packages/contracts:
     dependencies:
       mina-fungible-token:
-        specifier: ^1.1.0
+        specifier: 1.1.0
         version: 1.1.0(o1js@2.2.0)
       o1js:
         specifier: ^2.2.0
@@ -2651,7 +2651,6 @@ packages:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
 
-
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -3209,7 +3208,6 @@ packages:
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
-
 
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
@@ -5010,9 +5008,6 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
-  o1js@2.2.0:
-    resolution: {integrity: sha512-lR8vmBlvzz3h+tDUajZfC/zVM+yKyrJFoIa57nED7F8WRfCGZHHy5lUpaUgHwVsC3ZE+aRaFtj2B2IzYyJu1AQ==}
-
   nuxi@3.20.0:
     resolution: {integrity: sha512-E1R6QvUoinlAkP1EMesU0Dn1xLDLFli9LzaVAYdsmC2frHGIc15jMDRzwkAgK/8ae0H+tjHlfi/Qps/jZwF+7g==}
     engines: {node: ^16.10.0 || >=18.0.0}
@@ -5041,6 +5036,8 @@ packages:
     engines: {node: ^14.16.0 || >=16.10.0}
     hasBin: true
 
+  o1js@2.2.0:
+    resolution: {integrity: sha512-lR8vmBlvzz3h+tDUajZfC/zVM+yKyrJFoIa57nED7F8WRfCGZHHy5lUpaUgHwVsC3ZE+aRaFtj2B2IzYyJu1AQ==}
     engines: {node: '>=18.14.0'}
     hasBin: true
 
@@ -8915,7 +8912,6 @@ snapshots:
 
   '@trysound/sax@0.2.0': {}
 
-
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.26.5
@@ -9639,7 +9635,6 @@ snapshots:
       ieee754: 1.2.1
 
   bun-types@1.1.44:
-
     dependencies:
       '@types/node': 20.12.14
       '@types/ws': 8.5.13
@@ -10076,13 +10071,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-
   drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@types/react@18.3.12)(bun-types@1.1.44)(react@18.3.1):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20241127.0
       '@types/react': 18.3.12
       bun-types: 1.1.44
-
       react: 18.3.1
 
   duplexer@0.1.2: {}

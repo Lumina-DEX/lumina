@@ -141,4 +141,18 @@ describe("Read and write to the DO database", () => {
 			})
 		})
 	})
+
+	describe("Resetting the database", () => {
+		it("can reset the database", async () => {
+			await runInDurableObject(stub, (instance: TokenList) => {
+				insertTokens(instance)
+				const count = instance.count({ network: "mina:berkeley" })
+				expect(count).toBe(2)
+
+				instance.reset({ network: "mina:berkeley" })
+				const newCount = instance.count({ network: "mina:berkeley" })
+				expect(newCount).toBe(0)
+			})
+		})
+	})
 })

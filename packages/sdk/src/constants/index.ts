@@ -37,12 +37,13 @@ export const luminadexFactories = {
 export const chainFaucets = {
 	"mina:testnet": {
 		address: "B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq",
-		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
+		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+		tokenId: ""
 	},
-	"mina:mainnet": { address: "NOT Implemented", tokenAddress: "" },
-	"mina:berkeley": { address: "testnet-address-2", tokenAddress: "" },
-	"zeko:testnet": { address: "zeko-test", tokenAddress: "" },
-	"zeko:mainnet": { address: "zeko-test", tokenAddress: "" }
+	"mina:mainnet": { address: "NOT Implemented", tokenAddress: "", tokenId: "" },
+	"mina:berkeley": { address: "testnet-address-2", tokenAddress: "", tokenId: "" },
+	"zeko:testnet": { address: "zeko-test", tokenAddress: "", tokenId: "" },
+	"zeko:mainnet": { address: "zeko-test", tokenAddress: "", tokenId: "" }
 } as const
 
 export const MINA_ADDRESS = "MINA"
