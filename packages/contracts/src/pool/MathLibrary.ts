@@ -8,7 +8,7 @@ import { Field, Gadgets as RangeCheck, Provable, UInt64 } from "o1js"
  * @param denominator The divisor
  * @returns  the quotient and the remainder
  */
-export function mulDivMod(a: UInt64, b: UInt64, denominator: UInt64): { quotient: UInt64; rest: UInt64 } {
+export function mulDivMod(a: UInt64, b: UInt64, denominator: UInt64) {
   const x = a.value.mul(b.value)
   let y_ = denominator.value
   if (x.isConstant() && y_.isConstant()) {
@@ -22,15 +22,15 @@ export function mulDivMod(a: UInt64, b: UInt64, denominator: UInt64): { quotient
     }
   }
   y_ = y_.seal()
-  const q = Provable.witness(UInt64, () => {
-    const result = new Field(x.toBigInt() / y_.toBigInt())
-    return UInt64.Unsafe.fromField(result)
-  })
-  const r = x.sub(q.value.mul(y_)).seal()
+  const q = Provable.witness(Field, () => new Field(x.toBigInt() / y_.toBigInt()))
+  RangeCheck.rangeCheckN(UInt64.NUM_BITS, q)
+  // TODO: Could be a bit more efficient
+  const r = x.sub(q.mul(y_)).seal()
   RangeCheck.rangeCheckN(UInt64.NUM_BITS, r)
-  const r_ = UInt64.Unsafe.fromField(new Field(r.value))
-  r_.assertLessThan(UInt64.Unsafe.fromField(new Field(y_.value)))
-  return { quotient: q, rest: r_ }
+  const r_ = new UInt64(r.value)
+  const q_ = new UInt64(q.value)
+  r_.assertLessThan(new UInt64(y_.value))
+  return { quotient: q_, rest: r_ }
 }
 
 /**

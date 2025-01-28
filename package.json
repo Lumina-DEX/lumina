@@ -21,7 +21,6 @@
 		"dprint": "^0.47.5",
 		"lage": "^2.11.15",
 		"lint-staged": "^15.2.10",
-		"o1js": "^2.2.0",
 		"simple-git-hooks": "^2.11.1",
 		"taze": "^0.18.0",
 		"typescript": "^5.6.3"
@@ -36,12 +35,11 @@
 		"pre-commit": "pnpx lint-staged"
 	},
 	"lint-staged": {
-		"*.{js,ts,tsx,vue,md}": [
-			"dprint fmt --verbose"
-		]
+		"*.{js,ts,tsx,vue,md}": ["dprint fmt --verbose"]
 	},
 	"pnpm": {
 		"patchedDependencies": {
+			"o1js@1.7.0": "patches/o1js@1.7.0.patch",
 			"@gql.tada/internal": "patches/@gql.tada__internal.patch"
 		}
 	}

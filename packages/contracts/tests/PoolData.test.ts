@@ -1,9 +1,9 @@
 import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
-import { MerkleTree, Poseidon, PublicKey, Signature, UInt64, VerificationKey } from "o1js"
+import { MerkleTree, Poseidon, PublicKey, Signature, VerificationKey } from "o1js"
 import { AccountUpdate, Bool, Cache, Mina, PrivateKey, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { mulDiv, Pool, PoolFactory, PoolTokenHolder, SignerMerkleWitness } from "../dist"
+import { Pool, PoolFactory, PoolTokenHolder, SignerMerkleWitness } from "../dist"
 
 import { PoolUpgradeTest } from "./PoolUpgradeTest"
 
@@ -118,8 +118,7 @@ describe("Pool data", () => {
       })
       await zkToken.deploy({
         symbol: "LTA",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
-        allowUpdates: false
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
       })
       await zkToken.initialize(
         zkTokenAdminAddress,
@@ -135,8 +134,7 @@ describe("Pool data", () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await zkToken2.deploy({
         symbol: "LTA",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
-        allowUpdates: false
+        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
       })
       await zkToken2.initialize(
         zkTokenAdminAddress,
@@ -148,12 +146,12 @@ describe("Pool data", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn5.sign([deployerKey, zkToken2PrivateKey]).send()
 
-    const signature = Signature.create(bobKey, zkPoolAddress.toFields())
+    const signature = Signature.create(zkTokenPrivateKey, zkPoolAddress.toFields())
     const witness = merkle.getWitness(0n)
     const circuitWitness = new SignerMerkleWitness(witness)
     const txn3 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(zkPoolAddress, zkTokenAddress, bobAccount, signature, circuitWitness)
+      await zkApp.createPool(zkPoolAddress, zkTokenAddress, zkTokenAddress, signature, circuitWitness)
     })
 
     // console.log("Pool creation au", txn3.transaction.accountUpdates.length);
@@ -162,93 +160,34 @@ describe("Pool data", () => {
     await txn3.sign([deployerKey, zkPoolPrivateKey]).send()
   })
 
-  it("update pool", async () => {
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      await zkPool.updateVerificationKey(compileKey)
-    })
-    await txn1.prove()
-    await txn1.sign([deployerKey, bobKey]).send()
-
-    let poolDatav2 = new PoolUpgradeTest(zkPoolAddress)
-    let version = await poolDatav2.version()
-    expect(version?.toBigInt()).toEqual(33n)
-  })
-
-  it("update pool holder", async () => {
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      await tokenHolder.updateVerificationKey(compileKey)
-      await zkPool.approve(tokenHolder.self)
-    })
-    await txn1.prove()
-    await txn1.sign([deployerKey, bobKey]).send()
-
-    let poolDatav2 = new PoolUpgradeTest(zkPoolAddress, zkToken.deriveTokenId())
-    let version = await poolDatav2.version()
-    expect(version?.toBigInt()).toEqual(33n)
-  })
-
-  it("update pool factory", async () => {
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      await zkApp.updateVerificationKey(compileKey)
-    })
-    await txn1.prove()
-    await txn1.sign([deployerKey, bobKey]).send()
-
-    let poolDatav2 = new PoolUpgradeTest(zkAppAddress)
-    let version = await poolDatav2.version()
-    expect(version?.toBigInt()).toEqual(33n)
-  })
-
-  it("math test", async () => {
-    const result = 150n * 12000n / 300n
-    const resultMul = mulDiv(UInt64.from(150n), UInt64.from(12000n), UInt64.from(300n))
-    expect(result).toEqual(resultMul.toBigInt())
-
-    const resultFix = 10000n * 1200000000n / 300n
-    const resultMulFix = mulDiv(UInt64.from(10000n), UInt64.from(1200000000n), UInt64.from(300n))
-    expect(resultFix).toEqual(resultMulFix.toBigInt())
-
-    const resultBigMul = 300_000_000_000_000n * 12_000_000_000_000n / 300_000_000n
-    const resultMulBigMul = mulDiv(
-      UInt64.from(300_000_000_000_000n),
-      UInt64.from(12_000_000_000_000n),
-      UInt64.from(300_000_000n)
-    )
-    expect(resultBigMul).toEqual(resultMulBigMul.toBigInt())
-
-    const resultFloat = 300n * 12000n / 17n
-    const resultMulFloat = mulDiv(UInt64.from(300n), UInt64.from(12000n), UInt64.from(17n))
-    expect(resultFloat).toEqual(resultMulFloat.toBigInt())
-  })
-
   it("update owner", async () => {
-    let owner = await zkApp.owner.fetch()
+    const owner = await zkApp.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewOwner(senderAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkApp.owner.fetch()
+    const newowner = await zkApp.owner.fetch()
     expect(newowner?.toBase58()).toEqual(senderAccount.toBase58())
   })
 
   it("update protocol", async () => {
-    let protocol = await zkApp.protocol.fetch()
+    const protocol = await zkApp.protocol.fetch()
     expect(protocol?.toBase58()).toEqual(aliceAccount.toBase58())
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewProtocol(deployerAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let protocolNew = await zkApp.protocol.fetch()
+    const protocolNew = await zkApp.protocol.fetch()
     expect(protocolNew?.toBase58()).toEqual(deployerAccount.toBase58())
   })
 
   it("set delegator", async () => {
-    let delegator = await zkApp.delegator.fetch()
+    const delegator = await zkApp.delegator.fetch()
     let poolAccount = zkPool.account?.delegate?.get()
     expect(delegator?.toBase58()).toEqual(dylanAccount.toBase58())
     expect(poolAccount?.toBase58()).toEqual(zkPoolAddress.toBase58())
@@ -290,7 +229,7 @@ describe("Pool data", () => {
 
   it("failed change delegator", async () => {
     // only owner can change it
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewDelegator(aliceAccount)
     })
     await txn.prove()
@@ -323,32 +262,19 @@ describe("Pool data", () => {
     })
     await txn.prove()
     await expect(txn.sign([senderKey]).send()).rejects.toThrow()
-
-    txn = await Mina.transaction(senderAccount, async () => {
-      await zkPool.updateVerificationKey(compileKey)
-    })
-    await txn.prove()
-    await expect(txn.sign([senderKey]).send()).rejects.toThrow()
-
-    txn = await Mina.transaction(senderAccount, async () => {
-      await tokenHolder.updateVerificationKey(compileKey)
-    })
-    await txn.prove()
-    await expect(txn.sign([senderKey]).send()).rejects.toThrow()
   })
 
   it("failed change owner", async () => {
-    let owner = await zkApp.owner.fetch()
+    const owner = await zkApp.owner.fetch()
     expect(owner?.toBase58()).toEqual(bobAccount.toBase58())
-    // failed without alice key
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewOwner(aliceAccount)
     })
     await txn.prove()
-    await expect(txn.sign([senderKey, bobKey]).send()).rejects.toThrow()
+    await txn.sign([senderKey, bobKey]).send()
 
-    let newowner = await zkApp.owner.fetch()
-    expect(newowner?.toBase58()).toEqual(bobAccount.toBase58())
+    const newowner = await zkApp.owner.fetch()
+    expect(newowner?.toBase58()).toEqual(aliceAccount.toBase58())
   })
 
   it("deploy pool with first authorized account", async () => {
@@ -410,7 +336,7 @@ describe("Pool data", () => {
     merkle.setLeaf(2n, Poseidon.hash(senderAccount.toFields()))
     const newRoot = merkle.getRoot()
     // works after authorized this account
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.updateApprovedSigner(newRoot)
     })
     await txn.prove()

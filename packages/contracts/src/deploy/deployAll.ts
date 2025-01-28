@@ -239,8 +239,7 @@ async function deployToken() {
         })
         await zkToken.deploy({
           symbol: "LTA",
-          src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
-          allowUpdates: true
+          src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts"
         })
         await zkToken.initialize(
           zkTokenAdminAddress,
