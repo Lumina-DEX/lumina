@@ -12,7 +12,12 @@ import {
 	spawnChild,
 	stateIn
 } from "xstate"
-import { chainFaucets, luminaCdnOrigin, luminadexFactories } from "../../constants/index"
+import {
+	chainFaucets,
+	luminaCdnOrigin,
+	luminadexFactories,
+	poolInstance
+} from "../../constants/index"
 import type {
 	AddLiquidity,
 	CompileContract,
@@ -96,6 +101,9 @@ const setDexError = (message: string) =>
 
 const resetSettings = { calculated: null, transactionResult: null } as const
 
+/**
+ * Helper function to measure and log the time taken to execute an action.
+ */
 const act = async <T>(label: string, body: (stop: () => void) => Promise<T>) => {
 	const stop = measure(label)
 	logger.start(label)
@@ -203,8 +211,8 @@ export const createLuminaDexMachine = () => {
 			),
 			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) =>
 				act("deployPool", async (stop) => {
-					const { worker, user, tokenA, tokenB, factory } = input
-					const txJson = await worker.deployPoolInstance({ user, tokenA, tokenB, factory })
+					const { worker, ...config } = input
+					const txJson = await worker.deployPoolInstance(config)
 					stop()
 					return await sendTransaction(txJson)
 				})
@@ -674,12 +682,15 @@ export const createLuminaDexMachine = () => {
 							src: "deployPool",
 							input: ({ context, event }) => {
 								assertEvent(event, "DeployPool")
+								const { signer, user0 } = poolInstance[walletNetwork(context)]
 								return {
 									...inputWorker(context),
 									tokenA: context.dex.deployPool.tokenA,
 									tokenB: context.dex.deployPool.tokenB,
 									user: walletUser(context),
-									factory: luminaDexFactory(context)
+									factory: luminaDexFactory(context),
+									signer,
+									user0
 								}
 							},
 							onDone: {

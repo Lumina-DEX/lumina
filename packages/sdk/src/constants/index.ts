@@ -49,3 +49,14 @@ export const chainFaucets = {
 export const MINA_ADDRESS = "MINA"
 
 export const luminaCdnOrigin = "https://luminadex-contracts-cdn.hebilicious.workers.dev"
+
+export const poolInstance = {
+	"mina:testnet": {
+		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+	},
+	"mina:mainnet": { signer: "", user0: "" },
+	"mina:berkeley": { signer: "", user0: "" },
+	"zeko:testnet": { signer: "", user0: "" },
+	"zeko:mainnet": { signer: "", user0: "" }
+} as const
