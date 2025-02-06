@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.5.1
+
+### Patch Changes
+
+- a4722d1: Fix signer and user0 for mina:testnet
+
 ## 0.5.0
 
 ### Minor Changes
