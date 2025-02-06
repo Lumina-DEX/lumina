@@ -163,22 +163,26 @@ export interface DeployPoolArgs {
 	tokenB: string
 	user: string
 	factory: string
+	signer: string
+	user0: string
 }
 
-const deployPoolInstance = async ({ tokenA, tokenB, user, factory }: DeployPoolArgs) => {
-	logger.start("Deploying pool instance", { tokenA, tokenB, user, factory })
+const deployPoolInstance = async (
+	{ tokenA, tokenB, user, factory, user0, signer }: DeployPoolArgs
+) => {
+	logger.start("Deploying pool instance", { tokenA, tokenB, user, factory, user0, signer })
 	const poolKey = PrivateKey.random()
 	logger.debug({ poolKey })
 
 	const merkle = new MerkleTree(32)
 	// TODO: temporary solution for testnet
-	const signer = PrivateKey.fromBase58("EKFAo5kssADMSFXSCjYRHKABVRzCAfgnyHTRZsMCHkQD7EPLhvAt")
-	const user0 = PublicKey.fromBase58("B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1")
-	const user1 = signer.toPublicKey()
+	const signerPk = PrivateKey.fromBase58(signer)
+	const user0Pk = PublicKey.fromBase58(user0)
+	const user1 = signerPk.toPublicKey()
 	logger.debug({ user0, user1 })
-	merkle.setLeaf(0n, Poseidon.hash(user0.toFields()))
+	merkle.setLeaf(0n, Poseidon.hash(user0Pk.toFields()))
 	merkle.setLeaf(1n, Poseidon.hash(user1.toFields()))
-	const signature = Signature.create(signer, poolKey.toPublicKey().toFields())
+	const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 	logger.debug({ signature })
 	const witness = merkle.getWitness(1n)
 	const circuitWitness = new SignerMerkleWitness(witness)
