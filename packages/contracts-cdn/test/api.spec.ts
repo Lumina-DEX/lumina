@@ -63,7 +63,11 @@ describe("API", () => {
 		for await (const chunk of response.body!) {
 			chunks.push(decoder.decode(chunk))
 		}
-		expect(chunks).toEqual([`Starting sync for ${network}...\n`, `Sync completed for ${network}`])
+		expect(chunks).toEqual([
+			`Starting sync for ${network}...\n`,
+			"{}",
+			`Sync completed for ${network}`
+		])
 		SELF.fetch(request)
 		const response2 = await SELF.fetch(request)
 		// We send 2 request to trigger the rate limit { limit: 2, period: 10 }

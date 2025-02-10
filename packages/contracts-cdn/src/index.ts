@@ -40,8 +40,8 @@ export default {
 			if (!networks.includes(network)) return notFound()
 			const db = getDb(env)
 			await db.reset({ network })
-			await sync({ env, network, context })
-			return new Response("Database reset and synced", { headers, status: 200 })
+			const result = await sync({ env, network, context })
+			return Response.json(result, { headers, status: 200 })
 		}
 
 		// Sync a network
@@ -68,7 +68,8 @@ export default {
 
 			async function respondWithStream() {
 				try {
-					await sync({ env, network, context })
+					const result = await sync({ env, network, context })
+					await writer.write(encoder.encode(JSON.stringify({ result })))
 					await writer.write(encoder.encode(`Sync completed for ${network}`))
 				} catch {
 					await writer.write(encoder.encode("Error during sync"))

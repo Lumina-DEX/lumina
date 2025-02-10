@@ -55,17 +55,21 @@ export const sync = async ({
 	})
 	const response = await fetch(request)
 	if (response.ok) {
-		const tokens = (await response.json()) as Token[]
-		console.log({ tokens, network })
-		if (tokens.length === 0) return
-		const result = await tokenList.insertToken(network, tokens)
+		const allTokens = (await response.json()) as Token[]
+		console.log({ allTokens, network })
+		if (allTokens.length === 0) return
+		//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
+		await tokenList.reset({ network })
+		const result = await tokenList.insertToken(network, allTokens)
 		if (result.length > 0) {
-			// Only butst the cache if something changed.
+			// Only bust the cache if something changed.
 			const cacheKey = tokenCacheKey(network)
 			context.waitUntil(caches.default.delete(cacheKey))
+			return { allTokens, network, cacheBusted: cacheKey }
 		}
-		result[Symbol.dispose]()
+		return { allTokens, network, cacheBusted: false }
 	}
+	return []
 }
 
 export const tokenCacheKey = (network: string) => new URL(`http://token.key/${network}`)
