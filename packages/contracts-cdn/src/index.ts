@@ -69,8 +69,8 @@ export default {
 			async function respondWithStream() {
 				try {
 					const result = await sync({ env, network, context })
-					await writer.write(encoder.encode(`Sync completed for ${network}`))
 					await writer.write(encoder.encode(JSON.stringify({ result })))
+					await writer.write(encoder.encode(`Sync completed for ${network}`))
 				} catch {
 					await writer.write(encoder.encode("Error during sync"))
 				} finally {

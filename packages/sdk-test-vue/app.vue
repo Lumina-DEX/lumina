@@ -10,6 +10,8 @@ import {
 import { useActor } from "@lumina-dex/sdk/vue"
 import type { Reactive } from "vue"
 
+const sdkVersion = useRuntimeConfig().public.sdkVersion
+
 const Wallet = useActor(walletMachine)
 
 const Dex = useActor(dexMachine, {
@@ -219,7 +221,7 @@ const notEmpty = (obj: Reactive<unknown>) =>
 
 <template>
   <div>
-    <h2>Wallet and DEX Status</h2>
+    <h2>Lumina SDK Test v{{ sdkVersion }}</h2>
     <div>
       <button @click="fetchTokenBalances">Fetch Balances</button>
       <div>Mina Balances: {{ minaBalances }}</div>
