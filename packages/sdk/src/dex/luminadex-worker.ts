@@ -220,6 +220,7 @@ const deployPoolInstance = async (
 		}
 	})
 	transaction.sign([poolKey])
+
 	return await proveTransaction(transaction)
 }
 

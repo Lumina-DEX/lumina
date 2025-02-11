@@ -359,6 +359,9 @@ importers:
       nodemon:
         specifier: ^3.1.9
         version: 3.1.9
+      o1js:
+        specifier: 2.2.0
+        version: 2.2.0
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17
