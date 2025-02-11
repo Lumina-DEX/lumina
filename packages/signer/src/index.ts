@@ -85,7 +85,7 @@ app.get("/api/sign", async (req: Request, res: Response) => {
 	transaction.sign([poolPrivate])
 
 	const jsonResult = transaction.toJSON()
-	return jsonResult
+	res.send({ transaction: jsonResult })
 })
 
 app.listen(port, () => {
