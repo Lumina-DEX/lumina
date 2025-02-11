@@ -15,15 +15,7 @@ import {
 	UInt8
 } from "o1js"
 
-import {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	Pool,
-	PoolFactory,
-	PoolTokenHolder,
-	SignerMerkleWitness
-} from "@lumina-dex/contracts"
+import { PoolFactory, SignerMerkleWitness } from "@lumina-dex/contracts"
 
 //For env File
 dotenv.config()
