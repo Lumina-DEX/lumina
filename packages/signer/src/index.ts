@@ -1,4 +1,5 @@
 import express, { Express, Request, Response, Application } from "express"
+import cors from "cors"
 import dotenv from "dotenv"
 import {
 	AccountUpdate,
@@ -12,17 +13,23 @@ import {
 	PublicKey,
 	Signature,
 	Transaction,
-	UInt64,
-	UInt8
+	Cache
 } from "o1js"
 
-import { PoolFactory, SignerMerkleWitness } from "@lumina-dex/contracts"
+import {
+	FungibleToken,
+	FungibleTokenAdmin,
+	PoolFactory,
+	SignerMerkleWitness
+} from "@lumina-dex/contracts"
 
 //For env File
 dotenv.config()
 
 const app: Application = express()
 const port = process.env.PORT || 8000
+
+app.use(cors())
 
 app.use(express.json())
 
@@ -69,6 +76,10 @@ app.post("/api/sign", async (req: Request, res: Response) => {
 		})
 
 		Mina.setActiveInstance(network)
+		const cache: Cache = Cache.FileSystem("./cache")
+		await FungibleTokenAdmin.compile({ cache })
+		await FungibleToken.compile({ cache })
+		await PoolFactory.compile({ cache })
 
 		const transaction = await Mina.transaction(user, async () => {
 			AccountUpdate.fundNewAccount(user, 4)
@@ -94,14 +105,15 @@ app.post("/api/sign", async (req: Request, res: Response) => {
 		})
 
 		transaction.sign([poolPrivate])
+		await transaction.prove()
 
 		const jsonResult = transaction.toJSON()
 
 		const parsed = JSON.parse(jsonResult)
 		const new0tx = Transaction.fromJSON(parsed)
 
-		//await new0tx.prove();
-		res.send({ transaction: jsonResult })
+		console.log("proved")
+		res.send(jsonResult)
 	} catch (error) {
 		console.error(error)
 		res.sendStatus(500)
