@@ -40,6 +40,7 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/api/sign", async (req: Request, res: Response) => {
 	try {
 		console.log("body", req.body)
+		console.time("start")
 		const tokenA = req.body.tokenA
 		const tokenB = req.body.tokenB
 		const userAddress = req.body.user
@@ -113,6 +114,7 @@ app.post("/api/sign", async (req: Request, res: Response) => {
 		const new0tx = Transaction.fromJSON(parsed)
 
 		console.log("proved")
+		console.timeEnd("start")
 		res.send(jsonResult)
 	} catch (error) {
 		console.error(error)
