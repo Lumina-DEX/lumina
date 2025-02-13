@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "npx tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts"
+    "start": "npx tsc && node dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -16,9 +15,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongodb": "^6.13.0",
-    "mongoose": "^8.10.0",
-    "nodemon": "^3.1.9",
     "o1js": "2.2.0",
     "@lumina-dex/contracts": "workspace:^"
   },

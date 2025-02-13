@@ -96,6 +96,11 @@ app.post("/api/sign", async (req: Request, res: Response) => {
 		transaction.sign([poolPrivate])
 
 		const jsonResult = transaction.toJSON()
+
+		const parsed = JSON.parse(jsonResult)
+		const new0tx = Transaction.fromJSON(parsed)
+
+		//await new0tx.prove();
 		res.send({ transaction: jsonResult })
 	} catch (error) {
 		console.error(error)
@@ -104,5 +109,5 @@ app.post("/api/sign", async (req: Request, res: Response) => {
 })
 
 app.listen(port, () => {
-	console.log(`Server is Fire at https://localhost:${port}`)
+	console.log(`Server is Fire at http://localhost:${port}`)
 })
