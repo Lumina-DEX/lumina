@@ -37,7 +37,7 @@ import {
 import { createMeasure, prefixedLogger } from "../../helpers/logs"
 import { sendTransaction } from "../../helpers/transfer"
 import { isBetween } from "../../helpers/validation"
-import { detectWalletChange, type WalletActorRef } from "../wallet/actors"
+import { detectWalletChange } from "../wallet/actors"
 import type {
 	AddLiquiditySettings,
 	Can,
@@ -57,17 +57,13 @@ const measure = createMeasure(logger)
 
 const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
 
-const walletNetwork = (c: { wallet: WalletActorRef }) =>
-	c.wallet.getSnapshot().context.currentNetwork
+const walletNetwork = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.currentNetwork
+
 const walletUser = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.account
 
-const inputWorker = (context: LuminaDexMachineContext) => ({ worker: context.contract.worker })
+const inputWorker = (c: LuminaDexMachineContext) => ({ worker: c.contract.worker })
 
-const luminaDexFactory = (context: { wallet: WalletActorRef }) => {
-	const network = walletNetwork(context)
-	if (network !== "mina:testnet") throw new Error("Network not supported.")
-	return luminadexFactories[network]
-}
+const luminaDexFactory = (c: LuminaDexMachineContext) => luminadexFactories[walletNetwork(c)]
 
 const inputCompile = (
 	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
@@ -76,13 +72,9 @@ const inputCompile = (
 const loaded = (
 	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
 ) => {
-	const c = {
-		contract: {
-			...context.contract,
-			loaded: { ...context.contract.loaded, [contract]: true }
-		}
+	return {
+		contract: { ...context.contract, loaded: { ...context.contract.loaded, [contract]: true } }
 	}
-	return c
 }
 
 const setContractError = (message: string) =>

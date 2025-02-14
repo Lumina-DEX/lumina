@@ -2,7 +2,7 @@ import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina } from "o1js"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
-import { urls } from "../../constants"
+import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { prefixedLogger } from "../../helpers/logs"
 import { fromCallback } from "../../helpers/xstate"
@@ -14,11 +14,10 @@ export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
 const emptyNetworkBalance = (): Balance => ({
-	"mina:testnet": { MINA: 0 },
 	"mina:mainnet": { MINA: 0 },
-	"mina:berkeley": { MINA: 0 },
-	"zeko:mainnet": { MINA: 0 },
-	"zeko:testnet": { MINA: 0 }
+	"mina:devnet": { MINA: 0 },
+	"zeko:testnet": { MINA: 0 },
+	"zeko:mainnet": { MINA: 0 }
 })
 
 const toNumber = (n: unknown) => {
@@ -32,9 +31,8 @@ const toNumber = (n: unknown) => {
 
 const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
 	if (Object.keys(urls).includes(networkId)) return networkId as Networks
-	if (networkId === "mina:devnet") return "mina:testnet"
-	logger.info("Unknown network, falling back to mina:testnet", networkId)
-	return "mina:testnet"
+	logger.info("Unknown network, falling back to mina:devnet", networkId)
+	return "mina:devnet" // Fallback to devnet
 }
 
 export const createWalletMachine = (
@@ -122,14 +120,14 @@ export const createWalletMachine = (
 						const result = results[index]
 						const balance = toNumber(result.data?.account?.balance?.total) / decimal
 						const [layer, netType] = (network as Networks).split(":") as [
-							"mina" | "zeko",
-							"testnet" | "mainnet" | "berkeley"
+							NetworkLayer,
+							ChainNetwork
 						]
 						acc[layer][netType][name] = balance
 						return acc
 					},
 					{
-						mina: { mainnet: {}, testnet: {}, berkeley: {} },
+						mina: { mainnet: {}, devnet: {} },
 						zeko: { mainnet: {}, testnet: {} }
 					} as TokenBalances
 				)
@@ -139,21 +137,25 @@ export const createWalletMachine = (
 			 */
 			changeNetwork: fromPromise<{ currentNetwork: Networks }, { switchTo: Networks }>(
 				async ({ input: { switchTo } }) => {
-					logger.info("Change Network ...")
-					if (switchTo.includes("mainnet")) logger.error("Mainnet is not supported")
-					if (!switchTo.startsWith("mina")) {
-						// TODO: this might not be necessary
-						await window.mina.addChain({ url: urls[switchTo], name: switchTo })
+					logger.info(`Attempt to change network to ${switchTo}`)
+					if (switchTo === "zeko:mainnet") logger.error("Zeko mainnet is not supported")
+					const switchChain = async () => {
+						const result = await window.mina.switchChain({ networkID: switchTo })
+						if (result instanceof Error) throw result
+						return result
 					}
-					const result = await window.mina.switchChain({ networkID: switchTo })
-					if (result instanceof Error) throw result
+					const { networkID } = await switchChain()
+					if (networkID !== switchTo) {
+						await window.mina.addChain({ url: urls[switchTo], name: switchTo })
+						await switchChain()
+					}
 					return { currentNetwork: switchTo }
 				}
 			)
 		},
 		actions: {
 			setWalletNetwork: enqueueActions(({ enqueue }, { network }: { network: Networks }) => {
-				const url = urls[network] ?? urls["mina:testnet"]
+				const url = urls[network] ?? urls["mina:devnet"]
 				Mina.setActiveInstance(Mina.Network(url))
 				logger.success("Network set to", { network, url })
 				enqueue.assign({ currentNetwork: network })
@@ -164,7 +166,7 @@ export const createWalletMachine = (
 		id: "wallet",
 		context: {
 			account: "",
-			currentNetwork: "mina:testnet",
+			currentNetwork: "mina:devnet",
 			balances: emptyNetworkBalance()
 		},
 		initial: "INIT",
@@ -216,8 +218,7 @@ export const createWalletMachine = (
 						if (event.type === "FetchBalance") {
 							return { address: context.account, token: event.token, networks: event.networks }
 						}
-						// TODO: Hardcoded testnet
-						return { address: context.account, networks: ["mina:testnet"] }
+						return { address: context.account, networks: [context.currentNetwork] }
 					},
 					onDone: {
 						target: "READY",
@@ -227,13 +228,9 @@ export const createWalletMachine = (
 									...context.balances["mina:mainnet"],
 									...event.output.mina.mainnet
 								},
-								"mina:testnet": {
-									...context.balances["mina:testnet"],
+								"mina:devnet": {
+									...context.balances["mina:devnet"],
 									...event.output.mina.testnet
-								},
-								"mina:berkeley": {
-									...context.balances["mina:berkeley"],
-									...event.output.mina.berkeley
 								},
 								"zeko:mainnet": {
 									...context.balances["zeko:mainnet"],

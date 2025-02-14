@@ -17,7 +17,7 @@ afterEach(() => fetchMock.assertNoPendingInterceptors())
 
 describe("API", () => {
 	it("can return a list of tokens", async () => {
-		const request = createRequest("api/mina:testnet/tokens")
+		const request = createRequest("api/mina:devnet/tokens")
 		const response = await SELF.fetch(request)
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const json = (await response.json()) as Record<string, any>
@@ -27,7 +27,7 @@ describe("API", () => {
 			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 			poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 			tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
-			chainId: "mina:testnet",
+			chainId: "mina:devnet",
 			symbol: "TOKA",
 			decimals: 9
 		})
@@ -48,7 +48,7 @@ describe("API", () => {
 	})
 
 	it("can sync the network state and be rate limited.", async () => {
-		const network = "mina:testnet"
+		const network = "mina:devnet"
 		fetchMock
 			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 			.intercept({ path: `/${network}` })
@@ -65,7 +65,7 @@ describe("API", () => {
 		}
 		expect(chunks).toEqual([
 			`Starting sync for ${network}...\n`,
-			"{}",
+			"{}\n",
 			`Sync completed for ${network}`
 		])
 		SELF.fetch(request)
@@ -81,14 +81,14 @@ describe("API", () => {
 	})
 
 	it("can insert a token and bust the cache", async () => {
-		const request1 = createRequest("api/mina:testnet/tokens")
+		const request1 = createRequest("api/mina:devnet/tokens")
 
 		const response1 = await SELF.fetch(request1)
 		const json = (await response1.json()) as Record<string, unknown>
 		expect(json.tokens).toHaveLength(1)
 
 		const request2 = new Request<unknown, IncomingRequestCfProperties>(
-			"http://example.com/api/mina:testnet/token",
+			"http://example.com/api/mina:devnet/token",
 			{
 				method: "POST",
 				headers: { Authorization: "Bearer foo" },
@@ -104,14 +104,14 @@ describe("API", () => {
 		const response2 = await SELF.fetch(request2)
 		expect(response2.status).toBe(201)
 
-		const request3 = createRequest("api/mina:testnet/tokens")
+		const request3 = createRequest("api/mina:devnet/tokens")
 		const response3 = await SELF.fetch(request3)
 		const json2 = (await response3.json()) as Record<string, unknown>
 		expect(json2.tokens).toHaveLength(2)
 	})
 
 	it("can reset the network state", async () => {
-		const network = "mina:testnet"
+		const network = "mina:devnet"
 		fetchMock
 			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 			.intercept({ path: `/${network}` })
@@ -119,7 +119,7 @@ describe("API", () => {
 			.times(1)
 
 		//Verify that we have a seeded token
-		const request1 = createRequest("api/mina:testnet/tokens")
+		const request1 = createRequest("api/mina:devnet/tokens")
 		const response1 = await SELF.fetch(request1)
 		const json = (await response1.json()) as Record<string, unknown>
 		expect(json.tokens).toHaveLength(1)
@@ -130,7 +130,7 @@ describe("API", () => {
 		expect(response2.status).toBe(200)
 
 		//Verify that we have no tokens
-		const request3 = createRequest("api/mina:testnet/tokens")
+		const request3 = createRequest("api/mina:devnet/tokens")
 		const response3 = await SELF.fetch(request3)
 		const json3 = (await response3.json()) as Record<string, unknown>
 		expect(json3.tokens).toHaveLength(0)

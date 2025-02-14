@@ -20,8 +20,7 @@ const tokenTable = (name: string) =>
 	)
 
 //Mina Tables
-export const minaTestnet = tokenTable("TokenList_mina_testnet")
-export const minaBerkeley = tokenTable("TokenList_mina_berkeley")
+export const minaDevnet = tokenTable("TokenList_mina_devnet")
 export const minaMainnet = tokenTable("TokenList_mina_mainnet")
 
 //Zeko Tables

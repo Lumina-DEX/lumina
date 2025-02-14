@@ -14,12 +14,12 @@ function HomeComponent() {
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
 
-	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:testnet"])
+	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:devnet"])
 
 	const [tokens, setTokens] = useState<TokenDbToken[]>([])
 
 	const fetchTokenBalances = useCallback(async () => {
-		const result = await fetchPoolTokenList("mina:testnet")
+		const result = await fetchPoolTokenList("mina:devnet")
 		console.log(result)
 		setTokens(result.tokens)
 		for (const { address, symbol, tokenId, decimals, chainId } of tokens) {
