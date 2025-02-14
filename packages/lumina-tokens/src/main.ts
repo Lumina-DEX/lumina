@@ -36,9 +36,11 @@ Deno.serve(async (request) => {
 		if (networks.includes(network) === false) {
 			return new Response("Invalid Network", { status: 400 })
 		}
+		//TODO: This should accept a specific block height to start searching from
 		const tokens = await generateTokens(network)
 		console.log({ network, tokens })
 		// Return JSON response
+		//TODO: This should return `end` as the latest known block height and `start` as the block height where the search started
 		return new Response(JSON.stringify(tokens), {
 			headers: { "Content-Type": "application/json" }
 		})
