@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.6.0
+
+### Minor Changes
+
+- 0371a2d: Changed nomenclature of available chains.
+
 ## 0.5.1
 
 ### Patch Changes
