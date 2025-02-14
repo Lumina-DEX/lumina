@@ -36,4 +36,4 @@ const generateTokens = async (network: Networks) => {
 	// )
 }
 
-await generateTokens("mina:testnet")
+await generateTokens("mina:devnet")

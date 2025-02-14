@@ -1,11 +1,10 @@
 import type { Networks, TokenDbList } from "@lumina-dex/sdk"
-import { minaBerkeley, minaMainnet, minaTestnet, zekoMainnet, zekoTestnet } from "../drizzle/schema"
+import { minaMainnet, minaTestnet, zekoMainnet, zekoTestnet } from "../drizzle/schema"
 
 export const getTable = (network: Networks) => {
 	const table = {
 		"mina:mainnet": minaMainnet,
-		"mina:testnet": minaTestnet,
-		"mina:berkeley": minaBerkeley,
+		"mina:devnet": minaTestnet,
 		"zeko:testnet": zekoTestnet,
 		"zeko:mainnet": zekoMainnet
 	}[network]

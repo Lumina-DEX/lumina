@@ -32,7 +32,7 @@ const dexError = computed(() => ({
 }))
 const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
 const minaBalances = computed(() =>
-  Wallet.snapshot.value.context.balances["mina:testnet"]
+  Wallet.snapshot.value.context.balances["mina:devnet"]
 )
 const tokens = ref<TokenDbToken[]>([])
 
@@ -193,7 +193,7 @@ const handleClaimFromFaucet = () => {
 }
 
 const fetchTokenBalances = async () => {
-  const result = await fetchPoolTokenList("mina:testnet")
+  const result = await fetchPoolTokenList("mina:devnet")
   tokens.value = result.tokens
   for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
     Wallet.send({
