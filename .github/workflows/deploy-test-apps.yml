@@ -1,0 +1,55 @@
+name: Deploy Test Apps Workflow
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-test-apps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/workflows/actions/install
+
+      - name: Build contracts
+        working-directory: packages/contracts
+        run: bun run build
+
+      - name: Build sdk
+        working-directory: packages/sdk
+        run: bun run build
+
+      - name: Build test Vue website
+        working-directory: packages/sdk-test-vue
+        run: bun run build:cf
+
+      - name: Deploy Test Vue website
+        working-directory: packages/sdk-test-vue
+        run: bun run deploy:cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Comment on commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = "https://lumina-sdk-vue-test.pages.dev/"
+            const body =
+              `### 🛸 Vue SDK Test Webapp Deployed! 🏌️‍♀️
+              |  | URL |
+              | --- | --- |
+              | 🔮 Dev | ${url} |
+
+              > Deployed by Wrangler`
+            const { sha, repo: { owner , repo }} = context
+            const commitComment = await github.rest.repos.createCommitComment({ commit_sha: sha, owner, repo, body })
+            console.log({ commitComment })
