@@ -4,7 +4,7 @@ on:
   workflow_call:
   workflow_dispatch:
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency: wc-${{ github.workflow }}-${{ github.ref }}
 permissions:
   id-token: write
   contents: write
