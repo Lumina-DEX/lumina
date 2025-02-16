@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.6.1
+
+### Patch Changes
+
+- dc26f4a: Fix mina:devnet balance fetching
+
 ## 0.6.0
 
 ### Minor Changes
