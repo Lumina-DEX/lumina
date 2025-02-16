@@ -6,7 +6,14 @@ import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { prefixedLogger } from "../../helpers/logs"
 import { fromCallback } from "../../helpers/xstate"
-import type { Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
+import type {
+	AllTokenBalances,
+	Balance,
+	FetchBalanceInput,
+	TokenBalances,
+	WalletEmit,
+	WalletEvent
+} from "./types"
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -129,7 +136,7 @@ export const createWalletMachine = (
 					{
 						mina: { mainnet: {}, devnet: {} },
 						zeko: { mainnet: {}, testnet: {} }
-					} as TokenBalances
+					} as AllTokenBalances
 				)
 			}),
 			/**
@@ -230,7 +237,7 @@ export const createWalletMachine = (
 								},
 								"mina:devnet": {
 									...context.balances["mina:devnet"],
-									...event.output.mina.testnet
+									...event.output.mina.devnet
 								},
 								"zeko:mainnet": {
 									...context.balances["zeko:mainnet"],
