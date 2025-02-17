@@ -7,11 +7,11 @@ import { PrivateKey, PublicKey, UInt64 } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
-import useAccount from "@/states/useAccount"
 
 // @ts-ignore
 const Balance = ({ tokenAddress }) => {
-	const zkState = useAccount()
+	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
+
 	const [balance, setBalance] = useState("0.0")
 
 	useEffect(() => {
@@ -25,17 +25,17 @@ const Balance = ({ tokenAddress }) => {
 
 	const getBalance = async () => {
 		if (zkState.publicKeyBase58 && tokenAddress) {
-			zkState.zkappWorkerClient
-				.getBalanceToken(zkState.publicKeyBase58, tokenAddress)
-				.then((x: UInt64) => {
-					if (x) {
-						let amtOut = x.toBigInt() / BigInt(10 ** 9)
-						console.log("bal", balance)
-						setBalance(Number(amtOut).toFixed(2))
-					} else {
-						setBalance("0.0")
-					}
-				})
+			// zkState.zkappWorkerClient
+			// 	.getBalanceToken(zkState.publicKeyBase58, tokenAddress)
+			// 	.then((x: UInt64) => {
+			// 		if (x) {
+			// 			let amtOut = x.toBigInt() / BigInt(10 ** 9)
+			// 			console.log("bal", balance)
+			// 			setBalance(Number(amtOut).toFixed(2))
+			// 		} else {
+			// 			setBalance("0.0")
+			// 		}
+			// 	})
 		}
 	}
 

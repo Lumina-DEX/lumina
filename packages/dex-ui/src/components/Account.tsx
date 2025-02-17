@@ -5,13 +5,12 @@ import { useSearchParams } from "next/navigation"
 import { fetchAccount, PublicKey } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import useAccount from "@/states/useAccount"
 import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Menu from "./Menu"
 
 // @ts-ignore
 const Account = () => {
-	const zkState = useAccount()
+	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	async function timeout(seconds: number): Promise<void> {
 		return new Promise<void>((resolve) => {

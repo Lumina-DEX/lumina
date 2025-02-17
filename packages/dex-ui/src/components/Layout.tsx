@@ -1,14 +1,13 @@
 import { Field, PublicKey } from "o1js"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import GradientBG from "./GradientBG.js"
 import styles from "../styles/Home.module.css"
-import * as react from "../pages/reactCOIServiceWorker.js"
-import ZkappWorkerClient from "@/lib/zkappWorkerClient"
 import Swap from "@/components/Swap"
 import Account from "@/components/Account"
 import Tab from "@/components/Tab"
-import useAccount from "@/states/useAccount"
 import useLoad from "@/states/useLoad"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { LuminaContext } from "@/pages/_app.page"
 
 let transactionFee = 0.1
 const ZKAPP_ADDRESS = "B62qjmz2oEe8ooqBmvj3a6fAbemfhk61rjxTYmUMP9A6LPdsBLmRAxK"
@@ -18,15 +17,10 @@ const ZKFAUCET_ADDRESS = "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUA
 const WETH_ADDRESS = "B62qisgt5S7LwrBKEc8wvWNjW7SGTQjMZJTDL2N6FmZSVGrWiNkV21H"
 
 export default function Layout({ children }) {
-	const { loadUpdate } = useLoad((state) => ({
-		loadUpdate: state.update
-	}))
+	const { Wallet, Dex } = useContext(LuminaContext)
 
-	const { address, hasBeenSetup, accountUpdate } = useAccount((state) => ({
-		address: state.publicKeyBase58,
-		hasBeenSetup: state.hasBeenSetup,
-		accountUpdate: state.update
-	}))
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const dexState = useSelector(Dex, (state) => state.value)
 
 	const [displayText, setDisplayText] = useState("")
 	const [transactionlink, setTransactionLink] = useState("")
@@ -43,49 +37,10 @@ export default function Layout({ children }) {
 			})
 		}
 		;(async () => {
-			if (!hasBeenSetup) {
-				setDisplayText("Loading web worker...")
-				console.log("Loading web worker...")
-				const zkappWorkerClient = new ZkappWorkerClient()
-				accountUpdate({ zkappWorkerClient })
-				await timeout(1)
-
-				setDisplayText("Done loading web worker")
-				console.log("Done loading web worker")
-
-				await zkappWorkerClient.setActiveInstanceToDevnet()
-
-				await zkappWorkerClient.loadContract()
-
-				console.log("Compiling zkApp...")
-				setDisplayText("Compiling zkApp...")
-				await zkappWorkerClient.compileContract()
-				console.log("zkApp compiled")
-				setDisplayText("zkApp compiled...")
-
-				const zkappPublicKey = PublicKey.fromBase58(ZKAPP_ADDRESS)
-
-				await zkappWorkerClient.initZkappInstance(
-					ZKAPP_ADDRESS,
-					ZKFAUCET_ADDRESS,
-					ZKFACTORY_ADDRESS
-				)
-
+			if (dexState.contractSystem === "CONTRACTS_READY") {
+				setDisplayText(JSON.stringify(dexState))
+			} else {
 				setDisplayText("")
-
-				// setState({
-				//   ...state,
-				//   zkappWorkerClient,
-				//   hasWallet: true,
-				//   hasBeenSetup: true,
-				//   zkappPublicKey,
-				// });
-
-				accountUpdate({
-					hasBeenSetup: true,
-					zkappPublicKey
-				})
-				loadUpdate({ state: true, process: 1 })
 			}
 		})()
 	}, [])
@@ -119,7 +74,7 @@ export default function Layout({ children }) {
 		<div className="flex flex-col">
 			<Account></Account>
 			<div className="flex flex-row w-screen p-5 items-center justify-center">
-				{hasBeenSetup && children}
+				{dexState.contractSystem === "CONTRACTS_READY" && children}
 			</div>
 		</div>
 	)

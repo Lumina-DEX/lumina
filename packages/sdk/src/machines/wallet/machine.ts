@@ -60,11 +60,11 @@ export const createWalletMachine = (
 			 * Invoked on initialization to listen to Mina wallet changes.
 			 */
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
-				window.mina.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
+				window.mina?.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
 					logger.info("User manually changed network", networkID)
 					sendBack({ type: "WalletExtensionChangedNetwork", network: toNetwork(networkID) })
 				})
-				window.mina.on("accountsChanged", (accounts: string[]) => {
+				window.mina?.on("accountsChanged", (accounts: string[]) => {
 					logger.info("User manually changed account", accounts)
 					if (accounts.length === 0) {
 						logger.info("User disconnected account")

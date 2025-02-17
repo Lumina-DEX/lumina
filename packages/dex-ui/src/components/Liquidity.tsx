@@ -8,6 +8,8 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
+import { useActor } from "@lumina-dex/sdk/react"
+import { dexMachine, walletMachine } from "@lumina-dex/sdk"
 
 // @ts-ignore
 const Liquidity = ({ accountState }) => {
@@ -48,6 +50,8 @@ const Liquidity = ({ accountState }) => {
 
 	const getLiquidityAmount = async (fromAmt, slippagePcent) => {
 		console.log("getLiquidityAmount", fromAmt)
+
+		/*
 		const { getAmountLiquidityOut, getFirstAmountLiquidityOut } = await import(
 			"../../../contracts/build/src/indexmina"
 		)
@@ -100,7 +104,15 @@ const Liquidity = ({ accountState }) => {
 				}
 			}
 		}
-		return calcul
+		return calcul*/
+		return {
+			amountAIn: 0,
+			amountBIn: 0,
+			balanceAMax: 0,
+			balanceBMax: 0,
+			supplyMin: 0,
+			liquidity: 0
+		}
 	}
 
 	const addLiquidity = async () => {

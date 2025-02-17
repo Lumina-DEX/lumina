@@ -9,14 +9,13 @@ import Liquidity from "@/components/Liquidity"
 import Withdraw from "@/components//Withdraw"
 import TabButton from "@/components/TabButton"
 import Create from "@/components/Create"
-import useAccount from "@/states/useAccount"
 
 type Percent = number | string
 
 // @ts-ignore
 const Pool = () => {
 	const [tab, setTab] = useState<any>("create")
-	const accountState = useAccount()
+	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	return (
 		<>

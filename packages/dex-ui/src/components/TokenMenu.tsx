@@ -1,7 +1,6 @@
 "use client"
 import React, { useEffect, useMemo, useState } from "react"
 import { Addresses } from "@/utils/addresses"
-import useAccount from "@/states/useAccount"
 import { minaTestnet } from "@/lib/wallet"
 import { Box, Typography, Modal } from "@mui/material"
 import { fetchAccount, fetchEvents, Field, PublicKey, SmartContract } from "o1js"
@@ -10,7 +9,7 @@ import { ZKFACTORY_ADDRESS } from "./Layout"
 const TokenMenu = ({ pool, setPool, setToken }) => {
 	const [tokenList, setTokenList] = useState([])
 	const [eventList, setEventList] = useState([])
-	const accountState = useAccount()
+	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 	const [current, setCurrent] = useState({ symbol: "" })
 	const [open, setOpen] = useState(false)
 	const [indexed, setIndexed] = useState([])

@@ -4,8 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "next dev",
-		"postinstall": "echo 'TODO: cd ../contracts && npm install'",
-		"prebuild": "echo 'TODO: cd ../contracts && npm run build'",
+		"postinstall": "echo 'TODO: cd ../sdk && pnpm install'",
+		"prebuild": "echo 'TODO: cd ../sdk && pnpm run build'",
 		"build": "next build --no-lint",
 		"start": "next start",
 		"lint:next": "next lint",
@@ -26,6 +26,7 @@
 		"zustand": "^4.4.1"
 	},
 	"devDependencies": {
+		"@lumina-dex/sdk": "workspace:^",
 		"@types/node": "^20",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",

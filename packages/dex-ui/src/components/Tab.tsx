@@ -9,17 +9,15 @@ import Liquidity from "./Liquidity"
 import Swap from "./Swap"
 import Withdraw from "./Withdraw"
 import Faucet from "./Faucet"
-import SwapServer from "./SwapServer"
 import TabButton from "./TabButton"
 import Create from "./Create"
-import useAccount from "@/states/useAccount"
 
 type Percent = number | string
 
 // @ts-ignore
 const Tab = () => {
 	const [tab, setTab] = useState<any>("swap")
-	const accountState = useAccount()
+	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	return (
 		<>
@@ -34,7 +32,6 @@ const Tab = () => {
 					>
 						<TabButton name="swap" tab={tab} setTab={setTab} />
 						<TabButton name="create" tab={tab} setTab={setTab} />
-						{/* <TabButton name="server" tab={tab} setTab={setTab} /> */}
 						<TabButton name="liquidity" tab={tab} setTab={setTab} />
 						<TabButton name="withdraw" tab={tab} setTab={setTab} />
 						<TabButton name="faucet" tab={tab} setTab={setTab} />
@@ -58,11 +55,6 @@ const Tab = () => {
 						{tab === "faucet" && (
 							<div>
 								<Faucet accountState={accountState}></Faucet>
-							</div>
-						)}
-						{tab === "server" && (
-							<div>
-								<SwapServer accountState={accountState}></SwapServer>
 							</div>
 						)}
 						{tab === "create" && (
