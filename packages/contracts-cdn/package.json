@@ -13,6 +13,7 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
+		"migrate:gen": "drizzle-kit generate",
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {

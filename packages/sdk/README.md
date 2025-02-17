@@ -2,10 +2,12 @@
 
 ## React usage
 
-The easiest way to get started would be to combine the SDK with React context to create global state for the Wallet and Dex machines.
+The easiest way to get started would be to combine the SDK with React context to
+create global state for the Wallet and Dex machines.
 
 1. Use `createWallet` and `createDex` to start the state machines.
-2. Use React Context to provide the Wallet and Dex actors to the rest of the application.
+2. Use React Context to provide the Wallet and Dex actors to the rest of the
+   application.
 
 ```jsx
 import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
@@ -69,7 +71,8 @@ https://stately.ai/docs/xstate-react
 
 ## Vue usage
 
-This example uses `@vueuse/core`, but you can share the actor in other ways as well.
+This example uses `@vueuse/core`, but you can share the actor in other ways as
+well.
 
 ```ts
 import {
@@ -98,16 +101,15 @@ Then in your components
 
 ```html
 <script lang="ts" setup>
-import { useLuminaDex } from "./somewhere"
+	import { useLuminaDex } from "./somewhere";
 
-const { Wallet, Dex } = useLuminaDex()
-const walletLoaded = computed(
-	() =>
-		Wallet.snapshot.value.matches("READY") ||
-		Wallet.snapshot.value.matches("SWITCHING_NETWORK") ||
-		Wallet.snapshot.value.matches("FETCHING_BALANCE")
-)
-
+	const { Wallet, Dex } = useLuminaDex();
+	const walletLoaded = computed(
+		() =>
+			Wallet.snapshot.value.matches("READY") ||
+			Wallet.snapshot.value.matches("SWITCHING_NETWORK") ||
+			Wallet.snapshot.value.matches("FETCHING_BALANCE"),
+	);
 </script>
 ```
 
@@ -120,15 +122,15 @@ The SDK exposes 2 functions to fetch the pool and token data from the CDN.
 ```ts
 import { fetchPoolTokenList } from "@lumina-dex/sdk"
 
-const tokens = await fetchPoolTokenList("mina:testnet")
+const tokens = await fetchPoolTokenList("mina:devnet")
 ```
 
 ### Fetching from the blockchain
 
 _Ideally this should be done server side._
 
-You can this information from the blockchain state by sending a GraphQL request to an archive node.
-The SDK exposes 2 functions to demonstrate how to do this.
+You can this information from the blockchain state by sending a GraphQL request
+to an archive node. The SDK exposes 2 functions to demonstrate how to do this.
 
 For more advanced use cases, you should create your own indexing service.
 
@@ -138,6 +140,6 @@ import {
 	internal_fetchAllPoolTokens
 } from "@lumina-dex/sdk"
 
-const events = await internal_fetchAllPoolFactoryEvents("mina:testnet")
-const tokens = await internal_fetchAllTokensFromPoolFactory("mina:testnet")
+const events = await internal_fetchAllPoolFactoryEvents("mina:devnet")
+const tokens = await internal_fetchAllTokensFromPoolFactory("mina:devnet")
 ```

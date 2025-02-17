@@ -10,7 +10,13 @@ export type Balance = {
 type TokenBalance = {
 	[cn in ChainNetwork]: Record<string, number>
 }
+
 export type TokenBalances = {
+	mina: Omit<TokenBalance, "testnet">
+	zeko: Omit<TokenBalance, "devnet">
+}
+
+export type AllTokenBalances = {
 	mina: TokenBalance
 	zeko: TokenBalance
 }

@@ -69,7 +69,7 @@ export default {
 			async function respondWithStream() {
 				try {
 					const result = await sync({ env, network, context })
-					await writer.write(encoder.encode(JSON.stringify({ result })))
+					await writer.write(encoder.encode(`${JSON.stringify({ result })}\n`))
 					await writer.write(encoder.encode(`Sync completed for ${network}`))
 				} catch {
 					await writer.write(encoder.encode("Error during sync"))
@@ -88,16 +88,15 @@ export default {
 			if (!networks.includes(network)) return notFound()
 			const db = getDb(env)
 			const body = await request.json()
-			// Validate the data
+			// TODO: Validate the data
 			const token = body as Token
-			const exists = await db.tokenExists({
+			const result = await db.insertTokenIfExists({
 				network,
 				address: token.address,
-				poolAddress: token.poolAddress
+				poolAddress: token.poolAddress,
+				token
 			})
-			if (exists) return new Response("Token already exists", { headers, status: 409 })
-			await db.insertToken(network, token)
-
+			if (result === false) return new Response("Token already exists", { headers, status: 409 })
 			const cacheKey = tokenCacheKey(match.params.network)
 			context.waitUntil(caches.default.delete(cacheKey))
 			return new Response("Token Inserted", { headers, status: 201 })

@@ -45,7 +45,7 @@ const minaNetwork = (network: Networks) =>
  */
 export const internal_fetchAllPoolEvents = async (network: Networks) => {
 	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = luminadexFactories[network as "mina:testnet"] // TODO: Support all factories
+	const factoryAddress = luminadexFactories[network]
 	if (!factoryAddress) throw new Error("Factory address not found")
 	return await fetchEvents({ publicKey: factoryAddress })
 }
@@ -57,7 +57,7 @@ export const internal_fetchAllPoolFactoryEvents = async (
 	{ network, factory }: { network: Networks; factory?: string }
 ) => {
 	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = factory ?? luminadexFactories[network as "mina:testnet"] // TODO: Support all factories
+	const factoryAddress = factory ?? luminadexFactories[network]
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
 	return await zkFactory.fetchEvents()
 }
