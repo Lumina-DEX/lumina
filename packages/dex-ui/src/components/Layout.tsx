@@ -17,33 +17,28 @@ const ZKFAUCET_ADDRESS = "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUA
 const WETH_ADDRESS = "B62qisgt5S7LwrBKEc8wvWNjW7SGTQjMZJTDL2N6FmZSVGrWiNkV21H"
 
 export default function Layout({ children }) {
+	const [isReady, setIsReady] = useState(false)
 	const { Wallet, Dex } = useContext(LuminaContext)
 
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
 
 	const [displayText, setDisplayText] = useState("")
+	const [displayTextWallet, setDisplayTextWallet] = useState("")
 	const [transactionlink, setTransactionLink] = useState("")
 
 	// -------------------------------------------------------
 	// Do Setup
 
 	useEffect(() => {
-		async function timeout(seconds: number): Promise<void> {
-			return new Promise<void>((resolve) => {
-				setTimeout(() => {
-					resolve()
-				}, seconds * 1000)
-			})
+		if (dexState?.contractSystem === "CONTRACTS_READY") {
+			setDisplayText("")
+			setIsReady(true)
+		} else {
+			setDisplayText(JSON.stringify(dexState))
+			setDisplayTextWallet(JSON.stringify(walletState))
 		}
-		;(async () => {
-			if (dexState.contractSystem === "CONTRACTS_READY") {
-				setDisplayText(JSON.stringify(dexState))
-			} else {
-				setDisplayText("")
-			}
-		})()
-	}, [])
+	}, [dexState])
 
 	// -------------------------------------------------------
 	// Create UI elements
@@ -58,7 +53,10 @@ export default function Layout({ children }) {
 			View transaction
 		</a>
 	) : (
-		displayText
+		<div>
+			<div>{displayText}</div>
+			<div>{displayTextWallet}</div>
+		</div>
 	)
 
 	let setup = (
@@ -74,7 +72,7 @@ export default function Layout({ children }) {
 		<div className="flex flex-col">
 			<Account></Account>
 			<div className="flex flex-row w-screen p-5 items-center justify-center">
-				{dexState.contractSystem === "CONTRACTS_READY" && children}
+				{isReady && children}
 			</div>
 		</div>
 	)
