@@ -2,7 +2,7 @@ import { ZKFACTORY_ADDRESS } from "@/components/Layout"
 import { fetchAccount, fetchEvents, Field, Mina, PublicKey } from "o1js"
 import { fetchPoolTokenList } from "@lumina-dex/sdk"
 
-export const poolToka = "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
+export const poolToka = "B62qq47Pu4rmDAs86jRLcwDRD3XDheJU9dmRq5pfSpfWYi2aY7b1KNH"
 //export const poolWeth = "B62qphnhqrRW6DFFR39onHNKnBcoB9Gqi3M8Emytg26nwZWUYXR1itw";
 
 export class Addresses {

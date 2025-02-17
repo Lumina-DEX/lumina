@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
@@ -8,6 +8,7 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
+import { LuminaContext } from "@/pages/_app.page"
 
 type Percent = number | string
 
@@ -27,6 +28,8 @@ const Swap = ({ accountState }) => {
 	}, [])
 
 	const zkState = accountState
+
+	const { Wallet, Dex } = useContext(LuminaContext)
 
 	const [toDai, setToDai] = useState(true)
 
@@ -48,6 +51,26 @@ const Swap = ({ accountState }) => {
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
 	}, [fromAmount, toDai, slippagePercent, pool, zkState.network])
+
+	// Action handlers
+	const handleCalculateSwap = () => {
+		Dex.send({
+			type: "ChangeSwapSettings",
+			settings: {
+				pool: poolToka,
+				from: {
+					address: "MINA",
+					amount: "100000000"
+				},
+				to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+				slippagePercent: 10
+			}
+		})
+	}
+
+	const handleSwap = () => {
+		Dex.send({ type: "Swap" })
+	}
 
 	const getSwapAmount = async (fromAmt, slippagePcent) => {
 		/*const { getAmountOut } = await import("../../../contracts/build/src/indexmina")
@@ -80,34 +103,36 @@ const Swap = ({ accountState }) => {
 			setLoading(true)
 			console.log("infos", { fromAmount, toAmount })
 
-			if (mina) {
-				console.log("zkState", zkState)
-				// get time proof generation
-				console.time("swap")
-				const user: string = (await mina.requestAccounts())[0]
-				if (!toDai) {
-					await zkState.zkappWorkerClient?.swapFromToken(
-						pool,
-						user,
-						data.amountIn,
-						data.amountOut,
-						data.balanceOutMin,
-						data.balanceInMax
-					)
-				} else {
-					await zkState.zkappWorkerClient?.swapFromMina(
-						pool,
-						user,
-						data.amountIn,
-						data.amountOut,
-						data.balanceOutMin,
-						data.balanceInMax
-					)
-				}
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("swap")
-				await mina.sendTransaction({ transaction: json })
-			}
+			// if (mina) {
+			// 	console.log("zkState", zkState)
+			// 	// get time proof generation
+			// 	console.time("swap")
+			// 	const user: string = (await mina.requestAccounts())[0]
+			// 	if (!toDai) {
+			// 		await zkState.zkappWorkerClient?.swapFromToken(
+			// 			pool,
+			// 			user,
+			// 			data.amountIn,
+			// 			data.amountOut,
+			// 			data.balanceOutMin,
+			// 			data.balanceInMax
+			// 		)
+			// 	} else {
+			// 		await zkState.zkappWorkerClient?.swapFromMina(
+			// 			pool,
+			// 			user,
+			// 			data.amountIn,
+			// 			data.amountOut,
+			// 			data.balanceOutMin,
+			// 			data.balanceInMax
+			// 		)
+			// 	}
+			// 	const json = await zkState.zkappWorkerClient?.getTransactionJSON()
+			// 	console.timeEnd("swap")
+			// 	await mina.sendTransaction({ transaction: json })
+			// }
+			const res = Dex.send({ type: "Swap" })
+			console.log("res", res)
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
