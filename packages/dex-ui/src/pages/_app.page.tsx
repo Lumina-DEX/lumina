@@ -1,3 +1,5 @@
+"use client"
+
 import "@/styles/globals.css"
 import type { AppProps } from "next/app"
 import ErrorBoundary from "@/components/ErrorBoundary"
@@ -10,7 +12,10 @@ const Wallet = createWallet()
 const Dex = createDex({
 	input: {
 		wallet: Wallet,
-		frontendFee: { destination: "", amount: 0 }
+		frontendFee: {
+			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
+			amount: 5
+		}
 	}
 })
 
