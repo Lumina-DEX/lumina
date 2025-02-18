@@ -131,6 +131,18 @@ const Swap = ({ accountState }) => {
 			// 	console.timeEnd("swap")
 			// 	await mina.sendTransaction({ transaction: json })
 			// }
+			Dex.send({
+				type: "ChangeSwapSettings",
+				settings: {
+					pool: poolToka,
+					from: {
+						address: "MINA",
+						amount: "100000000"
+					},
+					to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+					slippagePercent: 10
+				}
+			})
 			const res = Dex.send({ type: "Swap" })
 			console.log("res", res)
 		} catch (error) {
