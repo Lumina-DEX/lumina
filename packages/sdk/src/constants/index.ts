@@ -32,7 +32,7 @@ export const archiveUrls = {
 export const luminadexFactories = {
 	"mina:devnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
 	"mina:mainnet": "NOT_IMPLEMENTED",
-	"zeko:testnet": "NOT_IMPLEMENTED",
+	"zeko:testnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
