@@ -1,4 +1,6 @@
+import { LuminaContext } from "@/pages/_app.page"
 import { UInt64 } from "o1js"
+import { useContext } from "react"
 
 export const mina = typeof window !== "undefined" && (window as any)?.mina
 
@@ -14,13 +16,6 @@ export const minaTestnet = "mina:testnet"
 
 export async function connect() {
 	if (!mina) return
-	await requestNetwork()
-	await requestAccounts()
-
-	typeof window !== "undefined" && window.localStorage.setItem(WALLET_CONNECTED_BEFORE_FLAG, "true")
-
-	mina.on("accountsChanged", requestAccounts)
-	mina.on("chainChanged", requestNetwork)
 }
 
 export async function disconnect() {

@@ -145,6 +145,7 @@ export interface SwapSettings {
 	from: Token
 	to: string
 	slippagePercent: number
+	frontendFee: number
 }
 
 export interface AddLiquiditySettings {

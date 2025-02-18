@@ -1,5 +1,5 @@
 "use client"
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { fetchAccount, PublicKey } from "o1js"
@@ -7,10 +7,12 @@ import { fetchAccount, PublicKey } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Menu from "./Menu"
+import { LuminaContext } from "@/pages/_app.page"
 
 // @ts-ignore
 const Account = () => {
 	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
+	const { Wallet, Dex } = useContext(LuminaContext)
 
 	async function timeout(seconds: number): Promise<void> {
 		return new Promise<void>((resolve) => {
@@ -50,7 +52,9 @@ const Account = () => {
 	}
 
 	const handleConnect = async () => {
-		connect()
+		console.log("connect")
+
+		Wallet.send({ type: "Connect" })
 	}
 
 	return (

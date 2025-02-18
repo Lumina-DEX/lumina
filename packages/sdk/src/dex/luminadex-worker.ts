@@ -344,8 +344,8 @@ export interface SwapArgs {
 
 const swap = async (args: SwapArgs) => {
 	logger.start("Swap", args)
-	const { poolKey, zkTokenId } = await getZkTokenFromPool(args.pool)
-	logger.debug({ poolKey, zkTokenId })
+	const { poolKey, zkTokenId, zkToken } = await getZkTokenFromPool(args.pool)
+	logger.debug({ poolKey, zkTokenId, zkToken })
 	const contracts = context().contracts
 
 	const userKey = PublicKey.fromBase58(args.user)
@@ -396,6 +396,7 @@ const swap = async (args: SwapArgs) => {
 				[args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"](
 					...swapArgList
 				)
+			await zkToken.approveAccountUpdate(zkPoolHolder.self)
 		}
 	})
 

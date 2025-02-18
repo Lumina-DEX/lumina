@@ -42,6 +42,7 @@ const Swap = ({ accountState }) => {
 	const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 })
 
 	useEffect(() => {
+		handleCalculateSwap()
 		const delayDebounceFn = setTimeout(() => {
 			if (parseFloat(fromAmount)) {
 				getSwapAmount(fromAmount, slippagePercent)
@@ -63,7 +64,8 @@ const Swap = ({ accountState }) => {
 					amount: "100000000"
 				},
 				to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
-				slippagePercent: 10
+				slippagePercent: 10,
+				frontendFee: 5
 			}
 		})
 	}
@@ -102,47 +104,6 @@ const Swap = ({ accountState }) => {
 		try {
 			setLoading(true)
 			console.log("infos", { fromAmount, toAmount })
-
-			// if (mina) {
-			// 	console.log("zkState", zkState)
-			// 	// get time proof generation
-			// 	console.time("swap")
-			// 	const user: string = (await mina.requestAccounts())[0]
-			// 	if (!toDai) {
-			// 		await zkState.zkappWorkerClient?.swapFromToken(
-			// 			pool,
-			// 			user,
-			// 			data.amountIn,
-			// 			data.amountOut,
-			// 			data.balanceOutMin,
-			// 			data.balanceInMax
-			// 		)
-			// 	} else {
-			// 		await zkState.zkappWorkerClient?.swapFromMina(
-			// 			pool,
-			// 			user,
-			// 			data.amountIn,
-			// 			data.amountOut,
-			// 			data.balanceOutMin,
-			// 			data.balanceInMax
-			// 		)
-			// 	}
-			// 	const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-			// 	console.timeEnd("swap")
-			// 	await mina.sendTransaction({ transaction: json })
-			// }
-			Dex.send({
-				type: "ChangeSwapSettings",
-				settings: {
-					pool: poolToka,
-					from: {
-						address: "MINA",
-						amount: "100000000"
-					},
-					to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
-					slippagePercent: 10
-				}
-			})
 			const res = Dex.send({ type: "Swap" })
 			console.log("res", res)
 		} catch (error) {
