@@ -347,18 +347,16 @@ importers:
       '@lumina-dex/sdk':
         specifier: workspace:^
         version: link:../sdk
-      '@types/bun':
-        specifier: ^1.2.2
-        version: 1.2.2
       arktype:
         specifier: ^2.0.4
         version: 2.0.4
       o1js:
         specifier: 2.2.0
         version: 2.2.0
-      typescript:
-        specifier: ^5.5.2
-        version: 5.7.2
+    devDependencies:
+      '@types/bun':
+        specifier: 1.2.2
+        version: 1.2.2
 
 packages:
 

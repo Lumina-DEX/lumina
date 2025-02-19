@@ -14,7 +14,6 @@
 		"o1js": "2.2.0"
 	},
 	"devDependencies": {
-		"@types/bun": "1.2.3",
-		"typescript": "^5.5.2"
+		"@types/bun": "1.2.2"
 	}
 }
