@@ -232,9 +232,9 @@ export const createLuminaDexMachine = () => {
 					})
 			),
 			calculateSwapAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & SwapSettings }) => {
+				async ({ input }: { input: InputDexWorker & SwapSettings & { frontendFee: number } }) => {
 					return act("calculateSwapAmount", async () => {
-						const { worker, pool, slippagePercent, from } = input
+						const { worker, pool, slippagePercent, from, frontendFee } = input
 						const reserves = await worker.getReserves(pool)
 						const settings = { from, slippagePercent }
 						if (reserves.token0.amount && reserves.token1.amount) {
@@ -250,7 +250,8 @@ export const createLuminaDexMachine = () => {
 								amountIn,
 								balanceIn,
 								balanceOut,
-								slippagePercent
+								slippagePercent,
+								frontendFee
 							})
 							return { swapAmount, settings }
 						}
@@ -892,7 +893,8 @@ export const createLuminaDexMachine = () => {
 									pool: swap.pool,
 									from: swap.from,
 									to: swap.to,
-									slippagePercent: swap.slippagePercent
+									slippagePercent: swap.slippagePercent,
+									frontendFee: context.frontendFee.amount
 								}
 							},
 							onDone: {
