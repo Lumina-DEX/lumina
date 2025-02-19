@@ -8,7 +8,8 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
-import { LuminaContext } from "@/pages/_app.page"
+import { feeAmount, LuminaContext } from "@/pages/_app.page"
+import { useSelector } from "@lumina-dex/sdk/react"
 
 type Percent = number | string
 
@@ -17,7 +18,7 @@ const Swap = ({ accountState }) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: "" })
+	const [token, setToken] = useState({ address: "", decimals: 9 })
 
 	const [loading, setLoading] = useState(false)
 
@@ -30,6 +31,7 @@ const Swap = ({ accountState }) => {
 	const zkState = accountState
 
 	const { Wallet, Dex } = useContext(LuminaContext)
+	const dexState = useSelector(Dex, (state) => state.value)
 
 	const [toDai, setToDai] = useState(true)
 
@@ -42,62 +44,44 @@ const Swap = ({ accountState }) => {
 	const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 })
 
 	useEffect(() => {
-		handleCalculateSwap()
 		const delayDebounceFn = setTimeout(() => {
 			if (parseFloat(fromAmount)) {
-				getSwapAmount(fromAmount, slippagePercent)
-					.then((x) => setData(x))
-					.catch((x) => console.error(x))
+				handleCalculateSwap(fromAmount)
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
 	}, [fromAmount, toDai, slippagePercent, pool, zkState.network])
 
+	useEffect(() => {
+		const subscription = Dex.subscribe((snapshot) => {
+			// simple logging
+			console.log("Dex", snapshot)
+			console.log("token", token)
+			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
+			if (token) {
+				valTo = valTo / 10 ** token.decimals
+			}
+
+			setToAmount(valTo.toString())
+		})
+		return subscription.unsubscribe
+	}, [Dex])
+
 	// Action handlers
-	const handleCalculateSwap = () => {
+	const handleCalculateSwap = (amount) => {
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
 				pool: poolToka,
 				from: {
 					address: "MINA",
-					amount: "100000000"
+					amount: fromAmount
 				},
 				to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
-				slippagePercent: 10,
-				frontendFee: 5
+				slippagePercent: slippagePercent,
+				frontendFee: feeAmount
 			}
 		})
-	}
-
-	const handleSwap = () => {
-		Dex.send({ type: "Swap" })
-	}
-
-	const getSwapAmount = async (fromAmt, slippagePcent) => {
-		/*const { getAmountOut } = await import("../../../contracts/build/src/indexmina")
-		const reserves = await zkState?.zkappWorkerClient?.getReserves(pool)
-		let calcul = { amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 }
-		const slippage = slippagePcent
-		if (reserves?.amountMina && reserves?.amountToken) {
-			const amountMina = parseInt(reserves?.amountMina)
-			const amountToken = parseInt(reserves?.amountToken)
-			let amt = parseFloat(fromAmt) * 10 ** 9
-			console.log("amtIn", amt)
-			if (!toDai) {
-				calcul = getAmountOut(amt, amountToken, amountMina, slippage)
-				console.log("calcul from dai", calcul)
-				let amtOut = calcul.amountOut / 10 ** 9
-				setToAmount(amtOut.toString())
-			} else {
-				calcul = getAmountOut(amt, amountMina, amountToken, slippage)
-				console.log("calcul from mina", calcul)
-				let amtOut = calcul.amountOut / 10 ** 9
-				setToAmount(amtOut.toString())
-			}
-		}
-		return calcul*/
-		return { amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 }
 	}
 
 	const swap = async () => {

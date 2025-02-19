@@ -9,12 +9,14 @@ import { createContext } from "react"
 
 const Wallet = createWallet()
 
+export const feeAmount = 10
+
 const Dex = createDex({
 	input: {
 		wallet: Wallet,
 		frontendFee: {
 			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
-			amount: 5
+			amount: feeAmount
 		}
 	}
 })

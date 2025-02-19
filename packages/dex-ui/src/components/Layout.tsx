@@ -32,13 +32,14 @@ export default function Layout({ children }) {
 
 	useEffect(() => {
 		if (dexState?.contractSystem === "CONTRACTS_READY") {
-			setDisplayText("")
 			setIsReady(true)
-		} else {
-			setDisplayText(JSON.stringify(dexState))
-			setDisplayTextWallet(JSON.stringify(walletState))
 		}
+		setDisplayText(JSON.stringify(dexState))
 	}, [dexState])
+
+	useEffect(() => {
+		setDisplayTextWallet(JSON.stringify(walletState))
+	}, [walletState])
 
 	// -------------------------------------------------------
 	// Create UI elements
