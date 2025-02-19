@@ -1,0 +1,21 @@
+{
+	"tasks": {
+		"dev": "deno run --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test --watch src/main.ts"
+	},
+	"imports": {
+		"@lumina-dex/contracts": "npm:@lumina-dex/contracts@0.3.0",
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.6.3",
+		"o1js": "npm:o1js@2.2.0",
+		"arktype": "npm:arktype@2.0.4"
+	},
+	"nodeModulesDir": "auto",
+	"fmt": {
+		"semiColons": false
+	},
+	"unstable": [
+		// https://docs.deno.com/runtime/reference/cli/unstable_flags/#--unstable-sloppy-imports: needed because Deno can only read ESM modules but project lacks file extension in imports (.ts)
+		"sloppy-imports",
+		// https://docs.deno.com/runtime/reference/cli/unstable_flags/#--unstable-detect-cjs: needed as some of the packages are CJS but masquerade as ESM
+		"detect-cjs"
+	]
+}
