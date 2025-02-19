@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.6.3
+
+### Patch Changes
+
+- 3dd113b: Expose cache and network features
+
 ## 0.6.2
 
 ### Patch Changes
