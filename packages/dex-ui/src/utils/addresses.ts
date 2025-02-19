@@ -3,6 +3,8 @@ import { fetchAccount, fetchEvents, Field, Mina, PublicKey } from "o1js"
 import { fetchPoolTokenList } from "@lumina-dex/sdk"
 
 export const poolToka = "B62qq47Pu4rmDAs86jRLcwDRD3XDheJU9dmRq5pfSpfWYi2aY7b1KNH"
+export const toka = "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w"
+
 //export const poolWeth = "B62qphnhqrRW6DFFR39onHNKnBcoB9Gqi3M8Emytg26nwZWUYXR1itw";
 
 export class Addresses {

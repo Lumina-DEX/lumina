@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import { poolToka } from "@/utils/addresses"
+import { poolToka, toka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { feeAmount, LuminaContext } from "@/pages/_app.page"
@@ -19,7 +19,7 @@ const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: "", decimals: 9 })
+	const [token, setToken] = useState({ address: toka, decimals: 9 })
 
 	const [loading, setLoading] = useState(false)
 
@@ -28,6 +28,14 @@ const Swap = ({}) => {
 			setMina((window as any).mina)
 		}
 	}, [])
+
+	function updateToken(newToken) {
+		setToken(newToken)
+	}
+
+	function updatePool(newPool) {
+		setPool(newPool)
+	}
 
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
@@ -57,6 +65,7 @@ const Swap = ({}) => {
 			// simple logging
 			console.log("Dex", snapshot)
 			console.log("token", token)
+			console.log("pool", pool)
 			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
 			if (token) {
 				valTo = valTo / 10 ** token.decimals
@@ -77,7 +86,7 @@ const Swap = ({}) => {
 					address: "MINA",
 					amount: fromAmount
 				},
-				to: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+				to: pool,
 				slippagePercent: slippagePercent,
 				frontendFee: feeAmount
 			}
@@ -122,7 +131,7 @@ const Swap = ({}) => {
 						{toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu pool={pool} setToken={setToken} setPool={setPool} />
+							<TokenMenu pool={pool} setToken={updateToken} setPool={updatePool} />
 						)}
 					</div>
 					<div>
@@ -148,9 +157,13 @@ const Swap = ({}) => {
 							<TokenMenu pool={pool} setToken={setToken} setPool={setPool} />
 						)}
 					</div>
-					<div>
-						Your token balance : <Balance tokenAddress={token.address}></Balance>
-					</div>
+					{token?.address ? (
+						<div>
+							Your token balance : <Balance tokenAddress={token.address}></Balance>
+						</div>
+					) : (
+						<div></div>
+					)}
 					<ButtonStatus onClick={swap} text={"Swap"}></ButtonStatus>
 				</div>
 			</div>

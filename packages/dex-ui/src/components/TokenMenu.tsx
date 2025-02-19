@@ -20,7 +20,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 		console.log("token", pool)
 		console.log("accountState update")
 		getTokens().then()
-	}, [accountState.network])
+	}, [])
 
 	const getTokens = async () => {
 		const network = accountState.network === minaTestnet ? "mina-devnet" : "zeko-devnet"
@@ -38,6 +38,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 		}
 
 		const poolExist = tokens.find((z) => z.poolAddress === pool)
+		console.log("pool exist", poolExist)
 		if (!poolExist && tokens?.length) {
 			const poolExist = fetchEvent?.find((z) => z.poolAddress === pool)
 			if (poolExist) {
@@ -56,6 +57,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 	}
 
 	const selectPool = (pool: any) => {
+		console.log("pool", pool)
 		setPool(pool.poolAddress)
 		setToken(pool)
 		setCurrent(pool)
