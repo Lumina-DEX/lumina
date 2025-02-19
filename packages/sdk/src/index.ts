@@ -12,7 +12,9 @@ export * from "./graphql/zeko"
 export * from "./machines"
 
 // Dex
+export * from "./dex/cache"
 export * from "./machines/luminadex/types"
+
 // Wallet
 export { detectWalletChange } from "./machines/wallet/actors"
 export * from "./machines/wallet/types"

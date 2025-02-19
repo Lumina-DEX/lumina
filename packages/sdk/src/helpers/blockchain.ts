@@ -32,7 +32,7 @@ interface PoolAddedEventData {
 	token1Address: PublicKey
 }
 
-const minaNetwork = (network: Networks) =>
+export const minaNetwork = (network: Networks) =>
 	Mina.Network({
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
 		mina: urls[network],
