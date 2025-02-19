@@ -10,9 +10,10 @@ import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { useActor } from "@lumina-dex/sdk/react"
 import { dexMachine, walletMachine } from "@lumina-dex/sdk"
+import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
-const Liquidity = ({ accountState }) => {
+const Liquidity = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
@@ -24,7 +25,6 @@ const Liquidity = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
 	const [pool, setPool] = useState(poolToka)
 	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("")
@@ -121,31 +121,6 @@ const Liquidity = ({ accountState }) => {
 			console.log("infos", { fromAmount, toAmount })
 
 			if (mina) {
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				if (!toDai) {
-					await zkState.zkappWorkerClient?.addLiquidity(
-						pool,
-						user,
-						data.amountBIn,
-						data.amountAIn,
-						data.balanceBMax,
-						data.balanceAMax,
-						data.supplyMin
-					)
-				} else {
-					await zkState.zkappWorkerClient?.addLiquidity(
-						pool,
-						user,
-						data.amountAIn,
-						data.amountBIn,
-						data.balanceAMax,
-						data.balanceBMax,
-						data.supplyMin
-					)
-				}
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				await mina.sendTransaction({ transaction: json })
 			}
 		} catch (error) {
 			console.log("swap error", error)
@@ -218,13 +193,7 @@ const Liquidity = ({ accountState }) => {
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
 					</div>
-					<button
-						onClick={addLiquidity}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Add Liquidity
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={addLiquidity} text={"Add Liquidity"}></ButtonStatus>
 				</div>
 			</div>
 		</>

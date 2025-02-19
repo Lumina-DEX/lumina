@@ -1,11 +1,7 @@
 import { Field, PublicKey } from "o1js"
 import { useContext, useEffect, useState } from "react"
-import GradientBG from "./GradientBG.js"
 import styles from "../styles/Home.module.css"
-import Swap from "@/components/Swap"
 import Account from "@/components/Account"
-import Tab from "@/components/Tab"
-import useLoad from "@/states/useLoad"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "@/pages/_app.page"
 

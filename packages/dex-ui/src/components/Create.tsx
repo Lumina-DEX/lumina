@@ -7,9 +7,10 @@ import { PublicKey } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
+import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
-const Create = ({ accountState }) => {
+const Create = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [tokenAddress, setTokenAddress] = useState("")
@@ -20,19 +21,11 @@ const Create = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
-
 	const createPool = async () => {
 		try {
 			setLoading(true)
 			if (mina) {
 				console.time("create")
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				await zkState.zkappWorkerClient?.deployPoolInstance(tokenAddress, user)
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("create")
-				await mina.sendTransaction({ transaction: json })
 			}
 		} catch (error) {
 			console.log("swap error", error)
@@ -54,13 +47,7 @@ const Create = ({ accountState }) => {
 							onChange={(event) => setTokenAddress(event.target.value)}
 						></input>
 					</div>
-					<button
-						onClick={createPool}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Create Pool
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={createPool} text={"Create Pool"}></ButtonStatus>
 				</div>
 			</div>
 		</>

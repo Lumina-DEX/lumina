@@ -28,9 +28,7 @@ const ButtonStatus = ({ onClick, text }) => {
 			) : (
 				<Button
 					loading={loading}
-					color="success"
-					variant="contained"
-					size="large"
+					className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
 					onClick={onClick}
 				>
 					{text}

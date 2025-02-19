@@ -15,7 +15,6 @@ type Percent = number | string
 // @ts-ignore
 const Pool = () => {
 	const [tab, setTab] = useState<any>("create")
-	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	return (
 		<>
@@ -34,17 +33,17 @@ const Pool = () => {
 				<div className="p-2">
 					{tab === "add" && (
 						<div>
-							<Liquidity accountState={accountState}></Liquidity>
+							<Liquidity></Liquidity>
 						</div>
 					)}
 					{tab === "withdraw" && (
 						<div>
-							<Withdraw accountState={accountState}></Withdraw>
+							<Withdraw></Withdraw>
 						</div>
 					)}
 					{tab === "create" && (
 						<div>
-							<Create accountState={accountState}></Create>
+							<Create></Create>
 						</div>
 					)}
 				</div>

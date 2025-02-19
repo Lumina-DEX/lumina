@@ -8,9 +8,10 @@ import CurrencyFormat from "react-currency-format"
 import TokenMenu from "./TokenMenu"
 import { poolToka } from "@/utils/addresses"
 import Balance from "./Balance"
+import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
-const Withdraw = ({ accountState }) => {
+const Withdraw = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [loading, setLoading] = useState(false)
@@ -22,7 +23,6 @@ const Withdraw = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
 	const [toDai, setToDai] = useState(true)
 	const [pool, setPool] = useState(poolToka)
 	const [fromAmount, setFromAmount] = useState("")
@@ -91,21 +91,6 @@ const Withdraw = ({ accountState }) => {
 			console.log("infos", { fromAmount })
 
 			if (mina) {
-				const user: string = (await mina.requestAccounts())[0]
-
-				await zkState.zkappWorkerClient?.withdrawLiquidity(
-					pool,
-					user,
-					data.liquidity,
-					data.amountAOut,
-					data.amountBOut,
-					data.balanceAMin,
-					data.balanceBMin,
-					data.supplyMax
-				)
-
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				await mina.sendTransaction({ transaction: json })
 			}
 		} catch (error) {
 			console.log("swap error", error)
@@ -154,13 +139,7 @@ const Withdraw = ({ accountState }) => {
 					<div>
 						Your liquidity balance : <Balance tokenAddress={token.poolAddress}></Balance>
 					</div>
-					<button
-						onClick={withdrawLiquidity}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Withdraw Liquidity
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={withdrawLiquidity} text={"Withdraw Liquidity"}></ButtonStatus>
 				</div>
 			</div>
 		</>

@@ -15,7 +15,7 @@ import ButtonStatus from "./ButtonStatus"
 type Percent = number | string
 
 // @ts-ignore
-const Swap = ({ accountState }) => {
+const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
@@ -29,10 +29,9 @@ const Swap = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
-
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
+	const walletState = useSelector(Wallet, (state) => state.value)
 
 	const [toDai, setToDai] = useState(true)
 
@@ -51,7 +50,7 @@ const Swap = ({ accountState }) => {
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
-	}, [fromAmount, toDai, slippagePercent, pool, zkState.network])
+	}, [fromAmount, toDai, slippagePercent, pool, walletState])
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
@@ -153,7 +152,6 @@ const Swap = ({ accountState }) => {
 						Your token balance : <Balance tokenAddress={token.address}></Balance>
 					</div>
 					<ButtonStatus onClick={swap} text={"Swap"}></ButtonStatus>
-					{loading && <p>Creating transaction ...</p>}
 				</div>
 			</div>
 		</>
