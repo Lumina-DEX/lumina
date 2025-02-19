@@ -10,6 +10,7 @@ import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { feeAmount, LuminaContext } from "@/pages/_app.page"
 import { useSelector } from "@lumina-dex/sdk/react"
+import ButtonStatus from "./ButtonStatus"
 
 type Percent = number | string
 
@@ -151,9 +152,7 @@ const Swap = ({ accountState }) => {
 					<div>
 						Your token balance : <Balance tokenAddress={token.address}></Balance>
 					</div>
-					<button onClick={swap} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
-						Swap
-					</button>
+					<ButtonStatus onClick={swap} text={"Swap"}></ButtonStatus>
 					{loading && <p>Creating transaction ...</p>}
 				</div>
 			</div>

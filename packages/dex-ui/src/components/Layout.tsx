@@ -55,8 +55,8 @@ export default function Layout({ children }) {
 		</a>
 	) : (
 		<div>
-			<div>{displayText}</div>
-			<div>{displayTextWallet}</div>
+			<div className="text-sm">{displayText}</div>
+			<div className="text-sm">{displayTextWallet}</div>
 		</div>
 	)
 
@@ -72,17 +72,15 @@ export default function Layout({ children }) {
 	let mainContent = (
 		<div className="flex flex-col">
 			<Account></Account>
-			<div className="flex flex-row w-screen p-5 items-center justify-center">
-				{isReady && children}
-			</div>
+			<div className="flex flex-row w-screen p-5 items-center justify-center">{children}</div>
 		</div>
 	)
 
 	return (
 		<div className={styles.main} style={{ padding: 0 }}>
 			<div className={styles.center} style={{ padding: 0 }}>
-				{setup}
 				{mainContent}
+				<footer>{setup}</footer>
 			</div>
 		</div>
 	)
