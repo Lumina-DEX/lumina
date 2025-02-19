@@ -12,18 +12,13 @@ This can't run on cloudflare workers because of o1js limitations:
 
 ## Usage
 
-Use deno to run the service :
+Use bun to run the service :
 
 ```bash
-deno task dev
+bun run dev
 ```
 
 The server with listen on http://0.0.0.0:8000/.
-
-## Runtime
-
-This service use the Deno runtime, but this can easily be ported to Bun or to
-Node.js.
 
 ## Deploy
 
