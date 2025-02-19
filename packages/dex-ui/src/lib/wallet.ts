@@ -12,7 +12,7 @@ type ChainInfoArgs = {
 }
 
 export const zekoTestnet = "zeko:testnet"
-export const minaTestnet = "mina:testnet"
+export const minaTestnet = "mina:devnet"
 
 export async function connect() {
 	if (!mina) return

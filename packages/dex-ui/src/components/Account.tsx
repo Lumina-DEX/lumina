@@ -8,11 +8,16 @@ import CurrencyFormat from "react-currency-format"
 import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Menu from "./Menu"
 import { LuminaContext } from "@/pages/_app.page"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { Networks } from "@lumina-dex/sdk"
 
 // @ts-ignore
 const Account = () => {
+	const [balance, setBalance] = useState(0)
 	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 	const { Wallet, Dex } = useContext(LuminaContext)
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const walletContext = useSelector(Wallet, (state) => state.context)
 
 	async function timeout(seconds: number): Promise<void> {
 		return new Promise<void>((resolve) => {
@@ -31,17 +36,24 @@ const Account = () => {
 	}, [])
 
 	useEffect(() => {
-		const intervalID = setInterval(() => {
-			if (zkState.publicKeyBase58) {
-				requestAccounts().then()
-			}
-		}, 10000)
+		if (walletState && walletState === "INIT") {
+			handleConnect()
+		}
+	}, [walletState])
 
-		return () => clearInterval(intervalID)
-	}, [zkState.network, zkState.publicKeyBase58])
+	useEffect(() => {
+		if (walletContext) {
+			try {
+				const bal = walletContext.balances[walletContext.currentNetwork]["MINA"]
+				setBalance(bal)
+			} catch (error) {}
 
-	const switchNetwork = async (newNetwork: string) => {
-		await switchChain(newNetwork).then()
+			console.log("walletContext", walletContext)
+		}
+	}, [walletContext])
+
+	const switchNetwork = async (newNetwork: Networks) => {
+		Wallet.send({ type: "RequestNetworkChange", network: newNetwork })
 	}
 
 	const trimText = (text: string) => {
@@ -53,7 +65,6 @@ const Account = () => {
 
 	const handleConnect = async () => {
 		console.log("connect")
-
 		Wallet.send({ type: "Connect" })
 	}
 
@@ -70,31 +81,30 @@ const Account = () => {
 					<Menu></Menu>
 				</div>
 
-				{zkState?.publicKeyBase58 && (
+				{walletState !== "INIT" && (
 					<div className="flex flex-row">
 						<div className="flex flex-col lg:flex-row">
 							<div>
-								<span>{zkState.balances["mina"]?.toFixed(2)} MINA</span>
+								<span>{balance.toFixed(2)} MINA</span>
 							</div>
 							<div>
-								<span title={zkState?.publicKeyBase58}>{trimText(zkState?.publicKeyBase58)}</span>
+								<span title={walletContext.account}>{trimText(walletContext.account)}</span>
 							</div>
 						</div>
 						<div>
 							<select
-								value={zkState?.network}
-								onChange={async (ev) => await switchNetwork(ev.target.value)}
+								value={walletContext.currentNetwork}
+								onChange={async (ev) => await switchNetwork(ev.target.value as Networks)}
 							>
-								{zkState?.network !== zekoTestnet && zkState?.network !== minaTestnet && (
-									<option>N/A</option>
-								)}
+								{walletContext.currentNetwork !== zekoTestnet &&
+									walletContext.currentNetwork !== minaTestnet && <option>N/A</option>}
 								<option value={zekoTestnet}>Zeko</option>
 								<option value={minaTestnet}>Devnet</option>
 							</select>
 						</div>
 					</div>
 				)}
-				{!zkState?.publicKeyBase58 && (
+				{walletState === "INIT" && (
 					<button onClick={() => handleConnect().then()}>Connect Wallet</button>
 				)}
 			</div>
