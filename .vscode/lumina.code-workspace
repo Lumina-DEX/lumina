@@ -10,10 +10,15 @@
       },
       {
         "path": "../packages/contracts-cdn",
-        "name": "cdn"
+        "name": "@service/cdn"
       },
       {
         "path": "../packages/lumina-tokens",
+        "name": "@service/tokens"
+      },
+      {
+        "path": "../packages/signer",
+        "name": "@service/signer"
       },
       {
         "path": "../packages/dex-ui",
