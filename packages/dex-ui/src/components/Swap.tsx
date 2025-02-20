@@ -58,14 +58,12 @@ const Swap = ({}) => {
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
-	}, [fromAmount, toDai, slippagePercent, pool, walletState])
+	}, [fromAmount, toDai, slippagePercent, token, walletState])
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
 			// simple logging
 			console.log("Dex", snapshot)
-			console.log("token", token)
-			console.log("pool", pool)
 			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
 			if (token) {
 				valTo = valTo / 10 ** token.decimals
@@ -78,15 +76,16 @@ const Swap = ({}) => {
 
 	// Action handlers
 	const handleCalculateSwap = (amount) => {
+		console.log("token address", token.address)
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
 				pool: poolToka,
 				from: {
-					address: "MINA",
+					address: toDai ? "MINA" : token.address,
 					amount: fromAmount
 				},
-				to: pool,
+				to: toDai ? token.address : "MINA",
 				slippagePercent: slippagePercent,
 				frontendFee: feeAmount
 			}
