@@ -1,0 +1,19 @@
+{
+	"name": "luminadex-signer",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --env-file=.env.test --port 8000 --watch src/main.ts",
+		"format": "dprint check",
+		"format:fix": "dprint fmt --verbose"
+	},
+	"dependencies": {
+		"@lumina-dex/contracts": "workspace:^",
+		"@lumina-dex/sdk": "workspace:^",
+		"arktype": "^2.0.4",
+		"o1js": "2.2.0"
+	},
+	"devDependencies": {
+		"@types/bun": "1.2.2"
+	}
+}
