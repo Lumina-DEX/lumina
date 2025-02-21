@@ -123,7 +123,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 						{eventList &&
 							eventList.map((x) => {
 								return alreadyExist ? (
-									<></>
+									<div key={x.poolAddress}></div>
 								) : (
 									<div
 										style={{ borderBottom: "1px solid black" }}
