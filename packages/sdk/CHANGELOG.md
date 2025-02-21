@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.6.4
+
+### Patch Changes
+
+- 149c9f1: Swap should now work in both directions.
+
 ## 0.6.3
 
 ### Patch Changes
