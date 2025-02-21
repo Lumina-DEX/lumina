@@ -5,12 +5,13 @@ import { minaTestnet } from "@/lib/wallet"
 import { Box, Typography, Modal } from "@mui/material"
 import { fetchAccount, fetchEvents, Field, PublicKey, SmartContract } from "o1js"
 import { ZKFACTORY_ADDRESS } from "./Layout"
+import { Networks } from "@lumina-dex/sdk"
 
 const TokenMenu = ({ pool, setPool, setToken }) => {
-	const [tokenList, setTokenList] = useState([])
+	const [cdnList, setCdnList] = useState([])
 	const [eventList, setEventList] = useState([])
 	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
-	const [current, setCurrent] = useState({ symbol: "" })
+	const [current, setCurrent] = useState({ symbol: "TokenA" })
 	const [open, setOpen] = useState(false)
 	const [indexed, setIndexed] = useState([])
 	const handleOpen = () => setOpen(true)
@@ -23,24 +24,23 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 	}, [])
 
 	const getTokens = async () => {
-		const network = accountState.network === minaTestnet ? "mina-devnet" : "zeko-devnet"
+		//	const network: Networks = accountState.network === minaTestnet ? "mina:devnet" : "zeko:testnet"
+		// TODO support zeko
+		const network: Networks = "mina:devnet"
+		const tokens = await Addresses.getList(network)
+		setCdnList(tokens)
 
-		const listed = await Addresses.getList()
-
-		// @ts-ignore
-		const tokens = listed?.tokens?.filter((z) => z.chainId === network)
-		setTokenList(tokens)
-
-		const fetchEvent = await Addresses.getEventList(network === "zeko-devnet")
+		const fetchEvent = await Addresses.getEventList(network)
 		setEventList([])
 		if (fetchEvent?.length) {
 			setEventList(fetchEvent)
 		}
 
-		const poolExist = tokens.find((z) => z.poolAddress === pool)
+		let poolExist = tokens.find((z) => z.poolAddress === pool)
 		console.log("pool exist", poolExist)
 		if (!poolExist && tokens?.length) {
-			const poolExist = fetchEvent?.find((z) => z.poolAddress === pool)
+			poolExist = fetchEvent?.find((z) => z.poolAddress === pool)
+			console.log("pool exist 2", poolExist)
 			if (poolExist) {
 				setToken(poolExist)
 				setCurrent(poolExist)
@@ -50,7 +50,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 				setToken(tokens[0])
 				setCurrent(tokens[0])
 			}
-		} else {
+		} else if (poolExist) {
 			setToken(poolExist)
 			setCurrent(poolExist)
 		}
@@ -85,6 +85,10 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 		return text.substring(0, 6) + "..." + text.substring(text.length - 6, text.length)
 	}
 
+	const alreadyExist = (poolAddress: string) => {
+		return cdnList?.find((z) => z.poolAddress === poolAddress) || false
+	}
+
 	return (
 		<div>
 			<button onClick={handleOpen} className=" ml-3 p-1 bg-white">
@@ -98,40 +102,46 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 			>
 				<Box sx={style}>
 					<div className="flex flex-col">
-						{tokenList.map((x) => (
-							<div
-								style={{ borderBottom: "1px solid black" }}
-								onClick={() => selectPool(x)}
-								className="flex flex-col bg-blue-100 p-3"
-								key={x.poolAddress}
-							>
-								<span title={x.name}>{x.symbol}</span>
-								<span className="text-sm" title={x.address}>
-									Address : {trimText(x.address)}
-								</span>
-								<span className="text-sm" title={x.poolAddress}>
-									Pool : {trimText(x.poolAddress)}
-								</span>
-							</div>
-						))}
+						{cdnList &&
+							cdnList.map((x) => (
+								<div
+									style={{ borderBottom: "1px solid black" }}
+									onClick={() => selectPool(x)}
+									className="flex flex-col bg-blue-100 p-3"
+									key={x.poolAddress}
+								>
+									<span title={x.name}>{x.symbol}</span>
+									<span className="text-sm" title={x.address}>
+										Address : {trimText(x.address)}
+									</span>
+									<span className="text-sm" title={x.poolAddress}>
+										Pool : {trimText(x.poolAddress)}
+									</span>
+								</div>
+							))}
 					</div>
 					<div className="flex flex-col">
-						{eventList.map((x) => (
-							<div
-								style={{ borderBottom: "1px solid black" }}
-								onClick={() => selectPool(x)}
-								className="flex flex-col bg-red-100 p-3"
-								key={x.poolAddress}
-							>
-								<span title={x.name}>{x.symbol}</span>
-								<span className="text-sm" title={x.address}>
-									Address : {trimText(x.address)}
-								</span>
-								<span className="text-sm" title={x.poolAddress}>
-									Pool : {trimText(x.poolAddress)}
-								</span>
-							</div>
-						))}
+						{eventList &&
+							eventList.map((x) => {
+								return alreadyExist ? (
+									<></>
+								) : (
+									<div
+										style={{ borderBottom: "1px solid black" }}
+										onClick={() => selectPool(x)}
+										className="flex flex-col bg-red-100 p-3"
+										key={x.poolAddress}
+									>
+										<span title={x.name}>{x.symbol}</span>
+										<span className="text-sm" title={x.address}>
+											Address : {trimText(x.address)}
+										</span>
+										<span className="text-sm" title={x.poolAddress}>
+											Pool : {trimText(x.poolAddress)}
+										</span>
+									</div>
+								)
+							})}
 					</div>
 				</Box>
 			</Modal>
