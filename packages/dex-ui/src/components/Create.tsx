@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
@@ -8,12 +8,14 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import ButtonStatus from "./ButtonStatus"
+import { LuminaContext } from "./Layout"
 
 // @ts-ignore
 const Create = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [tokenAddress, setTokenAddress] = useState("")
+	const { Wallet, Dex } = useContext(LuminaContext)
 
 	useEffect(() => {
 		if (window && (window as any).mina) {
@@ -24,9 +26,13 @@ const Create = ({}) => {
 	const createPool = async () => {
 		try {
 			setLoading(true)
-			if (mina) {
-				console.time("create")
-			}
+			Dex.send({
+				type: "DeployPool",
+				settings: {
+					tokenA: "MINA",
+					tokenB: tokenAddress
+				}
+			})
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
