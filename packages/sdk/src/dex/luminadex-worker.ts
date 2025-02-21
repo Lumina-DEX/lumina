@@ -384,12 +384,12 @@ const swap = async (args: SwapArgs) => {
 	] as const
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, total)
 		if (args.to === MINA_ADDRESS) {
 			const zkPool = new contracts.Pool(poolKey)
 			logger.debug({ zkPool })
 			await zkPool.swapFromTokenToMina(...swapArgList)
 		} else {
+			AccountUpdate.fundNewAccount(userKey, total)
 			const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
 			logger.debug({ zkPoolHolder })
 			await zkPoolHolder
