@@ -1,12 +1,12 @@
 interface GetAmountOut {
-	frontendFee: number
 	amountIn: number
 	balanceIn: number
 	balanceOut: number
 	slippagePercent: number
+	frontendFee: number
 }
 export function getAmountOut(
-	{ frontendFee, amountIn, balanceIn, balanceOut, slippagePercent }: GetAmountOut
+	{ amountIn, balanceIn, balanceOut, slippagePercent, frontendFee }: GetAmountOut
 ) {
 	const balanceInMax = balanceIn + (balanceIn * slippagePercent) / 100
 	const balanceOutMin = balanceOut - (balanceOut * slippagePercent) / 100
@@ -17,7 +17,6 @@ export function getAmountOut(
 	const feeLP = baseAmountOut * 2 / 1000
 	const feeProtocol = baseAmountOut * 5 / 10000
 	const taxedAmountOut = baseAmountOut - feeFrontend - feeLP - feeProtocol
-
 	// truncate - 1
 	const amountOut = Math.trunc(taxedAmountOut) - 1
 

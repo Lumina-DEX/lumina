@@ -1,5 +1,17 @@
 # @lumina-dex/sdk
 
+## 0.6.3
+
+### Patch Changes
+
+- 3dd113b: Expose cache and network features
+
+## 0.6.2
+
+### Patch Changes
+
+- a17a0cb: Fix swap issue due to fee calculation.
+
 ## 0.6.1
 
 ### Patch Changes
