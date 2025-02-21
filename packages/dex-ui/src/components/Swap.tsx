@@ -19,7 +19,7 @@ const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: toka, decimals: 9 })
+	const [token, setToken] = useState({ address: toka, decimals: 9, poolAddress: poolToka })
 
 	const [loading, setLoading] = useState(false)
 
@@ -76,14 +76,23 @@ const Swap = ({}) => {
 
 	// Action handlers
 	const handleCalculateSwap = (amount) => {
-		console.log("token address", token.address)
+		console.log("swap settings", {
+			pool: token.poolAddress,
+			from: {
+				address: toDai ? "MINA" : token.address,
+				amount: fromAmount
+			},
+			to: toDai ? token.address : "MINA",
+			slippagePercent: slippagePercent,
+			frontendFee: feeAmount
+		})
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
-				pool: poolToka,
+				pool: token.poolAddress,
 				from: {
 					address: toDai ? "MINA" : token.address,
-					amount: fromAmount
+					amount: amount
 				},
 				to: toDai ? token.address : "MINA",
 				slippagePercent: slippagePercent,
