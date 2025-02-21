@@ -7,7 +7,7 @@ import { fetchAccount, PublicKey } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Menu from "./Menu"
-import { LuminaContext } from "@/pages/_app.page"
+import { feeAmount, LuminaContext } from "./Layout"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Networks } from "@lumina-dex/sdk"
 

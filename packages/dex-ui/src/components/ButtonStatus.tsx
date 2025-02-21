@@ -1,5 +1,5 @@
 "use client"
-import { LuminaContext } from "@/pages/_app.page"
+import { LuminaContext } from "./Layout"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Button } from "@mui/material"
 import React, { useContext, useEffect, useMemo, useState } from "react"

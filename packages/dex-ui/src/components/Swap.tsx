@@ -8,9 +8,9 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka, toka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
-import { feeAmount, LuminaContext } from "@/pages/_app.page"
 import { useSelector } from "@lumina-dex/sdk/react"
 import ButtonStatus from "./ButtonStatus"
+import { feeAmount, LuminaContext } from "./Layout"
 
 type Percent = number | string
 

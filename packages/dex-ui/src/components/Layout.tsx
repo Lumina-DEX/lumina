@@ -1,9 +1,12 @@
+"use client"
+
 import { Field, PublicKey } from "o1js"
 import { useContext, useEffect, useState } from "react"
 import styles from "../styles/Home.module.css"
 import Account from "@/components/Account"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { LuminaContext } from "@/pages/_app.page"
+import { createContext } from "react"
+import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
 
 let transactionFee = 0.1
 const ZKAPP_ADDRESS = "B62qjmz2oEe8ooqBmvj3a6fAbemfhk61rjxTYmUMP9A6LPdsBLmRAxK"
@@ -12,9 +15,22 @@ export const ZKFACTORY_ADDRESS = "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4m
 const ZKFAUCET_ADDRESS = "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUAG"
 const WETH_ADDRESS = "B62qisgt5S7LwrBKEc8wvWNjW7SGTQjMZJTDL2N6FmZSVGrWiNkV21H"
 
+const Wallet = createWallet()
+export const feeAmount = 10
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		frontendFee: {
+			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
+			amount: feeAmount
+		}
+	}
+})
+const Context: LC = { Dex, Wallet }
+export const LuminaContext = createContext(Context)
+
 export default function Layout({ children }) {
 	const [isReady, setIsReady] = useState(false)
-	const { Wallet, Dex } = useContext(LuminaContext)
 
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
@@ -73,11 +89,13 @@ export default function Layout({ children }) {
 	)
 
 	return (
-		<div className={styles.main} style={{ padding: 0 }}>
-			<div className={styles.center} style={{ padding: 0 }}>
-				{mainContent}
-				<footer>{setup}</footer>
+		<LuminaContext.Provider value={Context}>
+			<div className={styles.main} style={{ padding: 0 }}>
+				<div className={styles.center} style={{ padding: 0 }}>
+					{mainContent}
+					<footer>{setup}</footer>
+				</div>
 			</div>
-		</div>
+		</LuminaContext.Provider>
 	)
 }
