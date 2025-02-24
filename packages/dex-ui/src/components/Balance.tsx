@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PrivateKey, PublicKey, UInt64 } from "o1js"
@@ -7,11 +7,15 @@ import { PrivateKey, PublicKey, UInt64 } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
+import { Networks } from "@lumina-dex/sdk"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Balance = ({ tokenAddress }) => {
-	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
-
+const Balance = ({ token }) => {
+	const { Wallet, Dex } = useContext(LuminaContext)
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const walletContext = useSelector(Wallet, (state) => state.context)
 	const [balance, setBalance] = useState("0.0")
 
 	useEffect(() => {
@@ -21,23 +25,31 @@ const Balance = ({ tokenAddress }) => {
 		}, 10000)
 
 		return () => clearInterval(intervalID)
-	}, [zkState.network, zkState.publicKeyBase58, tokenAddress])
+	}, [])
 
 	const getBalance = async () => {
-		if (zkState.publicKeyBase58 && tokenAddress) {
-			// zkState.zkappWorkerClient
-			// 	.getBalanceToken(zkState.publicKeyBase58, tokenAddress)
-			// 	.then((x: UInt64) => {
-			// 		if (x) {
-			// 			let amtOut = x.toBigInt() / BigInt(10 ** 9)
-			// 			console.log("bal", balance)
-			// 			setBalance(Number(amtOut).toFixed(2))
-			// 		} else {
-			// 			setBalance("0.0")
-			// 		}
-			// 	})
+		if (token && token?.symbol?.length) {
+			const chainId = Wallet.send({
+				type: "FetchBalance",
+				networks: [walletContext.currentNetwork],
+				token: {
+					address: token.address,
+					decimal: 10 ** token.decimals,
+					tokenId: token.tokenId,
+					symbol: token.symbol
+				}
+			})
 		}
 	}
+
+	useEffect(() => {
+		if (walletContext?.currentNetwork && token?.symbol?.length) {
+			console.log("token", token)
+			const bal = walletContext.balances[walletContext.currentNetwork][token.symbol.toUpperCase()]
+			console.log("bql", walletContext.balances)
+			setBalance(bal.toFixed(2).toString())
+		}
+	}, [walletContext, token])
 
 	return (
 		<>

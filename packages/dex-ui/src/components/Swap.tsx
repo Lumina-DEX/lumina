@@ -167,7 +167,7 @@ const Swap = ({}) => {
 					</div>
 					{token?.address ? (
 						<div>
-							Your token balance : <Balance tokenAddress={token.address}></Balance>
+							Your token balance : <Balance token={token}></Balance>
 						</div>
 					) : (
 						<div></div>
