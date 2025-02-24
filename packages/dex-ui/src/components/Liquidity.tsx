@@ -14,16 +14,25 @@ import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
 const Liquidity = ({}) => {
-	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [token, setToken] = useState({ address: "", poolAddress: "" })
+	const [token, setToken] = useState({ address: "", poolAddress: "", symbol: "", decimals: 9 })
+	const [tokenPool, setTokenPool] = useState({
+		address: "",
+		poolAddress: "",
+		symbol: "LUM",
+		decimals: 9
+	})
 
 	useEffect(() => {
-		if (window && (window as any).mina) {
-			setMina((window as any).mina)
+		if (token) {
+			const poolTok = { ...token }
+			poolTok.address = token.address
+			poolTok.symbol = "LUM"
+			poolTok.decimals = 9
+			setTokenPool(poolTok)
 		}
-	}, [])
+	}, [token])
 
 	const [pool, setPool] = useState(poolToka)
 	const [toDai, setToDai] = useState(true)
@@ -185,10 +194,10 @@ const Liquidity = ({}) => {
 						)}
 					</div>
 					<div>
-						Your token balance : <Balance tokenAddress={token.address}></Balance>
+						Your token balance : <Balance token={token}></Balance>
 					</div>
 					<div>
-						Your liquidity balance : <Balance tokenAddress={token.poolAddress}></Balance>
+						Your liquidity balance : <Balance token={tokenPool}></Balance>
 					</div>
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
