@@ -1,7 +1,6 @@
 import { FungibleToken } from "mina-fungible-token"
 import {
   Field,
-  MerkleMap,
   MerkleMapWitness,
   method,
   Poseidon,
@@ -10,22 +9,23 @@ import {
   State,
   state,
   Struct,
+  UInt32,
   UInt64
 } from "o1js"
 
-export class AddOrderEvent extends Struct({
+export class AddOrder extends Struct({
   sender: PublicKey,
-  tokenIn: PublicKey,
-  amountIn: UInt64,
-  tokenOut: PublicKey,
-  amountOut: UInt64
+  tokenSell: PublicKey,
+  amountSell: UInt64,
+  tokenBuy: PublicKey,
+  amountBuy: UInt64
 }) {
   constructor(value: {
     sender: PublicKey
-    tokenIn: PublicKey
-    amountIn: UInt64
-    tokenOut: PublicKey
-    amountOut: UInt64
+    tokenSell: PublicKey
+    amountSell: UInt64
+    tokenBuy: PublicKey
+    amountBuy: UInt64
   }) {
     super(value)
   }
@@ -34,16 +34,54 @@ export class AddOrderEvent extends Struct({
     return Poseidon.hash(
       this.sender.toFields()
         .concat(
-          this.tokenIn.toFields()
+          this.tokenSell.toFields()
             .concat(
-              this.amountIn.toFields()
+              this.amountSell.toFields()
                 .concat(
-                  this.tokenOut.toFields()
-                    .concat(this.amountOut.toFields())
+                  this.tokenBuy.toFields()
+                    .concat(this.amountBuy.toFields())
                 )
             )
         )
     )
+  }
+}
+
+export class UpdatedOrder extends Struct({
+  orderKey: Field,
+  amountFilled: UInt64,
+  status: UInt32
+}) {
+  constructor(value: {
+    orderKey: Field
+    amountFilled: UInt64
+    status: UInt32
+  }) {
+    super(value)
+  }
+
+  hash(): Field {
+    return Poseidon.hash(
+      this.orderKey.toFields()
+        .concat(
+          this.amountFilled.toFields()
+            .concat(
+              this.status.toFields()
+            )
+        )
+    )
+  }
+
+  static end(): UInt32 {
+    return UInt32.from(1)
+  }
+
+  static partial(): UInt32 {
+    return UInt32.from(2)
+  }
+
+  static cancelled(): UInt32 {
+    return UInt32.from(3)
   }
 }
 
@@ -59,9 +97,11 @@ export class Order extends SmartContract {
   indexOrder = State<Field>()
   @state(Field)
   indexFillOrder = State<Field>()
+  @state(PublicKey)
+  receiver = State<PublicKey>()
 
   events = {
-    addOrder: AddOrderEvent
+    addOrder: AddOrder
   }
 
   async deploy() {
@@ -70,10 +110,10 @@ export class Order extends SmartContract {
 
   @method
   async addOrder(
-    tokenIn: PublicKey,
-    amountIn: UInt64,
-    tokenOut: PublicKey,
-    amountOut: UInt64,
+    tokenSell: PublicKey,
+    amountSell: UInt64,
+    tokenBuy: PublicKey,
+    amountBuy: UInt64,
     witness: MerkleMapWitness
   ) {
     const indexOrder = this.indexOrder.getAndRequireEquals()
@@ -89,10 +129,10 @@ export class Order extends SmartContract {
     const sender = this.sender.getAndRequireSignature()
 
     // send token to the order book
-    const tokenContract = new FungibleToken(tokenIn)
-    tokenContract.transfer(sender, this.address, amountIn)
+    const tokenContract = new FungibleToken(tokenSell)
+    tokenContract.transfer(sender, this.address, amountSell)
 
-    const orderEvent = new AddOrderEvent({ sender, tokenIn, amountIn, tokenOut, amountOut })
+    const orderEvent = new AddOrder({ sender, tokenSell, amountSell, tokenBuy, amountBuy })
 
     const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
 
@@ -103,7 +143,7 @@ export class Order extends SmartContract {
   }
 
   @method
-  async fillOrder(orderA: Field, orderB: Field, witness: MerkleMapWitness) {
+  async fillOrder(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness) {
     // const indexOrder = this.indexOrder.getAndRequireEquals()
     // const merkleOrder = this.merkleOrder.getAndRequireEquals()
 
