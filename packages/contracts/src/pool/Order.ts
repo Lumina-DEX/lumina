@@ -9,12 +9,14 @@ import {
   State,
   state,
   Struct,
+  TokenId,
   UInt32,
   UInt64
 } from "o1js"
 
 export class AddOrder extends Struct({
   sender: PublicKey,
+  index: Field,
   tokenSell: PublicKey,
   amountSell: UInt64,
   tokenBuy: PublicKey,
@@ -22,6 +24,7 @@ export class AddOrder extends Struct({
 }) {
   constructor(value: {
     sender: PublicKey
+    index: Field
     tokenSell: PublicKey
     amountSell: UInt64
     tokenBuy: PublicKey
@@ -34,12 +37,15 @@ export class AddOrder extends Struct({
     return Poseidon.hash(
       this.sender.toFields()
         .concat(
-          this.tokenSell.toFields()
+          this.index.toFields()
             .concat(
-              this.amountSell.toFields()
+              this.tokenSell.toFields()
                 .concat(
-                  this.tokenBuy.toFields()
-                    .concat(this.amountBuy.toFields())
+                  this.amountSell.toFields()
+                    .concat(
+                      this.tokenBuy.toFields()
+                        .concat(this.amountBuy.toFields())
+                    )
                 )
             )
         )
@@ -88,7 +94,7 @@ export class UpdatedOrder extends Struct({
 /**
  * Test code don't use it in production
  */
-export class Order extends SmartContract {
+export class OrderBook extends SmartContract {
   @state(Field)
   merkleOrder = State<Field>()
   @state(Field)
@@ -97,8 +103,6 @@ export class Order extends SmartContract {
   indexOrder = State<Field>()
   @state(Field)
   indexFillOrder = State<Field>()
-  @state(PublicKey)
-  receiver = State<PublicKey>()
 
   events = {
     addOrder: AddOrder
@@ -132,7 +136,7 @@ export class Order extends SmartContract {
     const tokenContract = new FungibleToken(tokenSell)
     tokenContract.transfer(sender, this.address, amountSell)
 
-    const orderEvent = new AddOrder({ sender, tokenSell, amountSell, tokenBuy, amountBuy })
+    const orderEvent = new AddOrder({ sender, index: newKey, tokenSell, amountSell, tokenBuy, amountBuy })
 
     const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
 
@@ -143,25 +147,44 @@ export class Order extends SmartContract {
   }
 
   @method
-  async fillOrder(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness) {
-    // const indexOrder = this.indexOrder.getAndRequireEquals()
-    // const merkleOrder = this.merkleOrder.getAndRequireEquals()
+  async moveTokenA(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
+    await this.send({ to: orderA.sender, amount: orderA.amountBuy })
+    const tokenBId = TokenId.derive(orderA.tokenSell)
+    const orderTokenB = new OrderBook(this.address, tokenBId)
+    await orderTokenB.moveTokenB(orderA, orderB, witnessA, witnessB)
+  }
 
-    // // we start from the next key who are supposed to be empty
-    // const empty = Field.empty()
-    // const newKey = indexOrder.add(1)
-    // const [witnessRootBefore, witnessKey] = witness.computeRootAndKey(empty)
-    // witnessRootBefore.assertEquals(merkleOrder, "Witness incorrect")
-    // witnessKey.assertEquals(newKey, "Witness incorrect")
+  @method
+  async moveTokenB(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
+    await this.send({ to: orderB.sender, amount: orderB.amountBuy })
+    const order = new OrderBook(this.address)
+    await order.updateOrder(orderA, orderB, witnessA, witnessB)
+  }
 
-    // const sender = this.sender.getAndRequireSignature()
-    // const orderEvent = new AddOrderEvent({ sender, tokenIn, amountIn, tokenOut, amountOut })
+  @method
+  async updateOrder(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
+    // don't use it in prod we don't verify if order already fullfilled
+    const merkleOrder = this.merkleOrder.getAndRequireEquals()
+    // as example we don
+    const hashA = orderA.hash()
+    const hashB = orderB.hash()
 
-    // const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
+    const [witnessRootA, witnessKeyA] = witnessA.computeRootAndKey(hashA)
+    merkleOrder.assertEquals(witnessRootA, "Invalid witness a")
+    witnessKeyA.assertEquals(orderA.index, "Invalid witness a")
 
-    // this.merkleOrder.set(witnessRootAfter)
-    // this.indexOrder.set(newKey)
+    const [witnessRootB, witnessKeyB] = witnessB.computeRootAndKey(hashB)
+    merkleOrder.assertEquals(witnessRootB, "Invalid witness b")
+    witnessKeyB.assertEquals(orderB.index, "Invalid witness b")
 
-    // this.emitEvent("addOrder", orderEvent)
+    // match the order token
+    orderA.tokenBuy.assertEquals(orderB.tokenSell)
+    orderA.tokenSell.assertEquals(orderB.tokenBuy)
+
+    // for example just perfect matching orders
+    const priceA = orderA.amountSell.div(orderA.amountBuy)
+    const priceB = orderB.amountBuy.div(orderA.amountSell)
+    priceB.assertEquals(priceA)
+    orderA.amountBuy.assertEquals(orderB.amountSell)
   }
 }
