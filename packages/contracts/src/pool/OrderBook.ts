@@ -200,7 +200,7 @@ export class OrderBook extends SmartContract {
   }
 
   @method
-  async moveTokenA(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
+  async matchOrder(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
     await this.send({ to: orderA.sender, amount: orderA.amountBuy })
     const tokenBId = TokenId.derive(orderA.tokenSell)
     const orderTokenB = new OrderBook(this.address, tokenBId)
@@ -223,10 +223,16 @@ export class OrderBook extends SmartContract {
     const hashB = orderB.hash()
 
     const [witnessRootA, witnessKeyA] = witnessA.computeRootAndKey(hashA)
+    Provable.log("witnessRootA", witnessRootA)
+    Provable.log("witnessKeyA", witnessKeyA)
+    Provable.log("merkleOrder", merkleOrder)
+    Provable.log("hashA", hashA)
     merkleOrder.assertEquals(witnessRootA, "Invalid witness a")
     witnessKeyA.assertEquals(orderA.index, "Invalid witness a")
 
     const [witnessRootB, witnessKeyB] = witnessB.computeRootAndKey(hashB)
+    Provable.log("witnessRootB", witnessRootB)
+    Provable.log("witnessKeyB", witnessKeyB)
     merkleOrder.assertEquals(witnessRootB, "Invalid witness b")
     witnessKeyB.assertEquals(orderB.index, "Invalid witness b")
 

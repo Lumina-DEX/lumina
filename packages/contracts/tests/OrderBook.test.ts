@@ -213,8 +213,25 @@ describe("Order book test", () => {
     const balance = Mina.getBalance(zkPoolAddress)
     const balanceOut = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())
 
-    const balanceAlice = await fetchAccount({ publicKey: aliceAccount, tokenId: zkToken.deriveTokenId() })
-    console.log("balance alice", balanceAlice.account?.balance?.toBigInt() || 0n)
+    const accountAlice = await fetchAccount({ publicKey: aliceAccount, tokenId: zkToken.deriveTokenId() })
+    const balanceAlice = accountAlice.account?.balance?.toBigInt() || 0n
+    expect(balanceAlice).toEqual(0n)
+    console.log("balance alice", balanceAlice)
+
+    const balanceAliceMina = Mina.getBalance(aliceAccount)
+    console.log("balanceAliceMina", balanceAliceMina.toBigInt())
+
+    const orderEventAlice = new AddOrder({
+      sender: aliceAccount,
+      index: Field(2),
+      tokenSell: zkTokenAddress,
+      amountSell: amtBuy,
+      tokenBuy: PublicKey.empty(),
+      amountBuy: amtSell
+    })
+    merleMap.set(Field(2), orderEventAlice.hash())
+    const witness1 = merleMap.getWitness(Field(1))
+    const witness2 = merleMap.getWitness(Field(2))
 
     txn = await Mina.transaction(aliceAccount, async () => {
       AccountUpdate.fundNewAccount(aliceAccount, 1)
@@ -223,6 +240,7 @@ describe("Order book test", () => {
       await zkToken.approveAccountUpdate(tokenHolder.self)
       // seems impossible to give money if we don't have it before
       await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
+      await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
     })
     console.log("swap order au", txn.toPretty())
     await txn.prove()
@@ -230,6 +248,10 @@ describe("Order book test", () => {
 
     const balanceAliceAfter = Mina.getBalance(aliceAccount, zkToken.deriveTokenId())
     console.log("balance alice after", balanceAliceAfter.toBigInt())
+    expect(balanceAliceAfter.greaterThan(UInt64.zero)).toEqual(Bool(true))
+
+    const balanceAliceMinaAfter = Mina.getBalance(aliceAccount)
+    console.log("balanceAliceMinaAfter", balanceAliceMinaAfter.toBigInt())
   })
 
   async function mintToken(user: PublicKey) {
