@@ -1,4 +1,4 @@
-import { Field, MerkleMap, MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
+import { fetchAccount, Field, MerkleMap, MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
 import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -210,13 +210,26 @@ describe("Order book test", () => {
     merleMap.set(Field(2), Field.empty())
 
     witness = merleMap.getWitness(Field(2))
-    txn = await Mina.transaction(senderAccount, async () => {
+    const balance = Mina.getBalance(zkPoolAddress)
+    const balanceOut = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())
+
+    const balanceAlice = await fetchAccount({ publicKey: aliceAccount, tokenId: zkToken.deriveTokenId() })
+    console.log("balance alice", balanceAlice.account?.balance?.toBigInt() || 0n)
+
+    txn = await Mina.transaction(aliceAccount, async () => {
+      AccountUpdate.fundNewAccount(aliceAccount, 1)
       // create invert order of bob
+      await tokenHolder.swapFromMinaToToken(senderAccount, UInt64.from(5), amtSell, amtBuy.add(2), balance, balanceOut)
+      await zkToken.approveAccountUpdate(tokenHolder.self)
+      // seems impossible to give money if we don't have it before
       await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
     })
-    console.log("add order au", txn.transaction.accountUpdates.length)
+    console.log("swap order au", txn.toPretty())
     await txn.prove()
-    await txn.sign([senderKey]).send()
+    await txn.sign([aliceKey]).send()
+
+    const balanceAliceAfter = Mina.getBalance(aliceAccount, zkToken.deriveTokenId())
+    console.log("balance alice after", balanceAliceAfter.toBigInt())
   })
 
   async function mintToken(user: PublicKey) {
