@@ -69,7 +69,8 @@ describe("Order book test", () => {
   })
 
   beforeEach(async () => {
-    const Local = await Mina.LocalBlockchain({ proofsEnabled })
+    // order book will be deploy only on zeko
+    const Local = await Mina.LocalBlockchain({ proofsEnabled, enforceTransactionLimits: false })
     Mina.setActiveInstance(Local)
     ;[deployerAccount, senderAccount, bobAccount, aliceAccount, dylanAccount] = Local.testAccounts
     deployerKey = deployerAccount.key
@@ -147,6 +148,18 @@ describe("Order book test", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn3.sign([deployerKey, zkPoolPrivateKey]).send()
 
+    const txn4 = await Mina.transaction(deployerAccount, async () => {
+      AccountUpdate.fundNewAccount(deployerAccount, 2)
+      await zkOrder.deploy()
+      await zkOrderToken.deploy()
+      await zkToken.approveAccountUpdate(zkOrderToken.self)
+    })
+
+    console.log("deploy order book", txn4.transaction.accountUpdates.length)
+    await txn4.prove()
+    // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
+    await txn4.sign([deployerKey, zkOrderPrivateKey]).send()
+
     // mint token to user
     await mintToken(senderAccount)
   })
@@ -215,91 +228,6 @@ describe("Order book test", () => {
 
     const balanceMina = Mina.getBalance(newPool.address)
     expect(balanceMina.value).toEqual(amt.value)
-  })
-
-  it("failed deploy for same token", async () => {
-    const newPoolKey = PrivateKey.random()
-    const signature = Signature.create(aliceKey, newPoolKey.toPublicKey().toFields())
-    const witness = merkle.getWitness(1n)
-    const circuitWitness = new SignerMerkleWitness(witness)
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(newPoolKey.toPublicKey(), zkTokenAddress, aliceAccount, signature, circuitWitness)
-    })
-    await txn1.prove()
-    await expect(txn1.sign([deployerKey, newPoolKey]).send()).rejects.toThrow()
-  })
-
-  it("failed directly deploy a pool", async () => {
-    const newPoolKey = PrivateKey.random()
-    const newPool = new Pool(newPoolKey.toPublicKey())
-    await expect(Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 1)
-      await newPool.deploy()
-    })).rejects.toThrow()
-  })
-
-  it("cant transfer circulation supply", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    let txn = await Mina.transaction(senderAccount, async () => {
-      AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkPool.supplyFirstLiquidities(amt, amtToken)
-    })
-    await txn.prove()
-    await txn.sign([senderKey]).send()
-
-    await expect(Mina.transaction(senderAccount, async () => {
-      await zkPool.transfer(zkPoolAddress, senderAccount, UInt64.from(1000))
-    })).rejects.toThrow()
-
-    txn = await Mina.transaction(senderAccount, async () => {
-      await zkPool.send({ to: senderAccount, amount: UInt64.from(1000) })
-      await zkPool.approveAccountUpdate(zkPool.self)
-    })
-    console.log("transfer", txn.toPretty())
-    await txn.prove()
-    await expect(txn.sign([senderKey, zkPoolPrivateKey]).send()).rejects.toThrow()
-
-    await expect(Mina.transaction(senderAccount, async () => {
-      const poolAccount = AccountUpdate.create(zkPoolAddress, zkPool.deriveTokenId())
-      const userAccount = AccountUpdate.create(senderAccount, zkPool.deriveTokenId())
-      poolAccount.balance.subInPlace(1000)
-      userAccount.balance.addInPlace(1000)
-      await zkPool.approveAccountUpdates([poolAccount, userAccount])
-    })).rejects.toThrow()
-  })
-
-  it("cant transfer factory circulation supply", async () => {
-    await expect(Mina.transaction(senderAccount, async () => {
-      AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkApp.transfer(zkTokenAddress, bobAccount, UInt64.one)
-    })).rejects.toThrow()
-
-    await expect(Mina.transaction(senderAccount, async () => {
-      const poolAccount = AccountUpdate.create(zkTokenAddress, zkPool.deriveTokenId())
-      const userAccount = AccountUpdate.create(senderAccount, zkPool.deriveTokenId())
-      poolAccount.balance.subInPlace(1000)
-      userAccount.balance.addInPlace(1000)
-      await zkApp.approveAccountUpdates([poolAccount, userAccount])
-    })).rejects.toThrow()
-  })
-
-  it("cant mint token", async () => {
-    const txn = await Mina.transaction(senderAccount, async () => {
-      AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkPool.internal.mint({ address: senderAccount, amount: UInt64.one })
-      await zkPool.approveAccountUpdate(zkPool.self)
-    })
-    console.log("txn mint", txn.toPretty())
-    await txn.prove()
-    await expect(txn.sign([senderKey, zkPoolPrivateKey]).send()).rejects.toThrow()
-
-    await expect(Mina.transaction(senderAccount, async () => {
-      AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkApp.internal.mint({ address: senderAccount, amount: UInt64.one })
-      await zkApp.approveAccountUpdate(zkApp.self)
-    })).rejects.toThrow()
   })
 
   async function mintToken(user: PublicKey) {

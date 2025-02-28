@@ -41,7 +41,8 @@
     "test:factory": "vitest run Factory",
     "test:faucet": "vitest run Faucet",
     "test:data": "vitest run PoolData",
-    "test:token": "vitest run PoolToken"
+    "test:token": "vitest run PoolToken",
+    "test:order": "vitest run OrderBook"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.1",
