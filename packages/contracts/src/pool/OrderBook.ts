@@ -1,5 +1,6 @@
 import { FungibleToken } from "mina-fungible-token"
 import {
+  AccountUpdate,
   Field,
   MerkleMapWitness,
   method,
@@ -137,6 +138,47 @@ export class OrderBook extends SmartContract {
     tokenContract.transfer(sender, this.address, amountSell)
 
     const orderEvent = new AddOrder({ sender, index: newKey, tokenSell, amountSell, tokenBuy, amountBuy })
+
+    const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
+
+    this.merkleOrder.set(witnessRootAfter)
+    this.indexOrder.set(newKey)
+
+    this.emitEvent("addOrder", orderEvent)
+  }
+
+  @method
+  async addOrderMina(
+    amountSell: UInt64,
+    tokenBuy: PublicKey,
+    amountBuy: UInt64,
+    witness: MerkleMapWitness
+  ) {
+    const indexOrder = this.indexOrder.getAndRequireEquals()
+    const merkleOrder = this.merkleOrder.getAndRequireEquals()
+
+    // we start from the next key who are supposed to be empty
+    const empty = Field.empty()
+    const newKey = indexOrder.add(1)
+    const [witnessRootBefore, witnessKey] = witness.computeRootAndKey(empty)
+    witnessRootBefore.assertEquals(merkleOrder, "Witness incorrect")
+    witnessKey.assertEquals(newKey, "Witness incorrect")
+
+    const sender = this.sender.getAndRequireSignature()
+
+    // send token to the order book
+    const accSender = AccountUpdate.createSigned(sender)
+    accSender.send({ to: this.address, amount: amountSell })
+
+    // use empty key for mina
+    const orderEvent = new AddOrder({
+      sender,
+      index: newKey,
+      tokenSell: PublicKey.empty(),
+      amountSell,
+      tokenBuy,
+      amountBuy
+    })
 
     const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
 

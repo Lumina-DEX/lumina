@@ -95,6 +95,12 @@ describe("Order book test", () => {
 
     tokenHolder = new PoolTokenHolder(zkPoolAddress, zkToken.deriveTokenId())
 
+    zkOrderPrivateKey = PrivateKey.random()
+    zkOrderAddress = zkOrderPrivateKey.toPublicKey()
+    zkOrder = new OrderBook(zkOrderAddress)
+
+    zkOrderToken = new OrderBook(zkOrderAddress, zkToken.deriveTokenId())
+
     merkle = new MerkleTree(32)
     merkle.setLeaf(0n, Poseidon.hash(bobAccount.toFields()))
     merkle.setLeaf(1n, Poseidon.hash(aliceAccount.toFields()))
