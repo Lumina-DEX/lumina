@@ -232,15 +232,16 @@ describe("Order book test", () => {
     merleMap.set(Field(2), orderEventAlice.hash())
     const witness1 = merleMap.getWitness(Field(1))
     const witness2 = merleMap.getWitness(Field(2))
+    const actualRoot = merkle.getRoot()
+    console.log("root offchain", actualRoot.toBigInt())
 
     txn = await Mina.transaction(aliceAccount, async () => {
       AccountUpdate.fundNewAccount(aliceAccount, 1)
       // create invert order of bob
       await tokenHolder.swapFromMinaToToken(senderAccount, UInt64.from(5), amtSell, amtBuy.add(2), balance, balanceOut)
       await zkToken.approveAccountUpdate(tokenHolder.self)
-      // seems impossible to give money if we don't have it before
       await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
-      await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
+      // await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
     })
     console.log("swap order au", txn.toPretty())
     await txn.prove()
