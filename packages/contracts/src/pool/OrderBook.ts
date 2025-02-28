@@ -2,9 +2,11 @@ import { FungibleToken } from "mina-fungible-token"
 import {
   AccountUpdate,
   Field,
+  MerkleMap,
   MerkleMapWitness,
   method,
   Poseidon,
+  Provable,
   PublicKey,
   SmartContract,
   State,
@@ -111,6 +113,11 @@ export class OrderBook extends SmartContract {
 
   async deploy() {
     await super.deploy()
+
+    const merleMap = new MerkleMap()
+    // start at 1
+    merleMap.set(Field(0), Field.empty())
+    this.merkleOrder.set(merleMap.getRoot())
   }
 
   @method
@@ -135,7 +142,7 @@ export class OrderBook extends SmartContract {
 
     // send token to the order book
     const tokenContract = new FungibleToken(tokenSell)
-    tokenContract.transfer(sender, this.address, amountSell)
+    await tokenContract.transfer(sender, this.address, amountSell)
 
     const orderEvent = new AddOrder({ sender, index: newKey, tokenSell, amountSell, tokenBuy, amountBuy })
 
@@ -161,6 +168,10 @@ export class OrderBook extends SmartContract {
     const empty = Field.empty()
     const newKey = indexOrder.add(1)
     const [witnessRootBefore, witnessKey] = witness.computeRootAndKey(empty)
+    Provable.log("witnessRootBefore", witnessRootBefore)
+    Provable.log("witnessKey", witnessKey)
+    Provable.log("merkleOrder", merkleOrder)
+    Provable.log("newKey", newKey)
     witnessRootBefore.assertEquals(merkleOrder, "Witness incorrect")
     witnessKey.assertEquals(newKey, "Witness incorrect")
 

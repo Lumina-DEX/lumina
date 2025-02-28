@@ -1,8 +1,9 @@
-import { MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
+import { Field, MerkleMap, MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
 import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  AddOrder,
   FungibleToken,
   FungibleTokenAdmin,
   OrderBook,
@@ -162,79 +163,67 @@ describe("Order book test", () => {
 
     // mint token to user
     await mintToken(senderAccount)
-  })
 
-  it("deploy a second pool", async () => {
-    const newTokenKey = PrivateKey.random()
+    const senderBal = Mina.getBalance(senderAccount)
+    console.log("senderBal", senderBal.toBigInt())
 
-    const zkTokenNew = new FungibleToken(newTokenKey.toPublicKey())
-
-    const txn0 = await Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 2)
-      await zkTokenNew.deploy({
-        symbol: "TWO",
-        src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
-        allowUpdates: false
-      })
-      await zkTokenNew.initialize(
-        zkTokenAdminAddress,
-        UInt8.from(9),
-        Bool(false)
-      )
-    })
-    await txn0.prove()
-    // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
-    await txn0.sign([deployerKey, newTokenKey]).send()
-
-    const newPoolKey = PrivateKey.random()
-    const poolAddress = newPoolKey.toPublicKey()
-    const newTokenAddress = newTokenKey.toPublicKey()
-    const signature = Signature.create(bobKey, poolAddress.toFields())
-    const witness = merkle.getWitness(0n)
-    const circuitWitness = new SignerMerkleWitness(witness)
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(poolAddress, newTokenAddress, bobAccount, signature, circuitWitness)
-    })
-    await txn1.prove()
-    await txn1.sign([deployerKey, newPoolKey]).send()
-    const newPool = new Pool(poolAddress)
-
-    const txn2 = await Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 1)
-      await zkTokenNew.mint(senderAccount, UInt64.from(1000 * 10 ** 9))
-    })
-    await txn2.prove()
-    await txn2.sign([deployerKey, newTokenKey]).send()
-
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(500 * 10 ** 9)
+    let amtToken = UInt64.from(100_000 * 10 ** 9)
+    let txn5 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
-      await newPool.supplyFirstLiquidities(amt, amtToken)
+      await zkPool.supplyFirstLiquidities(amt, amtToken)
     })
     console.log("supplyFirstLiquidities", txn.toPretty())
     console.log("supplyFirstLiquidities au", txn.transaction.accountUpdates.length)
+    await txn5.prove()
+    await txn5.sign([senderKey]).send()
+  })
+
+  it("create order", async () => {
+    // bob buy 200 token
+    let amtBuy = UInt64.from(200 * 10 ** 9)
+    // bob sell 10 mina
+    let amtSell = UInt64.from(10 * 10 ** 9)
+
+    const merleMap = new MerkleMap()
+    // start at 1
+    merleMap.set(Field(0), Field.empty())
+    merleMap.set(Field(1), Field.empty())
+    let witness = merleMap.getWitness(Field(1))
+    let txn = await Mina.transaction(bobAccount, async () => {
+      await zkOrder.addOrderMina(amtSell, zkTokenAddress, amtBuy, witness)
+    })
+    console.log("add order au", txn.transaction.accountUpdates.length)
+    await txn.prove()
+    await txn.sign([bobKey]).send()
+
+    const orderEvent = new AddOrder({
+      sender: bobAccount,
+      index: Field(1),
+      tokenSell: PublicKey.empty(),
+      amountSell: amtSell,
+      tokenBuy: zkTokenAddress,
+      amountBuy: amtBuy
+    })
+
+    merleMap.set(Field(1), orderEvent.hash())
+    merleMap.set(Field(2), Field.empty())
+
+    witness = merleMap.getWitness(Field(2))
+    txn = await Mina.transaction(senderAccount, async () => {
+      // create invert order of bob
+      await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
+    })
+    console.log("add order au", txn.transaction.accountUpdates.length)
     await txn.prove()
     await txn.sign([senderKey]).send()
-
-    const liquidityUser = Mina.getBalance(senderAccount, newPool.deriveTokenId())
-    const expected = amt.value.add(amtToken.value).sub(Pool.minimumLiquidity.value)
-    console.log("liquidity user", liquidityUser.toString())
-    expect(liquidityUser.value).toEqual(expected)
-
-    const balanceToken = Mina.getBalance(newPool.address, zkTokenNew.deriveTokenId())
-    expect(balanceToken.value).toEqual(amtToken.value)
-
-    const balanceMina = Mina.getBalance(newPool.address)
-    expect(balanceMina.value).toEqual(amt.value)
   })
 
   async function mintToken(user: PublicKey) {
     // token are minted to original deployer, so just transfer it for test
     let txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 1)
-      await zkToken.mint(user, UInt64.from(1000 * 10 ** 9))
+      await zkToken.mint(user, UInt64.from(1_000_000 * 10 ** 9))
     })
     await txn.prove()
     await txn.sign([deployerKey, zkTokenPrivateKey]).send()
