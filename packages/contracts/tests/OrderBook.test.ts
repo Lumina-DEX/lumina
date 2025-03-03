@@ -173,7 +173,7 @@ describe("Order book test", () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
     })
-    console.log("supplyFirstLiquidities", txn.toPretty())
+    // console.log("supplyFirstLiquidities", txn.toPretty())
     console.log("supplyFirstLiquidities au", txn.transaction.accountUpdates.length)
     await txn5.prove()
     await txn5.sign([senderKey]).send()
@@ -193,7 +193,7 @@ describe("Order book test", () => {
     let txn = await Mina.transaction(bobAccount, async () => {
       await zkOrder.addOrderMina(amtSell, zkTokenAddress, amtBuy, witness)
     })
-    console.log("add order au", txn.transaction.accountUpdates.length)
+    // console.log("add order au", txn.transaction.accountUpdates.length)
     await txn.prove()
     await txn.sign([bobKey]).send()
 
@@ -207,7 +207,10 @@ describe("Order book test", () => {
     })
 
     merleMap.set(Field(1), orderEvent.hash())
-    merleMap.set(Field(2), Field.empty())
+    // merleMap.set(Field(2), Field.empty())
+    console.log("hash test event bob", orderEvent.hash().toBigInt())
+    const rootAfterBob = merkle.getRoot()
+    console.log("root after bob", rootAfterBob.toBigInt())
 
     witness = merleMap.getWitness(Field(2))
     const balance = Mina.getBalance(zkPoolAddress)
@@ -243,7 +246,7 @@ describe("Order book test", () => {
       await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
       // await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
     })
-    console.log("swap order au", txn.toPretty())
+    // console.log("swap order au", txn.toPretty())
     await txn.prove()
     await txn.sign([aliceKey]).send()
 
