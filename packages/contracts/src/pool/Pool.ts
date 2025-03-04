@@ -133,7 +133,7 @@ export class Pool extends TokenContract implements IPool {
   protocol = State<PublicKey>()
 
   /**
-   * Frontend max fee, 0.15%
+   * Frontend max fee, 0.15% (will be updated to 0.10%)
    */
   static maxFee: UInt64 = UInt64.from(15)
   /**
@@ -356,6 +356,15 @@ export class Pool extends TokenContract implements IPool {
     return liquidityUser
   }
 
+  /**
+   * Swap token to mina
+   * @param frontend address who collect the frontend fees
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountTokenIn amount of token to swap
+   * @param amountMinaOutMin minimum mina to received
+   * @param balanceInMax minimum balance of token in the pool
+   * @param balanceOutMin maximum balance of mina in the pool
+   */
   @method
   async swapFromTokenToMina(
     frontend: PublicKey,
@@ -597,6 +606,14 @@ export class Pool extends TokenContract implements IPool {
     return await poolFactory.getProtocol()
   }
 
+  /**
+   * Calculate amount out on swap, use by pool and pool token holder contracts
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountTokenIn amount of tokenIn to swap
+   * @param balanceInMax minimum balance of tokenIn in the pool
+   * @param balanceOutMin maximum balance of tokenOut in the pool
+   * @returns amount of token out
+   */
   public static getAmountOut(
     taxFeeFrontend: UInt64,
     amountTokenIn: UInt64,
