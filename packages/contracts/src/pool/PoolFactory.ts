@@ -275,9 +275,9 @@ export class PoolFactory extends TokenContract {
   /**
    * Create a new pool
    * @param newAccount address of the new pool
-   * @param token for which the pool is created
+   * @param token token 1 for the mina pool
    * @param signer who sign the argument
-   * @param signature who proves you can deploy this pool (only approved signer or token owner can deploy a pool)
+   * @param signature who proves you can deploy this pool (only approved signer can deploy a pool)
    * @param path merkle witness to check if signer is in the approved list
    */
   @method
@@ -298,7 +298,7 @@ export class PoolFactory extends TokenContract {
    * @param token 0 of the pool
    * @param token 1 of the pool
    * @param signer who sign the argument
-   * @param signature who proves you can deploy this pool (only approved signer or token owner can deploy a pool)
+   * @param signature who proves you can deploy this pool (only approved signer can deploy a pool)
    * @param path merkle witness to check if signer is in the approved list
    */
   @method
