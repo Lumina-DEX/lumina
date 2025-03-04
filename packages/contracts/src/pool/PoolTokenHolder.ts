@@ -17,6 +17,9 @@ import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent, UpdateVerification
 
 import { checkToken, IPool } from "./IPoolState.js"
 
+/**
+ * Event emitted when an user withdraw liquidity
+ */
 export class WithdrawLiquidityEvent extends Struct({
   sender: PublicKey,
   amountLiquidityIn: UInt64,
@@ -33,6 +36,9 @@ export class WithdrawLiquidityEvent extends Struct({
   }
 }
 
+/**
+ * Event emitted when liquidity was withdraw on the second pool token holder contract
+ */
 export class SubWithdrawLiquidityEvent extends Struct({
   sender: PublicKey,
   amountLiquidityIn: UInt64,
@@ -51,13 +57,27 @@ export class SubWithdrawLiquidityEvent extends Struct({
  * Token holder contract, manage swap and liquidity remove functions
  */
 export class PoolTokenHolder extends SmartContract implements IPool {
+  /**
+   * Address of first token in the pool (ordered by address)
+   * PublicKey.empty() in case of native mina
+   */
   @state(PublicKey)
   token0 = State<PublicKey>()
+  /**
+   * Address of second token in the pool
+   * Can't be empty
+   */
   @state(PublicKey)
   token1 = State<PublicKey>()
+  /**
+   * Pool factory contract address
+   */
   @state(PublicKey)
   poolFactory = State<PublicKey>()
 
+  /**
+   * List of pool token holder events
+   */
   events = {
     withdrawLiquidity: WithdrawLiquidityEvent,
     swap: SwapEvent,
@@ -65,6 +85,9 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     subWithdrawLiquidity: SubWithdrawLiquidityEvent
   }
 
+  /**
+   * This method can't be call directly, deploy new pool token holder from pool factory
+   */
   async deploy() {
     await super.deploy()
     Bool(false).assertTrue("You can't directly deploy a token holder")
@@ -85,7 +108,15 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
   }
 
-  // swap from mina to this token through the pool
+  /**
+   * Swap from mina to token
+   * @param frontend address who collect the frontend fees
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountMinaIn amount of mina to swap
+   * @param amountTokenOutMin minimum token to received
+   * @param balanceInMax minimum balance of mina in the pool
+   * @param balanceOutMin maximum balance of token in the pool
+   */
   @method
   async swapFromMinaToToken(
     frontend: PublicKey,
@@ -113,7 +144,15 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     await pool.swapFromMinaToToken(sender, protocol, amountMinaIn, balanceInMax)
   }
 
-  // swap from token to an other token
+  /**
+   * Swap from token to another token
+   * @param frontend address who collect the frontend fees
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountTokenIn amount of tokenIn to swap
+   * @param amountTokenOutMin minimum tokenOut to received
+   * @param balanceInMax minimum balance of tokenIn in the pool
+   * @param balanceOutMin maximum balance of tokenOut in the pool
+   */
   @method
   async swapFromTokenToToken(
     frontend: PublicKey,
@@ -140,7 +179,16 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     )
   }
 
-  // check if they are no exploit possible
+  /**
+   * Withdraw liquidity from the mina/token pool
+   * The reserves min and supply max permit concurrent call, use slippage mechanism to calculate it
+   * @param liquidityAmount amount of liquidity to withdraw
+   * @param amountMinaMin minimum amount of mina to receive
+   * @param amountTokenMin minimum amount of token to receive
+   * @param reserveMinaMin reserve min of mina in the pool
+   * @param reserveTokenMin reserve min of token in the pool
+   * @param supplyMax maximum liquidity in the pool
+   */
   @method
   async withdrawLiquidity(
     liquidityAmount: UInt64,
@@ -165,7 +213,16 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     )
   }
 
-  // check if they are no exploit possible
+  /**
+   * Withdraw liquidity from the token/token pool
+   * The reserves min and supply max permit concurrent call, use slippage mechanism to calculate it
+   * @param liquidityAmount amount of liquidity to withdraw
+   * @param amountMinaMin minimum amount of mina to receive
+   * @param amountTokenMin minimum amount of token to receive
+   * @param reserveMinaMin reserve min of mina in the pool
+   * @param reserveTokenMin reserve min of token in the pool
+   * @param supplyMax maximum liquidity in the pool
+   */
   @method
   async withdrawLiquidityToken(
     liquidityAmount: UInt64,

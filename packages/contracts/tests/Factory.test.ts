@@ -143,9 +143,9 @@ describe("Pool Factory Mina", () => {
   })
 
   it("add first liquidity", async () => {
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
+    const txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
     })
@@ -167,8 +167,8 @@ describe("Pool Factory Mina", () => {
   })
 
   it("Transfer liquidity", async () => {
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -198,8 +198,8 @@ describe("Pool Factory Mina", () => {
   it("withdraw liquidity", async () => {
     const minaUser = Mina.getBalance(senderAccount)
     console.log("mina before", minaUser.toBigInt())
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -235,8 +235,8 @@ describe("Pool Factory Mina", () => {
   })
 
   it("add second liquidity", async () => {
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -251,8 +251,8 @@ describe("Pool Factory Mina", () => {
     console.log("liquidity user", liquidityUser.toString())
     expect(liquidityUser.value).toEqual(expected)
 
-    let amtMina = UInt64.from(1 * 10 ** 9)
-    let amtToken2 = UInt64.from(5 * 10 ** 9)
+    const amtMina = UInt64.from(1 * 10 ** 9)
+    const amtToken2 = UInt64.from(5 * 10 ** 9)
     txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 1)
       await zkPool.supplyLiquidity(amtMina, amtToken2, amt, amtToken, totalLiquidity)
@@ -268,8 +268,8 @@ describe("Pool Factory Mina", () => {
   })
 
   it("swap from mina", async () => {
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     const txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -277,7 +277,7 @@ describe("Pool Factory Mina", () => {
     await txn.prove()
     await txn.sign([senderKey]).send()
 
-    let amountIn = UInt64.from(1.3 * 10 ** 9)
+    const amountIn = UInt64.from(1.3 * 10 ** 9)
 
     const reserveIn = Mina.getBalance(zkPoolAddress)
     const reserveOut = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())
@@ -323,8 +323,8 @@ describe("Pool Factory Mina", () => {
   })
 
   it("swap from token", async () => {
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     const txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)
@@ -334,7 +334,7 @@ describe("Pool Factory Mina", () => {
 
     const reserveIn = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())
     const reserveOut = Mina.getBalance(zkPoolAddress)
-    let amountIn = UInt64.from(1.3 * 10 ** 9)
+    const amountIn = UInt64.from(1.3 * 10 ** 9)
 
     const balanceMin = reserveOut.sub(reserveOut.div(100))
     const balanceMax = reserveIn.add(reserveIn.div(100))

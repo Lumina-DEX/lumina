@@ -252,7 +252,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * Method to tranfer liquidity from an account to an other
+   * Transfer liquidity from an account to an other
    * @param from account from
    * @param to account to
    * @param amount amount to tranfer
@@ -265,7 +265,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * Method to call on the first time liquidity is supplied to the mina pool
+   * Call it on the first time liquidity is supplied to the mina/token pool
    * @param amountMina mina to add to the pool
    * @param amountToken token to add to the pool
    * @returns liquity amount minted
@@ -277,7 +277,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * Supply liquidity to the mina pool if it's not the first time
+   * Supply liquidity to the mina/token pool if it's not the first time
    * The reserves max and supply min permit concurrent call, use slippage mechanism to calculate it
    * @param amountMina mina to add to the pool
    * @param amountToken token to add to the pool
@@ -327,7 +327,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * Supply liquidity to the token pool if it's not the first time
+   * Supply liquidity to the token/token pool if it's not the first time
    * The reserves max and supply min permit concurrent call, use slippage mechanism to calculate it
    * @param amountToken0 amount of token 0 to add to the pool
    * @param amountToken1 amount of token 1 to add to the pool
