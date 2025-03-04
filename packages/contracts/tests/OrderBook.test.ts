@@ -190,6 +190,8 @@ describe("Order book test", () => {
     merleMap.set(Field(0), Field.empty())
     merleMap.set(Field(1), Field.empty())
     let witness = merleMap.getWitness(Field(1))
+
+    console.log("merkle bob empty", merleMap.getRoot().toBigInt())
     let txn = await Mina.transaction(bobAccount, async () => {
       await zkOrder.addOrderMina(amtSell, zkTokenAddress, amtBuy, witness)
     })
@@ -207,11 +209,16 @@ describe("Order book test", () => {
     })
 
     merleMap.set(Field(1), orderEvent.hash())
+
+    const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
+
     // merleMap.set(Field(2), Field.empty())
     console.log("hash test event bob", orderEvent.hash().toBigInt())
     const rootAfterBob = merkle.getRoot()
     console.log("root after bob", rootAfterBob.toBigInt())
+    console.log("root after bob simulated", witnessRootAfter.toBigInt())
 
+    return
     witness = merleMap.getWitness(Field(2))
     const balance = Mina.getBalance(zkPoolAddress)
     const balanceOut = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())

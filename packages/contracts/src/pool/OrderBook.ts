@@ -111,12 +111,13 @@ export class OrderBook extends SmartContract {
     addOrder: AddOrder
   }
 
-  async deploy() {
-    await super.deploy()
+  async init() {
+    await super.init()
 
     const merleMap = new MerkleMap()
     // start at 1
     merleMap.set(Field(0), Field.empty())
+    merleMap.set(Field(1), Field.empty())
     this.merkleOrder.set(merleMap.getRoot())
   }
 
@@ -194,7 +195,7 @@ export class OrderBook extends SmartContract {
       amountBuy
     })
 
-    const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
+    const [witnessRootAfter, keyAfter] = witness.computeRootAndKey(orderEvent.hash())
 
     this.merkleOrder.set(witnessRootAfter)
     this.indexOrder.set(newKey)
