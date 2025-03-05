@@ -1,59 +1,46 @@
-# Mina zkApp: Lumina Mvp
+# Lumina MVP
 
-This template uses TypeScript.
+First version of LuminaDex, allows you to create Mina/Fungible Token pools on Mina.
+Zeko support both Mina/Token and Token/Token pools.
 
-## Contract addresses Zeko
+Adding/withdrawing liquidities, or swapping, each action requires only one transaction.
 
-Pool B62qjMfeNmu9KfbsmZfDJvNrBtteJAx9GcJ3B2mgtjLrzqarZiA43fF
-TokenA B62qjZ1W2ybx2AYLYUyjPMoBT6Kn6CPPjAN2WWSRKH46uGgn2SgeNtK (Zeko and mina testnet)
-TokenB B62qkSPqDx2TazHm6PxdqXSb7DiVfvt7UM17ykK3xb3VSPjKLPbYWdb (Zeko and mina testnet)
-Balancer B62qqroHK8ug1uvmMA6xP6bEa5dbifU2ZMczpbZjNRrpmTxmi3xeFSD (Zeko and mina testnet)
-ShowBalance B62qram7TfkH5r99zsWtd2wgj55fHM9fU7yZCE9G94h3knUvzxU3Q6Y (Zeko and mina testnet)
-DexToken B62qkc4LF9Axhv5xCVn1WfHhR1iK9S7tjEbaKGtYtBTxU1KzkQQ8pLp (Mina)
-TokenStandard B62qqSkmjeUQHhHbCERLwFnwizVW92XU2kcqqdYy2CuBTvp5gaqR8TP (Mina)
-PoolMina B62qmDWWfMN4cGLFabeqAiYdE27C89EDxuHVovUGRiABeC7Ed8Kx17T (Mina)
+These actions can be performed concurrently with other users.
 
-### Generate key
+## Licensing
 
-(usefull for test)
+Business Source License 1.1
+
+Licensor: Lumina Labs
+
+## Test
 
 ```
-node src/key.js
+cd packages/contracts
+pnpm run build
+pnpm run test
 ```
 
-### GraphQL
+## Lastest Improvment
 
-https://api.minascan.io/node/devnet/v1/graphql
-https://devnet.zeko.io/graphql
+Pool factory, to create only one pool by pair, avoids liquidity fragmentation.
 
-### Get Balance
+0.05% for Lumina as creator and maintainer of the protocol
 
-Update graphql, account and token in src/deploy/getBalance.ts
+0.25% for liquidity providers
 
-```
-npm run build
-node build/src/deploy/getBalance.js
-```
+between 0-0.10% for frontend operators
 
-## How to build
+## Testnet address
 
-```sh
-npm run build
-```
-
-## How to run tests
-
-```sh
-npm run test
-npm run testw # watch mode
-```
-
-## How to run coverage
-
-```sh
-npm run coverage
-```
-
-## License
-
-[Apache-2.0](LICENSE)
+TOKA="B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"\
+TOKB="B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW"\
+TOKEN_ADMIN="B62qkQVZ9eokTmHcWtwXimhL43mw9LwzBfAx1jCschRp3SsJ9ENKDZN"\
+FACTORY="B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"\
+// not deployed yet POOL_TOKA_TOKB="B62qoctdst7JCvZ1qNRU3Ws8SgzAHgXNZcT5yZQLQ19gedsGTYJpryH"\
+POOL_TOKA_MINA="B62qq47Pu4rmDAs86jRLcwDRD3XDheJU9dmRq5pfSpfWYi2aY7b1KNH"\
+// not deployed yet POOL_ETH_MINA="B62qozByN9o4U82xcKvY2kTJJhnHf9cSFi2GPhbmcvgCQ4sd7U7d1Ut"\
+FAUCET="B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq"\
+OWNER="B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"\
+PROTOCOL="B62qpBKidvBH2YEWCwwkzLMFoBWa2fZknj6K5YWdqF5wAiLgoTExh42"\
+DELEGATOR="B62qmibKL59uByUjbWmXYBPLhhs5GbUYSBWGThsEqkHkdNcU7FCdfYy"

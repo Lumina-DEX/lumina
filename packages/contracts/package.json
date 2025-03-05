@@ -28,7 +28,7 @@
     }
   },
   "scripts": {
-    "generate:docs": "pnpx typedoc src/indexpool.ts --out ../contracts-docs/",
+    "generate:docs": "pnpx typedoc src/indexpool.ts --out ./docs",
     "build:tsc": "tsc --project tsc.tsconfig.json",
     "build": "rollup -c rollup.config.mjs",
     "format": "dprint check --verbose",
