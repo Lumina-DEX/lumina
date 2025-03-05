@@ -156,7 +156,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * This method can't be call directly, deploy new pool from pool factory
+   * This method can't be called directly, deploy new pool from pool factory instead
    */
   async deploy() {
     await super.deploy()
