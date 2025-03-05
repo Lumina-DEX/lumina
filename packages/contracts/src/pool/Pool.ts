@@ -252,7 +252,7 @@ export class Pool extends TokenContract implements IPool {
   }
 
   /**
-   * Transfer liquidity from an account to an other
+   * Transfer liquidity from an account to another
    * @param from account from
    * @param to account to
    * @param amount amount to tranfer
