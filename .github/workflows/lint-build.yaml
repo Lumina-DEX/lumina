@@ -1,4 +1,4 @@
-name: Lint
+name: Lint & Build
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Lint
         run: bun run lint:all
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,9 +30,5 @@ jobs:
 
       - uses: ./.github/workflows/actions/install
 
-      - name: Build
+      - name: Build Everything
         run: bun run build
-
-      # - name: Test contracts
-      #   working-directory: packages/contracts
-      #   run: bun run test
