@@ -273,7 +273,7 @@ export class PoolFactory extends TokenContract {
   }
 
   /**
-   * Create a new pool
+   * Create a new mina/token pool
    * @param newAccount address of the new pool
    * @param token token 1 for the mina pool
    * @param signer who sign the argument
@@ -293,7 +293,7 @@ export class PoolFactory extends TokenContract {
   }
 
   /**
-   * Create a new pool token
+   * Create a new token/token pool
    * @param newAccount address of the new pool
    * @param token 0 of the pool
    * @param token 1 of the pool
