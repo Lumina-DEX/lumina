@@ -14,8 +14,8 @@ import {
   UInt8,
   VerificationKey
 } from "o1js"
-
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+
 import {
   FungibleToken,
   FungibleTokenAdmin,
@@ -26,10 +26,11 @@ import {
   SignerMerkleWitness
 } from "../dist"
 import { claimerNumber, Farm, FarmMerkleWitness, FarmReward, FarmRewardTokenHolder, FarmTokenHolder } from "../dist"
+
 import { generateRewardMerkle } from "./Farm.Token.test"
 import { FarmUpgradeTest } from "./FarmUpgradeTest"
 
-let proofsEnabled = false
+const proofsEnabled = false
 
 describe("Farming pool mina", () => {
   let deployerAccount: Mina.TestPublicKey,
@@ -124,11 +125,11 @@ describe("Farming pool mina", () => {
     zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
     zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
 
-    let keyTokenX = PrivateKey.random()
-    let keyTokenY = PrivateKey.random()
+    const keyTokenX = PrivateKey.random()
+    const keyTokenY = PrivateKey.random()
 
     // order token to create pool
-    let xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
+    const xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
 
     zkTokenPrivateKey0 = xIsLower.toBoolean() ? keyTokenX : keyTokenY
     zkTokenAddress0 = zkTokenPrivateKey0.toPublicKey()
@@ -225,14 +226,14 @@ describe("Farming pool mina", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn6.sign([deployerKey, zkPoolMinaPrivateKey]).send()
 
-    let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+    const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
 
     let start = BigInt(Date.now() + 10_000)
     start = (start - genesisTimestamp.toBigInt()) / slotTime.toBigInt()
     let end = start + BigInt(1_000_000)
     end = end / slotTime.toBigInt()
 
-    let txn10 = await Mina.transaction(deployerAccount, async () => {
+    const txn10 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await zkFarmToken.deploy({
         owner: deployerAccount,
@@ -255,17 +256,17 @@ describe("Farming pool mina", () => {
     await mintToken(bobAccount)
     await mintToken(aliceAccount)
 
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
-    let txn5 = await Mina.transaction(senderAccount, async () => {
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
+    const txn5 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPoolMina.supplyFirstLiquidities(amt, amtToken)
     })
     await txn5.prove()
     await txn5.sign([senderKey]).send()
 
-    let amtMina = UInt64.from(1 * 10 ** 9)
-    let amtToken2 = UInt64.from(5 * 10 ** 9)
+    const amtMina = UInt64.from(1 * 10 ** 9)
+    const amtToken2 = UInt64.from(5 * 10 ** 9)
     let totalLiquidity = Mina.getBalance(zkPoolMinaAddress, zkPoolMina.deriveTokenId())
     let amtToken0 = Mina.getBalance(zkPoolMinaAddress)
     let amtToken1 = Mina.getBalance(zkPoolMinaAddress, zkToken1.deriveTokenId())
@@ -546,7 +547,7 @@ describe("Farming pool mina", () => {
     await txn.sign([bobKey]).send()
     local.setGlobalSlot(2)
 
-    let timeUnlock = Date.now() + 1000_000
+    const timeUnlock = Date.now() + 1000_000
     txn = await Mina.transaction(deployerAccount, async () => {
       await zkFarmTokenHolder.initUpdate(UInt64.from(timeUnlock))
       await zkPoolMina.approveAccountUpdate(zkFarmTokenHolder.self)
@@ -571,8 +572,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    let farmv2 = new FarmUpgradeTest(zkFarmTokenAddress, zkPoolMina.deriveTokenId())
-    let version = await farmv2.version()
+    const farmv2 = new FarmUpgradeTest(zkFarmTokenAddress, zkPoolMina.deriveTokenId())
+    const version = await farmv2.version()
     expect(version?.toBigInt()).toEqual(112n)
 
     const dataReward = await generateRewardMerkle(zkFarmTokenAddress, zkPoolMina.deriveTokenId(), claimerNumber)
@@ -629,8 +630,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    let farmRewardv2 = new FarmUpgradeTest(farmReward.address)
-    let versionReward = await farmRewardv2.version()
+    const farmRewardv2 = new FarmUpgradeTest(farmReward.address)
+    const versionReward = await farmRewardv2.version()
     expect(versionReward?.toBigInt()).toEqual(112n)
   })
 
@@ -652,7 +653,7 @@ describe("Farming pool mina", () => {
     await txn.sign([bobKey]).send()
     local.setGlobalSlot(2)
 
-    let timeUnlock = Date.now() + 1000_000
+    const timeUnlock = Date.now() + 1000_000
     txn = await Mina.transaction(deployerAccount, async () => {
       await zkFarmToken.initUpdate(UInt64.from(timeUnlock))
     })
@@ -674,8 +675,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    let farmv2 = new FarmUpgradeTest(zkFarmTokenAddress)
-    let version = await farmv2.version()
+    const farmv2 = new FarmUpgradeTest(zkFarmTokenAddress)
+    const version = await farmv2.version()
     expect(version?.toBigInt()).toEqual(112n)
 
     const dataReward = await generateRewardMerkle(zkFarmTokenAddress, zkPoolMina.deriveTokenId(), claimerNumber)
@@ -735,8 +736,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    let farmRewardv2 = new FarmUpgradeTest(key.toPublicKey(), zkToken2.deriveTokenId())
-    let versionReward = await farmRewardv2.version()
+    const farmRewardv2 = new FarmUpgradeTest(key.toPublicKey(), zkToken2.deriveTokenId())
+    const versionReward = await farmRewardv2.version()
     expect(versionReward?.toBigInt()).toEqual(112n)
   })
 
@@ -765,7 +766,7 @@ describe("Farming pool mina", () => {
   }
 
   function globalSlotToTimestamp(slot: UInt32) {
-    let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+    const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
     return UInt64.from(slot).mul(slotTime).add(genesisTimestamp)
   }
 })

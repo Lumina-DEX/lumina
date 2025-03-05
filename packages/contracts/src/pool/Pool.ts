@@ -22,6 +22,9 @@ import { FungibleToken, mulDiv, PoolFactory, UpdateUserEvent, UpdateVerification
 
 import { checkToken, IPool } from "./IPoolState.js"
 
+/**
+ * Event emitted when a swap is validated
+ */
 export class SwapEvent extends Struct({
   sender: PublicKey,
   amountIn: UInt64,
@@ -36,6 +39,9 @@ export class SwapEvent extends Struct({
   }
 }
 
+/**
+ * Event emitted when the contract receive mina in case of swap
+ */
 export class ReceiveMinaEvent extends Struct({
   sender: PublicKey,
   amountMinaIn: UInt64
@@ -48,6 +54,9 @@ export class ReceiveMinaEvent extends Struct({
   }
 }
 
+/**
+ * Event emitted when an user add liquidity
+ */
 export class AddLiquidityEvent extends Struct({
   sender: PublicKey,
   amountToken0In: UInt64,
@@ -64,6 +73,9 @@ export class AddLiquidityEvent extends Struct({
   }
 }
 
+/**
+ * Event emitted when liquidity balance changed
+ */
 export class BalanceEvent extends Struct({
   address: PublicKey,
   amount: Int64
@@ -76,6 +88,9 @@ export class BalanceEvent extends Struct({
   }
 }
 
+/**
+ * Event emitted when liquidity was burned
+ */
 export class BurnLiqudityEvent extends Struct({
   sender: PublicKey,
   amountMinaOut: UInt64,
@@ -91,26 +106,44 @@ export class BurnLiqudityEvent extends Struct({
 }
 
 /**
- * Pool contract for Lumina dex (Future implementation for direct mina token support)
+ * Main Pool contract for Lumina dex
  */
 export class Pool extends TokenContract implements IPool {
-  // we need the token address to instantiate it
+  /**
+   * Address of first token in the pool (ordered by address)
+   * PublicKey.empty() in case of native mina
+   */
   @state(PublicKey)
   token0 = State<PublicKey>()
+  /**
+   * Address of second token in the pool
+   * Can't be empty
+   */
   @state(PublicKey)
   token1 = State<PublicKey>()
+  /**
+   * Pool factory contract address
+   */
   @state(PublicKey)
   poolFactory = State<PublicKey>()
   /**
-   * we store protocol in the pool to not exceed account update limit on swap
+   * Protocol address stored in the pool to not exceed account update limit on swap
    */
   @state(PublicKey)
   protocol = State<PublicKey>()
 
-  // max fee for frontend 0.15 %
+  /**
+   * Frontend max fee, 0.15% (will be updated to 0.10%)
+   */
   static maxFee: UInt64 = UInt64.from(15)
+  /**
+   * Minimun liquidity in the pool, 1000
+   */
   static minimumLiquidity: UInt64 = UInt64.from(1000)
 
+  /**
+   * List of pool events
+   */
   events = {
     swap: SwapEvent,
     addLiquidity: AddLiquidityEvent,
@@ -122,6 +155,9 @@ export class Pool extends TokenContract implements IPool {
     receiveMina: ReceiveMinaEvent
   }
 
+  /**
+   * This method can't be called directly, deploy new pool from pool factory instead
+   */
   async deploy() {
     await super.deploy()
 
@@ -143,6 +179,9 @@ export class Pool extends TokenContract implements IPool {
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
   }
 
+  /**
+   * Update the delegator account address from pool factory
+   */
   @method
   async setDelegator() {
     const poolFactoryAddress = this.poolFactory.getAndRequireEquals()
@@ -156,6 +195,9 @@ export class Pool extends TokenContract implements IPool {
     this.emitEvent("updateDelegator", new UpdateUserEvent(delegator))
   }
 
+  /**
+   * Update the protocol account address from pool factory
+   */
   @method
   async setProtocol() {
     const protocol = await this.getProtocolAddress()
@@ -209,6 +251,12 @@ export class Pool extends TokenContract implements IPool {
     )
   }
 
+  /**
+   * Transfer liquidity from an account to another
+   * @param from account from
+   * @param to account to
+   * @param amount amount to tranfer
+   */
   @method
   async transfer(from: PublicKey, to: PublicKey, amount: UInt64) {
     from.equals(this.address).assertFalse("Can't transfer to/from the circulation account")
@@ -216,12 +264,28 @@ export class Pool extends TokenContract implements IPool {
     this.internal.send({ from, to, amount })
   }
 
+  /**
+   * Call it on the first time liquidity is supplied to the mina/token pool
+   * @param amountMina mina to add to the pool
+   * @param amountToken token to add to the pool
+   * @returns liquity amount minted
+   */
   @method.returns(UInt64)
   async supplyFirstLiquidities(amountMina: UInt64, amountToken: UInt64) {
     const liquidityUser = await this.supply(amountMina, amountToken, UInt64.zero, UInt64.zero, UInt64.zero, true, true)
     return liquidityUser
   }
 
+  /**
+   * Supply liquidity to the mina/token pool if it's not the first time
+   * The reserves max and supply min permit concurrent call, use slippage mechanism to calculate it
+   * @param amountMina mina to add to the pool
+   * @param amountToken token to add to the pool
+   * @param reserveMinaMax reserve max of mina in the pool
+   * @param reserveTokenMax reserve max of token in the pool
+   * @param supplyMin minimun liquidity in the pool
+   * @returns liquity amount minted
+   */
   @method.returns(UInt64)
   async supplyLiquidity(
     amountMina: UInt64,
@@ -242,6 +306,12 @@ export class Pool extends TokenContract implements IPool {
     return liquidityUser
   }
 
+  /**
+   * Method to call on the first time liquidity is supplied to the token pool
+   * @param amountToken0 amount of token 0 to add to the pool
+   * @param amountToken1 amount of token 1 to add to the pool
+   * @returns liquity amount minted
+   */
   @method.returns(UInt64)
   async supplyFirstLiquiditiesToken(amountToken0: UInt64, amountToken1: UInt64) {
     const liquidityUser = await this.supply(
@@ -256,6 +326,16 @@ export class Pool extends TokenContract implements IPool {
     return liquidityUser
   }
 
+  /**
+   * Supply liquidity to the token/token pool if it's not the first time
+   * The reserves max and supply min permit concurrent call, use slippage mechanism to calculate it
+   * @param amountToken0 amount of token 0 to add to the pool
+   * @param amountToken1 amount of token 1 to add to the pool
+   * @param reserveMinaMax reserve max of mina in the pool
+   * @param reserveTokenMax reserve max of token in the pool
+   * @param supplyMin minimun liquidity in the pool
+   * @returns liquity amount minted
+   */
   @method.returns(UInt64)
   async supplyLiquidityToken(
     amountToken0: UInt64,
@@ -276,6 +356,15 @@ export class Pool extends TokenContract implements IPool {
     return liquidityUser
   }
 
+  /**
+   * Swap token to mina
+   * @param frontend address who collect the frontend fees
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountTokenIn amount of token to swap
+   * @param amountMinaOutMin minimum mina to received
+   * @param balanceInMax minimum balance of token in the pool
+   * @param balanceOutMin maximum balance of mina in the pool
+   */
   @method
   async swapFromTokenToMina(
     frontend: PublicKey,
@@ -517,6 +606,14 @@ export class Pool extends TokenContract implements IPool {
     return await poolFactory.getProtocol()
   }
 
+  /**
+   * Calculate amount out on swap, use by pool and pool token holder contracts
+   * @param taxFeeFrontend fees applied by the frontend
+   * @param amountTokenIn amount of tokenIn to swap
+   * @param balanceInMax minimum balance of tokenIn in the pool
+   * @param balanceOutMin maximum balance of tokenOut in the pool
+   * @returns amount of token out
+   */
   public static getAmountOut(
     taxFeeFrontend: UInt64,
     amountTokenIn: UInt64,

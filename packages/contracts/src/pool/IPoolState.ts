@@ -9,6 +9,12 @@ export interface IPool {
   poolFactory: State<PublicKey>
 }
 
+/**
+ * Check if token is in order and don't be empty
+ * @param pool pool data
+ * @param isMinaPool is mina/token pool
+ * @returns true if correct
+ */
 export function checkToken(pool: IPool, isMinaPool: boolean): [PublicKey, PublicKey] {
   const token0 = pool.token0.getAndRequireEquals()
   const token1 = pool.token1.getAndRequireEquals()

@@ -30,9 +30,6 @@
         "path": "../packages/sdk-test-react",
       },
       {
-        "path": "../packages/contracts-docs",
-      },
-      {
         "path": "..",
         "name": "#root"
       },
