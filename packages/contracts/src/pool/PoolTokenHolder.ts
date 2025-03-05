@@ -37,7 +37,7 @@ export class WithdrawLiquidityEvent extends Struct({
 }
 
 /**
- * Event emitted when liquidity was withdraw on the second pool token holder contract
+ * Event emitted when liquidity was withdrawn on the second pool token holder contract
  */
 export class SubWithdrawLiquidityEvent extends Struct({
   sender: PublicKey,
