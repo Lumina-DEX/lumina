@@ -86,7 +86,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
   }
 
   /**
-   * This method can't be call directly, deploy new pool token holder from pool factory
+   * This method can't be called directly, deploy new pool token holder from pool factory
    */
   async deploy() {
     await super.deploy()
