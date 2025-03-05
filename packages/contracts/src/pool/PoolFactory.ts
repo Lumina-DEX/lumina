@@ -188,7 +188,7 @@ export class PoolFactory extends TokenContract {
   }
 
   /**
-   * update the list of approved signers
+   * Update the list of approved signers
    * @param newSigner merkle root of the new list
    */
   @method
