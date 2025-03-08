@@ -152,9 +152,6 @@ export class OrderBook extends SmartContract {
     this.merkleOrder.set(witnessRootAfter)
     this.indexOrder.set(newKey)
 
-    Provable.log("merkleOrder stored", witnessRootAfter)
-    Provable.log("hash order", orderEvent.hash())
-
     this.emitEvent("addOrder", orderEvent)
   }
 
@@ -172,10 +169,6 @@ export class OrderBook extends SmartContract {
     const empty = Field.empty()
     const newKey = indexOrder.add(1)
     const [witnessRootBefore, witnessKey] = witness.computeRootAndKey(empty)
-    Provable.log("witnessRootBefore mina", witnessRootBefore)
-    Provable.log("witnessKey mina", witnessKey)
-    Provable.log("merkleOrder mina", merkleOrder)
-    Provable.log("newKey mina", newKey)
     witnessRootBefore.assertEquals(merkleOrder, "Witness incorrect")
     witnessKey.assertEquals(newKey, "Witness incorrect")
 
@@ -199,9 +192,6 @@ export class OrderBook extends SmartContract {
 
     this.merkleOrder.set(witnessRootAfter)
     this.indexOrder.set(newKey)
-
-    Provable.log("merkleOrder mina stored", witnessRootAfter)
-    Provable.log("hash order mina", orderEvent.hash())
 
     this.emitEvent("addOrder", orderEvent)
   }

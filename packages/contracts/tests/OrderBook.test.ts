@@ -210,15 +210,6 @@ describe("Order book test", () => {
 
     merleMap.set(Field(1), orderEvent.hash())
 
-    const [witnessRootAfter] = witness.computeRootAndKey(orderEvent.hash())
-
-    // merleMap.set(Field(2), Field.empty())
-    console.log("hash test event bob", orderEvent.hash().toBigInt())
-    const rootAfterBob = merkle.getRoot()
-    console.log("root after bob", rootAfterBob.toBigInt())
-    console.log("root after bob simulated", witnessRootAfter.toBigInt())
-
-    return
     witness = merleMap.getWitness(Field(2))
     const balance = Mina.getBalance(zkPoolAddress)
     const balanceOut = Mina.getBalance(zkPoolAddress, zkToken.deriveTokenId())
@@ -231,6 +222,11 @@ describe("Order book test", () => {
     const balanceAliceMina = Mina.getBalance(aliceAccount)
     console.log("balanceAliceMina", balanceAliceMina.toBigInt())
 
+    const currentOnchain = await zkOrder.merkleOrder.fetch()
+    const actualRoot = merleMap.getRoot()
+    console.log("root offchain", actualRoot.toBigInt())
+    expect(actualRoot.toBigInt()).toEqual(currentOnchain?.toBigInt())
+
     const orderEventAlice = new AddOrder({
       sender: aliceAccount,
       index: Field(2),
@@ -239,11 +235,10 @@ describe("Order book test", () => {
       tokenBuy: PublicKey.empty(),
       amountBuy: amtSell
     })
-    merleMap.set(Field(2), orderEventAlice.hash())
+    // merleMap.set(Field(2), orderEventAlice.hash())
     const witness1 = merleMap.getWitness(Field(1))
+    merleMap.set(Field(2), orderEventAlice.hash())
     const witness2 = merleMap.getWitness(Field(2))
-    const actualRoot = merkle.getRoot()
-    console.log("root offchain", actualRoot.toBigInt())
 
     txn = await Mina.transaction(aliceAccount, async () => {
       AccountUpdate.fundNewAccount(aliceAccount, 1)
@@ -251,7 +246,8 @@ describe("Order book test", () => {
       await tokenHolder.swapFromMinaToToken(senderAccount, UInt64.from(5), amtSell, amtBuy.add(2), balance, balanceOut)
       await zkToken.approveAccountUpdate(tokenHolder.self)
       await zkOrder.addOrder(zkTokenAddress, amtBuy, PublicKey.empty(), amtSell, witness)
-      // await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
+      await zkToken.approveAccountUpdate(zkOrder.self)
+      await zkOrder.matchOrder(orderEvent, orderEventAlice, witness1, witness2)
     })
     // console.log("swap order au", txn.toPretty())
     await txn.prove()
