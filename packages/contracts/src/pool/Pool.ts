@@ -623,7 +623,7 @@ export class Pool extends TokenContract implements IPool {
     const amountOutBeforeFee = mulDiv(balanceOutMin, amountTokenIn, balanceInMax.add(amountTokenIn))
     // 0.20% tax fee for liquidity provider directly on amount out
     const feeLP = mulDiv(amountOutBeforeFee, UInt64.from(2), UInt64.from(1000))
-    // 0.15% fee max for the frontend
+    // 0.10% fee max for the frontend
     const feeFrontend = mulDiv(amountOutBeforeFee, taxFeeFrontend, UInt64.from(10000))
     // 0.05% to the protocol
     const feeProtocol = mulDiv(amountOutBeforeFee, UInt64.from(5), UInt64.from(10000))

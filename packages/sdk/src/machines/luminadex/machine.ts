@@ -356,7 +356,7 @@ export const createLuminaDexMachine = () => {
 		context: ({
 			input: { wallet, frontendFee: { destination, amount } }
 		}) => {
-			if (!isBetween(0, 15)(amount)) throw new Error("The Frontend Fee must be between 0 and 15.")
+			if (!isBetween(0, 10)(amount)) throw new Error("The Frontend Fee must be between 0 and 10.")
 			const nsWorker = new Worker(new URL("../../dex/luminadex-worker.ts", import.meta.url), {
 				type: "module"
 			})
