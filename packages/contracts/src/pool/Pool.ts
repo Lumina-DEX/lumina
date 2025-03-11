@@ -133,9 +133,9 @@ export class Pool extends TokenContract implements IPool {
   protocol = State<PublicKey>()
 
   /**
-   * Frontend max fee, 0.15% (will be updated to 0.10%)
+   * Frontend max fee, 0.10%
    */
-  static maxFee: UInt64 = UInt64.from(15)
+  static maxFee: UInt64 = UInt64.from(10)
   /**
    * Minimun liquidity in the pool, 1000
    */
