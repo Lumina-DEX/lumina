@@ -6,7 +6,6 @@ import {
   method,
   Mina,
   Permissions,
-  Provable,
   PublicKey,
   State,
   state,
@@ -15,6 +14,7 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
+
 import { Pool, UpdateVerificationKeyEvent } from "../indexpool.js"
 
 export class FarmingInfo extends Struct({
@@ -120,7 +120,7 @@ export class Farm extends TokenContract {
     this.startTimestamp.set(startTimestamp)
     this.endTimestamp.set(endTimestamp)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()

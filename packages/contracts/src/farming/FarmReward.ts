@@ -6,10 +6,8 @@ import {
   Field,
   MerkleWitness,
   method,
-  Mina,
   Permissions,
   Poseidon,
-  Provable,
   PublicKey,
   State,
   state,
@@ -18,7 +16,9 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
+
 import { UpdateVerificationKeyEvent } from "../indexpool"
+
 import { UpdateInitEvent } from "./Farm"
 
 export interface FarmRewardDeployProps extends Exclude<DeployArgs, undefined> {
@@ -92,7 +92,7 @@ export class FarmReward extends TokenContract {
     this.merkleRoot.set(args.merkleRoot)
     this.token.set(args.token)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.access = Permissions.proof()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()

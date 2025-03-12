@@ -3,11 +3,8 @@ import {
   AccountUpdateForest,
   Bool,
   DeployArgs,
-  Field,
   method,
-  Mina,
   Permissions,
-  Provable,
   PublicKey,
   SmartContract,
   State,
@@ -15,7 +12,9 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
+
 import { UpdateVerificationKeyEvent } from "../indexpool.js"
+
 import { Farm, FarmingEvent, minTimeUnlockFarm, UpdateInitEvent } from "./Farm.js"
 
 export interface FarmingDeployProps extends Exclude<DeployArgs, undefined> {
@@ -45,7 +44,7 @@ export class FarmTokenHolder extends SmartContract {
     args.owner.isEmpty().assertFalse("Owner empty")
     this.owner.set(args.owner)
 
-    let permissions = Permissions.default()
+    const permissions = Permissions.default()
     permissions.send = Permissions.proof()
     permissions.setPermissions = Permissions.impossible()
     permissions.setVerificationKey = Permissions.VerificationKey.proofDuringCurrentVersion()
