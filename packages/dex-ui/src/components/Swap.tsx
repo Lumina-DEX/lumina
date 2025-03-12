@@ -95,8 +95,7 @@ const Swap = ({}) => {
 					amount: amount
 				},
 				to: toDai ? token.address : "MINA",
-				slippagePercent: slippagePercent,
-				frontendFee: feeAmount
+				slippagePercent: slippagePercent
 			}
 		})
 	}

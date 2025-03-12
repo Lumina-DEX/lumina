@@ -47,7 +47,11 @@ const Balance = ({ token }) => {
 			console.log("token", token)
 			const bal = walletContext.balances[walletContext.currentNetwork][token.symbol.toUpperCase()]
 			console.log("bql", walletContext.balances)
-			setBalance(bal.toFixed(2).toString())
+			if (bal) {
+				setBalance(bal.toFixed(2).toString())
+			} else {
+				setBalance("0.00")
+			}
 		}
 	}, [walletContext, token])
 
