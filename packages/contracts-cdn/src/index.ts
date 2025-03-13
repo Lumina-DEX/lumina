@@ -7,7 +7,7 @@ import { auth, getDb, headers, notFound, serveAsset, sync, tokenCacheKey } from 
 
 const router = createRouter<{ path: string }>()
 
-addRoute(router, "GET", "/api/cache", { path: "cache" })
+addRoute(router, "GET", "/api/manifest/:version", { path: "manifest" })
 
 addRoute(router, "GET", "/api/:network/tokens", { path: "tokens" })
 addRoute(router, "GET", "/api/:network/tokens/count", { path: "tokens/count" })
@@ -140,12 +140,13 @@ export default {
 		}
 
 		// Return the json data with the cached contracts
-		if (match?.data.path === "cache") {
-			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/compiled.json`)
+		if (match?.data.path === "manifest" && match.params?.version) {
+			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${match.params.version}/manifest.json`)
 			return serveAsset({ assetUrl, env, request, context })
 		}
 
 		// Serve the assets
+		console.log("Serving asset", url.pathname)
 		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
 		return serveAsset({ assetUrl, env, request, context })
 	}

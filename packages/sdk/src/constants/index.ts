@@ -1,3 +1,5 @@
+import { version } from "../../../contracts/package.json" with { type: "json" }
+
 export type NetworkLayer = "mina" | "zeko"
 
 export type ChainNetwork = "mainnet" | "devnet" | "testnet"
@@ -63,6 +65,8 @@ export const chainFaucets = {
 export const MINA_ADDRESS = "MINA"
 
 export const luminaCdnOrigin = "https://luminadex-contracts-cdn.hebilicious.workers.dev"
+
+export const contractsVersion = `v${version}`
 
 export const poolInstance = {
 	"mina:devnet": {

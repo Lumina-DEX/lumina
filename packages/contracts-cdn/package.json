@@ -10,6 +10,7 @@
 		"cache:create": "bun scripts/create-cache.ts",
 		"compile:benchmark": "bun scripts/compile-benchmark.ts",
 		"deploy": "wrangler deploy",
+		"deploy:preview": "wrangler versions upload",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
