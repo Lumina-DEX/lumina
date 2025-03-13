@@ -1,5 +1,16 @@
 # @lumina-dex/sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- 9ebd676: Change the SDK maximum frontend fee from 0.15% to 0.10%.
+
+### Patch Changes
+
+- Updated dependencies [9ebd676]
+  - @lumina-dex/contracts@0.4.0
+
 ## 0.6.4
 
 ### Patch Changes
