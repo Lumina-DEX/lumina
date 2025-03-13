@@ -146,7 +146,6 @@ export default {
 		}
 
 		// Serve the assets
-		console.log("Serving asset", url.pathname)
 		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
 		return serveAsset({ assetUrl, env, request, context })
 	}

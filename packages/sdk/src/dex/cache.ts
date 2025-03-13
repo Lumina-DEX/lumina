@@ -43,9 +43,7 @@ export const fetchCachedContracts = async () => {
 			.map(async (file: string) => {
 				const response = await fetchWithRetry(3)(
 					`${luminaCdnOrigin}/${contractsVersion}/cache/${file}.txt`,
-					{
-						headers
-					}
+					{ headers }
 				)
 				return {
 					file,

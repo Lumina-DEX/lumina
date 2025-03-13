@@ -10,6 +10,10 @@ permissions:
   id-token: write
   contents: write
   pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
 
 jobs:
   release:
@@ -36,6 +40,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+    
+      - name: Deploy the CDN if a new version of the contracts was published
+        if: ${{ contains(steps.changesets.outputs.publishedPackages, '"@lumina-dex/contracts"') }}
+        id: cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Optional: Enable this if you want to have GitHub Deployments triggered
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: deploy
+          workingDirectory: packages/contracts-cdn
+          wranglerVersion: "3.110.0"
+          packageManager: pnpm
 
   deploy-test-apps-trigger:
     name: Trigger Deploy Test Apps Workflow
