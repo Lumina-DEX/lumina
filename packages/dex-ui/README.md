@@ -29,7 +29,7 @@ Pool factory, to create only one pool by pair, avoids liquidity fragmentation.
 
 0.25% for liquidity providers
 
-between 0-0.10% for frontend operators
+between 0-0.15% for frontend operators
 
 ## Testnet address
 
