@@ -25,7 +25,7 @@ const Balance = ({ token }) => {
 		}, 10000)
 
 		return () => clearInterval(intervalID)
-	}, [])
+	}, [token])
 
 	const getBalance = async () => {
 		if (token && token?.symbol?.length) {
