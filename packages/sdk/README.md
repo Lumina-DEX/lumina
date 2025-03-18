@@ -1,145 +1,169 @@
-# @zeko/sdk
+# LuminaDex SDK
 
-## React usage
+> State machine-driven SDK for interacting with the Lumina DEX on the Mina blockchain
 
-The easiest way to get started would be to combine the SDK with React context to
-create global state for the Wallet and Dex machines.
+[![npm version](https://img.shields.io/npm/v/@lumina-dex/sdk.svg)](https://www.npmjs.com/package/@lumina-dex/sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-1. Use `createWallet` and `createDex` to start the state machines.
-2. Use React Context to provide the Wallet and Dex actors to the rest of the
-   application.
+## Quick Links
 
-```jsx
-import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
-import { createContext } from "react"
+- 📚 [Documentation](https://lumina-dex.github.io/sdk/) - Comprehensive guides and API reference
+- 🚀 [Getting Started](https://lumina-dex.github.io/sdk/guide/getting-started) - Installation and basic usage
+- 📖 [API Reference](https://lumina-dex.github.io/sdk/api/overview) - Detailed API documentation
 
-const Wallet = createWallet()
+## Features
 
-const Dex = createDex({ input: {
-	wallet: Wallet,
-	frontendFee: { destination: "", amount: 0 }
-}})
+- **XState Powered**: Built on XState state machines for predictable, testable application logic with type-safe events and transitions
+- **Framework Agnostic**: First-class support for both React and Vue with dedicated integrations, while maintaining a framework-agnostic core
+- **Complete DEX Support**: Connect wallets, swap tokens, add/remove liquidity, fetch pool data, and deploy contracts with a consistent API
+- **Type-Safe**: Full TypeScript support with comprehensive type definitions for a better developer experience and fewer runtime errors
 
-const Context: LC = { Dex, Wallet }
+## Installation
 
-export const LuminaContext = createContext(Context)
+```bash
+# Using npm
+npm install @lumina-dex/sdk
 
-export function App() {
-	return (
-		<LuminaContext.Provider value={Context}>
-			<div>Rest of the application ...</div>
-		</LuminaContext.Provider>
-	)
-}
+# Using pnpm
+pnpm add @lumina-dex/sdk
+
+# Using yarn
+yarn add @lumina-dex/sdk
+
+# Using bun
+bun add @lumina-dex/sdk
 ```
 
-Then in your components
-
-```jsx
-import { useSelector } from "@lumina-dex/sdk/react"
-import { useContext } from "react"
-import { LuminaContext } from "./somewhere"
-
-export function SomeComponent() {
-	// Grab a machine from the context
-	const { Wallet } = useContext(LuminaContext)
-	// Read the state of the Wallet machine
-	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
-	// Dispatch an event to the Wallet machine
-	const connect = () => Wallet.send({ type: "Connect" })
-	// Subscribe to state changes. Most of the times you won't need this.
-	useEffect(() => {
-		const subscription = Wallet.subscribe((snapshot) => {
-			// simple logging
-			console.log(snapshot)
-		})
-		return subscription.unsubscribe
-	}, [Wallet])
-
-	return (
-		<div>
-			{!isReady
-				? <button onClick={connect}>Connect</button>
-				: <p>Wallet is ready</p>}
-		</div>
-	)
-}
-```
-
-Refer to xstate documentation for more information :
-https://stately.ai/docs/xstate-react
-
-## Vue usage
-
-This example uses `@vueuse/core`, but you can share the actor in other ways as
-well.
+## Basic Usage
 
 ```ts
-import {
-	dexMachine,
-	type LuminaContext as LC,
-	walletMachine
-} from "@lumina-dex/sdk"
-import { useSelector } from "@lumina-dex/sdk/react"
-import { createSharedComposable } from "@vueuse/core"
+import { createDex, createWallet } from "@lumina-dex/sdk"
 
-export const useLuminaDex = createSharedComposable(() => {
-	const Wallet = useActor(walletMachine)
+// Create and start a wallet machine actor
+const Wallet = createWallet()
 
-	const Dex = useActor(dexMachine, {
-		input: {
-			wallet: Wallet,
-			frontendFee: { destination: "", amount: 0 }
+// Create and start a DEX machine actor with the wallet as input
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		frontendFee: {
+			destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
+			amount: 1
 		}
-	})
+	}
+})
 
-	return { Dex, Wallet }
+// Connect the wallet
+Wallet.send({ type: "Connect" })
+
+// Subscribe to wallet state changes
+Wallet.subscribe(state => {
+	console.log("Wallet state:", state.value)
+	console.log("Current network:", state.context.currentNetwork)
+	console.log("Account address:", state.context.account)
 })
 ```
 
-Then in your components
+## Framework Integration
 
-```html
-<script lang="ts" setup>
-	import { useLuminaDex } from "./somewhere";
+The SDK provides dedicated integration modules for both React and Vue.
 
-	const { Wallet, Dex } = useLuminaDex();
-	const walletLoaded = computed(
-		() =>
-			Wallet.snapshot.value.matches("READY") ||
-			Wallet.snapshot.value.matches("SWITCHING_NETWORK") ||
-			Wallet.snapshot.value.matches("FETCHING_BALANCE"),
-	);
-</script>
+### React
+
+```tsx
+import {
+	createDex,
+	createWallet,
+	type LuminaContext as LC
+} from "@lumina-dex/sdk"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { createContext, useContext } from "react"
+
+// Create context
+const Wallet = createWallet()
+const Dex = createDex({
+	input: { wallet: Wallet, frontendFee: { destination: "", amount: 0 } }
+})
+const Context: LC = { Dex, Wallet }
+export const LuminaContext = createContext(Context)
+
+// Use in components
+function WalletButton() {
+	const { Wallet } = useContext(LuminaContext)
+	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
+	const connect = () => Wallet.send({ type: "Connect" })
+
+	return (
+		<button onClick={connect} disabled={isReady}>
+			{isReady ? "Connected" : "Connect Wallet"}
+		</button>
+	)
+}
 ```
 
-## Fetching Pool and Token Data
+### Vue
 
-### Fetching from the CDN
+```vue
+<script setup lang="ts">
+import { dexMachine, walletMachine } from "@lumina-dex/sdk"
+import { useActor } from "@lumina-dex/sdk/vue"
+import { computed } from "vue"
 
-The SDK exposes 2 functions to fetch the pool and token data from the CDN.
+// Create shared composable
+const Wallet = useActor(walletMachine)
+const Dex = useActor(dexMachine, {
+  input: {
+    wallet: Wallet.actorRef,
+    frontendFee: { destination: "", amount: 0 }
+  }
+})
+
+// Reactive state
+const isReady = computed(() => Wallet.snapshot.value.matches("READY"))
+const connect = () => Wallet.send({ type: "Connect" })
+</script>
+
+<template>
+  <button @click="connect" :disabled="isReady">
+    {{ isReady ? "Connected" : "Connect Wallet" }}
+  </button>
+</template>
+```
+
+## Data Fetching
 
 ```ts
 import { fetchPoolTokenList } from "@lumina-dex/sdk"
 
-const tokens = await fetchPoolTokenList("mina:devnet")
-```
+// Fetch tokens for a specific network
+const result = await fetchPoolTokenList("mina:devnet")
+console.log("Token list:", result.tokens)
 
-### Fetching from the blockchain
-
-_Ideally this should be done server side._
-
-You can this information from the blockchain state by sending a GraphQL request
-to an archive node. The SDK exposes 2 functions to demonstrate how to do this.
-
-For more advanced use cases, you should create your own indexing service.
-
-```ts
+// For direct blockchain queries (slower, use server-side)
 import {
-	internal_fetchAllPoolEvents,
-	internal_fetchAllPoolTokens
+	internal_fetchAllPoolFactoryEvents,
+	internal_fetchAllTokensFromPoolFactory
 } from "@lumina-dex/sdk"
 
-const events = await internal_fetchAllPoolFactoryEvents("mina:devnet")
-const tokens = await internal_fetchAllTokensFromPoolFactory("mina:devnet")
+const events = await internal_fetchAllPoolFactoryEvents({
+	network: "mina:devnet"
+})
+const tokens = await internal_fetchAllTokensFromPoolFactory({
+	network: "mina:devnet"
+})
 ```
+
+## Documentation
+
+For complete documentation, visit [https://lumina-dex.github.io/sdk/](https://lumina-dex.github.io/sdk/)
+
+## Examples
+
+For full working examples, check out:
+
+- [sdk-test-react](https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk-test-react) - React integration example
+- [sdk-test-vue](https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk-test-vue) - Vue integration example
+
+## License
+
+MIT
