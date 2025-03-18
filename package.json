@@ -11,7 +11,7 @@
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
 		"format:all": "dprint check",
-		"format:all:fix": "dprint fmt --verbose",
+		"format:all:fix": "dprint fmt --verbose --allow-no-files",
 		"version": "bun run scripts/version.ts",
 		"publish:all": "pnpm run build && changeset tag && pnpm publish -r --no-git-checks --access public",
 		"generate:docs": "cd packages/contracts && pnpm run generate:docs"
