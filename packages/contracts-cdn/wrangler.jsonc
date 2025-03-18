@@ -4,6 +4,8 @@
 	"account_id": "a12d2915bc16ee8550f19399839623f7",
 	"compatibility_date": "2025-01-16",
 	"main": "src/index.ts",
+	"workers_dev": true,
+	"preview_urls": true,
 	"route": "cdn.luminadex.com",
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {

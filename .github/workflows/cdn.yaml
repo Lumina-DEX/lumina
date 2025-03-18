@@ -19,8 +19,8 @@ permissions:
   deployments: write
 
 jobs:
-  deploy-cdn-preview:
-    name: Deploy CDN [preview]
+  deploy-cdn:
+    name: Deploy CDN
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.cloudflare.outputs.deployment-url }} # TODO: Use this for e2e tests.
