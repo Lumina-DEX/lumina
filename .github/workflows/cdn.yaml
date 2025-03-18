@@ -6,18 +6,22 @@ on:
     paths:
     - "packages/contracts-cdn/**"
   workflow_dispatch:
+  workflow_call:
+
+concurrency: wc-${{ github.workflow }}-${{ github.ref }}
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
 
 jobs:
   deploy-cdn-preview:
     name: Deploy CDN [preview]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      checks: write
-      statuses: write
-      deployments: write
     outputs:
       url: ${{ steps.deploy-preview-url.outputs.result }} # TODO: Use this for e2e tests.
     steps:
