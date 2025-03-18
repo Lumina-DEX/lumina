@@ -1,6 +1,26 @@
 # Lumina Monorepo
 
-## Github Workflow
+Monorepo for Lumina, a dex for the Mina Blockchain.
+
+## Contributing Guide
+
+### Prerequisites
+
+- Node.js
+- Bun
+- pnpm
+
+Install the dependencies
+
+```bash
+pnpm i
+```
+
+### Git Hooks
+
+We use [lefthook](https://github.com/evilmartians/lefthook) to manage githooks. It should work out of the box, but after running `pnpm i`, you should run `pnpm lefthook install` to ensure it's set up correctly.
+
+### Github Workflow
 
 1. Pull the latest changes from `main`.
 
@@ -32,17 +52,18 @@ gh pr create
 git push -u origin feature/my-changes
 ```
 
-## Publishing to NPM
+### Creating Releases
 
-Follow the GitHub workflow, and add a changeset to your PR.
+We use [changesets](https://github.com/changesets/changesets) to manage releases.
+Follow the GitHub workflow, and add a changeset to your PR to create a new release.
 
 ```bash
 npx changeset
 ```
 
-Then merge your PR. Publishing to NPM is automated with GitHub Actions.
+Then merge your PR. Publishing to NPM will be automated with GitHub Actions.
 
-## Formatting
+### Formatting
 
 You'll need to install [dprint](https://dprint.dev/install/) to get the vscode extension working.
 

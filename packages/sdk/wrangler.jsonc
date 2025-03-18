@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "name": "sdk",
+  "compatibility_date": "2025-01-16",
+  "main": "docs/worker.ts",
+  "assets": {
+    "directory": "./docs/.vitepress/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+  },
+}
