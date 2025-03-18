@@ -44,9 +44,7 @@ const Balance = ({ token }) => {
 
 	useEffect(() => {
 		if (walletContext?.currentNetwork && token?.symbol?.length) {
-			console.log("token", token)
 			const bal = walletContext.balances[walletContext.currentNetwork][token.symbol.toUpperCase()]
-			console.log("bql", walletContext.balances)
 			if (bal) {
 				setBalance(bal.toFixed(2).toString())
 			} else {
