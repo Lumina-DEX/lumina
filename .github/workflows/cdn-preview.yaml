@@ -5,20 +5,20 @@ on:
     branches: ["main"]
     paths:
       - "packages/contracts-cdn/**"
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
 
 jobs:
   deploy-cdn-preview:
     name: Deploy CDN [preview]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      checks: write
-      statuses: write
-      deployments: write
     outputs:
-      url: ${{ steps.deploy-preview-url.outputs.result }} # TODO: Use this for e2e tests.
+      url: ${{ steps.cloudflare.outputs.deployment-url }} # TODO: Use this for e2e tests.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,9 +43,10 @@ jobs:
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           command: versions upload
-          workingDirectory: packages/sdk
+          workingDirectory: packages/contracts-cdn
           wranglerVersion: "4"
           packageManager: pnpm
+
       - name: Comment on PR
         uses: actions/github-script@v7
         id: deploy-preview-url
