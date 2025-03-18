@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/install
+      - uses: ./.github/workflows/actions/install
 
       - name: Build Docs
         working-directory: packages/sdk
