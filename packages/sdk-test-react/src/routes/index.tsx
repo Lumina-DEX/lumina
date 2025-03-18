@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { LuminaContext } from "../main"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { fetchPoolTokenList, type Networks, type TokenDbToken } from "@lumina-dex/sdk"
+import { version } from "../../../sdk/package.json" with { type: "json" }
 
 export const Route = createFileRoute("/")({
 	component: HomeComponent
@@ -63,6 +64,7 @@ function HomeComponent() {
 	return (
 		<div>
 			<div>Wallet State {walletState}</div>
+			<div>SDK Version {version}</div>
 			<div>Dex State {JSON.stringify(dexState)}</div>
 			<div>
 				Tokens <pre>{JSON.stringify(tokens)}</pre>
