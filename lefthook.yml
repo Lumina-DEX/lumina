@@ -21,6 +21,7 @@ pre-commit:
   parallel: true
   jobs:
     - run: pnpm run format:all:fix {staged_files}
+      stage_fixed: true
 #
 #     - name: rubocop
 #       glob: "*.rb"
