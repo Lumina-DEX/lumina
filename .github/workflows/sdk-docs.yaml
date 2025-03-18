@@ -27,6 +27,9 @@ jobs:
 
       - uses: ./.github/workflows/actions/install
 
+      - name: Install D2
+        run: curl -fsSL https://d2lang.com/install.sh | sh -s --
+
       - name: Build Docs
         working-directory: packages/sdk
         run: pnpm run docs:build
