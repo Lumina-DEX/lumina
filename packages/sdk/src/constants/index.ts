@@ -64,7 +64,7 @@ export const chainFaucets = {
 
 export const MINA_ADDRESS = "MINA"
 
-export const luminaCdnOrigin = "https://luminadex-contracts-cdn.hebilicious.workers.dev"
+export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
 export const contractsVersion = `v${version}`
 
