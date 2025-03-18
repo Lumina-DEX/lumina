@@ -1,5 +1,5 @@
 import { unzipSync } from "fflate"
-import { luminaCdnOrigin } from "../constants"
+import { contractsVersion, luminaCdnOrigin } from "../constants"
 import { prefixedLogger } from "../helpers/logs"
 
 type CachedFile = { file: string; data: Uint8Array }
@@ -33,15 +33,18 @@ const fetchWithRetry =
  */
 export const fetchCachedContracts = async () => {
 	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
-	const filesResponse = await fetch(`${luminaCdnOrigin}/api/cache`, { headers })
-	const json = (await filesResponse.json()) as string[]
+	const manifest = await fetch(`${luminaCdnOrigin}/api/manifest/v${contractsVersion}`, {
+		headers
+	})
+	const json = (await manifest.json()) as { cache: string[] }
 	const cacheList = await Promise.all(
-		json
+		json.cache
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
-				const response = await fetchWithRetry(3)(`${luminaCdnOrigin}/cache/${file}.txt`, {
-					headers
-				})
+				const response = await fetchWithRetry(3)(
+					`${luminaCdnOrigin}/${contractsVersion}/cache/${file}.txt`,
+					{ headers }
+				)
 				return {
 					file,
 					data: new Uint8Array(await response.arrayBuffer())

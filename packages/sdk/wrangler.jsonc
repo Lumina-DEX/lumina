@@ -3,6 +3,7 @@
   "name": "sdk",
   "compatibility_date": "2025-01-16",
   "main": "docs/worker.ts",
+  "route": "sdk.luminadex.com",
   "assets": {
     "directory": "./docs/.vitepress/dist",
     "binding": "ASSETS",

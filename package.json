@@ -6,12 +6,13 @@
 	"scripts": {
 		"build": "lage build --no-cache --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
 		"build:all": "lage build",
-		"test": "lage test--no-cache --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
+		"test": "lage test --no-cache --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
+		"cache:create": "lage cache:create --no-cache --scope 'luminadex-contracts-cdn' --no-deps",
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
 		"format:all": "dprint check",
-		"format:all:fix": "dprint fmt --verbose",
-		"version": "changeset version && bun run format:all:fix",
+		"format:all:fix": "dprint fmt --verbose --allow-no-files",
+		"version": "bun run scripts/version.ts",
 		"publish:all": "pnpm run build && changeset tag && pnpm publish -r --no-git-checks --access public",
 		"generate:docs": "cd packages/contracts && pnpm run generate:docs"
 	},
@@ -36,5 +37,8 @@
 		"patchedDependencies": {
 			"@gql.tada/internal": "patches/@gql.tada__internal.patch"
 		}
+	},
+	"dependencies": {
+		"@types/bun": "^1.2.5"
 	}
 }
