@@ -34,7 +34,11 @@ jobs:
       - name: Build contracts
         working-directory: packages/contracts
         run: bun run build
-    
+
+      - name: Build sdk
+        working-directory: packages/sdk
+        run: bun run build
+
       - name: Build cache
         working-directory: packages/contracts-cdn
         run: bun run cache:create
