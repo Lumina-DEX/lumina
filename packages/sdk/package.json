@@ -20,7 +20,12 @@
     "test": "echo 'test succesful'",
     "schema:zeko:get": "gql-tada generate schema 'https://devnet.zeko.io/graphql' --output './src/graphql/sequencer.graphql'",
     "schema:mina:get": "gql-tada generate schema 'https://api.minascan.io/node/devnet/v1/graphql' --output './src/graphql/mina.graphql'",
-    "schema:mina:archive:get": "gql-tada generate schema 'https://api.minascan.io/archive/devnet/v1/graphql' --output './src/graphql/mina-archive.graphql'"
+    "schema:mina:archive:get": "gql-tada generate schema 'https://api.minascan.io/archive/devnet/v1/graphql' --output './src/graphql/mina-archive.graphql'",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler versions upload"
   },
   "files": [
     "dist"
@@ -64,11 +69,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@cloudflare/workers-types": "^4.20241127.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
     "magic-string": "^0.30.14",
     "rollup": "^4.27.4",
-    "unbuild": "^2.0.0"
+    "unbuild": "^2.0.0",
+    "vitepress": "^1.6.3",
+    "vitepress-plugin-d2": "^1.0.4",
+    "wrangler": "^4.1.0"
   },
   "peerDependencies": {
     "typescript": "^5.6.3"
