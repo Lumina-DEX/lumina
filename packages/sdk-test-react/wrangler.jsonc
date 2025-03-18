@@ -1,6 +1,6 @@
 {
-    "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
-    "name": "lumina-sdk-react-test",
-    "compatibility_date": "2025-01-16",
-    "pages_build_output_dir": "./dist"
-  }
+	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+	"name": "lumina-sdk-react-test",
+	"compatibility_date": "2025-01-16",
+	"pages_build_output_dir": "./dist"
+}

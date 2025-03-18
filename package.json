@@ -21,6 +21,7 @@
 		"@types/node": "^22.9.1",
 		"dprint": "^0.47.5",
 		"lage": "^2.11.15",
+		"lefthook": "^1.11.3",
 		"lint-staged": "^15.2.10",
 		"o1js": "2.2.0",
 		"simple-git-hooks": "^2.11.1",
@@ -37,7 +38,9 @@
 		"pre-commit": "pnpx lint-staged"
 	},
 	"lint-staged": {
-		"*.{js,ts,tsx,vue,md}": ["dprint fmt --verbose"]
+		"*.{js,ts,tsx,vue,md}": [
+			"dprint fmt --verbose"
+		]
 	},
 	"pnpm": {
 		"patchedDependencies": {
