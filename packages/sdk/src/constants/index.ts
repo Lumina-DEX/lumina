@@ -14,6 +14,16 @@ export const networks = [
 	"zeko:mainnet"
 ] as const
 
+/**
+ * Factory start block deployment
+ */
+export const startBlock: Record<NetworkUri, number> = {
+	"mina:mainnet": 0,
+	"mina:devnet": 388_667,
+	"zeko:mainnet": 0,
+	"zeko:testnet": 5_748
+} as const
+
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
 	"mina:devnet": "https://api.minascan.io/node/devnet/v1/graphql",
