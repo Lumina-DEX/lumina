@@ -1,6 +1,15 @@
 import { FungibleToken, PoolFactory } from "@lumina-dex/contracts"
-import { fetchAccount, fetchEvents, Field, Mina, PublicKey, TokenId } from "o1js"
-import { archiveUrls, luminaCdnOrigin, luminadexFactories, urls } from "../constants"
+import {
+	fetchAccount,
+	fetchEvents,
+	fetchLastBlock,
+	Field,
+	Mina,
+	PublicKey,
+	TokenId,
+	UInt32
+} from "o1js"
+import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import type { Networks } from "../machines/wallet/machine"
 
 export interface TokenDbToken {
@@ -59,7 +68,23 @@ export const internal_fetchAllPoolFactoryEvents = async (
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = factory ?? luminadexFactories[network]
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
-	return await zkFactory.fetchEvents()
+	const firstBlock = startBlock[network]
+	const currentBlock = await fetchLastBlock()
+	const blockSpace = 10_000
+	const nbToFetch = Math.ceil(
+		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
+	)
+	let from: number = firstBlock
+	let to: number = from + blockSpace
+	let tokenList: any[] = []
+	for (let index = 0; index < nbToFetch; index++) {
+		const tokens = await zkFactory.fetchEvents(UInt32.from(from), UInt32.from(to))
+		tokenList = tokenList.concat(tokens)
+		from += blockSpace
+		to += blockSpace
+	}
+
+	return await tokenList
 }
 
 const parsePoolEvents = (data: string[]) => {
