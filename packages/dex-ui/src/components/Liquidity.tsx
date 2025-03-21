@@ -98,7 +98,7 @@ const Liquidity = ({}) => {
 				},
 
 				// Maximum allowed slippage in percentage
-				slippagePercent: 0.5
+				slippagePercent: slippagePercent
 			}
 		}
 
