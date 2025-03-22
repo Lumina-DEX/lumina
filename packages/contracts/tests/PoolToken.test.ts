@@ -1,4 +1,4 @@
-import { MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
+import { fetchAccount, MerkleTree, Poseidon, PublicKey, Signature } from "o1js"
 import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -11,6 +11,7 @@ import {
   PoolTokenHolder,
   SignerMerkleWitness
 } from "../dist"
+import { getAmountLiquidityOutUint } from "../src"
 
 const proofsEnabled = false
 
@@ -329,6 +330,62 @@ describe("Pool Factory Token", () => {
     expect(liquidityUser.value).toEqual(liquidityOut.value)
     console.log("liquidity deployer", liquidityUser.toString())
   })
+
+  it("add second liquidity slippage", async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
+      AccountUpdate.fundNewAccount(senderAccount, 1)
+      await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
+    })
+    console.log("createPool au", txn.transaction.accountUpdates.length)
+    await txn.prove()
+    await txn.sign([senderKey]).send()
+
+    let liquidityUser = Mina.getBalance(senderAccount, zkPool.deriveTokenId())
+    const expected = amt.value.add(amtToken.value).sub(Pool.minimumLiquidity.value)
+    const totalLiquidity = Mina.getBalance(zkPoolAddress, zkPool.deriveTokenId())
+    console.log("liquidity user", liquidityUser.toString())
+    expect(liquidityUser.value).toEqual(expected)
+
+    let amtToken0 = UInt64.from(1 * 10 ** 9)
+    const reserve = await getReserves(zkPoolAddress)
+    const out = getAmountLiquidityOutUint(
+      amtToken0,
+      reserve.amountMina,
+      reserve.amountToken,
+      reserve.liquidity,
+      UInt64.one
+    )
+    txn = await Mina.transaction(deployerAccount, async () => {
+      AccountUpdate.fundNewAccount(deployerAccount, 1)
+      await zkPool.supplyLiquidityToken(out.amountAIn, out.amountBIn, out.balanceAMax, out.balanceBMax, out.supplyMin)
+    })
+    console.log("add liquidity from mina", txn.toPretty())
+    console.log("add liquidity from mina au", txn.transaction.accountUpdates.length)
+    await txn.prove()
+    await txn.sign([deployerKey]).send()
+    liquidityUser = Mina.getBalance(deployerAccount, zkPool.deriveTokenId())
+    expect(liquidityUser.value).toEqual(out.liquidity.value)
+    console.log("liquidity deployer", liquidityUser.toString())
+  })
+
+  async function getReserves(poolAddress: PublicKey) {
+    const acc = await fetchAccount({ publicKey: poolAddress })
+    const zkPool = new Pool(poolAddress)
+    const token0 = await zkPool.token0.fetch()
+    const token = await zkPool.token1.fetch()
+    const zkToken0 = new FungibleToken(token0!)
+    const zkToken = new FungibleToken(token!)
+    const accToken = await fetchAccount({ publicKey: poolAddress, tokenId: zkToken.deriveTokenId() })
+    const accLiquidity = await fetchAccount({ publicKey: poolAddress, tokenId: zkPool.deriveTokenId() })
+
+    return {
+      amountToken: Mina.getBalance(poolAddress, zkToken.deriveTokenId()),
+      amountMina: Mina.getBalance(poolAddress, zkToken0.deriveTokenId()),
+      liquidity: Mina.getBalance(poolAddress, zkPool.deriveTokenId())
+    }
+  }
 
   it("swap from token", async () => {
     const amt = UInt64.from(10 * 10 ** 9)
