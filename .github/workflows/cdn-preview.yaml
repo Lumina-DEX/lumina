@@ -48,7 +48,7 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           command: versions upload
           workingDirectory: packages/contracts-cdn
-          wranglerVersion: "3.110.0"
+          wranglerVersion: "4"
           packageManager: pnpm
 
       - name: Comment on PR
@@ -68,6 +68,8 @@ jobs:
               #### 🌍 Deploy URL
               
               [Cloudflare Workers API preview](${url})
+
+             > [Preview URLs are not working with workers that use Durable Objects.](https://developers.cloudflare.com/workers/configuration/previews/#limitations)
 
               #### 🔍 Build Output 
 

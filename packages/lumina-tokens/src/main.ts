@@ -1,8 +1,4 @@
-import {
-	NetworkStateQuery,
-	internal_fetchAllTokensFromPoolFactory,
-	networks
-} from "npm:@lumina-dex/sdk"
+import { NetworkStateQuery, fetchAllTokensFromPoolFactory, networks } from "npm:@lumina-dex/sdk"
 import { archiveUrls, urls } from "npm:@lumina-dex/sdk/constants"
 import { request as gqlrequest } from "npm:graphql-request"
 
@@ -29,7 +25,7 @@ Deno.serve(async (request) => {
 
 		//TODO: This should accept a specific block height to start searching from
 		const [{ tokens, currentBlock, startBlock }, { networkState }] = await Promise.all([
-			internal_fetchAllTokensFromPoolFactory({ network, from: from ? Number(from) : undefined }),
+			fetchAllTokensFromPoolFactory({ network, from: from ? Number(from) : undefined }),
 			network.includes("zeko")
 				? Promise.resolve({ networkState: { maxBlockHeight: null } })
 				: gqlrequest(archiveUrl, NetworkStateQuery)

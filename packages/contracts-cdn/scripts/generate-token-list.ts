@@ -1,4 +1,4 @@
-import { internal_fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
+import { fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
 
 // type CreateTuple<
 // 	Length extends number,
@@ -9,10 +9,10 @@ import { internal_fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/bl
 // 	: CreateTuple<Length, ElementType, [...Accumulator, ElementType]>
 
 const generateTokens = async () => {
-	const resultZeko = await internal_fetchAllTokensFromPoolFactory({ network: "zeko:testnet" })
-	const resultMina = await internal_fetchAllTokensFromPoolFactory({ network: "mina:devnet" })
+	const resultZeko = await fetchAllTokensFromPoolFactory({ network: "zeko:testnet" })
+	const resultMina = await fetchAllTokensFromPoolFactory({ network: "mina:devnet" })
 	console.log(resultZeko, resultMina)
-	// const { tokens: tokens2 } = await internal_fetchAllTokensFromPoolFactory({ network })
+	// const { tokens: tokens2 } = await fetchAllTokensFromPoolFactory({ network })
 	// const __dirname = path.dirname(new URL(import.meta.url).pathname)
 	// const genDir = path.resolve(__dirname, "../generated")
 	// await fs.mkdir(genDir, { recursive: true })

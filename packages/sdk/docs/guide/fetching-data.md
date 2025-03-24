@@ -31,22 +31,11 @@ This is the recommended way to get the list of available tokens, as it's fast an
 For more direct access to on-chain data, the SDK provides functions to query the blockchain:
 
 ```ts
-import {
-	internal_fetchAllPoolFactoryEvents,
-	internal_fetchAllTokensFromPoolFactory
-} from "@lumina-dex/sdk"
-
-// Fetch all pool events
-const fetchPoolEvents = async () => {
-	const events = await internal_fetchAllPoolFactoryEvents({
-		network: "mina:devnet"
-	})
-	console.log("Pool events:", events)
-}
+import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
 
 // Fetch all tokens from pools
 const fetchPoolTokens = async () => {
-	const tokensResult = await internal_fetchAllTokensFromPoolFactory({
+	const tokensResult = await fetchAllTokensFromPoolFactory({
 		network: "mina:devnet"
 	})
 
@@ -55,7 +44,7 @@ const fetchPoolTokens = async () => {
 ```
 
 ::: warning
-The direct blockchain fetching methods are slower and should primarily be used for development or server-side operations. For client applications, prefer the CDN-based `fetchPoolTokenList` function.
+The direct blockchain fetching methods are querying blockchain nodes directly, and should be avoided on client-side applications: they are intended to be used for development or server-side. For client applications, prefer the CDN-based `fetchPoolTokenList` function.
 :::
 
 ## Fetching Account Balances

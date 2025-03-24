@@ -49,22 +49,22 @@ export const minaNetwork = (network: Networks) =>
 	})
 
 const fetchEventsByBlockspace = async <T>(
-	{ eventFetch, network, blockSpace = 10_000, from }: {
+	{ eventFetch, network, blockScanRange = 10_000, from }: {
 		eventFetch: (from: UInt32, to: UInt32) => Promise<T[]>
 		network: Networks
-		blockSpace?: number
+		blockScanRange?: number
 		from?: number
 	}
 ) => {
 	const firstBlock = from ?? startBlock[network]
 	const currentBlock = await fetchLastBlock()
 	const nbToFetch = Math.ceil(
-		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
+		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockScanRange
 	)
 	const tokenPromises = Array.from({ length: nbToFetch }, (_, index) =>
 		eventFetch(
-			UInt32.from(firstBlock + index * blockSpace),
-			UInt32.from(firstBlock + (index + 1) * blockSpace)
+			UInt32.from(firstBlock + index * blockScanRange),
+			UInt32.from(firstBlock + (index + 1) * blockScanRange)
 		))
 	// console.log(
 	// 	`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
@@ -192,9 +192,9 @@ export const internal_fetchAllZekoPoolFactoryEvents = async (network: Networks) 
 }
 
 /**
- * Internal function to fetch all tokens from the pool factory.
+ * Fetch all tokens from the pool factory.
  */
-export const internal_fetchAllTokensFromPoolFactory = async (
+export const fetchAllTokensFromPoolFactory = async (
 	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
 ) => {
 	Mina.setActiveInstance(minaNetwork(network))

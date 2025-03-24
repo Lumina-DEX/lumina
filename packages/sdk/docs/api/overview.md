@@ -56,8 +56,7 @@ Utility functions for common operations:
 
 - `canDoDexAction(context)`: Checks what operations are currently possible
 - `fetchPoolTokenList(network)`: Fetches token lists from the CDN
-- `internal_fetchAllPoolFactoryEvents({ network })`: Fetches pool events from blockchain
-- `internal_fetchAllTokensFromPoolFactory({ network })`: Fetches tokens from blockchain
+- `fetchAllTokensFromPoolFactory({ network })`: Fetches tokens from blockchain
 - `minaNetwork(network)`: Creates a Mina network instance
 
 ### Framework Integration
