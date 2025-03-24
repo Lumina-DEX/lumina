@@ -201,7 +201,11 @@ importers:
         specifier: ^5
         version: 5.7.2
 
-  packages/lumina-tokens: {}
+  packages/lumina-tokens:
+    dependencies:
+      '@lumina-dex/sdk':
+        specifier: workspace:^
+        version: link:../sdk
 
   packages/sdk:
     dependencies:
@@ -349,12 +353,6 @@ importers:
       '@nuxt/kit':
         specifier: ^3.15.4
         version: 3.15.4(magicast@0.3.5)(rollup@4.27.4)
-
-  packages/sdk/sdk:
-    devDependencies:
-      wrangler:
-        specifier: ^4.1.0
-        version: 4.1.0(@cloudflare/workers-types@4.20241127.0)
 
   packages/signer:
     dependencies:

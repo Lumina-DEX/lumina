@@ -1,15 +1,14 @@
-import { type Networks, internal_fetchAllTokensFromPoolFactory, networks } from "@lumina-dex/sdk"
+import {
+	type Networks,
+	internal_fetchAllTokensFromPoolFactory,
+	networks
+} from "npm:@lumina-dex/sdk"
 
-// deno-lint-ignore no-explicit-any
-const processSettledPromises = <T extends any[]>(
-	settledPromises: {
-		[P in keyof T]: PromiseSettledResult<T[P]>
-	}
-): T => {
-	return settledPromises.map((result) => {
+export const processSettledPromises = <T>(settledPromises: PromiseSettledResult<T>[]) => {
+	return settledPromises.flatMap((result) => {
 		if (result.status === "rejected") throw new Error(result.reason)
 		return result.value
-	}) as T
+	})
 }
 
 const generateTokens = async (network: Networks) => {
@@ -38,7 +37,7 @@ Deno.serve(async (request) => {
 		}
 		//TODO: This should accept a specific block height to start searching from
 		const tokens = await generateTokens(network)
-		console.log({ network, tokens })
+		// console.log({ network, tokens })
 		// Return JSON response
 		//TODO: This should return `end` as the latest known block height and `start` as the block height where the search started
 		return new Response(JSON.stringify(tokens), {

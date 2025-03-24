@@ -4,6 +4,10 @@
 	"type": "module",
 	"scripts": {
 		"format": "dprint check",
-		"format:fix": "dprint fmt --verbose"
+		"format:fix": "dprint fmt --verbose",
+		"install:sdk": "pnpm --filter=@lumina-dex/sdk --prod deploy node_modules"
+	},
+	"dependencies": {
+		"@lumina-dex/sdk": "workspace:^"
 	}
 }

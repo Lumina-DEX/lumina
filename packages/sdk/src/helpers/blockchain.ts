@@ -48,15 +48,50 @@ export const minaNetwork = (network: Networks) =>
 		archive: archiveUrls[network]
 	})
 
+const fetchEventsByBlockspace = async <T>(
+	{ blockFetch, network, blockSpace = 10_000, from }: {
+		blockFetch: (from: UInt32, to: UInt32) => Promise<T[]>
+		network: Networks
+		blockSpace?: number
+		from?: number
+	}
+) => {
+	const firstBlock = startBlock[network]
+	const currentBlock = await fetchLastBlock()
+	const nbToFetch = Math.ceil(
+		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
+	)
+	const From = from ?? firstBlock
+	const tokenPromises = Array.from({ length: nbToFetch }, (_, index) =>
+		blockFetch(
+			UInt32.from(From + index * blockSpace),
+			UInt32.from(From + (index + 1) * blockSpace)
+		))
+	const tokenList = await Promise.allSettled(tokenPromises)
+		.then((results) =>
+			results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
+		)
+	return tokenList
+}
+
 /**
  * Internal function to fetch all pool events.
  * @deprecated Use `internal_fetchAllPoolFactoryEvents` instead.
  */
 export const internal_fetchAllPoolEvents = async (network: Networks) => {
+	const endpoint = archiveUrls[network]
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = luminadexFactories[network]
 	if (!factoryAddress) throw new Error("Factory address not found")
-	return await fetchEvents({ publicKey: factoryAddress })
+
+	const blockFetch = async (from: UInt32, to: UInt32) =>
+		fetchEvents({ publicKey: factoryAddress }, endpoint, { from, to })
+
+	const tokenList = await fetchEventsByBlockspace({
+		blockFetch,
+		network
+	})
+	return tokenList
 }
 
 /**
@@ -68,23 +103,11 @@ export const internal_fetchAllPoolFactoryEvents = async (
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = factory ?? luminadexFactories[network]
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
-	const firstBlock = startBlock[network]
-	const currentBlock = await fetchLastBlock()
-	const blockSpace = 10_000
-	const nbToFetch = Math.ceil(
-		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
-	)
-	let from: number = firstBlock
-	let to: number = from + blockSpace
-	let tokenList: any[] = []
-	for (let index = 0; index < nbToFetch; index++) {
-		const tokens = await zkFactory.fetchEvents(UInt32.from(from), UInt32.from(to))
-		tokenList = tokenList.concat(tokens)
-		from += blockSpace
-		to += blockSpace
-	}
-
-	return await tokenList
+	const tokenList = await fetchEventsByBlockspace({
+		blockFetch: zkFactory.fetchEvents.bind(zkFactory),
+		network
+	})
+	return tokenList
 }
 
 const parsePoolEvents = (data: string[]) => {
@@ -141,14 +164,14 @@ const toTokens = async (
 
 /**
  * Internal function to fetch all pool tokens.
- * @deprecated Use `internal_fetchAllTokensInPool` instead.
+ * @deprecated Use `internal_fetchAllTokensFromPoolFactory` instead.
  */
 export const internal_fetchAllPoolTokens = async (network: Networks) => {
-	const events = await internal_fetchAllPoolEvents(network)
-	console.log({ events })
-	// console.log(JSON.stringify(events))
 	Mina.setActiveInstance(minaNetwork(network))
-	console.log("Event data:", events.map((event) => event.events[0].data))
+	const events = await internal_fetchAllPoolEvents(network)
+	// console.log({ events })
+	// console.log(JSON.stringify(events))
+	// console.log("Event data:", events.map((event) => event.events[0].data))
 	const promises = events.filter(event => event.events[0].data.length === 11).map(async (event) => {
 		const data = event.events[0].data
 		// console.log({ data })

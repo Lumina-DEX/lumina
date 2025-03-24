@@ -1,0 +1,6 @@
+{
+	"imports": {
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.8.0",
+		"@lumina-dex/sdk/": "npm:/@lumina-dex/sdk@0.8.0/"
+	}
+}
