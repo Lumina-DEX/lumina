@@ -56,8 +56,8 @@ export const minaNetwork = (network: Networks) =>
 	})
 
 const fetchEventsByBlockspace = async <T>(
-	{ blockFetch, network, blockSpace = 10_000, from }: {
-		blockFetch: (from: UInt32, to: UInt32) => Promise<T[]>
+	{ eventFetch, network, blockSpace = 10_000, from }: {
+		eventFetch: (from: UInt32, to: UInt32) => Promise<T[]>
 		network: Networks
 		blockSpace?: number
 		from?: number
@@ -69,7 +69,7 @@ const fetchEventsByBlockspace = async <T>(
 		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
 	)
 	const tokenPromises = Array.from({ length: nbToFetch }, (_, index) =>
-		blockFetch(
+		eventFetch(
 			UInt32.from(firstBlock + index * blockSpace),
 			UInt32.from(firstBlock + (index + 1) * blockSpace)
 		))
@@ -121,7 +121,7 @@ export const internal_fetchAllPoolFactoryEvents = async (
 	const factoryAddress = factory ?? luminadexFactories[network]
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
 	const tokenList = await fetchEventsByBlockspace({
-		blockFetch: zkFactory.fetchEvents.bind(zkFactory),
+		eventFetch: zkFactory.fetchEvents.bind(zkFactory),
 		network,
 		from
 	})
@@ -169,11 +169,11 @@ export const internal_fetchAllPoolEvents = async (network: Networks) => {
 	const factoryAddress = luminadexFactories[network]
 	if (!factoryAddress) throw new Error("Factory address not found")
 
-	const blockFetch = async (from: UInt32, to: UInt32) =>
+	const eventFetch = async (from: UInt32, to: UInt32) =>
 		fetchEvents({ publicKey: factoryAddress }, endpoint, { from, to })
 
 	const tokenList = await fetchEventsByBlockspace({
-		blockFetch,
+		eventFetch,
 		network
 	})
 	return tokenList
