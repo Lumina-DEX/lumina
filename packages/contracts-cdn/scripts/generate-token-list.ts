@@ -1,5 +1,4 @@
-import type { Networks } from "@lumina-dex/sdk"
-import { internal_fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
+import { fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
 
 // type CreateTuple<
 // 	Length extends number,
@@ -9,22 +8,11 @@ import { internal_fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/bl
 // 	? Accumulator
 // 	: CreateTuple<Length, ElementType, [...Accumulator, ElementType]>
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic Type
-export const processSettledPromises = <T extends any[]>(
-	settledPromises: {
-		[P in keyof T]: PromiseSettledResult<T[P]>
-	}
-): T => {
-	return settledPromises.map((result) => {
-		if (result.status === "rejected") throw new Error(result.reason)
-		return result.value
-	}) as T
-}
-const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllTokensFromPoolFactory({ network })
-	const success = processSettledPromises(tokens)
-	console.log(success)
-
+const generateTokens = async () => {
+	const resultZeko = await fetchAllTokensFromPoolFactory({ network: "zeko:testnet" })
+	const resultMina = await fetchAllTokensFromPoolFactory({ network: "mina:devnet" })
+	console.log(resultZeko, resultMina)
+	// const { tokens: tokens2 } = await fetchAllTokensFromPoolFactory({ network })
 	// const __dirname = path.dirname(new URL(import.meta.url).pathname)
 	// const genDir = path.resolve(__dirname, "../generated")
 	// await fs.mkdir(genDir, { recursive: true })
@@ -36,4 +24,4 @@ const generateTokens = async (network: Networks) => {
 	// )
 }
 
-await generateTokens("mina:devnet")
+await generateTokens()

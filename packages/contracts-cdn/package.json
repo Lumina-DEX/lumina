@@ -7,7 +7,7 @@
 		"lint:fix": "bunx @biomejs/biome lint --write src/",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
-		"cache:create": "bun scripts/create-cache.ts",
+		"cache:create": "node --experimental-strip-types scripts/create-cache.ts",
 		"compile:benchmark": "bun scripts/compile-benchmark.ts",
 		"deploy": "wrangler deploy",
 		"deploy:preview": "wrangler versions upload",

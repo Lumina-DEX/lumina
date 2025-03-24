@@ -14,7 +14,8 @@ import {
 	PoolTokenHolder
 } from "@lumina-dex/contracts"
 
-import { version } from "../../contracts/package.json"
+import contracts from "../../contracts/package.json" with { type: "json" }
+const { version } = contracts
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const cacheDir = path.resolve(__dirname, "../cache")

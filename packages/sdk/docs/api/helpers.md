@@ -132,34 +132,15 @@ tokens.forEach(token => {
 })
 ```
 
-### `internal_fetchAllPoolFactoryEvents`
-
-Fetches all pool factory events from the blockchain.
-
-```ts
-import { internal_fetchAllPoolFactoryEvents } from "@lumina-dex/sdk"
-
-// Fetch events for a specific network
-const events = await internal_fetchAllPoolFactoryEvents({
-	network: "mina:devnet",
-	// Optional custom factory address
-	factory: "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"
-})
-
-// Process events
-console.log(`Found ${events.length} pool events`)
-const poolAddedEvents = events.filter(event => event.type === "poolAdded")
-```
-
-### `internal_fetchAllTokensFromPoolFactory`
+### `fetchAllTokensFromPoolFactory`
 
 Fetches all tokens from pool factory events on the blockchain.
 
 ```ts
-import { internal_fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
+import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
-const tokensResult = await internal_fetchAllTokensFromPoolFactory({
+const tokensResult = await fetchAllTokensFromPoolFactory({
 	network: "mina:devnet"
 })
 
