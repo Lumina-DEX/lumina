@@ -1,5 +1,11 @@
 # @lumina-dex/contracts
 
+## 0.5.0
+
+### Minor Changes
+
+- 3bb13df: Fix a bug on supply liquidity, if supplymin is different from current supply onchain
+
 ## 0.4.0
 
 ### Minor Changes
