@@ -1,4 +1,4 @@
-import { UInt64 } from "o1js"
+import { Bool, UInt64 } from "o1js"
 
 import { mulDiv } from "../indexpool.js"
 
@@ -63,6 +63,26 @@ export function getFirstAmountLiquidityOut(amountAIn: number, amountBIn: number)
 
   // use same return than getAmountLiquidityOut to use same method on supply liquidity
   return { amountAIn, amountBIn, balanceAMax: 0, balanceBMax: 0, supplyMin: 0, liquidity }
+}
+
+export function getAmountLiquidityOutUint(
+  amountAIn: UInt64,
+  balanceA: UInt64,
+  balanceB: UInt64,
+  supply: UInt64,
+  percent: UInt64
+) {
+  const balanceAMax = balanceA.add(mulDiv(balanceA, percent, UInt64.from(100)))
+  const balanceBMax = balanceB.add(mulDiv(balanceB, percent, UInt64.from(100)))
+  const supplyMin = supply.sub(mulDiv(supply, percent, UInt64.from(100)))
+
+  const liquidityA = mulDiv(amountAIn, supplyMin, balanceAMax)
+  const amountBIn = mulDiv(liquidityA, balanceBMax, supplyMin)
+  const liquidityB = mulDiv(amountBIn, supplyMin, balanceBMax)
+
+  let liquidity = liquidityA.lessThan(liquidityB) === Bool(true) ? liquidityA : liquidityB
+
+  return { amountAIn, amountBIn, balanceAMax, balanceBMax, supplyMin, liquidity }
 }
 
 export function getAmountOutFromLiquidity(
