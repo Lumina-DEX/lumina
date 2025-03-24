@@ -10,6 +10,10 @@ permissions:
   id-token: write
   contents: write
   pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
 
 jobs:
   release:
@@ -17,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changesets: ${{ steps.changesets.outputs.published }}
+      published: ${{ steps.changesets.outputs.publishedPackages }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -42,4 +47,11 @@ jobs:
     needs: [release]
     if: ${{ needs.release.outputs.changesets == 'true' }}
     uses: ./.github/workflows/deploy-test-apps.yml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+    secrets: inherit
+
+  deploy-cdn:
+    name: Deploy the CDN if a new version of the contracts was published
+    needs: [release]
+    if: ${{ contains(needs.release.outputs.published, '"@lumina-dex/contracts"') }}
+    uses: ./.github/workflows/cdn.yaml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
     secrets: inherit
