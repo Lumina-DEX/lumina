@@ -2,4 +2,4 @@
 "@lumina-dex/sdk": minor
 ---
 
-Fix token fetch
+Add Zeko token fetch, and fix token fetch on Mina. Remove deprecated methods from the SDK.

@@ -110,10 +110,10 @@ const processTypedEvents = (
 		events: Awaited<ReturnType<typeof internal_fetchAllPoolFactoryEvents>>["events"]
 	}
 ) => {
-	return events.filter(event => event.type === "poolAdded").map(async (event) => {
+	return events.filter(event => event.type === "poolAdded").map((event) => {
 		const data = event.event.data as unknown as PoolAddedEventData
 		const { poolAddress, token1Address } = data
-		return await toTokens({ poolAddress, token1Address, network })
+		return toTokens({ poolAddress, token1Address, network })
 	})
 }
 
@@ -150,11 +150,12 @@ const processRawEvents = (
 			}
 		}) as PoolAddedEventData
 	}
-	return events.filter(event => event.eventData[0].data.length === 11).map(async (event) => {
+	// TODO: Find out if there's a more robust way to filter the events than their length
+	return events.filter(event => event.eventData[0].data.length === 11).map((event) => {
 		const data = event.eventData[0].data
 		// console.log({ data })
 		const { poolAddress, token1Address } = parsePoolEvents(data)
-		return await toTokens({ poolAddress, token1Address, network })
+		return toTokens({ poolAddress, token1Address, network })
 	})
 }
 
