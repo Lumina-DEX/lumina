@@ -41,6 +41,13 @@ interface PoolAddedEventData {
 	token1Address: PublicKey
 }
 
+const processSettledPromises = <T>(settledPromises: PromiseSettledResult<T>[]) => {
+	return settledPromises.flatMap((result) => {
+		if (result.status === "rejected") throw new Error(result.reason)
+		return result.value
+	})
+}
+
 export const minaNetwork = (network: Networks) =>
 	Mina.Network({
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
@@ -56,86 +63,28 @@ const fetchEventsByBlockspace = async <T>(
 		from?: number
 	}
 ) => {
-	const firstBlock = startBlock[network]
+	const firstBlock = from ?? startBlock[network]
 	const currentBlock = await fetchLastBlock()
 	const nbToFetch = Math.ceil(
 		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockSpace
 	)
-	const From = from ?? firstBlock
 	const tokenPromises = Array.from({ length: nbToFetch }, (_, index) =>
 		blockFetch(
-			UInt32.from(From + index * blockSpace),
-			UInt32.from(From + (index + 1) * blockSpace)
+			UInt32.from(firstBlock + index * blockSpace),
+			UInt32.from(firstBlock + (index + 1) * blockSpace)
 		))
-	const tokenList = await Promise.allSettled(tokenPromises)
+	console.log(
+		`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
+	)
+	const events = await Promise.allSettled(tokenPromises)
 		.then((results) =>
 			results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
 		)
-	return tokenList
-}
-
-/**
- * Internal function to fetch all pool events.
- * @deprecated Use `internal_fetchAllPoolFactoryEvents` instead.
- */
-export const internal_fetchAllPoolEvents = async (network: Networks) => {
-	const endpoint = archiveUrls[network]
-	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = luminadexFactories[network]
-	if (!factoryAddress) throw new Error("Factory address not found")
-
-	const blockFetch = async (from: UInt32, to: UInt32) =>
-		fetchEvents({ publicKey: factoryAddress }, endpoint, { from, to })
-
-	const tokenList = await fetchEventsByBlockspace({
-		blockFetch,
-		network
-	})
-	return tokenList
-}
-
-/**
- * Internal function to fetch all pool events from the contract.
- */
-export const internal_fetchAllPoolFactoryEvents = async (
-	{ network, factory }: { network: Networks; factory?: string }
-) => {
-	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = factory ?? luminadexFactories[network]
-	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
-	const tokenList = await fetchEventsByBlockspace({
-		blockFetch: zkFactory.fetchEvents.bind(zkFactory),
-		network
-	})
-	return tokenList
-}
-
-const parsePoolEvents = (data: string[]) => {
-	const pubk = (a: number, b: number) => {
-		return PublicKey.fromFields([Field.from(data[a]), Field.from(data[b])])
+	return {
+		events,
+		startBlock: firstBlock,
+		currentBlock: Number(currentBlock.blockchainLength.toBigint())
 	}
-
-	return new Proxy({}, {
-		get: (_, prop: string) => {
-			return {
-				get sender() {
-					return pubk(1, 2)
-				},
-				get signer() {
-					return pubk(3, 4)
-				},
-				get poolAddress() {
-					return pubk(5, 6)
-				},
-				get token0Address() {
-					return pubk(7, 8)
-				},
-				get token1Address() {
-					return pubk(9, 10)
-				}
-			}[prop]
-		}
-	}) as PoolAddedEventData
 }
 
 const toTokens = async (
@@ -163,38 +112,42 @@ const toTokens = async (
 }
 
 /**
- * Internal function to fetch all pool tokens.
- * @deprecated Use `internal_fetchAllTokensFromPoolFactory` instead.
+ * Internal function to fetch all pool events from the contract.
  */
-export const internal_fetchAllPoolTokens = async (network: Networks) => {
+export const internal_fetchAllPoolFactoryEvents = async (
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+) => {
 	Mina.setActiveInstance(minaNetwork(network))
-	const events = await internal_fetchAllPoolEvents(network)
-	// console.log({ events })
-	// console.log(JSON.stringify(events))
-	// console.log("Event data:", events.map((event) => event.events[0].data))
-	const promises = events.filter(event => event.events[0].data.length === 11).map(async (event) => {
-		const data = event.events[0].data
-		// console.log({ data })
-		const { poolAddress, token1Address } = parsePoolEvents(data)
-		return await toTokens({ poolAddress, token1Address, network })
+	const factoryAddress = factory ?? luminadexFactories[network]
+	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
+	const tokenList = await fetchEventsByBlockspace({
+		blockFetch: zkFactory.fetchEvents.bind(zkFactory),
+		network,
+		from
 	})
-	return await Promise.allSettled(promises)
+	return tokenList
 }
 
 /**
  * Internal function to fetch all tokens from the pool factory.
  */
 export const internal_fetchAllTokensFromPoolFactory = async (
-	{ network, factory }: { network: Networks; factory?: string }
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
 ) => {
-	const events = await internal_fetchAllPoolFactoryEvents({ network, factory })
+	const { events, currentBlock, startBlock } = await internal_fetchAllPoolFactoryEvents({
+		network,
+		factory,
+		from
+	})
 	Mina.setActiveInstance(minaNetwork(network))
 	const promises = events.filter(event => event.type === "poolAdded").map(async (event) => {
 		const data = event.event.data as unknown as PoolAddedEventData
 		const { poolAddress, token1Address } = data
 		return await toTokens({ poolAddress, token1Address, network })
 	})
-	return await Promise.allSettled(promises)
+	const settledTokens = await Promise.allSettled(promises)
+	const tokens = processSettledPromises(settledTokens)
+	return { tokens, startBlock, currentBlock }
 }
 
 /**
@@ -204,4 +157,73 @@ export const fetchPoolTokenList = async (network: Networks) => {
 	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
 	const tokens = await response.json() as TokenDbList
 	return tokens
+}
+
+/**
+ * Internal function to fetch all pool events.
+ * @deprecated Use `internal_fetchAllPoolFactoryEvents` instead.
+ */
+export const internal_fetchAllPoolEvents = async (network: Networks) => {
+	const endpoint = archiveUrls[network]
+	Mina.setActiveInstance(minaNetwork(network))
+	const factoryAddress = luminadexFactories[network]
+	if (!factoryAddress) throw new Error("Factory address not found")
+
+	const blockFetch = async (from: UInt32, to: UInt32) =>
+		fetchEvents({ publicKey: factoryAddress }, endpoint, { from, to })
+
+	const tokenList = await fetchEventsByBlockspace({
+		blockFetch,
+		network
+	})
+	return tokenList
+}
+
+/**
+ * Internal function to fetch all pool tokens.
+ * @deprecated Use `internal_fetchAllTokensFromPoolFactory` instead.
+ */
+export const internal_fetchAllPoolTokens = async (network: Networks) => {
+	Mina.setActiveInstance(minaNetwork(network))
+	const { events, currentBlock, startBlock } = await internal_fetchAllPoolEvents(network)
+	// console.log({ events })
+	// console.log(JSON.stringify(events))
+	// console.log("Event data:", events.map((event) => event.events[0].data))
+	const parsePoolEvents = (data: string[]) => {
+		const pubk = (a: number, b: number) => {
+			return PublicKey.fromFields([Field.from(data[a]), Field.from(data[b])])
+		}
+
+		return new Proxy({}, {
+			get: (_, prop: string) => {
+				return {
+					get sender() {
+						return pubk(1, 2)
+					},
+					get signer() {
+						return pubk(3, 4)
+					},
+					get poolAddress() {
+						return pubk(5, 6)
+					},
+					get token0Address() {
+						return pubk(7, 8)
+					},
+					get token1Address() {
+						return pubk(9, 10)
+					}
+				}[prop]
+			}
+		}) as PoolAddedEventData
+	}
+
+	const promises = events.filter(event => event.events[0].data.length === 11).map(async (event) => {
+		const data = event.events[0].data
+		// console.log({ data })
+		const { poolAddress, token1Address } = parsePoolEvents(data)
+		return await toTokens({ poolAddress, token1Address, network })
+	})
+	const settledTokens = await Promise.allSettled(promises)
+	const tokens = processSettledPromises(settledTokens)
+	return { tokens, currentBlock, startBlock }
 }

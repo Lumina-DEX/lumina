@@ -8,6 +8,7 @@
 		"install:sdk": "pnpm --filter=@lumina-dex/sdk --prod deploy node_modules"
 	},
 	"dependencies": {
-		"@lumina-dex/sdk": "workspace:^"
+		"@lumina-dex/sdk": "workspace:^",
+		"graphql-request": "7.1.2"
 	}
 }

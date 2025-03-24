@@ -12,20 +12,10 @@ import {
 // 	? Accumulator
 // 	: CreateTuple<Length, ElementType, [...Accumulator, ElementType]>
 
-export const processSettledPromises = <T>(settledPromises: PromiseSettledResult<T>[]) => {
-	return settledPromises.flatMap((result) => {
-		if (result.status === "rejected") throw new Error(result.reason)
-		return result.value
-	})
-}
 const generateTokens = async (network: Networks) => {
-	const tokens = await internal_fetchAllPoolTokens(network)
-	const tokens2 = await internal_fetchAllTokensFromPoolFactory({ network })
-	const success = processSettledPromises(tokens)
-	console.log(success)
-	const success2 = processSettledPromises(tokens2)
-	console.log(success2)
-	console.log(success.length, success2.length)
+	const { tokens } = await internal_fetchAllPoolTokens(network)
+	const { tokens: tokens2 } = await internal_fetchAllTokensFromPoolFactory({ network })
+	console.log(tokens.length, tokens2.length)
 
 	// const __dirname = path.dirname(new URL(import.meta.url).pathname)
 	// const genDir = path.resolve(__dirname, "../generated")
