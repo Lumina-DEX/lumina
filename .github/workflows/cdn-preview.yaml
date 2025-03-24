@@ -48,7 +48,7 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           command: versions upload
           workingDirectory: packages/contracts-cdn
-          wranglerVersion: "4"
+          wranglerVersion: "3.110.0"
           packageManager: pnpm
 
       - name: Comment on PR
