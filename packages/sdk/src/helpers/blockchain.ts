@@ -1,15 +1,8 @@
 import { FungibleToken, PoolFactory } from "@lumina-dex/contracts"
-import {
-	fetchAccount,
-	fetchEvents,
-	fetchLastBlock,
-	Field,
-	Mina,
-	PublicKey,
-	TokenId,
-	UInt32
-} from "o1js"
+import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 } from "o1js"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
+import { FetchZekoEvents } from "../graphql/zeko"
+import { createMinaClient } from "../machines"
 import type { Networks } from "../machines/wallet/machine"
 
 export interface TokenDbToken {
@@ -73,9 +66,9 @@ const fetchEventsByBlockspace = async <T>(
 			UInt32.from(firstBlock + index * blockSpace),
 			UInt32.from(firstBlock + (index + 1) * blockSpace)
 		))
-	console.log(
-		`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
-	)
+	// console.log(
+	// 	`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
+	// )
 	const events = await Promise.allSettled(tokenPromises)
 		.then((results) =>
 			results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
@@ -111,84 +104,25 @@ const toTokens = async (
 	}
 }
 
-/**
- * Internal function to fetch all pool events from the contract.
- */
-export const internal_fetchAllPoolFactoryEvents = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+const processTypedEvents = (
+	{ events, network }: {
+		network: Networks
+		events: Awaited<ReturnType<typeof internal_fetchAllPoolFactoryEvents>>["events"]
+	}
 ) => {
-	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = factory ?? luminadexFactories[network]
-	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
-	const tokenList = await fetchEventsByBlockspace({
-		eventFetch: zkFactory.fetchEvents.bind(zkFactory),
-		network,
-		from
-	})
-	return tokenList
-}
-
-/**
- * Internal function to fetch all tokens from the pool factory.
- */
-export const internal_fetchAllTokensFromPoolFactory = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
-) => {
-	const { events, currentBlock, startBlock } = await internal_fetchAllPoolFactoryEvents({
-		network,
-		factory,
-		from
-	})
-	Mina.setActiveInstance(minaNetwork(network))
-	const promises = events.filter(event => event.type === "poolAdded").map(async (event) => {
+	return events.filter(event => event.type === "poolAdded").map(async (event) => {
 		const data = event.event.data as unknown as PoolAddedEventData
 		const { poolAddress, token1Address } = data
 		return await toTokens({ poolAddress, token1Address, network })
 	})
-	const settledTokens = await Promise.allSettled(promises)
-	const tokens = processSettledPromises(settledTokens)
-	return { tokens, startBlock, currentBlock }
 }
 
-/**
- * Fetches the token list from the CDN.
- */
-export const fetchPoolTokenList = async (network: Networks) => {
-	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
-	const tokens = await response.json() as TokenDbList
-	return tokens
-}
-
-/**
- * Internal function to fetch all pool events.
- * @deprecated Use `internal_fetchAllPoolFactoryEvents` instead.
- */
-export const internal_fetchAllPoolEvents = async (network: Networks) => {
-	const endpoint = archiveUrls[network]
-	Mina.setActiveInstance(minaNetwork(network))
-	const factoryAddress = luminadexFactories[network]
-	if (!factoryAddress) throw new Error("Factory address not found")
-
-	const eventFetch = async (from: UInt32, to: UInt32) =>
-		fetchEvents({ publicKey: factoryAddress }, endpoint, { from, to })
-
-	const tokenList = await fetchEventsByBlockspace({
-		eventFetch,
-		network
-	})
-	return tokenList
-}
-
-/**
- * Internal function to fetch all pool tokens.
- * @deprecated Use `internal_fetchAllTokensFromPoolFactory` instead.
- */
-export const internal_fetchAllPoolTokens = async (network: Networks) => {
-	Mina.setActiveInstance(minaNetwork(network))
-	const { events, currentBlock, startBlock } = await internal_fetchAllPoolEvents(network)
-	// console.log({ events })
-	// console.log(JSON.stringify(events))
-	// console.log("Event data:", events.map((event) => event.events[0].data))
+const processRawEvents = (
+	{ events, network }: {
+		network: Networks
+		events: Awaited<ReturnType<typeof internal_fetchAllZekoPoolFactoryEvents>>["events"]
+	}
+) => {
 	const parsePoolEvents = (data: string[]) => {
 		const pubk = (a: number, b: number) => {
 			return PublicKey.fromFields([Field.from(data[a]), Field.from(data[b])])
@@ -216,14 +150,76 @@ export const internal_fetchAllPoolTokens = async (network: Networks) => {
 			}
 		}) as PoolAddedEventData
 	}
-
-	const promises = events.filter(event => event.events[0].data.length === 11).map(async (event) => {
-		const data = event.events[0].data
+	return events.filter(event => event.eventData[0].data.length === 11).map(async (event) => {
+		const data = event.eventData[0].data
 		// console.log({ data })
 		const { poolAddress, token1Address } = parsePoolEvents(data)
 		return await toTokens({ poolAddress, token1Address, network })
 	})
-	const settledTokens = await Promise.allSettled(promises)
+}
+
+/**
+ * Internal function to fetch all pool events from a contract, using the archive node API.
+ */
+export const internal_fetchAllPoolFactoryEvents = async (
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+) => {
+	Mina.setActiveInstance(minaNetwork(network))
+	const factoryAddress = factory ?? luminadexFactories[network]
+	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
+	const tokenList = await fetchEventsByBlockspace({
+		eventFetch: zkFactory.fetchEvents.bind(zkFactory),
+		network,
+		from
+	})
+	return tokenList
+}
+
+/**
+ * Internal function to fetch all zeko pool events using the sequencer API.
+ * This exists because on Zeko there's no concept of blocks, and the events can be fetched directly from the sequencer.
+ */
+export const internal_fetchAllZekoPoolFactoryEvents = async (network: Networks) => {
+	Mina.setActiveInstance(minaNetwork(network))
+	const endpoint = urls[network]
+	const factoryAddress = luminadexFactories[network]
+	if (!factoryAddress) throw new Error("Factory address not found")
+	const client = createMinaClient(endpoint)
+	const { data } = await client.query(FetchZekoEvents, { eventInput: { address: factoryAddress } })
+	if (!data) throw new Error("No data found")
+	return { events: data.events, currentBlock: 0, startBlock: 0 }
+}
+
+/**
+ * Internal function to fetch all tokens from the pool factory.
+ */
+export const internal_fetchAllTokensFromPoolFactory = async (
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+) => {
+	Mina.setActiveInstance(minaNetwork(network))
+	if (network.includes("zeko")) {
+		const { events, currentBlock, startBlock } = await internal_fetchAllZekoPoolFactoryEvents(
+			network
+		)
+		const settledTokens = await Promise.allSettled(processRawEvents({ events, network }))
+		const tokens = processSettledPromises(settledTokens)
+		return { tokens, startBlock, currentBlock }
+	}
+	const { events, currentBlock, startBlock } = await internal_fetchAllPoolFactoryEvents({
+		network,
+		factory,
+		from
+	})
+	const settledTokens = await Promise.allSettled(processTypedEvents({ events, network }))
 	const tokens = processSettledPromises(settledTokens)
-	return { tokens, currentBlock, startBlock }
+	return { tokens, startBlock, currentBlock }
+}
+
+/**
+ * Fetches the token list from the CDN.
+ */
+export const fetchPoolTokenList = async (network: Networks) => {
+	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
+	const tokens = await response.json() as TokenDbList
+	return tokens
 }
