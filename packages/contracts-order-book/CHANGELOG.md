@@ -1,0 +1,31 @@
+# @lumina-dex/contracts
+
+## 0.5.0
+
+### Minor Changes
+
+- 3bb13df: Fix a bug on supply liquidity, if supplymin is different from current supply onchain
+
+## 0.4.0
+
+### Minor Changes
+
+- 9ebd676: Change the SDK maximum frontend fee from 0.15% to 0.10%.
+
+## 0.3.0
+
+### Minor Changes
+
+- f4fe1a8: Upgrade to o1js ^2.2.0 with new versions of contracts. Add cdn reset feature and cdn-sdk sync.
+
+## 0.2.0
+
+### Minor Changes
+
+- db8892a: Release of the pre-audit contracts
+
+## 0.1.0
+
+### Minor Changes
+
+- f6fb83d: Releasing pre-alpha version of the SDK and contracts.
