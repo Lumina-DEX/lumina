@@ -25,10 +25,6 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/workflows/actions/install
-
-      - name: Test CDN
-        working-directory: packages/contracts-cdn
-        run: bun run test
       
       - name: Build contracts
         working-directory: packages/contracts
@@ -37,7 +33,11 @@ jobs:
       - name: Build sdk
         working-directory: packages/sdk
         run: bun run build
-    
+
+      - name: Test CDN
+        working-directory: packages/contracts-cdn
+        run: bun run test
+
       - name: Build cache
         working-directory: packages/contracts-cdn/scripts
         run: sh compile-and-create.sh
