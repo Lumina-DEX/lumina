@@ -41,7 +41,7 @@ jobs:
 
       - name: Test CDN
         working-directory: packages/contracts-cdn
-        run: bun run test
+        run: cp .dev.vars.example .dev.vars && bun run test
 
       - name: Build cache
         working-directory: packages/contracts-cdn/scripts
