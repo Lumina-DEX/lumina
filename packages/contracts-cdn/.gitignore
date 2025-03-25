@@ -173,5 +173,3 @@ dist
 
 cache/**
 !cache/**/.gitkeep
-
-test/generated-cache.ts

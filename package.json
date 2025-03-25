@@ -7,7 +7,7 @@
 		"build": "lage build --no-cache --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
 		"build:all": "lage build",
 		"test": "lage test --no-cache --scope '@lumina-dex/sdk' '@lumina-dex/contracts' --no-deps",
-		"cache:create": "pushd packages/contracts && bun run build && popd && pushd packages/sdk && bun run build && popd && pushd packages/contracts-cdn && bun run cache:create",
+		"cache:create": "pushd packages/contracts && bun run build && popd && pushd packages/sdk && bun run build && popd && pushd packages/contracts-cdn/scripts && sh compile-and-create.sh",
 		"test:all": "echo 'testing...'",
 		"lint:all": "lage lint",
 		"format:all": "dprint check",
