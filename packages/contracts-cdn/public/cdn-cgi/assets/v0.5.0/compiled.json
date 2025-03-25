@@ -1,4 +1,8 @@
 [
+	"lagrange-basis-fp-1024",
+	"lagrange-basis-fp-2048",
+	"lagrange-basis-fp-4096",
+	"lagrange-basis-fp-8192",
 	"srs-fp-65536",
 	"srs-fq-32768",
 	"step-vk-faucet-approvebase",

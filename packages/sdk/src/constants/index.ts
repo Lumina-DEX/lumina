@@ -74,6 +74,12 @@ export const chainFaucets = {
 
 export const MINA_ADDRESS = "MINA"
 
+/**
+ * CDN URL Scheme
+ * @example https://cdn.luminadex.com/api/manifest/v1.0.0
+ * @example https://cdn.luminadex.com/v1.0.0/cache/file.txt
+ * @example https://cdn.luminadex.com/v1.0.0/bundle.zip
+ */
 export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
 export const contractsVersion = `v${version}`

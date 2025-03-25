@@ -1,5 +1,13 @@
-import { SELF, env, fetchMock } from "cloudflare:test"
+import {
+	SELF,
+	createExecutionContext,
+	createScheduledController,
+	env,
+	fetchMock,
+	waitOnExecutionContext
+} from "cloudflare:test"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
+import worker from "../src/index"
 
 const createRequest = (url: string, method = "GET") =>
 	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, {
@@ -34,17 +42,16 @@ describe("API", () => {
 	})
 
 	it("can sync the blockchain state with a scheduled event", async () => {
-		//TODO: Investigate why this doesn't work
-		// fetchMock
-		// 	.get(env.LUMINA_TOKEN_ENDPOINT_URL)
-		// 	.intercept({ path: () => true })
-		// 	.reply(200, [])
-		// 	.times(2)
-		await SELF.scheduled()
-		// const controller = createScheduledController()
-		// const ctx = createExecutionContext()
-		// await worker.scheduled(controller, env, ctx)
-		// await waitOnExecutionContext(ctx)
+		fetchMock
+			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
+			.intercept({ path: () => true })
+			.reply(200, [])
+			.times(4)
+
+		const controller = createScheduledController()
+		const ctx = createExecutionContext()
+		await worker.scheduled(controller, env, ctx)
+		await waitOnExecutionContext(ctx)
 	})
 
 	it("can sync the network state and be rate limited.", async () => {

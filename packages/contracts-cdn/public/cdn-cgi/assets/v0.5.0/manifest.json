@@ -1,6 +1,10 @@
 {
 	"version": "0.5.0",
 	"cache": [
+		"lagrange-basis-fp-1024",
+		"lagrange-basis-fp-2048",
+		"lagrange-basis-fp-4096",
+		"lagrange-basis-fp-8192",
 		"srs-fp-65536",
 		"srs-fq-32768",
 		"step-vk-faucet-approvebase",
@@ -60,6 +64,10 @@
 		"wrap-vk-pooltokenholder"
 	],
 	"files": [
+		"lagrange-basis-fp-1024.txt",
+		"lagrange-basis-fp-2048.txt",
+		"lagrange-basis-fp-4096.txt",
+		"lagrange-basis-fp-8192.txt",
 		"srs-fp-65536.txt",
 		"srs-fq-32768.txt",
 		"step-vk-faucet-approvebase.txt",
@@ -118,5 +126,5 @@
 		"wrap-vk-poolfactory.txt",
 		"wrap-vk-pooltokenholder.txt"
 	],
-	"totalFiles": 57
+	"totalFiles": 61
 }

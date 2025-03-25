@@ -6,7 +6,8 @@
 	"main": "src/index.ts",
 	"workers_dev": true,
 	"preview_urls": true,
-	"route": "cdn.luminadex.com",
+	"upload_source_maps": true,
+	"routes": [{ "pattern": "cdn.luminadex.com", "custom_domain": true }],
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
