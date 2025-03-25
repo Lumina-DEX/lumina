@@ -40,8 +40,8 @@ jobs:
         run: bun run build
 
       - name: Build cache
-        working-directory: packages/contracts-cdn
-        run: bun run cache:create
+        working-directory: packages/contracts-cdn/scripts
+        run: sh compile-and-create.sh
 
       - name: Deploy to Cloudflare Workers Static Assets
         id: cloudflare
