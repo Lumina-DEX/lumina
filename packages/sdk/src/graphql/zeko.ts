@@ -20,3 +20,13 @@ export const GetTransferAccountUpdateQuery = graphql(`
     transferAccountUpdate(key: $key)
   }
 `)
+
+export const FetchZekoEvents = graphql(
+	`query FetchZekoEvents($eventInput: EventFilterOptionsInput!) {
+    events(input: $eventInput) {
+      eventData {
+        data
+      }
+    }
+}`
+)

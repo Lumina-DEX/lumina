@@ -1,0 +1,65 @@
+{
+	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+	"name": "luminadex-contracts-cdn",
+	"account_id": "a12d2915bc16ee8550f19399839623f7",
+	"compatibility_date": "2025-01-16",
+	"main": "src/index.ts",
+	"workers_dev": true,
+	"preview_urls": true,
+	"route": "cdn.luminadex.com",
+	"compatibility_flags": ["nodejs_compat"],
+	"vars": {
+		"ENVIRONMENT": "production",
+		"DO_TOKENLIST_NAME": "db-prod-1",
+		"LUMINA_TOKEN_ENDPOINT_URL": "https://lumina-tokens.deno.dev"
+	},
+	// Workers Static Assets
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
+	},
+	// Workers Logs
+	// Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+	// Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
+	"observability": {
+		"enabled": true
+	},
+
+	//Bind a Durable Object. Durable objects are a scale-to-zero compute primitive based on the actor model.
+	//Durable Objects can live for as long as needed. Use these when you need a long-running "server", such as in realtime apps.
+	//Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#durable-objects
+	"durable_objects": {
+		"bindings": [{ "name": "TOKENLIST", "class_name": "TokenList" }]
+	},
+	// Durable Object migrations.
+	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList"] }],
+	// We need rules so we can import migrations in the next steps
+	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
+	// Schedule cron triggers:
+	"triggers": {
+		// At midnight everyday
+		"crons": ["0 0 * * *"]
+	},
+	"unsafe": {
+		"bindings": [
+			{
+				"name": "SYNC_RATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1",
+				"simple": {
+					"limit": 2,
+					"period": 10
+				}
+			}
+		]
+	}
+	// Worfklows are not working with vitest https://github.com/cloudflare/workers-sdk/issues/7414
+	// "workflows": [
+	//     {
+	//         "name": "sync-blockchain",
+	//         "binding": "SYNC_BLOCKCHAIN",
+	//         "class_name": "SyncBlockchain"
+	//     }
+	// ]
+}

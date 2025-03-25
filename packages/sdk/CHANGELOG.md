@@ -1,5 +1,16 @@
 # @lumina-dex/sdk
 
+## 0.8.0
+
+### Minor Changes
+
+- 9dacdc2: Add Zeko token fetch, and fix token fetch on Mina. Remove deprecated methods from the SDK.
+
+### Patch Changes
+
+- Updated dependencies [3bb13df]
+  - @lumina-dex/contracts@0.5.0
+
 ## 0.7.0
 
 ### Minor Changes

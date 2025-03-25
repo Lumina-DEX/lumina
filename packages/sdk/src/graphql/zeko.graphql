@@ -704,11 +704,47 @@ type ActionOutput {
   actionData: [ActionData!]!
 }
 
-type Statistics {
-  transactions: Int!
-  deposits: Int!
-  luminaSwaps: Int!
-  luminaLiquidityPools: Int!
+type LuminaActivity {
+  totalSwaps: Int!
+  totalLiquidityPools: Int!
+}
+
+type TopZkapps {
+  zkapp: String!
+  count: Int!
+}
+
+type TransactionStatistics {
+  averageFee: Float!
+  averagePFS: Float!
+}
+
+type TransactionActivity {
+  totalDeposits: Int!
+  totalSignedCommands: Int!
+  totalZkappCommands: Int!
+  totalTransactions: Int!
+}
+
+type ZkappActivity {
+  totalZkapps: Int!
+  newZkapps30d: Int!
+  activeZkapps30d: Int!
+}
+
+type UserActivity {
+  totalAccounts: Int!
+  newAccounts30d: Int!
+  activeAccounts30d: Int!
+}
+
+type Analytics {
+  userActivity: UserActivity!
+  zkappActivity: ZkappActivity!
+  transactionActivity: TransactionActivity!
+  transactionStatistics: TransactionStatistics!
+  topZkapps: [TopZkapps!]!
+  luminaActivity: LuminaActivity!
 }
 
 type StateHashes {
@@ -1073,7 +1109,7 @@ type query {
   The chain-agnostic identifier of the network this daemon is participating in
 """
   networkID: String!
-  statistics(luminaFactory: PublicKey!): Statistics!
+  analytics(luminaFactory: PublicKey!): Analytics!
   actions(input: ActionFilterOptionsInput!): [ActionOutput!]!
   events(input: EventFilterOptionsInput!): [EventOutput!]!
 }

@@ -22,3 +22,14 @@ export const EventsQuery = graphql(`
         }
     }
 `)
+
+export const NetworkStateQuery = graphql(`
+    query NetworkState {
+        networkState {
+            maxBlockHeight {
+                canonicalMaxBlockHeight
+                pendingMaxBlockHeight
+            }
+        }
+    }
+`)

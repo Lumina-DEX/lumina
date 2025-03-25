@@ -7,9 +7,10 @@
 		"lint:fix": "bunx @biomejs/biome lint --write src/",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
-		"cache:create": "bun scripts/create-cache.ts",
+		"cache:create": "node --experimental-strip-types scripts/create-cache.ts",
 		"compile:benchmark": "bun scripts/compile-benchmark.ts",
 		"deploy": "wrangler deploy",
+		"deploy:preview": "wrangler versions upload",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
@@ -26,7 +27,7 @@
 		"o1js": "2.2.0",
 		"typescript": "^5.5.2",
 		"vitest": "2.0.5",
-		"wrangler": "^3.60.3"
+		"wrangler": "^4.1.0"
 	},
 	"dependencies": {
 		"drizzle-orm": "^0.37.0",

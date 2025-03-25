@@ -140,15 +140,9 @@ const result = await fetchPoolTokenList("mina:devnet")
 console.log("Token list:", result.tokens)
 
 // For direct blockchain queries (slower, use server-side)
-import {
-	internal_fetchAllPoolFactoryEvents,
-	internal_fetchAllTokensFromPoolFactory
-} from "@lumina-dex/sdk"
+import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
 
-const events = await internal_fetchAllPoolFactoryEvents({
-	network: "mina:devnet"
-})
-const tokens = await internal_fetchAllTokensFromPoolFactory({
+const tokens = await fetchAllTokensFromPoolFactory({
 	network: "mina:devnet"
 })
 ```

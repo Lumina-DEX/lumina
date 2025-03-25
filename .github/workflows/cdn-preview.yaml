@@ -1,0 +1,112 @@
+name: Deploy CDN Preview
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "packages/contracts-cdn/**"
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
+
+jobs:
+  deploy-cdn-preview:
+    name: Deploy CDN [preview]
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.cloudflare.outputs.deployment-url }} # TODO: Use this for e2e tests.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/workflows/actions/install
+
+      - name: Build contracts
+        working-directory: packages/contracts
+        run: bun run build
+
+      - name: Build sdk
+        working-directory: packages/sdk
+        run: bun run build
+    
+      - name: Build cache
+        working-directory: packages/contracts-cdn
+        run: bun run cache:create
+
+      - name: Deploy to Cloudflare Workers Static Assets
+        id: cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Optional: Enable this if you want to have GitHub Deployments triggered
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: versions upload
+          workingDirectory: packages/contracts-cdn
+          wranglerVersion: "4"
+          packageManager: pnpm
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        id: deploy-preview-url
+        with:
+          result-encoding: string
+          script: |
+            const url = "${{ steps.cloudflare.outputs.deployment-url }}"
+            const rawOutput = `${{ steps.cloudflare.outputs.command-output }}`
+            const output = rawOutput.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\\/g, '\\\\')
+            
+            const environment = "preview"
+            const deployTitle = "🛸 LuminaDex CDN Deploy Preview is live 🏌️‍♀️"
+            const body = 
+              `### ${deployTitle}
+              #### 🌍 Deploy URL
+              
+              [Cloudflare Workers API preview](${url})
+
+             > [Preview URLs are not working with workers that use Durable Objects.](https://developers.cloudflare.com/workers/configuration/previews/#limitations)
+
+              #### 🔍 Build Output 
+
+              <details><summary>Output</summary>${output}</details>
+
+              > Deployed by Cloudflare Wrangler Action`
+            
+            const { repo: { owner, repo }, issue: { number } } = context
+            
+            // Search for existing comment
+            const commentIdentifier = "🛸 LuminaDex CDN"
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: number
+            })
+            
+            const botComments = comments.data.filter(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes(deployTitle)
+            })
+            
+            // Update existing comment or create a new one
+            if (botComments.length > 0) {
+              const comment = await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComments[0].id,
+                body
+              })
+              console.log("Updated existing deploy preview comment", comment)
+            } else {
+              const comment = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body
+              })
+              console.log("Created new deploy preview comment", comment)
+            }
+            return url

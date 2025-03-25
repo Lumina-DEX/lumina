@@ -14,12 +14,15 @@ import {
 	PoolTokenHolder
 } from "@lumina-dex/contracts"
 
+import contracts from "../../contracts/package.json" with { type: "json" }
+const { version } = contracts
+
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const cacheDir = path.resolve(__dirname, "../cache")
 
 await fs.mkdir(cacheDir, { recursive: true })
 
-export const publicDir = path.resolve(__dirname, "../public/cdn-cgi/assets")
+export const publicDir = path.resolve(__dirname, `../public/cdn-cgi/assets/v${version}`)
 export const testDir = path.resolve(__dirname, "../test")
 
 await fs.rm(publicDir, { recursive: true, force: true })
@@ -65,7 +68,8 @@ async function writeCache() {
 	await fs.writeFile(path.resolve(publicDir, "compiled.json"), json, "utf8")
 	await fs.writeFile(
 		path.resolve(testDir, "generated-cache.ts"),
-		`export const cache = ${json}.join()`,
+		`export const cache = ${json}.join();
+		export const version = "${version}";`,
 		"utf8"
 	)
 
@@ -88,9 +92,10 @@ async function writeCache() {
 		const newFileName = `${fileName}.txt`
 		await fs.rename(fullPath, path.join(publicCacheDir, newFileName))
 	}
+	return json
 }
 
-async function createOptimizedZipBundle() {
+async function createOptimizedZipBundle(c: string) {
 	const files = await fs.readdir(publicCacheDir)
 	const filesContent = {} as Record<string, Uint8Array>
 
@@ -164,7 +169,8 @@ async function createOptimizedZipBundle() {
 	}
 	// Create manifest
 	const manifest = {
-		version: "1.0",
+		version,
+		cache: JSON.parse(c),
 		files: Object.keys(zipObj),
 		totalFiles: Object.keys(zipObj).length
 	}
@@ -177,6 +183,6 @@ console.time("start")
 await compileContracts()
 await compileContracts()
 await compileContracts()
-await writeCache()
-await createOptimizedZipBundle()
+const c = await writeCache()
+await createOptimizedZipBundle(c)
 console.timeEnd("start")

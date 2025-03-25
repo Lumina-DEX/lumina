@@ -1,3 +1,5 @@
+import { version } from "../../../contracts/package.json" with { type: "json" }
+
 export type NetworkLayer = "mina" | "zeko"
 
 export type ChainNetwork = "mainnet" | "devnet" | "testnet"
@@ -13,6 +15,16 @@ export const networks = [
 	"zeko:testnet",
 	"zeko:mainnet"
 ] as const
+
+/**
+ * Factory start block deployment
+ */
+export const startBlock: Record<NetworkUri, number> = {
+	"mina:mainnet": 0,
+	"mina:devnet": 388_667,
+	"zeko:mainnet": 0,
+	"zeko:testnet": 5_748
+} as const
 
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
@@ -62,7 +74,9 @@ export const chainFaucets = {
 
 export const MINA_ADDRESS = "MINA"
 
-export const luminaCdnOrigin = "https://luminadex-contracts-cdn.hebilicious.workers.dev"
+export const luminaCdnOrigin = "https://cdn.luminadex.com"
+
+export const contractsVersion = `v${version}`
 
 export const poolInstance = {
 	"mina:devnet": {
