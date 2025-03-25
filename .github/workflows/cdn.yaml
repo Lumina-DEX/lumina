@@ -30,6 +30,10 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/workflows/actions/install
+      
+      - name: Test CDN
+        working-directory: packages/contracts-cdn
+        run: bun run test
 
       - name: Build contracts
         working-directory: packages/contracts

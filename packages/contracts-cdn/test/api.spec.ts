@@ -1,7 +1,11 @@
-import { createScheduledController } from "cloudflare:test"
-import { createExecutionContext } from "cloudflare:test"
-import { SELF, env, fetchMock } from "cloudflare:test"
-import { waitOnExecutionContext } from "cloudflare:test"
+import {
+	SELF,
+	createExecutionContext,
+	createScheduledController,
+	env,
+	fetchMock,
+	waitOnExecutionContext
+} from "cloudflare:test"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
 import worker from "../src/index"
 
