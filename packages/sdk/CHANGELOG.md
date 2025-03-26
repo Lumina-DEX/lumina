@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.9.0
+
+### Minor Changes
+
+- 188d1b7: Fix CDN urls within the SDK and cache generation
+
 ## 0.8.0
 
 ### Minor Changes

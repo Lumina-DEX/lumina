@@ -4,17 +4,18 @@ import { and, count, eq, sql } from "drizzle-orm"
 import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite"
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
+import * as schema from "../drizzle/schema"
 import type { Env } from "../worker-configuration"
 import { type FindTokenBy, type Network, type Token, type TokenExists, getTable } from "./helper"
 
 export class TokenList extends DurableObject {
 	storage: DurableObjectStorage
-	db: DrizzleSqliteDODatabase
+	db: DrizzleSqliteDODatabase<typeof schema>
 
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env)
 		this.storage = ctx.storage
-		this.db = drizzle(this.storage)
+		this.db = drizzle(this.storage, { schema, logger: false })
 
 		if (env.ENVIRONMENT === "local") {
 			migrate(this.db, migrations)

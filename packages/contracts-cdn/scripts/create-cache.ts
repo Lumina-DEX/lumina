@@ -2,25 +2,14 @@ import fs from "node:fs/promises"
 import path from "node:path"
 
 import { unzipSync, zipSync } from "fflate"
-import { Cache } from "o1js"
 
 import { execSync } from "node:child_process"
-import {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	Pool,
-	PoolFactory,
-	PoolTokenHolder
-} from "@lumina-dex/contracts"
 
 import contracts from "../../contracts/package.json" with { type: "json" }
 const { version } = contracts
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const cacheDir = path.resolve(__dirname, "../cache")
-
-await fs.mkdir(cacheDir, { recursive: true })
 
 export const publicDir = path.resolve(__dirname, `../public/cdn-cgi/assets/v${version}`)
 export const testDir = path.resolve(__dirname, "../test")
@@ -29,33 +18,6 @@ await fs.rm(publicDir, { recursive: true, force: true })
 
 const publicCacheDir = path.resolve(publicDir, "cache")
 await fs.mkdir(publicCacheDir, { recursive: true })
-
-const cache = Cache.FileSystem(cacheDir)
-
-async function compileContracts() {
-	console.log("Starting contract compilation :")
-
-	interface Contract {
-		name: string
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		compile: ({ cache }: { cache: Cache }) => Promise<any>
-	}
-
-	const ct = async (contract: Contract) => {
-		console.log(`Compiling ${contract.name}`)
-		console.time(contract.name)
-		await contract.compile({ cache })
-		console.timeEnd(contract.name)
-	}
-
-	await ct(PoolFactory)
-	await ct(Pool)
-	await ct(PoolTokenHolder)
-	await ct(FungibleToken)
-	await ct(FungibleTokenAdmin)
-	await ct(Faucet)
-	console.log("Compilation done")
-}
 
 async function writeCache() {
 	const cachedContracts = await fs.readdir(cacheDir)
@@ -165,7 +127,7 @@ async function createOptimizedZipBundle(c: string) {
 	} catch (e) {
 		console.error(e)
 	} finally {
-		await fs.rmdir(tempDir, { recursive: true })
+		await fs.rm(tempDir, { recursive: true })
 	}
 	// Create manifest
 	const manifest = {
@@ -178,11 +140,5 @@ async function createOptimizedZipBundle(c: string) {
 	await fs.writeFile(path.join(publicDir, "manifest.json"), JSON.stringify(manifest, null, 2))
 }
 
-console.time("start")
-// TODO: Compilation needs to run at least 3 times to to generate all the cached files.
-await compileContracts()
-await compileContracts()
-await compileContracts()
 const c = await writeCache()
 await createOptimizedZipBundle(c)
-console.timeEnd("start")

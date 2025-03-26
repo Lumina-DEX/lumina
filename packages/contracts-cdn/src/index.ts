@@ -20,6 +20,7 @@ addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 
 export default {
 	async scheduled(event, env, context) {
+		console.log("Scheduled event triggered", event)
 		await Promise.all(networks.map((network) => sync({ env, network, context })))
 		console.log("Synced all networks")
 	},
