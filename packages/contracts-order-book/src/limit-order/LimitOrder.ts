@@ -16,7 +16,7 @@ import {
   UInt32,
   UInt64
 } from "o1js"
-import { AddOrder } from "./OrderDeposit"
+import { AddOrder, OrderDeposit } from "./OrderDeposit"
 
 /**
  * Test code don't use it in production
@@ -38,6 +38,14 @@ export class LimitOrder extends SmartContract {
     // as example we don
     const hashA = orderA.hash()
     const hashB = orderB.hash()
+
+    const depositContract = this.depositContract.getAndRequireEquals()
+
+    const tokenIdA = TokenId.derive(orderA.sender)
+    const orderDepositA = new OrderDeposit(depositContract, tokenIdA)
+
+    const tokenIdB = TokenId.derive(orderB.sender)
+    const orderDepositB = new OrderDeposit(depositContract, tokenIdB)
 
     // match the order token
     orderA.tokenBuy.assertEquals(orderB.tokenSell)
