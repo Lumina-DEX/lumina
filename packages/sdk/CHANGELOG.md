@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.10.0
+
+### Minor Changes
+
+- d3f711b: Fix loading url for the sdk bundle
+
 ## 0.9.0
 
 ### Minor Changes
