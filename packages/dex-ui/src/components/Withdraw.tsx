@@ -137,7 +137,7 @@ const Withdraw = ({}) => {
 						<span>Token out : {toFixedIfNecessary(toToken, 2)}</span>
 					</div>
 					<div>
-						Your liquidity balance : <Balance tokenAddress={token.poolAddress}></Balance>
+						Your liquidity balance : <Balance token={token} isPool={false}></Balance>
 					</div>
 					<ButtonStatus onClick={withdrawLiquidity} text={"Withdraw Liquidity"}></ButtonStatus>
 				</div>

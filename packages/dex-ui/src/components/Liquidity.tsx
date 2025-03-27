@@ -179,7 +179,7 @@ const Liquidity = ({}) => {
 						)}
 					</div>
 					<div>
-						Your token balance : <Balance token={token}></Balance>
+						Your token balance : <Balance token={token} isPool={false}></Balance>
 					</div>
 					<div>
 						Your liquidity balance : <Balance token={token} isPool={true}></Balance>
