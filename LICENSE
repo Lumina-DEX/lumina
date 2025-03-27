@@ -1,0 +1,50 @@
+Business Source License 1.1
+
+SPDX-License-Identifier: BUSL-1.1
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//                                IMPORTANT                                   //
+//                                                                            //
+//   Please read this license carefully before using the Licensed Work.       //
+//   By using the Licensed Work, you accept the terms and conditions          //
+//   of this license. If you do not agree, do not use the Licensed Work.      //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+
+TERMS AND CONDITIONS
+
+Licensor:       LuminaDex
+Licensed Work:  The LuminaDex software and associated documentation distributed by Licensor under this license.
+Effective Date: 2025-01-01
+
+Change Date:    For any given version of the Licensed Work, the Change Date is 3 years after the date that version was first publicly released by the Licensor.
+Change License: MIT License (https://opensource.org/licenses/MIT)   
+
+Additional Use Grant: The Licensed Work may not be used for any hosted or deployed service offering to third parties where the core functionality or primary value relies substantially on the Licensed Work.
+
+Grant Scope:
+Subject to the terms and conditions of this license, the Licensor grants you a non-exclusive, worldwide, royalty-free license to use, reproduce, prepare derivative works of, publicly display, publicly perform, distribute, and sublicense the Licensed Work under the terms of this license, provided that you are not using the Licensed Work for the specific purpose defined in the Additional Use Grant.
+
+On the Change Date, the Licensed Work automatically becomes available under the terms of the Change License.
+
+Limitations:
+The license granted herein is subject to the following limitations:
+
+1.  **Additional Use Grant:** You may not use the Licensed Work for the specific purpose defined in the Additional Use Grant. If your use falls within the scope of the Additional Use Grant, you must obtain a separate commercial license from the Licensor. Contact contact@luminadex.com for details.
+2.  **Attribution:** In any distribution of the Licensed Work or derivative works thereof, you must include a conspicuous notice indicating that the Licensed Work is licensed under the Business Source License 1.1, and include a copy of this license.
+3.  **No Trademark License:** This license does not grant any rights to use the trademarks, service marks, or logos of the Licensor, including "LuminaDex", except as necessary to comply with the attribution requirements.
+
+Disclaimer of Warranty:
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE LICENSED WORK OR THE USE OR OTHER DEALINGS IN THE LICENSED WORK.
+
+Limitation of Liability:
+IN NO EVENT SHALL THE LICENSOR BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS LICENSED WORK, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Governing Law:
+This license shall be governed by and construed in accordance with the laws of the State of California, USA, without regard to its conflict of law provisions.
+
+---
+
+Copyright (c) 2024-2025 LuminaDex. All rights reserved.
