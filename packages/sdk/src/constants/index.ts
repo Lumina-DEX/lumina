@@ -82,7 +82,7 @@ export const MINA_ADDRESS = "MINA"
  */
 export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
-export const contractsVersion = `v${version}`
+export const contractsVersion = `${version}`
 
 export const poolInstance = {
 	"mina:devnet": {
