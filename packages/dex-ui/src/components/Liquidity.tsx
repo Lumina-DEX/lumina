@@ -19,26 +19,10 @@ const Liquidity = ({}) => {
 	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
 	const [token, setToken] = useState({ address: "", poolAddress: "", symbol: "", decimals: 9 })
-	const [tokenPool, setTokenPool] = useState({
-		address: "",
-		poolAddress: "",
-		symbol: "LUM",
-		decimals: 9
-	})
 
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
-
-	useEffect(() => {
-		if (token) {
-			const poolTok = { ...token }
-			poolTok.address = token.poolAddress
-			poolTok.symbol = "LUM"
-			poolTok.decimals = 9
-			setTokenPool(poolTok)
-		}
-	}, [token])
 
 	const [pool, setPool] = useState(poolToka)
 	const [toDai, setToDai] = useState(true)
@@ -83,7 +67,7 @@ const Liquidity = ({}) => {
 			type: "ChangeAddLiquiditySettings",
 			settings: {
 				// The pool address
-				pool: tokenPool.poolAddress,
+				pool: token.poolAddress,
 
 				// Token A settings
 				tokenA: {
@@ -198,7 +182,7 @@ const Liquidity = ({}) => {
 						Your token balance : <Balance token={token}></Balance>
 					</div>
 					<div>
-						Your liquidity balance : <Balance token={tokenPool}></Balance>
+						Your liquidity balance : <Balance token={token} isPool={true}></Balance>
 					</div>
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
