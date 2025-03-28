@@ -331,8 +331,10 @@ export const createLuminaDexMachine = () => {
 							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
 
 							const supply = Number.parseInt(reserves.liquidity)
+							// lp token has 9 decimals
+							const liquidity = liquidityAmount * 10 ** 9
 							withdrawInformation = getAmountOutFromLiquidity({
-								liquidity: liquidityAmount,
+								liquidity,
 								balanceA,
 								balanceB,
 								supply,
