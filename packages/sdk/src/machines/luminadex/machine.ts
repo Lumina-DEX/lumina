@@ -16,6 +16,7 @@ import {
 	chainFaucets,
 	luminaCdnOrigin,
 	luminadexFactories,
+	MINA_ADDRESS,
 	poolInstance
 } from "../../constants/index"
 import type {
@@ -311,27 +312,10 @@ export const createLuminaDexMachine = () => {
 			calculateRemoveLiquidityAmount: fromPromise(
 				async ({ input }: { input: InputDexWorker & RemoveLiquiditySettings }) => {
 					return act("calculateRemoveLiquidityAmount", async () => {
-						const { worker, pool, tokenA, tokenB, slippagePercent } = input
+						const { worker, pool, tokenA, tokenB, liquidityAmount, slippagePercent } = input
 						const reserves = await worker.getReserves(pool)
 
-						const ok = reserves.token0.address === tokenA.address
-
-						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
-
-							const supply = Number.parseInt(reserves.liquidity)
-							const liquidity = amount(ok ? tokenA : tokenB)
-							const liquidityAmount = getAmountOutFromLiquidity({
-								liquidity,
-								balanceA,
-								balanceB,
-								supply,
-								slippagePercent
-							})
-							return liquidityAmount
-						}
-						const liquidityAmount = {
+						let withdrawInformation = {
 							amountAOut: 0,
 							amountBOut: 0,
 							balanceAMin: 0,
@@ -339,7 +323,24 @@ export const createLuminaDexMachine = () => {
 							supplyMax: 0,
 							liquidity: 0
 						}
-						return liquidityAmount
+
+						const ok = reserves.token0.address === tokenA || tokenA === MINA_ADDRESS
+
+						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
+							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+
+							const supply = Number.parseInt(reserves.liquidity)
+							withdrawInformation = getAmountOutFromLiquidity({
+								liquidity: liquidityAmount,
+								balanceA,
+								balanceB,
+								supply,
+								slippagePercent
+							})
+						}
+
+						return withdrawInformation
 					})
 				}
 			)
@@ -406,8 +407,9 @@ export const createLuminaDexMachine = () => {
 					},
 					removeLiquidity: {
 						pool: "",
-						tokenA: { address: "", amount: "" },
-						tokenB: { address: "", amount: "" },
+						tokenA: "",
+						tokenB: "",
+						liquidityAmount: 0,
 						slippagePercent: 0,
 						...resetSettings
 					},
@@ -853,12 +855,12 @@ export const createLuminaDexMachine = () => {
 									supplyMax: liquidity.calculated.supplyMax,
 									liquidityAmount: liquidity.calculated.liquidity,
 									tokenA: {
-										address: liquidity.tokenA.address,
+										address: liquidity.tokenA,
 										amount: liquidity.calculated.amountAOut,
 										reserve: liquidity.calculated.balanceAMin
 									},
 									tokenB: {
-										address: liquidity.tokenB.address,
+										address: liquidity.tokenB,
 										amount: liquidity.calculated.amountBOut,
 										reserve: liquidity.calculated.balanceBMin
 									}
@@ -960,6 +962,7 @@ export const createLuminaDexMachine = () => {
 									pool: liquidity.pool,
 									tokenA: liquidity.tokenA,
 									tokenB: liquidity.tokenB,
+									liquidityAmount: liquidity.liquidityAmount,
 									slippagePercent: liquidity.slippagePercent
 								}
 							},
