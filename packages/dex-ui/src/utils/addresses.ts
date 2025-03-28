@@ -32,7 +32,7 @@ export class Addresses {
 			timestamp: "2025-03-12 00:00:26",
 			chainId: "mina:devnet"
 		}
-		Addresses.listFromCDN = [tokenA].concat(data.tokens)
+		Addresses.listFromCDN = data.tokens
 		this.currentNetworkCDN = network
 		return Addresses.listFromCDN
 	}
