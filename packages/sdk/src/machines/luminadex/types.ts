@@ -156,8 +156,9 @@ export interface AddLiquiditySettings {
 
 export interface RemoveLiquiditySettings {
 	pool: string
-	tokenA: Token
-	tokenB: Token
+	tokenA: string
+	tokenB: string
+	liquidityAmount: number
 	slippagePercent: number
 }
 
