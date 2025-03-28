@@ -84,14 +84,14 @@ const Withdraw = ({}) => {
 
 				// Token A settings
 				tokenA: {
-					address: token.address,
+					address: "MINA",
 					amount: fromAmount
 				},
 
 				// Token B settings
 				tokenB: {
-					address: "MINA", // Native MINA token
-					amount: "0"
+					address: token.address, // Native MINA token
+					amount: fromAmount
 				},
 
 				// Maximum allowed slippage in percentage
@@ -107,10 +107,7 @@ const Withdraw = ({}) => {
 	const withdrawLiquidity = async () => {
 		try {
 			setLoading(true)
-			console.log("infos", { fromAmount })
-
-			if (mina) {
-			}
+			Dex.send({ type: "RemoveLiquidity" })
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
