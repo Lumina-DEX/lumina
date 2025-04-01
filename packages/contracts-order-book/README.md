@@ -4,7 +4,7 @@ Limit order
 
 ## Licensing
 
-Modified Reciprocal Community License 1.50
+Modified Reciprocal Public License 1.50
 
 Licensor: Lumina Labs
 
