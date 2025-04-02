@@ -49,8 +49,8 @@ const Liquidity = ({}) => {
 			if (result) {
 				setData(result)
 
-				const from = result.amountAIn / 10 ** 9
-				const to = result.amountBIn / 10 ** 9
+				const from = result.tokenA.amountIn / 10 ** 9
+				const to = result.tokenB.amountIn / 10 ** 9
 				const liquidity = result.liquidity / 10 ** 9
 				setFromAmount(from.toFixed(2).toString())
 				setToAmount(to.toFixed(2).toString())

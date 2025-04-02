@@ -63,8 +63,8 @@ const Withdraw = ({}) => {
 			if (result) {
 				setData(result)
 
-				const amountA = result.amountAOut / 10 ** 9
-				const amountB = result.amountBOut / 10 ** 9
+				const amountA = result.tokenA.amountOut / 10 ** 9
+				const amountB = result.tokenB.amountOut / 10 ** 9
 				const liquidity = result.liquidity / 10 ** 9
 				setToToken(amountB)
 				setToMina(amountA)
@@ -81,15 +81,8 @@ const Withdraw = ({}) => {
 			settings: {
 				// The pool address
 				pool: token.poolAddress,
-
-				// Token A settings
-				tokenA: "MINA",
-
-				// Token B settings
 				tokenB: token.address,
-
-				liquidityAmount: fromAmount,
-
+				lpAmount: fromAmount,
 				// Maximum allowed slippage in percentage
 				slippagePercent: slippagePercent
 			}
