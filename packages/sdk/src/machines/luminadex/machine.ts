@@ -16,7 +16,6 @@ import {
 	chainFaucets,
 	luminaCdnOrigin,
 	luminadexFactories,
-	MINA_ADDRESS,
 	poolInstance
 } from "../../constants/index"
 import type {
@@ -283,9 +282,12 @@ export const createLuminaDexMachine = () => {
 							if (liquidity > 0) {
 								const amountAIn = amount(ok ? tokenA : tokenB)
 								const liquidityAmount = getAmountLiquidityOut({
-									amountAIn,
-									balanceA,
-									balanceB,
+									tokenA: {
+										address: ok ? tokenA.address : tokenB.address,
+										amountIn: amountAIn,
+										balance: balanceA
+									},
+									tokenB: { address: ok ? tokenB.address : tokenA.address, balance: balanceB },
 									supply: liquidity,
 									slippagePercent
 								})
@@ -294,14 +296,15 @@ export const createLuminaDexMachine = () => {
 
 							const amountAIn = amount(ok ? tokenA : tokenB)
 							const amountBIn = amount(ok ? tokenB : tokenA)
-							const liquidityAmount = getFirstAmountLiquidityOut({ amountAIn, amountBIn })
+							const liquidityAmount = getFirstAmountLiquidityOut({
+								tokenA: { address: tokenA.address, amountIn: amountAIn },
+								tokenB: { address: tokenB.address, amountIn: amountBIn }
+							})
 							return liquidityAmount
 						}
 						const liquidityAmount = {
-							amountAIn: 0,
-							amountBIn: 0,
-							balanceAMax: 0,
-							balanceBMax: 0,
+							tokenA: { address: "", amountIn: 0, balanceMax: 0 },
+							tokenB: { address: "", amountIn: 0, balanceMax: 0 },
 							supplyMin: 0,
 							liquidity: 0
 						}
@@ -312,37 +315,32 @@ export const createLuminaDexMachine = () => {
 			calculateRemoveLiquidityAmount: fromPromise(
 				async ({ input }: { input: InputDexWorker & RemoveLiquiditySettings }) => {
 					return act("calculateRemoveLiquidityAmount", async () => {
-						const { worker, pool, tokenA, tokenB, liquidityAmount, slippagePercent } = input
+						const { worker, pool, lpAmount, slippagePercent } = input
 						const reserves = await worker.getReserves(pool)
 
-						let withdrawInformation = {
-							amountAOut: 0,
-							amountBOut: 0,
-							balanceAMin: 0,
-							balanceBMin: 0,
-							supplyMax: 0,
-							liquidity: 0
-						}
-
-						const ok = reserves.token0.address === tokenA || tokenA === MINA_ADDRESS
-
 						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+							const balanceA = Number.parseInt(reserves.token0.amount)
+							const balanceB = Number.parseInt(reserves.token1.amount)
 
 							const supply = Number.parseInt(reserves.liquidity)
 							// lp token has 9 decimals
-							const liquidity = liquidityAmount * 10 ** 9
-							withdrawInformation = getAmountOutFromLiquidity({
+							const liquidity = lpAmount * 10 ** 9
+							const liquidityAmount = getAmountOutFromLiquidity({
 								liquidity,
-								balanceA,
-								balanceB,
+								tokenA: { address: reserves.token0.address, balance: balanceA },
+								tokenB: { address: reserves.token1.address, balance: balanceB },
 								supply,
 								slippagePercent
 							})
+							return liquidityAmount
 						}
-
-						return withdrawInformation
+						const liquidityAmount = {
+							tokenA: { address: "", amountOut: 0, balanceMin: 0 },
+							tokenB: { address: "", amountOut: 0, balanceMin: 0 },
+							supplyMax: 0,
+							liquidity: 0
+						}
+						return liquidityAmount
 					})
 				}
 			)
@@ -409,9 +407,7 @@ export const createLuminaDexMachine = () => {
 					},
 					removeLiquidity: {
 						pool: "",
-						tokenA: "",
-						tokenB: "",
-						liquidityAmount: 0,
+						lpAmount: 0,
 						slippagePercent: 0,
 						...resetSettings
 					},
@@ -813,14 +809,14 @@ export const createLuminaDexMachine = () => {
 									pool: liquidity.pool,
 									supplyMin: liquidity.calculated.supplyMin,
 									tokenA: {
-										address: liquidity.tokenA.address,
-										amount: liquidity.calculated.amountAIn,
-										reserve: liquidity.calculated.balanceAMax
+										address: liquidity.calculated.tokenA.address,
+										amount: liquidity.calculated.tokenA.amountIn,
+										reserve: liquidity.calculated.tokenA.balanceMax
 									},
 									tokenB: {
-										address: liquidity.tokenB.address,
-										amount: liquidity.calculated.amountBIn,
-										reserve: liquidity.calculated.balanceBMax
+										address: liquidity.calculated.tokenB.address,
+										amount: liquidity.calculated.tokenB.amountIn,
+										reserve: liquidity.calculated.tokenB.balanceMax
 									}
 								}
 							},
@@ -857,14 +853,14 @@ export const createLuminaDexMachine = () => {
 									supplyMax: liquidity.calculated.supplyMax,
 									liquidityAmount: liquidity.calculated.liquidity,
 									tokenA: {
-										address: liquidity.tokenA,
-										amount: liquidity.calculated.amountAOut,
-										reserve: liquidity.calculated.balanceAMin
+										address: liquidity.calculated.tokenA.address,
+										amount: liquidity.calculated.tokenA.amountOut,
+										reserve: liquidity.calculated.tokenA.balanceMin
 									},
 									tokenB: {
-										address: liquidity.tokenB,
-										amount: liquidity.calculated.amountBOut,
-										reserve: liquidity.calculated.balanceBMin
+										address: liquidity.calculated.tokenB.address,
+										amount: liquidity.calculated.tokenB.amountOut,
+										reserve: liquidity.calculated.tokenB.balanceMin
 									}
 								}
 							},
@@ -962,9 +958,7 @@ export const createLuminaDexMachine = () => {
 								return {
 									...inputWorker(context),
 									pool: liquidity.pool,
-									tokenA: liquidity.tokenA,
-									tokenB: liquidity.tokenB,
-									liquidityAmount: liquidity.liquidityAmount,
+									lpAmount: liquidity.lpAmount,
 									slippagePercent: liquidity.slippagePercent
 								}
 							},

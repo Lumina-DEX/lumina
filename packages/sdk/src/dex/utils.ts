@@ -24,24 +24,29 @@ export function getAmountOut(
 }
 
 interface GetAmountLiquidityOut {
-	amountAIn: number
-	balanceA: number
-	balanceB: number
+	tokenA: { address: string; amountIn: number; balance: number }
+	tokenB: { address: string; balance: number }
 	supply: number
 	slippagePercent: number
 }
+// const addLiquidityInformation = {
+// 	tokenA: { address: "", amountIn: 0, balanceMax: 0 },
+// 	tokenB: { address: "", amountIn: 0, balanceMax: 0 },
+// 	supplyMin: 0,
+// 	liquidity: 0
+// }
+
 export function getAmountLiquidityOut({
-	amountAIn,
-	balanceA,
-	balanceB,
+	tokenA,
+	tokenB,
 	supply,
 	slippagePercent
 }: GetAmountLiquidityOut) {
-	const balanceAMax = balanceA + (balanceA * slippagePercent) / 100
-	const balanceBMax = balanceB + (balanceB * slippagePercent) / 100
+	const balanceAMax = tokenA.balance + (tokenA.balance * slippagePercent) / 100
+	const balanceBMax = tokenB.balance + (tokenB.balance * slippagePercent) / 100
 	const supplyMin = supply - (supply * slippagePercent) / 100
 
-	const liquidityA = Math.trunc((amountAIn * supplyMin) / balanceAMax)
+	const liquidityA = Math.trunc((tokenA.amountIn * supplyMin) / balanceAMax)
 	const amountBIn = Math.trunc((liquidityA * balanceBMax) / supplyMin)
 	const liquidityB = Math.trunc((amountBIn * supplyMin) / balanceBMax)
 
@@ -52,15 +57,20 @@ export function getAmountLiquidityOut({
 	// truncate - 1
 	const liquidity = Math.trunc(taxedLiquidity) - 1
 
-	return { amountAIn, amountBIn, balanceAMax, balanceBMax, supplyMin, liquidity }
+	return {
+		tokenA: { address: tokenA.address, amountIn: tokenA.amountIn, balanceMax: balanceAMax },
+		tokenB: { address: tokenB.address, amountIn: amountBIn, balanceMax: balanceBMax },
+		supplyMin,
+		liquidity
+	}
 }
 
 interface GetFirstAmountLiquidityOut {
-	amountAIn: number
-	amountBIn: number
+	tokenA: { address: string; amountIn: number }
+	tokenB: { address: string; amountIn: number }
 }
-export function getFirstAmountLiquidityOut({ amountAIn, amountBIn }: GetFirstAmountLiquidityOut) {
-	const baseLiquidity = amountAIn + amountBIn
+export function getFirstAmountLiquidityOut({ tokenA, tokenB }: GetFirstAmountLiquidityOut) {
+	const baseLiquidity = tokenA.amountIn + tokenB.amountIn
 
 	// remove 0.1 % protocol tax
 	const taxedLiquidity = baseLiquidity - baseLiquidity / 1000
@@ -69,30 +79,40 @@ export function getFirstAmountLiquidityOut({ amountAIn, amountBIn }: GetFirstAmo
 	const liquidity = Math.trunc(taxedLiquidity) - 1
 
 	// use same return than getAmountLiquidityOut to use same method on supply liquidity
-	return { amountAIn, amountBIn, balanceAMax: 0, balanceBMax: 0, supplyMin: 0, liquidity }
+	return {
+		tokenA: { address: tokenA.address, amountIn: tokenA.amountIn, balanceMax: 0 },
+		tokenB: { address: tokenB.address, amountIn: tokenB.amountIn, balanceMax: 0 },
+		supplyMin: 0,
+		liquidity
+	}
 }
 
 interface GetAmountOutFromLiquidity {
 	liquidity: number
-	balanceA: number
-	balanceB: number
+	tokenA: { address: string; balance: number }
+	tokenB: { address: string; balance: number }
 	supply: number
 	slippagePercent: number
 }
+
 export function getAmountOutFromLiquidity({
 	liquidity,
-	balanceA,
-	balanceB,
+	tokenA,
+	tokenB,
 	supply,
 	slippagePercent
 }: GetAmountOutFromLiquidity) {
-	const balanceAMin = balanceA - (balanceA * slippagePercent) / 100
-	const balanceBMin = balanceB - (balanceB * slippagePercent) / 100
+	const balanceAMin = tokenA.balance - (tokenA.balance * slippagePercent) / 100
+	const balanceBMin = tokenB.balance - (tokenB.balance * slippagePercent) / 100
 	const supplyMax = supply + (supply * slippagePercent) / 100
 
 	// truncate - 1
 	const amountAOut = Math.trunc((liquidity * balanceAMin) / supplyMax) - 1
 	const amountBOut = Math.trunc((liquidity * balanceBMin) / supplyMax) - 1
-
-	return { amountAOut, amountBOut, balanceAMin, balanceBMin, supplyMax, liquidity }
+	return {
+		tokenA: { address: tokenA.address, amountOut: amountAOut, balanceMin: balanceAMin },
+		tokenB: { address: tokenB.address, amountOut: amountBOut, balanceMin: balanceBMin },
+		supplyMax,
+		liquidity
+	}
 }
