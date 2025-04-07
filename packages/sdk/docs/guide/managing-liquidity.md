@@ -84,12 +84,6 @@ Dex.send({
 		// The pool address
 		pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 
-		// Token A address
-		tokenA: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-
-		// Token B address
-		tokenB: "MINA",
-
 		// liquidity amount to withdraw
 		lpAmount: 10000,
 
