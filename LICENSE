@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Monorepo License Notice
+
+This monorepo contains multiple packages that may be governed by different licenses. The default license for packages without their own LICENSE file is the MIT License below.
+
+Please check individual package directories for specific LICENSE files that may override this default license.
