@@ -91,7 +91,7 @@ Dex.send({
 		tokenB: "MINA",
 
 		// liquidity amount to withdraw
-		liquidityAmount: 10000,
+		lpAmount: 10000,
 
 		// Maximum allowed slippage in percentage
 		slippagePercent: 0.5
