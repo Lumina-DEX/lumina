@@ -29,12 +29,6 @@ interface GetAmountLiquidityOut {
 	supply: number
 	slippagePercent: number
 }
-// const addLiquidityInformation = {
-// 	tokenA: { address: "", amountIn: 0, balanceMax: 0 },
-// 	tokenB: { address: "", amountIn: 0, balanceMax: 0 },
-// 	supplyMin: 0,
-// 	liquidity: 0
-// }
 
 export function getAmountLiquidityOut({
 	tokenA,
