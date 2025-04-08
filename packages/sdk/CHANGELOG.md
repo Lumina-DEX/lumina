@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.11.0
+
+### Minor Changes
+
+- 1770560: Update calculateRemoveLiquidityAmount method signature
+
 ## 0.10.0
 
 ### Minor Changes
