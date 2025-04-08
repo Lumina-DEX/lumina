@@ -84,17 +84,8 @@ Dex.send({
 		// The pool address
 		pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 
-		// Token A settings (this represents LP tokens)
-		tokenA: {
-			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-			amount: "2.5" // Amount of LP tokens to burn
-		},
-
-		// Token B settings (usually MINA)
-		tokenB: {
-			address: "MINA",
-			amount: "0" // This value is usually ignored for removal
-		},
+		// liquidity amount to withdraw
+		lpAmount: 10000,
 
 		// Maximum allowed slippage in percentage
 		slippagePercent: 0.5
