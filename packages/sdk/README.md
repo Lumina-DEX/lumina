@@ -5,6 +5,16 @@
 [![npm version](https://img.shields.io/npm/v/@lumina-dex/sdk.svg)](https://www.npmjs.com/package/@lumina-dex/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+## ⚠️ Disclaimer
+
+The Lumina DEX SDK is provided "as is" without any warranties or guarantees. While we strive to ensure the SDK's reliability and security, users should be aware that:
+
+- Lumina is not liable for any losses, damages, or issues arising from the use of this SDK
+- Users are responsible for validating and testing the SDK's functionality in their applications
+- Smart contract interactions always carry inherent risks including potential loss of funds
+
+By using this SDK, you acknowledge and accept these risks and limitations.
+
 ## Quick Links
 
 - 📚 [Documentation](https://lumina-dex.github.io/sdk/) - Comprehensive guides and API reference
