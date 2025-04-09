@@ -25,6 +25,9 @@ export class LimitOrder extends SmartContract {
   @state(PublicKey)
   depositContract = State<PublicKey>()
 
+  @state(Field)
+  executed = State<Field>()
+
   events = {}
 
   async init() {
@@ -33,6 +36,36 @@ export class LimitOrder extends SmartContract {
 
   @method
   async executeOrder(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
+    // don't use it in prod we don't verify if order already fullfilled
+    // const merkleOrder = this.merkleOrder.getAndRequireEquals()
+    // as example we don
+    const hashA = orderA.hash()
+    const hashB = orderB.hash()
+
+    const depositContract = this.depositContract.getAndRequireEquals()
+
+    const tokenIdA = TokenId.derive(orderA.sender)
+    const orderDepositA = new OrderDeposit(depositContract, tokenIdA)
+
+    const tokenIdB = TokenId.derive(orderB.sender)
+    const orderDepositB = new OrderDeposit(depositContract, tokenIdB)
+
+    tokenIdA.lessThan(tokenIdB)
+    tokenIdA.assertEquals(this.tokenId)
+
+    // match the order token
+    orderA.tokenBuy.assertEquals(orderB.tokenSell)
+    orderA.tokenSell.assertEquals(orderB.tokenBuy)
+
+    // for example just perfect matching orders
+    const priceA = orderA.amountSell.div(orderA.amountBuy)
+    const priceB = orderB.amountBuy.div(orderA.amountSell)
+    priceB.assertEquals(priceA)
+    orderA.amountBuy.assertEquals(orderB.amountSell)
+  }
+
+  @method
+  async subExecute(orderA: AddOrder, orderB: AddOrder, witnessA: MerkleMapWitness, witnessB: MerkleMapWitness) {
     // don't use it in prod we don't verify if order already fullfilled
     // const merkleOrder = this.merkleOrder.getAndRequireEquals()
     // as example we don
