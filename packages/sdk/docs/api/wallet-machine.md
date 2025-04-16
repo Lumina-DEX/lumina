@@ -73,7 +73,7 @@ Wallet.send({
 Fetches token balances for the current account.
 
 ```ts
-// Fetch MINA balance on specific networks
+// Fetch MINA balance
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet"
@@ -88,6 +88,17 @@ Wallet.send({
 		decimal: 1e9,
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
 		symbol: "USDC"
+	}]
+})
+
+// Fetch Lumina LP token balance
+Wallet.send({
+	type: "FetchBalance",
+	network: "mina:devnet",
+	token: [{
+		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+		decimal: 1e9,
+		symbol: "LLP-USDC_MINA"
 	}]
 })
 ```
