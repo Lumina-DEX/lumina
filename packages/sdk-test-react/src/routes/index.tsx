@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { LuminaContext } from "../main"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { fetchPoolTokenList, type Networks, type TokenDbToken } from "@lumina-dex/sdk"
+import { fetchPoolTokenList, type TokenDbToken } from "@lumina-dex/sdk"
 import { version } from "../../../sdk/package.json" with { type: "json" }
 
 export const Route = createFileRoute("/")({
@@ -21,16 +21,18 @@ function HomeComponent() {
 
 	const fetchTokenBalances = useCallback(async () => {
 		const result = await fetchPoolTokenList("mina:devnet")
-		console.log(result)
 		setTokens(result.tokens)
-		for (const { address, symbol, tokenId, decimals, chainId } of tokens) {
-			Wallet.send({
-				type: "FetchBalance",
-				networks: [chainId as Networks],
-				token: { address, decimal: 10 ** decimals, tokenId, symbol }
-			})
-		}
-	}, [Wallet, tokens])
+		Wallet.send({
+			type: "FetchBalance",
+			network: "mina:devnet",
+			tokens: result.tokens.map((token) => ({
+				address: token.address,
+				decimal: 10 ** token.decimals,
+				tokenId: token.tokenId,
+				symbol: token.symbol
+			}))
+		})
+	}, [Wallet])
 
 	const swapSettings = useCallback(() => {
 		Dex.send({

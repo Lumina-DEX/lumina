@@ -76,19 +76,19 @@ Fetches token balances for the current account.
 // Fetch MINA balance on specific networks
 Wallet.send({
 	type: "FetchBalance",
-	networks: ["mina:devnet"]
+	network: "mina:devnet"
 })
 
 // Fetch custom token balance
 Wallet.send({
 	type: "FetchBalance",
-	networks: ["mina:devnet"],
-	token: {
+	network: "mina:devnet",
+	token: [{
 		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9,
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
 		symbol: "USDC"
-	}
+	}]
 })
 ```
 
@@ -116,10 +116,10 @@ type WalletContext = {
 }
 
 type Balance = {
-	"mina:mainnet": { [symbol: string]: number }
-	"mina:devnet": { [symbol: string]: number }
-	"zeko:testnet": { [symbol: string]: number }
-	"zeko:mainnet": { [symbol: string]: number }
+	"mina:mainnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"mina:devnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"zeko:testnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"zeko:mainnet": { [tokenId: string]: { balance: number; symbol: string } }
 }
 ```
 

@@ -68,20 +68,21 @@ Once the wallet is connected, you can fetch token balances:
 // Fetch MINA balance on devnet
 Wallet.send({
 	type: "FetchBalance",
-	networks: ["mina:devnet"]
-	// No token specified means MINA
+	network: "mina:devnet",
+	// No token specified will fetch MINA
+	tokens: []
 })
 
 // Fetch a custom token balance
 Wallet.send({
 	type: "FetchBalance",
 	networks: ["mina:devnet"],
-	token: {
+	tokens: [{
 		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9, // Token decimal places
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
 		symbol: "USDC"
-	}
+	}]
 })
 ```
 

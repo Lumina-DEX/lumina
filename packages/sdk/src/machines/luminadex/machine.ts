@@ -324,7 +324,7 @@ export const createLuminaDexMachine = () => {
 
 							const supply = Number.parseInt(reserves.liquidity)
 							// lp token has 9 decimals
-							const liquidity = lpAmount * 10 ** 9
+							const liquidity = Number.parseInt(lpAmount) * 10 ** 9
 							const liquidityAmount = getAmountOutFromLiquidity({
 								liquidity,
 								tokenA: { address: reserves.token0.address, balance: balanceA },
@@ -407,7 +407,7 @@ export const createLuminaDexMachine = () => {
 					},
 					removeLiquidity: {
 						pool: "",
-						lpAmount: 0,
+						lpAmount: "0",
 						slippagePercent: 0,
 						...resetSettings
 					},

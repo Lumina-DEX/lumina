@@ -98,13 +98,16 @@ const tokens = ref<TokenDbToken[]>([])
 const fetchTokenBalances = async () => {
   const result = await fetchPoolTokenList("mina:devnet")
   tokens.value = result.tokens
-  for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
-    Wallet.send({
-      type: "FetchBalance",
-      networks: [chainId as Networks],
-      token: { address, decimal: 10 ** decimals, tokenId, symbol }
-    })
-  }
+	Wallet.send({
+			type: "FetchBalance",
+			network: "mina:devnet",
+			tokens: result.tokens.map((token) => ({
+			  address: token.address,
+			  decimal: 10 ** token.decimals,
+			  tokenId: token.tokenId,
+			  symbol: token.symbol
+			}))
+	})
 }
 
 // Watch for wallet ready state

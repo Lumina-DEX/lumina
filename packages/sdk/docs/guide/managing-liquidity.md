@@ -85,7 +85,7 @@ Dex.send({
 		pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 
 		// liquidity amount to withdraw
-		lpAmount: 10000,
+		lpAmount: "10000",
 
 		// Maximum allowed slippage in percentage
 		slippagePercent: 0.5

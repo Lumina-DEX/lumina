@@ -123,15 +123,16 @@ export function TokenList() {
 			setTokens(result.tokens)
 
 			// Update token balances in wallet
-			for (
-				const { address, symbol, tokenId, decimals, chainId } of result.tokens
-			) {
-				Wallet.send({
-					type: "FetchBalance",
-					networks: [chainId as Networks],
-					token: { address, decimal: 10 ** decimals, tokenId, symbol }
-				})
-			}
+			Wallet.send({
+				type: "FetchBalance",
+				network: "mina:devnet",
+				tokens: result.tokens.map((token) => ({
+					address: token.address,
+					decimal: 10 ** token.decimals,
+					tokenId: token.tokenId,
+					symbol: token.symbol
+				}))
+			})
 		} catch (error) {
 			console.error("Failed to fetch tokens:", error)
 		} finally {

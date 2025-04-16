@@ -1,5 +1,5 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
-import { Mina } from "o1js"
+import { Mina, PublicKey, TokenId } from "o1js"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
@@ -21,10 +21,10 @@ export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
 const emptyNetworkBalance = (): Balance => ({
-	"mina:mainnet": { MINA: 0 },
-	"mina:devnet": { MINA: 0 },
-	"zeko:testnet": { MINA: 0 },
-	"zeko:mainnet": { MINA: 0 }
+	"mina:mainnet": { MINA: { symbol: "MINA", balance: 0 } },
+	"mina:devnet": { MINA: { symbol: "MINA", balance: 0 } },
+	"zeko:testnet": { MINA: { symbol: "MINA", balance: 0 } },
+	"zeko:mainnet": { MINA: { symbol: "MINA", balance: 0 } }
 })
 
 const toNumber = (n: unknown) => {
@@ -110,27 +110,38 @@ export const createWalletMachine = (
 			 */
 			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) => {
 				const publicKey = input.address
-				const name = input.token?.symbol.toLocaleUpperCase() ?? "MINA"
-				const decimal = input.token?.decimal ?? 1e9
-				const settings = { tokenId: input.token ? input.token.tokenId : null, publicKey }
-
+				const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
+				const tokens = input.tokens.map((token) => {
+					return {
+						symbol: token.symbol,
+						decimal: token.decimal,
+						tokenId: "poolAddress" in token
+							? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
+							: token.tokenId,
+						publicKey
+					}
+				})
+				const allTokens = [mina, ...tokens]
 				const queries = Object.fromEntries(
-					input.networks.map((network) => [
-						network,
-						createMinaClient(urls[network]).query(FetchAccountBalanceQuery, settings)
+					allTokens.map((token) => [
+						token.tokenId ?? "MINA",
+						createMinaClient(urls[input.network]).query(FetchAccountBalanceQuery, {
+							tokenId: token.tokenId,
+							publicKey
+						}).toPromise()
 					])
 				)
 				const results = await Promise.all(Object.values(queries))
-
 				return Object.keys(queries).reduce(
-					(acc, network, index) => {
+					(acc, tokenId, index) => {
 						const result = results[index]
-						const balance = toNumber(result.data?.account?.balance?.total) / decimal
-						const [layer, netType] = (network as Networks).split(":") as [
+						const token = allTokens[index]
+						const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
+						const [layer, netType] = (input.network as Networks).split(":") as [
 							NetworkLayer,
 							ChainNetwork
 						]
-						acc[layer][netType][name] = balance
+						acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
 						return acc
 					},
 					{
@@ -223,9 +234,9 @@ export const createWalletMachine = (
 					src: "fetchBalance",
 					input: ({ context, event }) => {
 						if (event.type === "FetchBalance") {
-							return { address: context.account, token: event.token, networks: event.networks }
+							return { address: context.account, tokens: event.tokens, network: event.network }
 						}
-						return { address: context.account, networks: [context.currentNetwork] }
+						return { address: context.account, tokens: [], network: context.currentNetwork }
 					},
 					onDone: {
 						target: "READY",
