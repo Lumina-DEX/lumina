@@ -3,7 +3,6 @@ import {
   canDoDexAction,
   dexMachine,
   fetchPoolTokenList,
-  type Networks,
   type TokenDbToken,
   walletMachine
 } from "@lumina-dex/sdk"
@@ -64,10 +63,7 @@ const removedLiquiditySettings = computed(() =>
 )
 const removeLiquidityForm = reactive({
   pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
-  tokenAAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-  tokenAAmount: "5",
-  tokenBAddress: "MINA",
-  tokenBAmount: "5",
+  lpAmount: "5",
   slippagePercent: 0.5
 })
 
@@ -141,14 +137,7 @@ const calculateRemoveLiquidity = () => {
     type: "ChangeRemoveLiquiditySettings",
     settings: {
       pool: removeLiquidityForm.pool,
-      tokenA: {
-        address: removeLiquidityForm.tokenAAddress,
-        amount: removeLiquidityForm.tokenAAmount
-      },
-      tokenB: {
-        address: removeLiquidityForm.tokenBAddress,
-        amount: removeLiquidityForm.tokenBAmount
-      },
+      lpAmount: removeLiquidityForm.lpAmount,
       slippagePercent: removeLiquidityForm.slippagePercent
     }
   })
@@ -195,13 +184,16 @@ const handleClaimFromFaucet = () => {
 const fetchTokenBalances = async () => {
   const result = await fetchPoolTokenList("mina:devnet")
   tokens.value = result.tokens
-  for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
-    Wallet.send({
-      type: "FetchBalance",
-      networks: [chainId as Networks],
-      token: { address, decimal: 10 ** decimals, tokenId, symbol }
-    })
-  }
+  Wallet.send({
+    type: "FetchBalance",
+    network: "mina:devnet",
+    tokens: result.tokens.map((token) => ({
+      address: token.address,
+      decimal: 10 ** token.decimals,
+      tokenId: token.tokenId,
+      symbol: token.symbol
+    }))
+  })
 }
 
 onMounted(() => {
@@ -297,20 +289,8 @@ const notEmpty = (obj: Reactive<unknown>) =>
     <div>
       <input v-model="removeLiquidityForm.pool" placeholder="Pool Address">
       <input
-        v-model="removeLiquidityForm.tokenAAddress"
-        placeholder="Token A Address"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenAAmount"
-        placeholder="Token A Amount"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenBAddress"
-        placeholder="Token B Address"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenBAmount"
-        placeholder="Token B Amount"
+        v-model="removeLiquidityForm.lpAmount"
+        placeholder="LP Amount"
       >
       <input
         v-model="removeLiquidityForm.slippagePercent"

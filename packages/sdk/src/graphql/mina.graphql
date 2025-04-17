@@ -27,6 +27,9 @@ type subscription {
   chainReorganization: ChainReorganizationStatus!
 }
 
+"""Proof bundle for a given spec in json format"""
+scalar ProofBundleInput
+
 """A transaction encoded in the Rosetta format"""
 scalar RosettaTransaction
 
@@ -551,6 +554,14 @@ type mutation {
 
   """Send a transaction in Rosetta format"""
   sendRosettaTransaction(input: RosettaTransaction!): SendRosettaTransactionPayload!
+
+  """Transaction SNARKs for a given spec"""
+  sendProofBundle(
+    """
+    Proof bundle for a given spec in json format including fees and prover public key
+"""
+    input: ProofBundleInput!
+  ): String!
 }
 
 enum Encoding {
@@ -737,6 +748,31 @@ type MembershipInfo {
 
   """Membership proof in the snarked ledger"""
   merklePath: [MerklePathElement!]!
+}
+
+"""
+Witnesses and statements for snark work bundles. Includes optional fees and prover public keys for ones that have proofs in the snark pool
+"""
+type WorkBundleSpec {
+  """Snark work specification in json format"""
+  spec: String!
+
+  """Fee if proof for the spec exists in snark pool"""
+  snarkFee: Fee
+
+  """Prover public key if proof for the spec exists in snark pool"""
+  snarkProverKey: PublicKey
+
+  """Unique identifier for a snark work"""
+  workIds: [Int!]!
+}
+
+"""
+Snark work witnesses and statements that are yet to be proven or included in blocks
+"""
+type PendingSnarkWorkSpec {
+  """Work bundle spec with one or two snark work"""
+  workBundleSpec: WorkBundleSpec!
 }
 
 """
@@ -2177,6 +2213,19 @@ type query {
 
   """List of snark works that are yet to be done"""
   pendingSnarkWork: [PendingSnarkWork!]!
+
+  """
+  Find any sequence of snark work between two indexes in all available snark work. Returns both completed and uncompleted work.
+"""
+  snarkWorkRange(
+    """
+    The last index to be taken from all available snark work (exclusive). If not specified or greater than the available snark work list,all elements from index [startingIndex] will be returned. An empty list will be returned if startingIndex is not a valid index or if startingIndex >= endingIndex.
+"""
+    endingIndex: UInt32
+
+    """The first index to be taken from all available snark work"""
+    startingIndex: UInt32!
+  ): [PendingSnarkWorkSpec!]!
 
   """
   obtain a membership proof for an account in the snarked ledger along with the account's balance, timing information, and nonce

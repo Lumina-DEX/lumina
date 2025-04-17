@@ -4,26 +4,50 @@ export type Networks = keyof typeof urls
 export type Urls = (typeof urls)[Networks]
 
 export type Balance = {
-	[n in NetworkUri]: Record<string, number>
+	[n in NetworkUri]: Record<TokenId, TokenInfo>
+}
+
+type TokenId = string
+
+interface TokenInfo {
+	symbol: string
+	balance: number
 }
 
 type TokenBalance = {
-	[cn in ChainNetwork]: Record<string, number>
+	[cn in ChainNetwork]: Record<TokenId, TokenInfo>
 }
 
-export type TokenBalances = {
+export interface TokenBalances {
 	mina: Omit<TokenBalance, "testnet">
 	zeko: Omit<TokenBalance, "devnet">
 }
 
-export type AllTokenBalances = {
+export interface AllTokenBalances {
 	mina: TokenBalance
 	zeko: TokenBalance
 }
 
-export type CustomToken = { address: string; symbol: string; decimal: number; tokenId: string }
+export type CustomToken = SimpleToken | LuminaLPToken
 
-export type FetchBalanceInput = { address: string; token?: CustomToken; networks: Networks[] }
+export interface SimpleToken {
+	address: string
+	symbol: string
+	decimal: number
+	tokenId: string
+}
+
+export interface LuminaLPToken {
+	poolAddress: string
+	decimal: number
+	symbol: string
+}
+
+export interface FetchBalanceInput {
+	address: string
+	tokens: CustomToken[]
+	network: Networks
+}
 
 export type WalletEvent =
 	| { type: "RequestNetworkChange"; network: Networks }
@@ -31,7 +55,7 @@ export type WalletEvent =
 	| { type: "Connect" }
 	| { type: "Disconnect" }
 	| { type: "SetAccount"; account: string }
-	| { type: "FetchBalance"; token?: CustomToken; networks: Networks[] }
+	| { type: "FetchBalance"; network: Networks; tokens: CustomToken[] }
 
 export type WalletEmit =
 	| { type: "NetworkChanged"; network: Networks }

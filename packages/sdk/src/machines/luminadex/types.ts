@@ -152,7 +152,7 @@ export interface AddLiquiditySettings {
 
 export interface RemoveLiquiditySettings {
 	pool: string
-	lpAmount: number
+	lpAmount: string
 	slippagePercent: number
 }
 

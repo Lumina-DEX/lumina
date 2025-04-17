@@ -151,7 +151,7 @@ Dex.send({
 	type: "ChangeRemoveLiquiditySettings",
 	settings: {
 		pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
-		lpAmount : 100
+		lpAmount : "100"
 		slippagePercent: 0.5
 	}
 })
