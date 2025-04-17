@@ -55,11 +55,7 @@ export type WalletEvent =
 	| { type: "Connect" }
 	| { type: "Disconnect" }
 	| { type: "SetAccount"; account: string }
-	| {
-		type: "FetchBalance"
-		network: Networks
-		tokens: CustomToken[]
-	}
+	| { type: "FetchBalance"; network: Networks; tokens: CustomToken[] }
 
 export type WalletEmit =
 	| { type: "NetworkChanged"; network: Networks }
