@@ -1,11 +1,15 @@
 import { defineConfig } from "vitepress"
 import d2Plugin from "vitepress-plugin-d2"
 import { type Config, Theme } from "vitepress-plugin-d2/dist/config"
+import llmstxt from "vitepress-plugin-llms"
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
 	title: "LuminaDex SDK",
 	description: "SDK for interacting with the Lumina DEX on the Mina blockchain",
+	vite: {
+		plugins: [llmstxt()]
+	},
 	markdown: {
 		config: (md) => {
 			md.use(
@@ -29,6 +33,12 @@ export default defineConfig({
 	],
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
+		search: {
+			provider: "local",
+			options: {
+				detailedView: true
+			}
+		},
 		nav: [
 			{ text: "Home", link: "/" },
 			{ text: "Getting Started", link: "/guide/getting-started" },
@@ -77,6 +87,10 @@ export default defineConfig({
 		socialLinks: [
 			{ icon: "github", link: "https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk" }
 		],
+		editLink: {
+			text: "Edit this page on GitHub",
+			pattern: "https://github.com/Lumina-DEX/lumina/edit/main/packages/sdk/docs/:path"
+		},
 		footer: {
 			message: "Released under the MIT License.",
 			copyright: "Copyright © 2025-present Lumina DEX"
