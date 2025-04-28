@@ -1,4 +1,3 @@
-import type { ProviderError, SendZkTransactionResult } from "@aurowallet/mina-provider"
 import type * as Comlink from "comlink"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
@@ -134,6 +133,7 @@ export interface LuminaDexMachineInput {
 
 export interface InputDexWorker {
 	worker: DexWorker
+	wallet: WalletActorRef
 }
 
 export interface SwapSettings {
@@ -173,4 +173,4 @@ export type ContractName =
 	| "FungibleTokenAdmin"
 	| "Faucet"
 
-export type DexTransactionResult = SendZkTransactionResult | ProviderError | null
+export type DexTransactionResult = { hash: string; url: string } | null

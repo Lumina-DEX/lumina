@@ -1,4 +1,5 @@
 import { AccountUpdate, Field, Mina, PublicKey, type Types } from "o1js"
+import type { WalletActorRef } from "../machines/wallet/actors"
 import { logger } from "./logs"
 
 export const l1NodeUrl = "https://api.minascan.io/node/devnet/v1/graphql"
@@ -70,14 +71,31 @@ export const applyAccountUpdates = (tx: Mina.Transaction<false, false>, accountU
 	return tx
 }
 
-export const sendTransaction = async (tx: Mina.Transaction<false, false> | string) => {
+export const sendTransaction = async (
+	{ tx, wallet }: { tx: Mina.Transaction<false, false> | string; wallet: WalletActorRef }
+) => {
 	const transaction = typeof tx === "string" ? tx : tx.toJSON()
 	// Sign the transaction with the wallet
-	const updateResult = await window.mina.sendTransaction({
-		onlySign: false, // only sign zkCommond, not broadcast.
-		transaction
-	})
-	// TODO: Save the hash in localStorage to track the state
-	logger.success("Transaction sent", updateResult)
-	return updateResult
+	const updateResult = await window.mina.sendTransaction({ onlySign: false, transaction })
+	if ("hash" in updateResult) {
+		// Save transaction with timestamp for ordering
+		const timestamp = Date.now()
+		const { currentNetwork, account } = wallet.getSnapshot().context
+		const storageKey = `lumina-tx-${timestamp}-${currentNetwork}-${account}-${updateResult.hash}`
+		localStorage.setItem(
+			storageKey,
+			JSON.stringify({
+				hash: updateResult.hash,
+				timestamp,
+				transaction
+			})
+		)
+		logger.success("Transaction sent and saved to localStorage", updateResult)
+		return {
+			hash: updateResult.hash,
+			url: `https://zekoscan.io/testnet/account/${updateResult.hash}/zk-txs`
+		}
+	}
+	logger.error("Transaction failed", updateResult)
+	return null
 }
