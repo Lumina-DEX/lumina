@@ -1,5 +1,12 @@
 # @lumina-dex/sdk
 
+## 0.13.0
+
+### Minor Changes
+
+- e1c8273: Add hash and url to transaction results
+- 61f9406: add custom fund new account to support zeko
+
 ## 0.12.0
 
 ### Minor Changes
