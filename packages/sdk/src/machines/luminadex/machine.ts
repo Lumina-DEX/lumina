@@ -61,7 +61,10 @@ const walletNetwork = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().con
 
 const walletUser = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.account
 
-const inputWorker = (c: LuminaDexMachineContext) => ({ worker: c.contract.worker })
+const inputWorker = (c: LuminaDexMachineContext) => ({
+	worker: c.contract.worker,
+	wallet: c.wallet
+})
 
 const luminaDexFactory = (c: LuminaDexMachineContext) => luminadexFactories[walletNetwork(c)]
 
@@ -161,58 +164,58 @@ export const createLuminaDexMachine = () => {
 			claim: fromPromise(
 				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) =>
 					act("claim", async (stop) => {
-						const { worker, user, faucet } = input
-						const txJson = await worker.claim({ user, faucet })
+						const { worker, wallet, user, faucet } = input
+						const tx = await worker.claim({ user, faucet })
 						stop()
-						return await sendTransaction(txJson)
+						return await sendTransaction({ tx, wallet })
 					})
 			),
 			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
 				return act("swap", async (stop) => {
-					const { worker, ...swapSettings } = input
-					const txJson = await worker.swap(swapSettings)
+					const { worker, wallet, ...swapSettings } = input
+					const tx = await worker.swap(swapSettings)
 					stop()
-					return await sendTransaction(txJson)
+					return await sendTransaction({ tx, wallet })
 				})
 			}),
 			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) =>
 				act("addLiquidity", async (stop) => {
-					const { worker, ...config } = input
-					const txJson = await worker.addLiquidity(config)
+					const { worker, wallet, ...config } = input
+					const tx = await worker.addLiquidity(config)
 					stop()
-					return await sendTransaction(txJson)
+					return await sendTransaction({ tx, wallet })
 				})
 			),
 			removeLiquidity: fromPromise(
 				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
 					return act("removeLiquidity", async (stop) => {
-						const { worker, ...config } = input
-						const txJson = await worker.withdrawLiquidity(config)
+						const { worker, wallet, ...config } = input
+						const tx = await worker.withdrawLiquidity(config)
 						stop()
-						return await sendTransaction(txJson)
+						return await sendTransaction({ tx, wallet })
 					})
 				}
 			),
 			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) =>
 				act("mintToken", async (stop) => {
-					const { worker, ...config } = input
-					const txJson = await worker.mintToken(config)
+					const { worker, wallet, ...config } = input
+					const tx = await worker.mintToken(config)
 					stop()
-					return await sendTransaction(txJson)
+					return await sendTransaction({ tx, wallet })
 				})
 			),
 			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) =>
 				act("deployPool", async (stop) => {
-					const { worker, ...config } = input
-					const txJson = await worker.deployPoolInstance(config)
+					const { worker, wallet, ...config } = input
+					const tx = await worker.deployPoolInstance(config)
 					stop()
-					return await sendTransaction(txJson)
+					return await sendTransaction({ tx, wallet })
 				})
 			),
 			deployToken: fromPromise(
 				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) =>
 					act("deployToken", async (stop) => {
-						const { worker, symbol, user } = input
+						const { worker, symbol, wallet, user } = input
 						// TokenKey
 						const tk = PrivateKey.random()
 						const tokenKey = tk.toBase58()
@@ -222,9 +225,9 @@ export const createLuminaDexMachine = () => {
 						const tokenAdminKey = tak.toBase58()
 						const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
 
-						const txJson = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
+						const tx = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
 						stop()
-						const transactionOutput = await sendTransaction(txJson)
+						const transactionOutput = await sendTransaction({ tx, wallet })
 						return {
 							transactionOutput,
 							token: { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
