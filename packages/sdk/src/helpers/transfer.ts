@@ -75,20 +75,19 @@ export const sendTransaction = async (
 	{ tx, wallet }: { tx: Mina.Transaction<false, false> | string; wallet: WalletActorRef }
 ) => {
 	const transaction = typeof tx === "string" ? tx : tx.toJSON()
-	// Sign the transaction with the wallet
 	const updateResult = await window.mina.sendTransaction({ onlySign: false, transaction })
+	if (updateResult instanceof Error) {
+		logger.error("Transaction failed", updateResult)
+		throw updateResult
+	}
 	if ("hash" in updateResult) {
-		// Save transaction with timestamp for ordering
 		const timestamp = Date.now()
 		const { currentNetwork, account } = wallet.getSnapshot().context
-		const storageKey = `lumina-tx-${timestamp}-${currentNetwork}-${account}-${updateResult.hash}`
+		const hash = updateResult.hash
+		const storageKey = `lumina-sdk-tx-${timestamp}-${currentNetwork}-${account}-${hash}`
 		localStorage.setItem(
 			storageKey,
-			JSON.stringify({
-				hash: updateResult.hash,
-				timestamp,
-				transaction
-			})
+			JSON.stringify({ timestamp, currentNetwork, account, hash, transaction })
 		)
 		logger.success("Transaction sent and saved to localStorage", updateResult)
 		return {
@@ -96,6 +95,6 @@ export const sendTransaction = async (
 			url: `https://zekoscan.io/testnet/account/${updateResult.hash}/zk-txs`
 		}
 	}
-	logger.error("Transaction failed", updateResult)
-	return null
+	logger.warn("An unexpected transaction result was received", updateResult)
+	return { hash: "", url: "" }
 }
