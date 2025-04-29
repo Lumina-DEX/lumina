@@ -46,6 +46,7 @@ type Nullable<T> = T | null
 type WorkerState = {
 	readonly contracts: Contracts
 	readonly transaction: Nullable<Transaction>
+	readonly network: Nullable<NetworkUri>
 }
 
 const las = new Map<string, string>()
@@ -68,14 +69,16 @@ const getLuminaAddress = async (
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	transaction: null
+	transaction: null,
+	network: null
 }
 
 const workerState = createStore({
 	context: initialState,
 	on: {
 		SetContracts: { contracts: (_, event: { contracts: Contracts }) => event.contracts },
-		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction }
+		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction },
+		SetNetwork: { network: (_, event: { network: NetworkUri }) => event.network }
 	}
 })
 
@@ -158,8 +161,6 @@ const getZkTokenFromPool = async (pool: string) => {
 	return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 }
 
-let network: NetworkUri | null = null
-
 /**
  * Use this method to pay the account creation fee for another account (or, multiple accounts using the optional second argument).
  * (Based on native o1js method)
@@ -173,13 +174,12 @@ let network: NetworkUri | null = null
  */
 const fundNewAccount = async (feePayer: PublicKey, numberOfAccounts = 1) => {
 	try {
-		const isZeko = network === "zeko:testnet" || network === "zeko:mainnet"
+		const isZeko = workerState.getSnapshot().context.network?.includes("zeko")
 		const accountUpdate = AccountUpdate.createSigned(feePayer)
 		accountUpdate.label = "AccountUpdate.fundNewAccount()"
-		let fee = isZeko
+		const fee = (isZeko
 			? UInt64.from(10 ** 8)
-			: Mina.activeInstance.getNetworkConstants().accountCreationFee
-		fee = fee.mul(numberOfAccounts)
+			: Mina.activeInstance.getNetworkConstants().accountCreationFee).mul(numberOfAccounts)
 		accountUpdate.balance.subInPlace(fee)
 		return accountUpdate
 	} catch (error) {
@@ -633,7 +633,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 }
 
 const minaInstance = (networkUrl: NetworkUri) => {
-	network = networkUrl
+	workerState.send({ type: "SetNetwork", network: networkUrl })
 	const url = urls[networkUrl]
 	Mina.setActiveInstance(Mina.Network(url))
 	logger.success("Mina instance set", url)
