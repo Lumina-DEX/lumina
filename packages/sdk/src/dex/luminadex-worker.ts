@@ -46,6 +46,7 @@ type Nullable<T> = T | null
 type WorkerState = {
 	readonly contracts: Contracts
 	readonly transaction: Nullable<Transaction>
+	readonly network: Nullable<NetworkUri>
 }
 
 const las = new Map<string, string>()
@@ -68,14 +69,16 @@ const getLuminaAddress = async (
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	transaction: null
+	transaction: null,
+	network: null
 }
 
 const workerState = createStore({
 	context: initialState,
 	on: {
 		SetContracts: { contracts: (_, event: { contracts: Contracts }) => event.contracts },
-		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction }
+		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction },
+		SetNetwork: { network: (_, event: { network: NetworkUri }) => event.network }
 	}
 })
 
@@ -158,6 +161,33 @@ const getZkTokenFromPool = async (pool: string) => {
 	return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 }
 
+/**
+ * Use this method to pay the account creation fee for another account (or, multiple accounts using the optional second argument).
+ * (Based on native o1js method)
+ * Beware that you _don't_ need to specify the account that is created!
+ * Instead, the protocol will automatically identify that accounts need to be created,
+ * and require that the net balance change of the transaction covers the account creation fee.
+ *
+ * @param feePayer the address of the account that pays the fee
+ * @param numberOfAccounts the number of new accounts to fund (default: 1)
+ * @returns they {@link AccountUpdate} for the account which pays the fee
+ */
+const fundNewAccount = async (feePayer: PublicKey, numberOfAccounts = 1) => {
+	try {
+		const isZeko = workerState.getSnapshot().context.network?.includes("zeko")
+		const accountUpdate = AccountUpdate.createSigned(feePayer)
+		accountUpdate.label = "AccountUpdate.fundNewAccount()"
+		const fee = (isZeko
+			? UInt64.from(10 ** 8)
+			: Mina.activeInstance.getNetworkConstants().accountCreationFee).mul(numberOfAccounts)
+		accountUpdate.balance.subInPlace(fee)
+		return accountUpdate
+	} catch (error) {
+		logger.error("fund new account", error)
+		return AccountUpdate.fundNewAccount(feePayer, numberOfAccounts)
+	}
+}
+
 export interface DeployPoolArgs {
 	tokenA: string
 	tokenB: string
@@ -197,7 +227,7 @@ const deployPoolInstance = async (
 	const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 	logger.debug({ isMinaTokenPool })
 	const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-		AccountUpdate.fundNewAccount(PublicKey.fromBase58(user), 4)
+		fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (isMinaTokenPool) {
 			const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 			await zkFactory.createPool(
@@ -241,7 +271,7 @@ const deployToken = async ({ user, tokenKey, tokenAdminKey, symbol }: DeployToke
 	const zkTokenAdmin = new contracts.FungibleTokenAdmin(tokenAdminPrivateKey.toPublicKey())
 	logger.debug({ zkToken, zkTokenAdmin })
 	const transaction = await Mina.transaction(userPublicKey, async () => {
-		AccountUpdate.fundNewAccount(userPublicKey, 3)
+		fundNewAccount(userPublicKey, 3)
 		await zkTokenAdmin.deploy({
 			adminPublicKey: userPublicKey
 		})
@@ -281,7 +311,7 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 	})
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, acc.account ? 0 : 1)
+		fundNewAccount(userKey, acc.account ? 0 : 1)
 		await zkToken.mint(receiver, tokenAmount)
 	})
 
@@ -389,7 +419,7 @@ const swap = async (args: SwapArgs) => {
 			logger.debug({ zkPool })
 			await zkPool.swapFromTokenToMina(...swapArgList)
 		} else {
-			AccountUpdate.fundNewAccount(userKey, total)
+			fundNewAccount(userKey, total)
 			const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
 			logger.debug({ zkPoolHolder })
 			await zkPoolHolder
@@ -475,7 +505,7 @@ const addLiquidity = async (args: AddLiquidity) => {
 	}
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, newAccount)
+		fundNewAccount(userKey, newAccount)
 		await createSupplyLiquidity({ tokenA: args.tokenA, tokenB: args.tokenB, supply })
 	})
 
@@ -595,7 +625,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	logger.debug({ newAcc, newFau, total })
 
 	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, total)
+		fundNewAccount(userKey, total)
 		await zkFaucet.claim()
 		await zkToken.approveAccountUpdate(zkFaucet.self)
 	})
@@ -603,6 +633,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 }
 
 const minaInstance = (networkUrl: NetworkUri) => {
+	workerState.send({ type: "SetNetwork", network: networkUrl })
 	const url = urls[networkUrl]
 	Mina.setActiveInstance(Mina.Network(url))
 	logger.success("Mina instance set", url)
