@@ -103,23 +103,23 @@ You can fetch token data and update balances as follows:
 
 ```tsx
 import {
-	fetchPoolTokenList,
-	type Networks,
-	type TokenDbToken
+	fetchTokenList,
+	type LuminaToken,
+	type Networks
 } from "@lumina-dex/sdk"
 import { useContext, useEffect, useState } from "react"
 import { LuminaContext } from "../providers/LuminaProvider"
 
 export function TokenList() {
 	const { Wallet } = useContext(LuminaContext)
-	const [tokens, setTokens] = useState<TokenDbToken[]>([])
+	const [tokens, setTokens] = useState<LuminaToken[]>([])
 	const [loading, setLoading] = useState(false)
 
 	const fetchTokens = async () => {
 		setLoading(true)
 		try {
 			// Fetch token list from CDN
-			const result = await fetchPoolTokenList("mina:devnet")
+			const result = await fetchTokenList("mina:devnet")
 			setTokens(result.tokens)
 
 			// Update token balances in wallet

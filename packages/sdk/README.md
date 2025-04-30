@@ -143,16 +143,18 @@ const connect = () => Wallet.send({ type: "Connect" })
 ## Data Fetching
 
 ```ts
-import { fetchPoolTokenList } from "@lumina-dex/sdk"
+import { fetchPoolList, fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
-const result = await fetchPoolTokenList("mina:devnet")
+const tokens = await fetchTokenList("mina:devnet")
+const pools = await fetchPoolList("mina:devnet")
 console.log("Token list:", result.tokens)
+console.log("Pool list:", result.pools)
 
 // For direct blockchain queries (slower, use server-side)
-import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
+import { fetchAllFromPoolFactory } from "@lumina-dex/sdk"
 
-const tokens = await fetchAllTokensFromPoolFactory({
+const { tokens, pools } = await fetchAllFromPoolFactory({
 	network: "mina:devnet"
 })
 ```

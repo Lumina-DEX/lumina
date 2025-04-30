@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { LuminaContext } from "../main"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { fetchPoolTokenList, type TokenDbToken } from "@lumina-dex/sdk"
+import { fetchTokenList, type LuminaToken } from "@lumina-dex/sdk"
 import { version } from "../../../sdk/package.json" with { type: "json" }
 
 export const Route = createFileRoute("/")({
@@ -17,10 +17,10 @@ function HomeComponent() {
 
 	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:devnet"])
 
-	const [tokens, setTokens] = useState<TokenDbToken[]>([])
+	const [tokens, setTokens] = useState<LuminaToken[]>([])
 
 	const fetchTokenBalances = useCallback(async () => {
-		const result = await fetchPoolTokenList("mina:devnet")
+		const result = await fetchTokenList("mina:devnet")
 		setTokens(result.tokens)
 		Wallet.send({
 			type: "FetchBalance",

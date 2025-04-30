@@ -5,7 +5,14 @@ import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
 import type { Networks } from "../machines/wallet/machine"
 
-export interface TokenDbToken {
+export interface LuminaPool {
+	address: string
+	tokens: [LuminaToken, LuminaToken]
+	chainId: string
+	name: string
+}
+
+export interface LuminaToken {
 	address: string
 	poolAddress: string
 	chainId: string
@@ -23,7 +30,19 @@ export interface TokenDbList {
 		patch: number
 	}
 	keywords: string[]
-	tokens: TokenDbToken[]
+	tokens: LuminaToken[]
+}
+
+export interface PoolDbList {
+	name: string
+	timestamp: string
+	version: {
+		major: number
+		minor: number
+		patch: number
+	}
+	keywords: string[]
+	pools: LuminaPool[]
 }
 
 interface PoolAddedEventData {
@@ -80,44 +99,101 @@ const fetchEventsByBlockspace = async <T>(
 	}
 }
 
-const toTokens = async (
-	{ poolAddress, token1Address, network }: {
-		poolAddress: PublicKey
-		token1Address: PublicKey
-		network: Networks
-	}
+const getTokensAndPoolsFromPoolData = async (
+	{ poolData, network }: { poolData: PoolAddedEventData[]; network: Networks }
 ) => {
-	// // console.log([poolAddress.toJSON(), token1Address.toJSON()])
-	const token = await fetchAccount({ publicKey: token1Address })
-	if (token.error) throw token.error
-	const symbol = token?.account?.tokenSymbol ?? "UNKNOWN_TOKEN_SYMBOL"
-	const tokenId = TokenId.toBase58(new FungibleToken(token1Address).deriveTokenId())
-	// // console.log({ tokenId, symbol })
+	const toToken = async ({ poolAddress, tokenAddress, network }: {
+		poolAddress: PublicKey
+		tokenAddress: PublicKey
+		network: Networks
+	}): Promise<LuminaToken> => {
+		if (tokenAddress.toBase58() === "B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG") {
+			return {
+				address: tokenAddress.toBase58(),
+				poolAddress: poolAddress.toBase58(),
+				tokenId: "MINA",
+				chainId: network,
+				symbol: "MINA",
+				decimals: 9
+			}
+		}
+		const token = await fetchAccount({ publicKey: tokenAddress })
+		if (token.error) throw token.error
+		const symbol = token?.account?.tokenSymbol ?? "UNKNOWN_TOKEN_SYMBOL"
+		const tokenId = TokenId.toBase58(new FungibleToken(tokenAddress).deriveTokenId())
 
-	return {
-		address: token1Address.toBase58(),
-		poolAddress: poolAddress.toBase58(),
-		tokenId,
-		chainId: network,
-		symbol,
-		decimals: 9
+		return {
+			address: tokenAddress.toBase58(),
+			poolAddress: poolAddress.toBase58(),
+			tokenId,
+			chainId: network,
+			symbol,
+			decimals: 9
+		}
 	}
+
+	const toPool = async ({ poolAddress, token0, token1, network }: {
+		poolAddress: PublicKey
+		token0: LuminaToken
+		token1: LuminaToken
+		network: Networks
+	}): Promise<LuminaPool> => ({
+		address: poolAddress.toBase58(),
+		tokens: [token0, token1],
+		chainId: network,
+		name: `${token0.symbol}_${token1.symbol}-LLP`
+	})
+
+	const pools = new Map<string, LuminaPool>()
+	const tokens = new Map<string, LuminaToken>()
+
+	// Collect unique token fetches
+	const tokenFetches = []
+	for (const { poolAddress, token0Address, token1Address } of poolData) {
+		for (const addr of [token0Address, token1Address]) {
+			const key = addr.toBase58()
+			if (!tokens.has(key)) {
+				tokenFetches.push(
+					toToken({ poolAddress, tokenAddress: addr, network })
+						.then(token => ({ key, token }))
+				)
+			}
+		}
+	}
+	for (const { key, token } of processSettledPromises(await Promise.allSettled(tokenFetches))) {
+		tokens.set(key, token)
+	}
+
+	// Collect pool fetches
+	const poolFetches = poolData.map(({ poolAddress, token0Address, token1Address }) => {
+		const token0 = tokens.get(token0Address.toBase58())
+		const token1 = tokens.get(token1Address.toBase58())
+		if (!token0 || !token1) return null
+		return toPool({ poolAddress, token0, token1, network })
+			.then(pool => ({ key: poolAddress.toBase58(), pool }))
+	}).filter(Boolean)
+
+	for (const { key, pool } of processSettledPromises(await Promise.allSettled(poolFetches))) {
+		pools.set(key, pool)
+	}
+
+	return { pools, tokens }
 }
 
-const processTypedEvents = (
+const processTypedEvents = async (
 	{ events, network }: {
 		network: Networks
 		events: Awaited<ReturnType<typeof internal_fetchAllPoolFactoryEvents>>["events"]
 	}
 ) => {
-	return events.filter(event => event.type === "poolAdded").map((event) => {
-		const data = event.event.data as unknown as PoolAddedEventData
-		const { poolAddress, token1Address } = data
-		return toTokens({ poolAddress, token1Address, network })
+	const poolData = events.filter(event => event.type === "poolAdded").map((event) => {
+		return event.event.data as unknown as PoolAddedEventData
 	})
+	const { pools, tokens } = await getTokensAndPoolsFromPoolData({ poolData, network })
+	return { pools, tokens }
 }
 
-const processRawEvents = (
+const processRawEvents = async (
 	{ events, network }: {
 		network: Networks
 		events: Awaited<ReturnType<typeof internal_fetchAllZekoPoolFactoryEvents>>["events"]
@@ -151,12 +227,13 @@ const processRawEvents = (
 		}) as PoolAddedEventData
 	}
 	// TODO: Find out if there's a more robust way to filter the events than their length
-	return events.filter(event => event.eventData[0].data.length === 11).map((event) => {
+	const poolData = events.filter(event => event.eventData[0].data.length === 11).map((event) => {
 		const data = event.eventData[0].data
-		// console.log({ data })
-		const { poolAddress, token1Address } = parsePoolEvents(data)
-		return toTokens({ poolAddress, token1Address, network })
+		return parsePoolEvents(data)
 	})
+
+	const { pools, tokens } = await getTokensAndPoolsFromPoolData({ poolData, network })
+	return { pools, tokens }
 }
 
 /**
@@ -192,9 +269,9 @@ export const internal_fetchAllZekoPoolFactoryEvents = async (network: Networks) 
 }
 
 /**
- * Fetch all tokens from the pool factory.
+ * Fetch pools and tokens from the pool factory.
  */
-export const fetchAllTokensFromPoolFactory = async (
+export const fetchAllFromPoolFactory = async (
 	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
 ) => {
 	Mina.setActiveInstance(minaNetwork(network))
@@ -202,25 +279,58 @@ export const fetchAllTokensFromPoolFactory = async (
 		const { events, currentBlock, startBlock } = await internal_fetchAllZekoPoolFactoryEvents(
 			network
 		)
-		const settledTokens = await Promise.allSettled(processRawEvents({ events, network }))
-		const tokens = processSettledPromises(settledTokens)
-		return { tokens, startBlock, currentBlock }
+		const { tokens, pools } = await processRawEvents({ events, network })
+		return { tokens, pools, startBlock, currentBlock }
 	}
 	const { events, currentBlock, startBlock } = await internal_fetchAllPoolFactoryEvents({
 		network,
 		factory,
 		from
 	})
-	const settledTokens = await Promise.allSettled(processTypedEvents({ events, network }))
-	const tokens = processSettledPromises(settledTokens)
+	const { tokens, pools } = await processTypedEvents({ events, network })
+	return { tokens, pools, startBlock, currentBlock }
+}
+
+/**
+ * Fetch all tokens from the pool factory.
+ */
+export const fetchAllTokensFromPoolFactory = async (
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+) => {
+	const { tokens, startBlock, currentBlock } = await fetchAllFromPoolFactory({
+		network,
+		factory,
+		from
+	})
 	return { tokens, startBlock, currentBlock }
+}
+
+/**
+ * Fetch all pools from the pool factory.
+ */
+export const fetchAllPoolsFromPoolFactory = async (
+	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+) => {
+	const { pools, startBlock, currentBlock } = await fetchAllFromPoolFactory({
+		network,
+		factory,
+		from
+	})
+	return { pools, startBlock, currentBlock }
 }
 
 /**
  * Fetches the token list from the CDN.
  */
-export const fetchPoolTokenList = async (network: Networks) => {
+export const fetchTokenList = async (network: Networks) => {
 	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
 	const tokens = await response.json() as TokenDbList
 	return tokens
+}
+
+// TODO: To implement
+export const fetchPoolList = async (network: Networks) => {
+	// const response = await fetch(`${luminaCdnOrigin}/api/${network}/pools`)
+	// const pools = await response.json()
+	// return pools
 }

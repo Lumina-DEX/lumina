@@ -2,8 +2,8 @@
 import {
   canDoDexAction,
   dexMachine,
-  fetchPoolTokenList,
-  type TokenDbToken,
+  fetchTokenList,
+  type LuminaToken,
   walletMachine
 } from "@lumina-dex/sdk"
 import { useActor } from "@lumina-dex/sdk/vue"
@@ -33,7 +33,7 @@ const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:devnet"]
 )
-const tokens = ref<TokenDbToken[]>([])
+const tokens = ref<LuminaToken[]>([])
 
 // Form states for each operation
 
@@ -182,7 +182,7 @@ const handleClaimFromFaucet = () => {
 }
 
 const fetchTokenBalances = async () => {
-  const result = await fetchPoolTokenList("mina:devnet")
+  const result = await fetchTokenList("mina:devnet")
   tokens.value = result.tokens
   Wallet.send({
     type: "FetchBalance",
