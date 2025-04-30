@@ -108,7 +108,7 @@ export interface LuminaPool {
 	address: string
 	tokens: [LuminaToken, LuminaToken]
 	chainId: string
-	symbol: string
+	name: string
 }
 ```
 
