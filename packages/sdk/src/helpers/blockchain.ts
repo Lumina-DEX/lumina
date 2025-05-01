@@ -1,5 +1,6 @@
 import { FungibleToken, PoolFactory } from "@lumina-dex/contracts"
 import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 } from "o1js"
+import pLimit from "p-limit"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
@@ -76,15 +77,21 @@ const fetchEventsByBlockspace = async <T>(
 		from?: number
 	}
 ) => {
+	// Concurrency limit
+	const limit = pLimit(10)
+
 	const firstBlock = from ?? startBlock[network]
 	const currentBlock = await fetchLastBlock()
 	const nbToFetch = Math.ceil(
 		(Number(currentBlock.blockchainLength.toBigint()) - firstBlock) / blockScanRange
 	)
+
 	const tokenPromises = Array.from({ length: nbToFetch }, (_, index) =>
-		eventFetch(
-			UInt32.from(firstBlock + index * blockScanRange),
-			UInt32.from(firstBlock + (index + 1) * blockScanRange)
+		limit(() =>
+			eventFetch(
+				UInt32.from(firstBlock + index * blockScanRange),
+				UInt32.from(firstBlock + (index + 1) * blockScanRange)
+			)
 		))
 	// console.log(
 	// 	`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
@@ -103,14 +110,16 @@ const fetchEventsByBlockspace = async <T>(
 const getTokensAndPoolsFromPoolData = async (
 	{ poolData, network }: { poolData: PoolAddedEventData[]; network: SupportedNetwork }
 ) => {
+	// Conccurency limit
+	const limit = pLimit(10)
+
 	const toToken = async ({ poolAddress, tokenAddress, network }: {
 		poolAddress: PublicKey
 		tokenAddress: PublicKey
 		network: SupportedNetwork
 	}): Promise<LuminaToken> => {
-		// MINA token address is a special case
-		// TODO: Find a better way to detect the MINA token address
-		if (tokenAddress.toBase58() === "B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG") {
+		// MINA token address is empty
+		if (tokenAddress.isEmpty().toBoolean()) {
 			return {
 				address: tokenAddress.toBase58(),
 				poolAddress: poolAddress.toBase58(),
@@ -135,12 +144,12 @@ const getTokensAndPoolsFromPoolData = async (
 		}
 	}
 
-	const toPool = async ({ poolAddress, token0, token1, network }: {
+	const toPool = ({ poolAddress, token0, token1, network }: {
 		poolAddress: PublicKey
 		token0: LuminaToken
 		token1: LuminaToken
 		network: SupportedNetwork
-	}): Promise<LuminaPool> => ({
+	}): LuminaPool => ({
 		address: poolAddress.toBase58(),
 		tokens: [token0, token1],
 		chainId: network,
@@ -150,16 +159,20 @@ const getTokensAndPoolsFromPoolData = async (
 	const pools = new Map<string, LuminaPool>()
 	const tokens = new Map<string, LuminaToken>()
 
+	const uniqueTokens = new Set<string>()
 	// Collect unique token fetches
 	const tokenFetches: Promise<{ key: string; token: LuminaToken }>[] = []
 	for (const { poolAddress, token0Address, token1Address } of poolData) {
-		for (const addr of [token0Address, token1Address]) {
-			const key = addr.toBase58()
-			if (!tokens.has(key)) {
+		for (const address of [token0Address, token1Address]) {
+			const key = address.toBase58()
+			if (!uniqueTokens.has(key)) {
 				tokenFetches.push(
-					toToken({ poolAddress, tokenAddress: addr, network })
-						.then(token => ({ key, token }))
+					limit(() =>
+						toToken({ poolAddress, tokenAddress: address, network })
+							.then((token) => ({ key, token }))
+					)
 				)
+				uniqueTokens.add(key)
 			}
 		}
 	}
@@ -167,17 +180,12 @@ const getTokensAndPoolsFromPoolData = async (
 		tokens.set(key, token)
 	}
 
-	// Collect pool fetches
-	const poolFetches = poolData.map(({ poolAddress, token0Address, token1Address }) => {
+	for (const { poolAddress, token0Address, token1Address } of poolData) {
 		const token0 = tokens.get(token0Address.toBase58())
 		const token1 = tokens.get(token1Address.toBase58())
-		if (!token0 || !token1) return null
-		return toPool({ poolAddress, token0, token1, network })
-			.then(pool => ({ key: poolAddress.toBase58(), pool }))
-	}).filter(Boolean)
-
-	for (const { key, pool } of processSettledPromises(await Promise.allSettled(poolFetches))) {
-		pools.set(key, pool)
+		if (token0 && token1) {
+			pools.set(poolAddress.toBase58(), toPool({ poolAddress, token0, token1, network }))
+		}
 	}
 
 	return { pools, tokens }
