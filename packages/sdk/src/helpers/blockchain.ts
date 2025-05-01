@@ -4,6 +4,7 @@ import pLimit from "p-limit"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
+import { prefixedLogger } from "./logs"
 
 type SupportedNetwork = keyof typeof urls
 
@@ -55,6 +56,8 @@ interface PoolAddedEventData {
 	token1Address: PublicKey
 }
 
+const logger = prefixedLogger("[Blockchain]")
+
 const processSettledPromises = <T>(settledPromises: PromiseSettledResult<T>[]) => {
 	return settledPromises.flatMap((result) => {
 		if (result.status === "rejected") throw new Error(result.reason)
@@ -77,6 +80,7 @@ const fetchEventsByBlockspace = async <T>(
 		from?: number
 	}
 ) => {
+	logger.start("fetchEventsByBlockspace", { network, blockScanRange, from })
 	// Concurrency limit
 	const limit = pLimit(10)
 
@@ -93,9 +97,9 @@ const fetchEventsByBlockspace = async <T>(
 				UInt32.from(firstBlock + (index + 1) * blockScanRange)
 			)
 		))
-	// console.log(
-	// 	`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
-	// )
+	logger.info(
+		`Fetching ${nbToFetch} blocks from ${firstBlock} to ${currentBlock.blockchainLength}, ${tokenPromises.length} promises.`
+	)
 	const events = await Promise.allSettled(tokenPromises)
 		.then((results) =>
 			results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
@@ -110,7 +114,8 @@ const fetchEventsByBlockspace = async <T>(
 const getTokensAndPoolsFromPoolData = async (
 	{ poolData, network }: { poolData: PoolAddedEventData[]; network: SupportedNetwork }
 ) => {
-	// Conccurency limit
+	logger.start("getTokensAndPoolsFromPoolData", { network, poolData: poolData.length })
+	// Concurrency limit
 	const limit = pLimit(10)
 
 	const toToken = async ({ poolAddress, tokenAddress, network }: {
@@ -176,7 +181,7 @@ const getTokensAndPoolsFromPoolData = async (
 				address: poolAddress.toBase58(),
 				tokens: [token0, token1],
 				chainId: network,
-				name: `${token0.symbol}_${token1.symbol}-LLP`
+				name: `LLP-${token0.symbol}_${token1.symbol}`
 			})
 		}
 	}
@@ -190,6 +195,7 @@ const processTypedEvents = async (
 		events: Awaited<ReturnType<typeof internal_fetchAllPoolFactoryEvents>>["events"]
 	}
 ) => {
+	logger.start("processTypedEvents", { network, events: events.length })
 	const poolData = events.filter(event => event.type === "poolAdded").map((event) => {
 		return event.event.data as unknown as PoolAddedEventData
 	})
@@ -203,6 +209,7 @@ const processRawEvents = async (
 		events: Awaited<ReturnType<typeof internal_fetchAllZekoPoolFactoryEvents>>["events"]
 	}
 ) => {
+	logger.start("processRawEvents", { network, events: events.length })
 	const parsePoolEvents = (data: string[]) => {
 		const pubk = (a: number, b: number) => {
 			return PublicKey.fromFields([Field.from(data[a]), Field.from(data[b])])
@@ -246,6 +253,7 @@ const processRawEvents = async (
 export const internal_fetchAllPoolFactoryEvents = async (
 	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
+	logger.start("internal_fetchAllPoolFactoryEvents", { network, factory, from })
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = factory ?? luminadexFactories[network]
 	const zkFactory = new PoolFactory(PublicKey.fromBase58(factoryAddress))
@@ -262,6 +270,7 @@ export const internal_fetchAllPoolFactoryEvents = async (
  * This exists because on Zeko there's no concept of blocks, and the events can be fetched directly from the sequencer.
  */
 export const internal_fetchAllZekoPoolFactoryEvents = async (network: SupportedNetwork) => {
+	logger.start("internal_fetchAllZekoPoolFactoryEvents", { network })
 	Mina.setActiveInstance(minaNetwork(network))
 	const endpoint = urls[network]
 	const factoryAddress = luminadexFactories[network]
@@ -278,6 +287,7 @@ export const internal_fetchAllZekoPoolFactoryEvents = async (network: SupportedN
 export const fetchAllFromPoolFactory = async (
 	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
+	logger.start("fetchAllFromPoolFactory", { network, factory, from })
 	Mina.setActiveInstance(minaNetwork(network))
 	if (network.includes("zeko")) {
 		const { events, currentBlock, startBlock } = await internal_fetchAllZekoPoolFactoryEvents(
@@ -301,6 +311,7 @@ export const fetchAllFromPoolFactory = async (
 export const fetchAllTokensFromPoolFactory = async (
 	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
+	logger.start("fetchAllTokensFromPoolFactory", { network, factory, from })
 	const { tokens, startBlock, currentBlock } = await fetchAllFromPoolFactory({
 		network,
 		factory,
@@ -315,6 +326,7 @@ export const fetchAllTokensFromPoolFactory = async (
 export const fetchAllPoolsFromPoolFactory = async (
 	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
+	logger.start("fetchAllPoolsFromPoolFactory", { network, factory, from })
 	const { pools, startBlock, currentBlock } = await fetchAllFromPoolFactory({
 		network,
 		factory,

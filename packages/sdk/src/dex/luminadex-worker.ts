@@ -607,15 +607,12 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	const zkFaucet = new contracts.Faucet(publicKeyFaucet, zkToken.deriveTokenId())
 	logger.debug({ zkFaucet })
 
-	await Promise.all([
+	const [acc, accFau] = await Promise.all([
+		fetchAccount({ publicKey: userKey, tokenId: zkToken.deriveTokenId() }),
+		fetchAccount({ publicKey: userKey, tokenId: zkFaucet.deriveTokenId() }),
 		fetchAccount({ publicKey: zkFaucet.address }),
 		fetchAccount({ publicKey: zkFaucet.address, tokenId: faucet.tokenId }),
 		fetchAccount({ publicKey: userKey })
-	])
-
-	const [acc, accFau] = await Promise.all([
-		fetchAccount({ publicKey: userKey, tokenId: zkToken.deriveTokenId() }),
-		fetchAccount({ publicKey: userKey, tokenId: zkFaucet.deriveTokenId() })
 	])
 
 	const newAcc = acc.account?.balance ? 0 : 1

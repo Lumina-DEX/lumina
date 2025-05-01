@@ -1,5 +1,6 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
+import pLimit from "p-limit"
 import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
@@ -109,6 +110,8 @@ export const createWalletMachine = (
 			 * Fetches the balance of the Mina wallet on given networks.
 			 */
 			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) => {
+				// Concurrency
+				const limit = pLimit(10)
 				const publicKey = input.address
 				const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
 				const tokens = input.tokens.map((token) => {
@@ -125,10 +128,14 @@ export const createWalletMachine = (
 				const queries = Object.fromEntries(
 					allTokens.map((token) => [
 						token.tokenId ?? "MINA",
-						createMinaClient(urls[input.network]).query(FetchAccountBalanceQuery, {
-							tokenId: token.tokenId,
-							publicKey
-						}).toPromise()
+						limit(() =>
+							createMinaClient(urls[input.network])
+								.query(FetchAccountBalanceQuery, {
+									tokenId: token.tokenId,
+									publicKey
+								})
+								.toPromise()
+						)
 					])
 				)
 				const results = await Promise.all(Object.values(queries))

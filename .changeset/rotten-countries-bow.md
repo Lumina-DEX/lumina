@@ -10,6 +10,8 @@ This patch introduces new functions to fetch pools and refactor the existing fet
 - New functions : `fetchAllFromPoolFactory`, `fetchAllPoolsFromPoolFactory`, `fetchPoolList`
 - Renamed function : `fetchPoolTokenList` => `fetchTokenList`
 
-Additionally, the return type of the `fetchAll*` functions has changed : It's now a `Map` instead of an array.
+The return type of the `fetchAll*` functions has changed : It's now a `Map` instead of an array.
+
+Additionally, concurrency limits are introduced in several parts of the SDK.
 
 Note that `fetchPoolList` is not implemented yet.
