@@ -2,16 +2,16 @@
 
 The LuminaDex SDK provides several ways to fetch data from the blockchain, including token lists, pool information, and account balances. This guide explains the different data fetching methods available.
 
-## Fetching Token Lists
+## Fetching Token and Pool Lists from the CDN
 
 The SDK provides a convenient function to fetch token lists from the Lumina CDN:
 
 ```ts
-import { fetchPoolTokenList } from "@lumina-dex/sdk"
+import { fetchPoolList, fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
 const fetchTokens = async () => {
-	const result = await fetchPoolTokenList("mina:devnet")
+	const result = await fetchTokenList("mina:devnet")
 	console.log("Token list:", result.tokens)
 
 	// Each token has properties like:
@@ -21,6 +21,18 @@ const fetchTokens = async () => {
 	// - decimals: Number of decimal places
 	// - chainId: Network where the token exists
 	// - poolAddress: Address of the pool for this token
+}
+
+// Fetch pools for a specific network
+const fetchPools = async () => {
+	const result = await fetchPoolList("mina:devnet")
+	console.log("Pool list:", result.pools)
+
+	// Each pool has properties like:
+	// - address: The pool contract address
+	// - tokens: Array of tokens in the pool
+	// - chainId: Network where the pool exists
+	// - name: The pool name (e.g., "USDC_MINA-LLP")
 }
 ```
 
@@ -44,7 +56,7 @@ const fetchPoolTokens = async () => {
 ```
 
 ::: warning
-The direct blockchain fetching methods are querying blockchain nodes directly, and should be avoided on client-side applications: they are intended to be used for development or server-side. For client applications, prefer the CDN-based `fetchPoolTokenList` function.
+The direct blockchain fetching methods are querying blockchain nodes directly, and should be avoided on client-side applications: they are intended to be used for development or server-side. For client applications, prefer the CDN-based functions.
 :::
 
 ## Fetching Account Balances
