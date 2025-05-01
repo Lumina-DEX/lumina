@@ -3,7 +3,8 @@ import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 }
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
-import type { Networks } from "../machines/wallet/machine"
+
+type SupportedNetwork = keyof typeof urls
 
 export interface LuminaPool {
 	address: string
@@ -60,7 +61,7 @@ const processSettledPromises = <T>(settledPromises: PromiseSettledResult<T>[]) =
 	})
 }
 
-export const minaNetwork = (network: Networks) =>
+export const minaNetwork = (network: SupportedNetwork) =>
 	Mina.Network({
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
 		mina: urls[network],
@@ -70,7 +71,7 @@ export const minaNetwork = (network: Networks) =>
 const fetchEventsByBlockspace = async <T>(
 	{ eventFetch, network, blockScanRange = 10_000, from }: {
 		eventFetch: (from: UInt32, to: UInt32) => Promise<T[]>
-		network: Networks
+		network: SupportedNetwork
 		blockScanRange?: number
 		from?: number
 	}
@@ -100,13 +101,15 @@ const fetchEventsByBlockspace = async <T>(
 }
 
 const getTokensAndPoolsFromPoolData = async (
-	{ poolData, network }: { poolData: PoolAddedEventData[]; network: Networks }
+	{ poolData, network }: { poolData: PoolAddedEventData[]; network: SupportedNetwork }
 ) => {
 	const toToken = async ({ poolAddress, tokenAddress, network }: {
 		poolAddress: PublicKey
 		tokenAddress: PublicKey
-		network: Networks
+		network: SupportedNetwork
 	}): Promise<LuminaToken> => {
+		// MINA token address is a special case
+		// TODO: Find a better way to detect the MINA token address
 		if (tokenAddress.toBase58() === "B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG") {
 			return {
 				address: tokenAddress.toBase58(),
@@ -136,7 +139,7 @@ const getTokensAndPoolsFromPoolData = async (
 		poolAddress: PublicKey
 		token0: LuminaToken
 		token1: LuminaToken
-		network: Networks
+		network: SupportedNetwork
 	}): Promise<LuminaPool> => ({
 		address: poolAddress.toBase58(),
 		tokens: [token0, token1],
@@ -148,7 +151,7 @@ const getTokensAndPoolsFromPoolData = async (
 	const tokens = new Map<string, LuminaToken>()
 
 	// Collect unique token fetches
-	const tokenFetches = []
+	const tokenFetches: Promise<{ key: string; token: LuminaToken }>[] = []
 	for (const { poolAddress, token0Address, token1Address } of poolData) {
 		for (const addr of [token0Address, token1Address]) {
 			const key = addr.toBase58()
@@ -182,7 +185,7 @@ const getTokensAndPoolsFromPoolData = async (
 
 const processTypedEvents = async (
 	{ events, network }: {
-		network: Networks
+		network: SupportedNetwork
 		events: Awaited<ReturnType<typeof internal_fetchAllPoolFactoryEvents>>["events"]
 	}
 ) => {
@@ -195,7 +198,7 @@ const processTypedEvents = async (
 
 const processRawEvents = async (
 	{ events, network }: {
-		network: Networks
+		network: SupportedNetwork
 		events: Awaited<ReturnType<typeof internal_fetchAllZekoPoolFactoryEvents>>["events"]
 	}
 ) => {
@@ -240,7 +243,7 @@ const processRawEvents = async (
  * Internal function to fetch all pool events from a contract, using the archive node API.
  */
 export const internal_fetchAllPoolFactoryEvents = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
 	Mina.setActiveInstance(minaNetwork(network))
 	const factoryAddress = factory ?? luminadexFactories[network]
@@ -257,7 +260,7 @@ export const internal_fetchAllPoolFactoryEvents = async (
  * Internal function to fetch all zeko pool events using the sequencer API.
  * This exists because on Zeko there's no concept of blocks, and the events can be fetched directly from the sequencer.
  */
-export const internal_fetchAllZekoPoolFactoryEvents = async (network: Networks) => {
+export const internal_fetchAllZekoPoolFactoryEvents = async (network: SupportedNetwork) => {
 	Mina.setActiveInstance(minaNetwork(network))
 	const endpoint = urls[network]
 	const factoryAddress = luminadexFactories[network]
@@ -272,7 +275,7 @@ export const internal_fetchAllZekoPoolFactoryEvents = async (network: Networks) 
  * Fetch pools and tokens from the pool factory.
  */
 export const fetchAllFromPoolFactory = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
 	Mina.setActiveInstance(minaNetwork(network))
 	if (network.includes("zeko")) {
@@ -295,7 +298,7 @@ export const fetchAllFromPoolFactory = async (
  * Fetch all tokens from the pool factory.
  */
 export const fetchAllTokensFromPoolFactory = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
 	const { tokens, startBlock, currentBlock } = await fetchAllFromPoolFactory({
 		network,
@@ -309,7 +312,7 @@ export const fetchAllTokensFromPoolFactory = async (
  * Fetch all pools from the pool factory.
  */
 export const fetchAllPoolsFromPoolFactory = async (
-	{ network, factory, from }: { network: Networks; factory?: string; from?: number }
+	{ network, factory, from }: { network: SupportedNetwork; factory?: string; from?: number }
 ) => {
 	const { pools, startBlock, currentBlock } = await fetchAllFromPoolFactory({
 		network,
@@ -322,14 +325,14 @@ export const fetchAllPoolsFromPoolFactory = async (
 /**
  * Fetches the token list from the CDN.
  */
-export const fetchTokenList = async (network: Networks) => {
+export const fetchTokenList = async (network: SupportedNetwork) => {
 	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
 	const tokens = await response.json() as TokenDbList
 	return tokens
 }
 
 // TODO: To implement
-export const fetchPoolList = async (network: Networks) => {
+export const fetchPoolList = async (network: SupportedNetwork) => {
 	// const response = await fetch(`${luminaCdnOrigin}/api/${network}/pools`)
 	// const pools = await response.json()
 	// return pools
