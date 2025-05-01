@@ -144,18 +144,6 @@ const getTokensAndPoolsFromPoolData = async (
 		}
 	}
 
-	const toPool = ({ poolAddress, token0, token1, network }: {
-		poolAddress: PublicKey
-		token0: LuminaToken
-		token1: LuminaToken
-		network: SupportedNetwork
-	}): LuminaPool => ({
-		address: poolAddress.toBase58(),
-		tokens: [token0, token1],
-		chainId: network,
-		name: `${token0.symbol}_${token1.symbol}-LLP`
-	})
-
 	const pools = new Map<string, LuminaPool>()
 	const tokens = new Map<string, LuminaToken>()
 
@@ -184,7 +172,12 @@ const getTokensAndPoolsFromPoolData = async (
 		const token0 = tokens.get(token0Address.toBase58())
 		const token1 = tokens.get(token1Address.toBase58())
 		if (token0 && token1) {
-			pools.set(poolAddress.toBase58(), toPool({ poolAddress, token0, token1, network }))
+			pools.set(poolAddress.toBase58(), {
+				address: poolAddress.toBase58(),
+				tokens: [token0, token1],
+				chainId: network,
+				name: `${token0.symbol}_${token1.symbol}-LLP`
+			})
 		}
 	}
 
