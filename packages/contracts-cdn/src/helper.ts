@@ -1,30 +1,26 @@
 import type { Networks, TokenDbList } from "@lumina-dex/sdk"
-import { minaDevnet, minaMainnet, zekoMainnet, zekoTestnet } from "../drizzle/schema"
+import { pools, tokens } from "../drizzle/schema"
 
-export const getTable = (network: Networks) => {
-	const table = {
-		"mina:mainnet": minaMainnet,
-		"mina:devnet": minaDevnet,
-		"zeko:testnet": zekoTestnet,
-		"zeko:mainnet": zekoMainnet
-	}[network]
-	if (!table) throw new Error(`Table not found for network: ${network}`)
-	return table
-}
+export { tokens, pools }
 
-export type Token = typeof minaMainnet.$inferInsert
+export type Token = typeof tokens.$inferInsert
+export type Pool = typeof pools.$inferInsert
 
 export interface Network {
 	network: Networks
 }
 export interface FindTokenBy extends Network {
-	by: "symbol" | "address" | "poolAddress"
+	by: "symbol" | "address"
 	value: string
 }
 
-export interface TokenExists extends Network {
+export interface FindPoolBy extends Network {
+	by: "address" | "tokenAddress"
+	value: string
+}
+
+export interface Exists extends Network {
 	address: string
-	poolAddress: string
 }
 
 const version = { major: 1, minor: 0, patch: 0 }

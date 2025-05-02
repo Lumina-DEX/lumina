@@ -7,17 +7,16 @@ const stub = env.TOKENLIST.get(id)
 
 const testToken = {
 	address: "testAddress",
-	poolAddress: "testPoolAddress",
 	tokenId: "testTokenId",
+	chainId: "zeko:testnet" as const,
 	symbol: "TEST",
 	decimals: 9
 }
 
 const insertTokens = (instance: TokenList) => {
-	instance.insertToken("zeko:testnet", testToken)
-	instance.insertToken("zeko:testnet", {
+	instance.insertToken(testToken)
+	instance.insertToken({
 		...testToken,
-		poolAddress: "testPoolAddress2",
 		address: "address2",
 		symbol: "TEST2"
 	})
@@ -27,7 +26,7 @@ describe("Read and write to the DO database", () => {
 	describe("Token Insertion", () => {
 		it("can insert a token and retrieve it", async () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
-				instance.insertToken("zeko:testnet", testToken)
+				instance.insertToken(testToken)
 				const tokens = await instance.findAllTokens({ network: "zeko:testnet" })
 				expect(tokens).toHaveLength(1)
 				expect(tokens[0]).toMatchObject(testToken)
@@ -38,8 +37,8 @@ describe("Read and write to the DO database", () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
 				const token2 = { ...testToken, address: "address2", symbol: "TEST2" }
 
-				instance.insertToken("zeko:testnet", testToken)
-				instance.insertToken("zeko:testnet", token2)
+				instance.insertToken(testToken)
+				instance.insertToken(token2)
 
 				const tokens = await instance.findAllTokens({ network: "zeko:testnet" })
 				expect(tokens).toHaveLength(2)
@@ -48,8 +47,8 @@ describe("Read and write to the DO database", () => {
 
 		it("maintains separation between networks", async () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
-				instance.insertToken("zeko:testnet", testToken)
-				instance.insertToken("mina:mainnet", testToken)
+				instance.insertToken(testToken)
+				instance.insertToken({ ...testToken, chainId: "mina:mainnet" as const })
 
 				const testnetTokens = await instance.findAllTokens({ network: "zeko:testnet" })
 				const mainnetTokens = await instance.findAllTokens({ network: "mina:mainnet" })
@@ -87,23 +86,23 @@ describe("Read and write to the DO database", () => {
 			})
 		})
 
-		it("can find token by poolAddress", async () => {
-			await runInDurableObject(stub, async (instance: TokenList) => {
-				insertTokens(instance)
-				const tokens = await instance.findTokenBy({
-					network: "zeko:testnet",
-					by: "poolAddress",
-					value: "testPoolAddress"
-				})
-				expect(tokens).toHaveLength(1)
-				expect(tokens[0].poolAddress).toBe("testPoolAddress")
-			})
-		})
+		// it("can find token by poolAddress", async () => {
+		// 	await runInDurableObject(stub, async (instance: TokenList) => {
+		// 		insertTokens(instance)
+		// 		const tokens = await instance.findTokenBy({
+		// 			network: "zeko:testnet",
+		// 			by: "poolAddress",
+		// 			value: "testPoolAddress"
+		// 		})
+		// 		expect(tokens).toHaveLength(1)
+		// 		expect(tokens[0].poolAddress).toBe("testPoolAddress")
+		// 	})
+		// })
 
 		it("Can count the number of tokens", async () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
 				insertTokens(instance)
-				const count = await instance.count({ network: "zeko:testnet" })
+				const count = await instance.countTokens({ network: "zeko:testnet" })
 				expect(count).toBe(2)
 			})
 		})
@@ -115,15 +114,13 @@ describe("Read and write to the DO database", () => {
 				insertTokens(instance)
 				const exists = await instance.tokenExists({
 					network: "zeko:testnet",
-					address: "testAddress",
-					poolAddress: "testPoolAddress"
+					address: "testAddress"
 				})
 				expect(exists).toBe(true)
 
 				const notExists = await instance.tokenExists({
 					network: "zeko:testnet",
-					address: "nonexistent",
-					poolAddress: "nonexistent"
+					address: "nonexistent"
 				})
 				expect(notExists).toBe(false)
 			})
@@ -134,7 +131,6 @@ describe("Read and write to the DO database", () => {
 				const inserted = await instance.insertTokenIfExists({
 					network: "zeko:testnet",
 					address: "testAddress",
-					poolAddress: "testPoolAddress",
 					token: testToken
 				})
 				if (typeof inserted === "boolean") throw new Error("Token was not inserted")
@@ -142,8 +138,7 @@ describe("Read and write to the DO database", () => {
 
 				const exists = await instance.tokenExists({
 					network: "zeko:testnet",
-					address: "testAddress",
-					poolAddress: "testPoolAddress"
+					address: "testAddress"
 				})
 				expect(exists).toBe(true)
 			})
@@ -153,9 +148,9 @@ describe("Read and write to the DO database", () => {
 	describe("Error Handling", () => {
 		it("handles duplicate primary keys", async () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
-				instance.insertToken("zeko:testnet", testToken)
+				instance.insertToken(testToken)
 				try {
-					await instance.insertToken("zeko:testnet", testToken)
+					await instance.insertToken(testToken)
 				} catch (e) {
 					expect(e instanceof Error).toBe(true)
 				}
@@ -167,11 +162,11 @@ describe("Read and write to the DO database", () => {
 		it("can reset the database", async () => {
 			await runInDurableObject(stub, async (instance: TokenList) => {
 				insertTokens(instance)
-				const count = await instance.count({ network: "zeko:testnet" })
+				const count = await instance.countTokens({ network: "zeko:testnet" })
 				expect(count).toBe(2)
 
 				instance.reset({ network: "zeko:testnet" })
-				const newCount = await instance.count({ network: "zeko:testnet" })
+				const newCount = await instance.countTokens({ network: "zeko:testnet" })
 				expect(newCount).toBe(0)
 			})
 		})

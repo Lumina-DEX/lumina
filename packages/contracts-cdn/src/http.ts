@@ -50,24 +50,25 @@ export const sync = async ({
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
+	console.log(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN)
 	const request = new Request(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, {
 		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
 	})
 	const response = await fetch(request)
 	if (response.ok) {
-		const allTokens = (await response.json()) as Token[]
-		console.log({ allTokens, network })
-		if (allTokens.length === 0) return
+		const data = (await response.json()) as { tokens: Token[]; pools: unknown[] }
+		const { tokens, pools } = data
+		if (tokens.length === 0) return
 		//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
 		await tokenList.reset({ network })
-		const result = await tokenList.insertToken(network, allTokens)
+		const result = await tokenList.insertToken(tokens)
 		if (result.length > 0) {
 			// Only bust the cache if something changed.
 			const cacheKey = tokenCacheKey(network)
 			context.waitUntil(caches.default.delete(cacheKey))
-			return { allTokens, network, cacheBusted: cacheKey }
+			return { tokens, pools, network, cacheBusted: cacheKey }
 		}
-		return { allTokens, network, cacheBusted: false }
+		return { tokens, pools, network, cacheBusted: false }
 	}
 	return []
 }

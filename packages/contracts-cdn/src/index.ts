@@ -94,7 +94,6 @@ export default {
 			const result = await db.insertTokenIfExists({
 				network,
 				address: token.address,
-				poolAddress: token.poolAddress,
 				token
 			})
 			if (result === false) return new Response("Token already exists", { headers, status: 409 })
@@ -109,7 +108,7 @@ export default {
 			if (!networks.includes(network)) return notFound()
 
 			const db = getDb(env)
-			const count = await db.count({ network })
+			const count = await db.countTokens({ network })
 
 			return Response.json(count)
 		}

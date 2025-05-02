@@ -17,7 +17,6 @@ export interface LuminaPool {
 
 export interface LuminaToken {
 	address: string
-	poolAddress: string
 	chainId: string
 	tokenId: string
 	symbol: string
@@ -118,8 +117,7 @@ const getTokensAndPoolsFromPoolData = async (
 	// Concurrency limit
 	const limit = pLimit(10)
 
-	const toToken = async ({ poolAddress, tokenAddress, network }: {
-		poolAddress: PublicKey
+	const toToken = async ({ tokenAddress, network }: {
 		tokenAddress: PublicKey
 		network: SupportedNetwork
 	}): Promise<LuminaToken> => {
@@ -127,7 +125,6 @@ const getTokensAndPoolsFromPoolData = async (
 		if (tokenAddress.isEmpty().toBoolean()) {
 			return {
 				address: tokenAddress.toBase58(),
-				poolAddress: poolAddress.toBase58(),
 				tokenId: "MINA",
 				chainId: network,
 				symbol: "MINA",
@@ -141,7 +138,6 @@ const getTokensAndPoolsFromPoolData = async (
 
 		return {
 			address: tokenAddress.toBase58(),
-			poolAddress: poolAddress.toBase58(),
 			tokenId,
 			chainId: network,
 			symbol,
@@ -155,13 +151,13 @@ const getTokensAndPoolsFromPoolData = async (
 	const uniqueTokens = new Set<string>()
 	// Collect unique token fetches
 	const tokenFetches: Promise<{ key: string; token: LuminaToken }>[] = []
-	for (const { poolAddress, token0Address, token1Address } of poolData) {
+	for (const { token0Address, token1Address } of poolData) {
 		for (const address of [token0Address, token1Address]) {
 			const key = address.toBase58()
 			if (!uniqueTokens.has(key)) {
 				tokenFetches.push(
 					limit(() =>
-						toToken({ poolAddress, tokenAddress: address, network })
+						toToken({ tokenAddress: address, network })
 							.then((token) => ({ key, token }))
 					)
 				)

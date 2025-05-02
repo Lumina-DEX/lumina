@@ -15,6 +15,7 @@ const createRequest = (url: string, method = "GET") =>
 		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
 	})
 
+const emptyData = { tokens: [], pools: [] }
 beforeAll(() => {
 	fetchMock.activate()
 	fetchMock.disableNetConnect()
@@ -33,7 +34,6 @@ describe("API", () => {
 		delete json.tokens[0]?.timestamp
 		expect(json.tokens[0]).toEqual({
 			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-			poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 			tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
 			chainId: "mina:devnet",
 			symbol: "TOKA",
@@ -45,7 +45,7 @@ describe("API", () => {
 		fetchMock
 			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 			.intercept({ path: () => true })
-			.reply(200, [])
+			.reply(200, emptyData)
 			.times(4)
 
 		const controller = createScheduledController()
@@ -59,7 +59,7 @@ describe("API", () => {
 		fetchMock
 			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 			.intercept({ path: `/${network}` })
-			.reply(200, [])
+			.reply(200, emptyData)
 			.times(1)
 		const request = createRequest(`api/${network}/sync`, "POST")
 		const response = await SELF.fetch(request)
@@ -101,8 +101,8 @@ describe("API", () => {
 				headers: { Authorization: "Bearer foo" },
 				body: JSON.stringify({
 					address: "testAddress",
-					poolAddress: "testPoolAddress",
 					tokenId: "testTokenId",
+					chainId: "mina:devnet",
 					symbol: "ABC",
 					decimals: 9
 				})
@@ -122,7 +122,7 @@ describe("API", () => {
 		fetchMock
 			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
 			.intercept({ path: `/${network}` })
-			.reply(200, [])
+			.reply(200, emptyData)
 			.times(1)
 
 		//Verify that we have a seeded token

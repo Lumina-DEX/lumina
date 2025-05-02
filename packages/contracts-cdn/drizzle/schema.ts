@@ -1,28 +1,66 @@
-import { sql } from "drizzle-orm"
+import { defineRelations, sql } from "drizzle-orm"
 import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core"
+
+const chainIds = ["mina:devnet", "mina:mainnet", "zeko:testnet", "zeko:mainnet"] as const
 
 const tokenTable = (name: string) =>
 	sqliteTable(
 		name,
 		{
 			address: text().notNull(),
-			poolAddress: text().notNull(),
 			tokenId: text().notNull(),
 			symbol: text().notNull(),
+			chainId: text({ enum: chainIds }).notNull(),
 			decimals: integer().notNull(),
 			timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
 		},
-		(table) => ({
-			pk: primaryKey({ columns: [table.address, table.poolAddress] }),
-			symbolChainIdIndex: index(`${name}.symbol_idx`).on(table.symbol),
-			poolAddressChainIdIndex: index(`${name}.poolAddress`).on(table.poolAddress)
-		})
+		(table) => [
+			primaryKey({ columns: [table.address, table.chainId] }),
+			index(`${name}_chainId_idx`).on(table.chainId)
+		]
 	)
 
-//Mina Tables
-export const minaDevnet = tokenTable("TokenList_mina_devnet")
-export const minaMainnet = tokenTable("TokenList_mina_mainnet")
+const poolTable = (name: string) =>
+	sqliteTable(
+		name,
+		{
+			address: text().notNull(),
+			token0Address: text().notNull(),
+			token1Address: text().notNull(),
+			chainId: text({ enum: chainIds }).notNull(),
+			name: text().notNull(),
+			timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
+		},
+		(table) => [
+			primaryKey({ columns: [table.address, table.chainId] }),
+			index(`${name}_chainId_idx`).on(table.chainId),
+			index(`${name}.token0_idx`).on(table.token0Address),
+			index(`${name}.token1_idx`).on(table.token1Address)
+		]
+	)
 
-//Zeko Tables
-export const zekoTestnet = tokenTable("TokenList_zeko_testnet")
-export const zekoMainnet = tokenTable("TokenList_zeko_mainnet")
+export const tokens = tokenTable("Token")
+export const pools = poolTable("Pool")
+
+export const relations = defineRelations({ tokens, pools }, (r) => ({
+	pools: {
+		token0: r.one.tokens({
+			from: [r.pools.token0Address, r.pools.chainId],
+			to: [r.tokens.address, r.tokens.chainId]
+		}),
+		token1: r.one.tokens({
+			from: [r.pools.token1Address, r.pools.chainId],
+			to: [r.tokens.address, r.tokens.chainId]
+		})
+	},
+	tokens: {
+		poolsAsToken0: r.many.pools({
+			from: [r.tokens.address, r.tokens.chainId],
+			to: [r.pools.token0Address, r.pools.chainId]
+		}),
+		poolsAsToken1: r.many.pools({
+			from: [r.tokens.address, r.tokens.chainId],
+			to: [r.pools.token1Address, r.pools.chainId]
+		})
+	}
+}))

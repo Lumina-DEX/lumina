@@ -1,12 +1,20 @@
 import { DurableObject } from "cloudflare:workers"
-import type { Networks } from "@lumina-dex/sdk"
-import { and, count, eq, sql } from "drizzle-orm"
+import { and, count, eq, or, sql } from "drizzle-orm"
 import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite"
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
 import * as schema from "../drizzle/schema"
 import type { Env } from "../worker-configuration"
-import { type FindTokenBy, type Network, type Token, type TokenExists, getTable } from "./helper"
+import {
+	type Exists,
+	type FindPoolBy,
+	type FindTokenBy,
+	type Network,
+	type Pool,
+	type Token,
+	pools,
+	tokens
+} from "./helper"
 
 export class TokenList extends DurableObject {
 	storage: DurableObjectStorage
@@ -27,52 +35,118 @@ export class TokenList extends DurableObject {
 		}
 	}
 
-	async insertTokenIfExists({
-		network,
-		address,
-		poolAddress,
-		token
-	}: TokenExists & { token: Token | Token[] }) {
-		const exists = await this.tokenExists({ network, address, poolAddress })
-		if (!exists) return this.insertToken(network, token)
+	/**
+	 * Insert
+	 * -------------------------------------
+	 */
+	async insertTokenIfExists({ network, address, token }: Exists & { token: Token | Token[] }) {
+		const exists = await this.tokenExists({ network, address })
+		if (!exists) return this.insertToken(token)
 		return false
 	}
 
-	async insertToken(network: Networks, token: Token | Token[]) {
-		const table = getTable(network)
-		const toInsert = Array.isArray(token) ? token : [token]
-		return this.db.insert(table).values(toInsert).onConflictDoNothing().returning().all()
+	async insertPoolIfExists({ network, address, pool }: Exists & { pool: Pool | Pool[] }) {
+		const exists = await this.poolExists({ network, address })
+		if (!exists) return this.insertPool(pool)
+		return false
 	}
+
+	async insertToken(token: Token | Token[]) {
+		const toInsert = Array.isArray(token) ? token : [token]
+		return this.db.insert(tokens).values(toInsert).onConflictDoNothing().returning().all()
+	}
+
+	async insertPool(pool: Pool | Pool[]) {
+		const toInsert = Array.isArray(pool) ? pool : [pool]
+		return this.db.insert(pools).values(toInsert).onConflictDoNothing().returning().all()
+	}
+
+	/**
+	 * Find
+	 * -------------------------------------
+	 */
 
 	async findTokenBy({ network, by, value }: FindTokenBy) {
-		const table = getTable(network)
-		return this.db.select().from(table).where(eq(table[by], value)).all()
+		return this.db
+			.select()
+			.from(tokens)
+			.where(and(eq(tokens[by], value), eq(tokens.chainId, network)))
+			.all()
 	}
 
-	async tokenExists({ network, address, poolAddress }: TokenExists) {
-		const table = getTable(network)
+	async findPoolBy({ network, by, value }: FindPoolBy) {
+		const condition = {
+			tokenAddress: or(eq(pools.token0Address, value), eq(pools.token1Address, value)),
+			address: eq(pools.address, value)
+		}[by]
+		return this.db
+			.select()
+			.from(pools)
+			.where(and(condition, eq(pools.chainId, network)))
+			.all()
+	}
+
+	/**
+	 * Exist
+	 * -------------------------------------
+	 */
+
+	async tokenExists({ network, address }: Exists) {
 		const result = this.db
 			.select({ count: sql<number>`count(*)` })
-			.from(table)
-			.where(and(eq(table.address, address), eq(table.poolAddress, poolAddress)))
+			.from(tokens)
+			.where(and(eq(tokens.address, address), eq(tokens.chainId, network)))
 			.all()
 		return result[0].count > 0
 	}
 
-	async findAllTokens({ network }: Network) {
-		const table = getTable(network)
-		return this.db.select().from(table).all()
+	async poolExists({ network, address }: Exists) {
+		const result = this.db
+			.select({ count: sql<number>`count(*)` })
+			.from(pools)
+			.where(and(eq(schema.pools.address, address), eq(schema.pools.chainId, network)))
+			.all()
+		return result[0].count > 0
 	}
 
-	async count({ network }: Network) {
-		const table = getTable(network)
-		const result = this.db.select({ count: count() }).from(table).all()
+	/**
+	 * Find All
+	 * -------------------------------------
+	 */
+
+	async findAllTokens({ network }: Network) {
+		return this.db.select().from(tokens).where(eq(tokens.chainId, network)).all()
+	}
+
+	async findAllPools({ network }: Network) {
+		return this.db.select().from(pools).where(eq(schema.pools.chainId, network)).all()
+	}
+
+	/**
+	 * Count
+	 * -------------------------------------
+	 */
+
+	async countTokens({ network }: Network) {
+		const result = this.db
+			.select({ count: count() })
+			.from(tokens)
+			.where(eq(tokens.chainId, network))
+			.all()
+		return result[0].count
+	}
+
+	async countPools({ network }: Network) {
+		const result = this.db
+			.select({ count: count() })
+			.from(pools)
+			.where(eq(pools.chainId, network))
+			.all()
 		return result[0].count
 	}
 
 	async reset({ network }: Network) {
-		const table = getTable(network)
-		const result = this.db.delete(table).returning().all()
+		const result = this.db.delete(tokens).where(eq(tokens.chainId, network)).returning().all()
 		return result
 	}
 
@@ -82,12 +156,12 @@ export class TokenList extends DurableObject {
 
 	async seed() {
 		//This is only used for local development and tests
-		this.insertToken("mina:devnet", [
+		this.insertToken([
 			{
 				address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-				poolAddress: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
 				tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
 				symbol: "TOKA",
+				chainId: "mina:devnet",
 				decimals: 9
 			}
 		])
