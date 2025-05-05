@@ -114,7 +114,7 @@ export class TokenList extends DurableObject {
 		const result = this.db
 			.select({ count: sql<number>`count(*)` })
 			.from(pools)
-			.where(and(eq(schema.pools.address, address), eq(schema.pools.chainId, network)))
+			.where(and(eq(pools.address, address), eq(pools.chainId, network)))
 			.all()
 		return result[0].count > 0
 	}
