@@ -1,5 +1,17 @@
 # @lumina-dex/sdk
 
+## 0.15.0
+
+### Minor Changes
+
+- a72aab2: - Implement `fetchPoolList`, which fetches pools from the CDN and returns `LuminaPool[]`
+  - Change `fetchTokenList` return type to `LuminaToken[]`. This is a breaking change.
+  - Remove `poolAddress` from `LuminaToken`. This is a breaking change.
+
+### Patch Changes
+
+- 952aa9e: Minor interface change for `LuminaToken` and `LuminaPool`.
+
 ## 0.14.0
 
 ### Minor Changes
