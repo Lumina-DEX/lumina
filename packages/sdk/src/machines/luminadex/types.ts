@@ -3,7 +3,7 @@ import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
 import type { WalletEmit } from "../wallet/types"
 
-type DexWorker = Comlink.Remote<LuminaDexWorker>
+export type DexWorker = Comlink.Remote<LuminaDexWorker>
 
 export interface Token {
 	address: string
