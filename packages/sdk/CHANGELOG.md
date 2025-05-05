@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.15.1
+
+### Patch Changes
+
+- bed7d24: fix dataclone errors while loading contracts
+
 ## 0.15.0
 
 ### Minor Changes
