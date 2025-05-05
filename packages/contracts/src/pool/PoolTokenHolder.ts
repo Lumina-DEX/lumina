@@ -9,11 +9,23 @@ import {
   state,
   Struct,
   TokenId,
+  UInt32,
   UInt64,
   VerificationKey
 } from "o1js"
 
-import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent, UpdateVerificationKeyEvent } from "../indexpool.js"
+import {
+  FungibleToken,
+  mulDiv,
+  MultisigProof,
+  Pool,
+  PoolFactory,
+  SignatureRight,
+  SwapEvent,
+  UpdateVerificationKeyEvent,
+  UpgradeInfo,
+  verifyProof
+} from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
 
@@ -95,15 +107,27 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
   /**
    * Upgrade to a new version, necessary due to o1js breaking verification key compatibility between versions
+   * @param proof multisig proof
    * @param vk new verification key
    */
   @method
-  async updateVerificationKey(vk: VerificationKey) {
+  async updateVerificationKey(proof: MultisigProof, vk: VerificationKey) {
     const factoryAddress = this.poolFactory.getAndRequireEquals()
     const factory = new PoolFactory(factoryAddress)
-    const owner = await factory.getOwner()
-    // only protocol owner can update a pool
-    AccountUpdate.createSigned(owner)
+    const merkle = await factory.getApprovedSigner()
+
+    const deadlineSlot = proof.publicInput.deadlineSlot
+    // we can update only before the deadline to prevent signature reuse
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
+    const upgradeInfo = new UpgradeInfo({
+      contractAddress: this.address,
+      tokenId: this.tokenId,
+      newVkHash: vk.hash,
+      deadlineSlot
+    })
+    await verifyProof(proof, merkle, upgradeInfo.hash(), SignatureRight.canUpdatePool())
+
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
   }
@@ -243,7 +267,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     // withdraw token 0
     const amountToken = this.withdraw(sender, liquidityAmount, amountToken0Min, reserveToken0Min, supplyMax)
 
-    const poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
+    let poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
 
     const amountToken1 = await poolTokenZ.subWithdrawLiquidity(
       sender,
@@ -279,7 +303,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     methodSender.assertEquals(sender)
     // withdraw token 1
     const amountToken = this.withdraw(sender, liquidityAmount, amountToken1Min, reserveToken1Min, supplyMax)
-    const pool = new Pool(this.address)
+    let pool = new Pool(this.address)
     await pool.burnLiquidityToken(sender, liquidityAmount, supplyMax)
     // we emit an event in case of the user call this method directly
     this.emitEvent(
@@ -310,7 +334,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
     // send token to the user
     const receiverAccount = AccountUpdate.createSigned(sender, this.tokenId)
-    const receiverUpdate = this.send({ to: receiverAccount, amount: amountToken })
+    let receiverUpdate = this.send({ to: receiverAccount, amount: amountToken })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     return amountToken
@@ -355,16 +379,16 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
     // send token to the user
     const receiverAccount = AccountUpdate.createSigned(sender, this.tokenId)
-    const receiverUpdate = this.send({ to: receiverAccount, amount: amountOut })
+    let receiverUpdate = this.send({ to: receiverAccount, amount: amountOut })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
     // send fee to frontend (if not empty)
     const frontendReceiver = Provable.if(frontend.equals(PublicKey.empty()), this.address, frontend)
-    const frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
+    let frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
     frontendUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     // send fee to protocol
     const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
-    const protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
+    let protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
     protocolUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     if (!isMinaPool) {
