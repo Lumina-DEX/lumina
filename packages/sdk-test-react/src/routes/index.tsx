@@ -20,12 +20,12 @@ function HomeComponent() {
 	const [tokens, setTokens] = useState<LuminaToken[]>([])
 
 	const fetchTokenBalances = useCallback(async () => {
-		const result = await fetchTokenList("mina:devnet")
-		setTokens(result.tokens)
+		const tokens = await fetchTokenList("mina:devnet")
+		setTokens(tokens)
 		Wallet.send({
 			type: "FetchBalance",
 			network: "mina:devnet",
-			tokens: result.tokens.map((token) => ({
+			tokens: tokens.map((token) => ({
 				address: token.address,
 				decimal: 10 ** token.decimals,
 				tokenId: token.tokenId,

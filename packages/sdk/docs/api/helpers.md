@@ -121,11 +121,7 @@ Fetches token list from the Lumina CDN for a given network.
 import { fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
-const result = await fetchTokenList("mina:devnet")
-
-// Access token data
-const tokens = result.tokens
-
+const tokens = await fetchTokenList("mina:devnet")
 console.log(`Found ${tokens.length} tokens:`)
 tokens.forEach(token => {
 	console.log(`${token.symbol}: ${token.address}`)
@@ -139,9 +135,7 @@ Fetches pool list from the Lumina CDN for a given network.
 ```ts
 import { fetchPoolList } from "@lumina-dex/sdk"
 // Fetch pools for a specific network
-const result = await fetchPoolList("mina:devnet")
-// Access pool data
-const pools = result.pools
+const pools = await fetchPoolList("mina:devnet")
 console.log(`Found ${pools.length} pools:`)
 pools.forEach(pool => {
 	console.log(`${pool.name}: ${pool.address}`)

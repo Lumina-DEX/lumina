@@ -148,12 +148,11 @@ import { fetchPoolList, fetchTokenList } from "@lumina-dex/sdk"
 // Fetch tokens for a specific network
 const tokens = await fetchTokenList("mina:devnet")
 const pools = await fetchPoolList("mina:devnet")
-console.log("Token list:", result.tokens)
-console.log("Pool list:", result.pools)
+console.log("Token list:", tokens)
+console.log("Pool list:", pools)
 
 // For direct blockchain queries (slower, use server-side)
 import { fetchAllFromPoolFactory } from "@lumina-dex/sdk"
-
 const { tokens, pools } = await fetchAllFromPoolFactory({
 	network: "mina:devnet"
 })
