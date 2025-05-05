@@ -2,4 +2,4 @@
 "@lumina-dex/sdk": patch
 ---
 
-fix errors while loading contracts
+fix dataclone errors while loading contracts
