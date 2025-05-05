@@ -1,7 +1,5 @@
-import type { Networks } from "@lumina-dex/sdk"
+import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
 import type { Env } from "../worker-configuration"
-import type { Token } from "./helper"
-import type { Pool } from "./helper"
 
 interface ServeAsset {
 	assetUrl: URL
@@ -55,13 +53,19 @@ export const sync = async ({
 	})
 	const response = await fetch(request)
 	if (response.ok) {
-		const data = (await response.json()) as { tokens: Token[]; pools: Pool[] }
+		const data = (await response.json()) as { tokens: LuminaToken[]; pools: LuminaPool[] }
 		const { tokens, pools } = data
 		if (tokens.length === 0) return
 		//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
 		await tokenList.reset({ network })
 		const result = await tokenList.insertToken(tokens)
-		const poolResult = await tokenList.insertPool(pools)
+		const poolResult = await tokenList.insertPool(
+			pools.map((pool) => ({
+				...pool,
+				token0Address: pool.tokens[0].address,
+				token1Address: pool.tokens[1].address
+			}))
+		)
 		// Only bust the cache if something changed.
 		if (result.length > 0 || poolResult.length > 0) {
 			const tKey = tokenCacheKey(network)

@@ -83,7 +83,8 @@ export default {
 					const result = await sync({ env, network, context })
 					await writer.write(encoder.encode(`${JSON.stringify({ result })}\n`))
 					await writer.write(encoder.encode(`Sync completed for ${network}`))
-				} catch {
+				} catch (e) {
+					console.error("Error during sync", e)
 					await writer.write(encoder.encode("Error during sync"))
 				} finally {
 					await writer.close()

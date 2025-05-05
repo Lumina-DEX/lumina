@@ -12,7 +12,7 @@
 	"vars": {
 		"ENVIRONMENT": "production",
 		"DO_TOKENLIST_NAME": "db-prod-1",
-		"LUMINA_TOKEN_ENDPOINT_URL": "https://lumina-tokens-kjsq34961e8c.deno.dev"
+		"LUMINA_TOKEN_ENDPOINT_URL": "https://lumina-tokens.deno.dev"
 	},
 	// Workers Static Assets
 	"assets": {
