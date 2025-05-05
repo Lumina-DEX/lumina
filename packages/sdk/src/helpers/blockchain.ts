@@ -11,13 +11,13 @@ type SupportedNetwork = keyof typeof urls
 export interface LuminaPool {
 	address: string
 	tokens: [LuminaToken, LuminaToken]
-	chainId: string
+	chainId: SupportedNetwork
 	name: string
 }
 
 export interface LuminaToken {
 	address: string
-	chainId: string
+	chainId: SupportedNetwork
 	tokenId: string
 	symbol: string
 	decimals: number
