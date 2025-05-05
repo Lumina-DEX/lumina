@@ -3,10 +3,12 @@ import {
   Bool,
   Cache,
   Field,
+  MerkleMap,
   MerkleTree,
   Mina,
   Poseidon,
   PrivateKey,
+  Provable,
   PublicKey,
   Signature,
   UInt32,
@@ -25,12 +27,23 @@ import {
   PoolTokenHolder,
   SignerMerkleWitness
 } from "../dist"
-import { claimerNumber, Farm, FarmMerkleWitness, FarmReward, FarmRewardTokenHolder, FarmTokenHolder } from "../dist"
+import {
+  claimerNumber,
+  Farm,
+  FarmMerkleWitness,
+  FarmReward,
+  FarmRewardTokenHolder,
+  FarmTokenHolder,
+  MultisigInfo,
+  SignatureInfo,
+  SignatureRight,
+  UpdateSignerData
+} from "../dist"
 
 import { generateRewardMerkle } from "./Farm.Token.test"
 import { FarmUpgradeTest } from "./FarmUpgradeTest"
 
-const proofsEnabled = false
+let proofsEnabled = false
 
 describe("Farming pool mina", () => {
   let deployerAccount: Mina.TestPublicKey,
@@ -39,10 +52,17 @@ describe("Farming pool mina", () => {
     senderKey: PrivateKey,
     bobAccount: Mina.TestPublicKey,
     bobKey: PrivateKey,
-    merkle: MerkleTree,
+    merkle: MerkleMap,
     aliceAccount: Mina.TestPublicKey,
     aliceKey: PrivateKey,
     dylanAccount: Mina.TestPublicKey,
+    bobPublic: PublicKey,
+    alicePublic: PublicKey,
+    dylanPublic: PublicKey,
+    senderPublic: PublicKey,
+    deployerPublic: PublicKey,
+    allRight: SignatureRight,
+    deployRight: SignatureRight,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: PoolFactory,
@@ -108,6 +128,15 @@ describe("Farming pool mina", () => {
     bobKey = bobAccount.key
     aliceKey = aliceAccount.key
 
+    senderPublic = senderKey.toPublicKey()
+    bobPublic = bobKey.toPublicKey()
+    alicePublic = aliceKey.toPublicKey()
+    dylanPublic = dylanAccount.key.toPublicKey()
+    deployerPublic = deployerKey.toPublicKey()
+
+    allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
+    deployRight = SignatureRight.canDeployPool()
+
     zkAppPrivateKey = PrivateKey.random()
     zkAppAddress = zkAppPrivateKey.toPublicKey()
     zkApp = new PoolFactory(zkAppAddress)
@@ -125,11 +154,11 @@ describe("Farming pool mina", () => {
     zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
     zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
 
-    const keyTokenX = PrivateKey.random()
-    const keyTokenY = PrivateKey.random()
+    let keyTokenX = PrivateKey.random()
+    let keyTokenY = PrivateKey.random()
 
     // order token to create pool
-    const xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
+    let xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
 
     zkTokenPrivateKey0 = xIsLower.toBoolean() ? keyTokenX : keyTokenY
     zkTokenAddress0 = zkTokenPrivateKey0.toPublicKey()
@@ -145,20 +174,59 @@ describe("Farming pool mina", () => {
 
     tokenHolder = new PoolTokenHolder(zkPoolMinaAddress, zkToken0.deriveTokenId())
 
-    merkle = new MerkleTree(32)
-    merkle.setLeaf(0n, Poseidon.hash(bobAccount.toFields()))
-    merkle.setLeaf(1n, Poseidon.hash(aliceAccount.toFields()))
+    merkle = new MerkleMap()
+    merkle.set(Poseidon.hash(bobPublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(alicePublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(senderPublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(deployerPublic.toFields()), deployRight.hash())
+
     const root = merkle.getRoot()
+
+    const today = new Date()
+    today.setDate(today.getDate() + 1)
+    const tomorrow = today.getTime()
+    const time = getSlotFromTimestamp(tomorrow)
+    const info = new UpdateSignerData({ oldRoot: Field.empty(), newRoot: root, deadlineSlot: UInt32.from(time) })
+
+    const signBob = Signature.create(bobKey, info.toFields())
+    const signAlice = Signature.create(aliceKey, info.toFields())
+    const signDylan = Signature.create(senderAccount.key, info.toFields())
+
+    const multi = new MultisigInfo({
+      approvedUpgrader: root,
+      messageHash: info.hash(),
+      deadlineSlot: UInt32.from(time)
+    })
+    const infoBob = new SignatureInfo({
+      user: bobPublic,
+      witness: merkle.getWitness(Poseidon.hash(bobPublic.toFields())),
+      signature: signBob,
+      right: allRight
+    })
+    const infoAlice = new SignatureInfo({
+      user: alicePublic,
+      witness: merkle.getWitness(Poseidon.hash(alicePublic.toFields())),
+      signature: signAlice,
+      right: allRight
+    })
+    const infoDylan = new SignatureInfo({
+      user: senderPublic,
+      witness: merkle.getWitness(Poseidon.hash(senderPublic.toFields())),
+      signature: signDylan,
+      right: allRight
+    })
+    const array = [infoBob, infoAlice, infoDylan]
 
     const txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
       await zkApp.deploy({
         symbol: "FAC",
         src: "https://luminadex.com/",
-        owner: bobAccount,
         protocol: aliceAccount,
         delegator: dylanAccount,
-        approvedSigner: root
+        approvedSigner: root,
+        signatures: array,
+        signatureInfo: multi
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -214,26 +282,25 @@ describe("Farming pool mina", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn4.sign([deployerKey, zkAppPrivateKey, zkTokenAdminPrivateKey, zkTokenPrivateKey2]).send()
 
-    const witness = merkle.getWitness(0n)
-    const circuitWitness = new SignerMerkleWitness(witness)
+    const witness = merkle.getWitness(Poseidon.hash(bobPublic.toFields()))
     const signature2 = Signature.create(bobKey, zkPoolMinaAddress.toFields())
     const txn6 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(zkPoolMinaAddress, zkTokenAddress1, bobAccount, signature2, circuitWitness)
+      await zkApp.createPool(zkPoolMinaAddress, zkTokenAddress1, bobAccount, signature2, witness, allRight)
     })
     console.log("Pool Mina creation au", txn6.transaction.accountUpdates.length)
     await txn6.prove()
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn6.sign([deployerKey, zkPoolMinaPrivateKey]).send()
 
-    const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+    let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
 
     let start = BigInt(Date.now() + 10_000)
     start = (start - genesisTimestamp.toBigInt()) / slotTime.toBigInt()
     let end = start + BigInt(1_000_000)
     end = end / slotTime.toBigInt()
 
-    const txn10 = await Mina.transaction(deployerAccount, async () => {
+    let txn10 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await zkFarmToken.deploy({
         owner: deployerAccount,
@@ -256,17 +323,17 @@ describe("Farming pool mina", () => {
     await mintToken(bobAccount)
     await mintToken(aliceAccount)
 
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn5 = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn5 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPoolMina.supplyFirstLiquidities(amt, amtToken)
     })
     await txn5.prove()
     await txn5.sign([senderKey]).send()
 
-    const amtMina = UInt64.from(1 * 10 ** 9)
-    const amtToken2 = UInt64.from(5 * 10 ** 9)
+    let amtMina = UInt64.from(1 * 10 ** 9)
+    let amtToken2 = UInt64.from(5 * 10 ** 9)
     let totalLiquidity = Mina.getBalance(zkPoolMinaAddress, zkPoolMina.deriveTokenId())
     let amtToken0 = Mina.getBalance(zkPoolMinaAddress)
     let amtToken1 = Mina.getBalance(zkPoolMinaAddress, zkToken1.deriveTokenId())
@@ -547,7 +614,7 @@ describe("Farming pool mina", () => {
     await txn.sign([bobKey]).send()
     local.setGlobalSlot(2)
 
-    const timeUnlock = Date.now() + 1000_000
+    let timeUnlock = Date.now() + 1000_000
     txn = await Mina.transaction(deployerAccount, async () => {
       await zkFarmTokenHolder.initUpdate(UInt64.from(timeUnlock))
       await zkPoolMina.approveAccountUpdate(zkFarmTokenHolder.self)
@@ -572,8 +639,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    const farmv2 = new FarmUpgradeTest(zkFarmTokenAddress, zkPoolMina.deriveTokenId())
-    const version = await farmv2.version()
+    let farmv2 = new FarmUpgradeTest(zkFarmTokenAddress, zkPoolMina.deriveTokenId())
+    let version = await farmv2.version()
     expect(version?.toBigInt()).toEqual(112n)
 
     const dataReward = await generateRewardMerkle(zkFarmTokenAddress, zkPoolMina.deriveTokenId(), claimerNumber)
@@ -630,8 +697,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    const farmRewardv2 = new FarmUpgradeTest(farmReward.address)
-    const versionReward = await farmRewardv2.version()
+    let farmRewardv2 = new FarmUpgradeTest(farmReward.address)
+    let versionReward = await farmRewardv2.version()
     expect(versionReward?.toBigInt()).toEqual(112n)
   })
 
@@ -653,7 +720,7 @@ describe("Farming pool mina", () => {
     await txn.sign([bobKey]).send()
     local.setGlobalSlot(2)
 
-    const timeUnlock = Date.now() + 1000_000
+    let timeUnlock = Date.now() + 1000_000
     txn = await Mina.transaction(deployerAccount, async () => {
       await zkFarmToken.initUpdate(UInt64.from(timeUnlock))
     })
@@ -675,8 +742,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    const farmv2 = new FarmUpgradeTest(zkFarmTokenAddress)
-    const version = await farmv2.version()
+    let farmv2 = new FarmUpgradeTest(zkFarmTokenAddress)
+    let version = await farmv2.version()
     expect(version?.toBigInt()).toEqual(112n)
 
     const dataReward = await generateRewardMerkle(zkFarmTokenAddress, zkPoolMina.deriveTokenId(), claimerNumber)
@@ -736,8 +803,8 @@ describe("Farming pool mina", () => {
     await txn.prove()
     await txn.sign([deployerKey]).send()
 
-    const farmRewardv2 = new FarmUpgradeTest(key.toPublicKey(), zkToken2.deriveTokenId())
-    const versionReward = await farmRewardv2.version()
+    let farmRewardv2 = new FarmUpgradeTest(key.toPublicKey(), zkToken2.deriveTokenId())
+    let versionReward = await farmRewardv2.version()
     expect(versionReward?.toBigInt()).toEqual(112n)
   })
 
@@ -766,7 +833,15 @@ describe("Farming pool mina", () => {
   }
 
   function globalSlotToTimestamp(slot: UInt32) {
-    const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+    let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
     return UInt64.from(slot).mul(slotTime).add(genesisTimestamp)
+  }
+
+  function getSlotFromTimestamp(date: number) {
+    const { genesisTimestamp, slotTime } = Mina.activeInstance.getNetworkConstants()
+    let slotCalculated = UInt64.from(date)
+    slotCalculated = (slotCalculated.sub(genesisTimestamp)).div(slotTime)
+    Provable.log("slotCalculated64", slotCalculated)
+    return slotCalculated.toUInt32()
   }
 })

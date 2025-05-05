@@ -23,7 +23,7 @@
 		"@lumina-dex/sdk": "workspace:^",
 		"drizzle-kit": "^0.29.1",
 		"fflate": "^0.8.2",
-		"o1js": "2.2.0",
+		"o1js": "2.4.0",
 		"typescript": "^5.5.2",
 		"vitest": "2.0.5",
 		"wrangler": "^4.1.0"

@@ -36,8 +36,8 @@ importers:
         specifier: ^1.11.3
         version: 1.11.3
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       taze:
         specifier: ^0.18.0
         version: 0.18.0
@@ -49,10 +49,10 @@ importers:
     dependencies:
       mina-fungible-token:
         specifier: 1.1.0
-        version: 1.1.0(o1js@2.2.0)
+        version: 1.1.0(o1js@2.4.0)
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
     devDependencies:
       '@rollup/plugin-typescript':
         specifier: ^12.1.1
@@ -131,8 +131,8 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       typescript:
         specifier: ^5.5.2
         version: 5.7.2
@@ -164,8 +164,8 @@ importers:
         specifier: 14.2.3
         version: 14.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       react:
         specifier: ^18
         version: 18.3.1
@@ -246,8 +246,8 @@ importers:
         specifier: ^1.8.10
         version: 1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.9.0)(typescript@5.7.2)
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
       p-limit:
         specifier: ^6.2.0
         version: 6.2.0
@@ -375,8 +375,8 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4
       o1js:
-        specifier: 2.2.0
-        version: 2.2.0
+        specifier: 2.4.0
+        version: 2.4.0
     devDependencies:
       '@types/bun':
         specifier: 1.2.2
@@ -4275,6 +4275,9 @@ packages:
   error-stack-parser-es@0.1.5:
     resolution: {integrity: sha512-xHku1X40RO+fO8yJ8Wh2f2rZWVjqyhb1zgq1yZ8aZRQkv6OOKhKWRUaht3eSCUbAOBaKIgM+ykwFLE+QUxgGeg==}
 
+  error-stack-parser@2.1.4:
+    resolution: {integrity: sha512-Sk5V6wVazPhq5MhpO+AUxJn5x7XSXGl1R93Vn7i+zS15KDVxQijejNCrz8340/2bgLBjR9GtEG8ZVKONDjcqGQ==}
+
   errx@0.1.0:
     resolution: {integrity: sha512-fZmsRiDNv07K6s2KkKFTiD2aIvECa7++PKyD5NC32tpRw46qZA3sOz+aM+/V9V0GDHxVTKLziveV4JhzBHDp9Q==}
 
@@ -4980,9 +4983,6 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  isomorphic-fetch@3.0.0:
-    resolution: {integrity: sha512-qvUtwJ3j6qwsF3jLxkZ72qCgjMysPzDfeV240JHiGZsANBYd+EEuu35v7dfrJ9Up0Ak07D7GGSkGhCHTqg/5wA==}
-
   istanbul-lib-coverage@3.2.2:
     resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
     engines: {node: '>=8'}
@@ -5154,6 +5154,12 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libsodium-sumo@0.7.15:
+    resolution: {integrity: sha512-5tPmqPmq8T8Nikpm1Nqj0hBHvsLFCXvdhBFV7SGOitQPZAA6jso8XoL0r4L7vmfKXr486fiQInvErHtEvizFMw==}
+
+  libsodium-wrappers-sumo@0.7.15:
+    resolution: {integrity: sha512-aSWY8wKDZh5TC7rMvEdTHoyppVq/1dTSAeAR7H6pzd6QRT3vQWcT5pGwCotLcpPEOLXX6VvqihSPkpEhYAjANA==}
 
   lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
@@ -5639,8 +5645,8 @@ packages:
     engines: {node: ^14.16.0 || >=16.10.0}
     hasBin: true
 
-  o1js@2.2.0:
-    resolution: {integrity: sha512-lR8vmBlvzz3h+tDUajZfC/zVM+yKyrJFoIa57nED7F8WRfCGZHHy5lUpaUgHwVsC3ZE+aRaFtj2B2IzYyJu1AQ==}
+  o1js@2.4.0:
+    resolution: {integrity: sha512-IxwPmSJxN+9H+IFwJ5mzasJ6XBcWhamfN9jPqqyUsXgmI8mWuEH3A3s83F9z0570wuO69dbNFvaPCwsIi0QoPA==}
     engines: {node: '>=18.14.0'}
     hasBin: true
 
@@ -6461,6 +6467,10 @@ packages:
   source-map-support@0.5.21:
     resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}
 
+  source-map@0.5.6:
+    resolution: {integrity: sha512-MjZkVp0NHr5+TPihLcadqnlVoGIoWo4IBHptutGh9wI3ttUYvCG26HkSuDi+K6lsZ25syXJXcctwgyVCt//xqA==}
+    engines: {node: '>=0.10.0'}
+
   source-map@0.5.7:
     resolution: {integrity: sha512-LbrmJOMUSdEVxIKvdcJzQC+nQhe8FUZQTXQy6+I75skNgn3OoQ0DZA8YnFa7gp8tqtL3KPf1kmo0R5DoApeSGQ==}
     engines: {node: '>=0.10.0'}
@@ -6490,8 +6500,20 @@ packages:
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
+  stack-generator@2.0.10:
+    resolution: {integrity: sha512-mwnua/hkqM6pF4k8SnmZ2zfETsRUpWXREfA/goT8SLCV4iOFa4bzOX2nDipWAZFPTjLvQB82f5yaodMVhK0yJQ==}
+
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
+
+  stackframe@1.3.4:
+    resolution: {integrity: sha512-oeVtt7eWQS+Na6F//S4kJ2K2VbRlS9D43mAlMyVpVWovy9o+jfgH8O9agzANzaiLjclA0oYzUXEM4PurhSUChw==}
+
+  stacktrace-gps@3.1.2:
+    resolution: {integrity: sha512-GcUgbO4Jsqqg6RxfyTHFiPxdPqF+3LFmQhm7MgCuYQOYuWyqxo5pwRPz5d/u6/WYJdEnWfK4r+jGbyD8TSggXQ==}
+
+  stacktrace-js@2.0.2:
+    resolution: {integrity: sha512-Je5vBeY4S1r/RnLydLl0TBTi3F2qdfWmYsGvtfZgEI+SCprPppaIhQf5nGcal4gI4cGpCV/duLcAzT1np6sQqg==}
 
   stacktracey@2.1.8:
     resolution: {integrity: sha512-Kpij9riA+UNg7TnphqjH7/CzctQ/owJGNbFkfEeve4Z4uxT5+JapVLFXcsurIfN34gnTWZNJ/f7NMG0E8JDzTw==}
@@ -7369,9 +7391,6 @@ packages:
 
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
-
-  whatwg-fetch@3.6.20:
-    resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
 
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
@@ -11271,6 +11290,10 @@ snapshots:
 
   error-stack-parser-es@0.1.5: {}
 
+  error-stack-parser@2.1.4:
+    dependencies:
+      stackframe: 1.3.4
+
   errx@0.1.0: {}
 
   es-module-lexer@1.5.4: {}
@@ -12163,13 +12186,6 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-fetch@3.0.0:
-    dependencies:
-      node-fetch: 2.7.0
-      whatwg-fetch: 3.6.20
-    transitivePeerDependencies:
-      - encoding
-
   istanbul-lib-coverage@3.2.2: {}
 
   istanbul-lib-report@3.0.1:
@@ -12320,6 +12336,12 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libsodium-sumo@0.7.15: {}
+
+  libsodium-wrappers-sumo@0.7.15:
+    dependencies:
+      libsodium-sumo: 0.7.15
 
   lilconfig@2.1.0: {}
 
@@ -12669,9 +12691,9 @@ snapshots:
 
   mimic-fn@4.0.0: {}
 
-  mina-fungible-token@1.1.0(o1js@2.2.0):
+  mina-fungible-token@1.1.0(o1js@2.4.0):
     dependencies:
-      o1js: 2.2.0
+      o1js: 2.4.0
 
   miniflare@3.20241106.1:
     dependencies:
@@ -13135,16 +13157,15 @@ snapshots:
       tinyexec: 0.3.1
       ufo: 1.5.4
 
-  o1js@2.2.0:
+  o1js@2.4.0:
     dependencies:
       blakejs: 1.2.1
       cachedir: 2.4.0
-      isomorphic-fetch: 3.0.0
       js-sha256: 0.9.0
+      libsodium-wrappers-sumo: 0.7.15
       reflect-metadata: 0.1.14
+      stacktrace-js: 2.0.2
       tslib: 2.8.1
-    transitivePeerDependencies:
-      - encoding
 
   object-assign@4.1.1: {}
 
@@ -14006,6 +14027,8 @@ snapshots:
       buffer-from: 1.1.2
       source-map: 0.6.1
 
+  source-map@0.5.6: {}
+
   source-map@0.5.7: {}
 
   source-map@0.6.1: {}
@@ -14025,7 +14048,24 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
+  stack-generator@2.0.10:
+    dependencies:
+      stackframe: 1.3.4
+
   stackback@0.0.2: {}
+
+  stackframe@1.3.4: {}
+
+  stacktrace-gps@3.1.2:
+    dependencies:
+      source-map: 0.5.6
+      stackframe: 1.3.4
+
+  stacktrace-js@2.0.2:
+    dependencies:
+      error-stack-parser: 2.1.4
+      stack-generator: 2.0.10
+      stacktrace-gps: 3.1.2
 
   stacktracey@2.1.8:
     dependencies:
@@ -15030,8 +15070,6 @@ snapshots:
   webidl-conversions@3.0.1: {}
 
   webpack-virtual-modules@0.6.2: {}
-
-  whatwg-fetch@3.6.20: {}
 
   whatwg-url@5.0.0:
     dependencies:
