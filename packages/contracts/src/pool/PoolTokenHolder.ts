@@ -267,7 +267,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     // withdraw token 0
     const amountToken = this.withdraw(sender, liquidityAmount, amountToken0Min, reserveToken0Min, supplyMax)
 
-    let poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
+    const poolTokenZ = new PoolTokenHolder(this.address, fungibleToken1.deriveTokenId())
 
     const amountToken1 = await poolTokenZ.subWithdrawLiquidity(
       sender,
@@ -303,7 +303,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     methodSender.assertEquals(sender)
     // withdraw token 1
     const amountToken = this.withdraw(sender, liquidityAmount, amountToken1Min, reserveToken1Min, supplyMax)
-    let pool = new Pool(this.address)
+    const pool = new Pool(this.address)
     await pool.burnLiquidityToken(sender, liquidityAmount, supplyMax)
     // we emit an event in case of the user call this method directly
     this.emitEvent(
@@ -334,7 +334,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
     // send token to the user
     const receiverAccount = AccountUpdate.createSigned(sender, this.tokenId)
-    let receiverUpdate = this.send({ to: receiverAccount, amount: amountToken })
+    const receiverUpdate = this.send({ to: receiverAccount, amount: amountToken })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     return amountToken
@@ -379,16 +379,16 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
     // send token to the user
     const receiverAccount = AccountUpdate.createSigned(sender, this.tokenId)
-    let receiverUpdate = this.send({ to: receiverAccount, amount: amountOut })
+    const receiverUpdate = this.send({ to: receiverAccount, amount: amountOut })
     receiverUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
     // send fee to frontend (if not empty)
     const frontendReceiver = Provable.if(frontend.equals(PublicKey.empty()), this.address, frontend)
-    let frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
+    const frontendUpdate = await this.send({ to: frontendReceiver, amount: feeFrontend })
     frontendUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     // send fee to protocol
     const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
-    let protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
+    const protocolUpdate = await this.send({ to: protocolReceiver, amount: feeProtocol })
     protocolUpdate.body.mayUseToken = AccountUpdate.MayUseToken.InheritFromParent
 
     if (!isMinaPool) {

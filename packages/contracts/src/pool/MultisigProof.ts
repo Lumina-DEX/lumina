@@ -454,5 +454,5 @@ export const MultisigProgram = ZkProgram({
   }
 })
 
-export let MultisigProof_ = ZkProgram.Proof(MultisigProgram)
+export const MultisigProof_ = ZkProgram.Proof(MultisigProgram)
 export class MultisigProof extends MultisigProof_ {}

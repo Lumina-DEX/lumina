@@ -261,12 +261,12 @@ export class Pool extends TokenContract implements IPool {
   }
 
   private checkPermissionsUpdate(update: AccountUpdate) {
-    let permissions = update.update.permissions
+    const permissions = update.update.permissions
 
-    let { access, receive } = permissions.value
-    let accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
-    let receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
-    let updateAllowed = accessIsNone.and(receiveIsNone)
+    const { access, receive } = permissions.value
+    const accessIsNone = Provable.equal(Types.AuthRequired, access, Permissions.none())
+    const receiveIsNone = Provable.equal(Types.AuthRequired, receive, Permissions.none())
+    const updateAllowed = accessIsNone.and(receiveIsNone)
 
     assert(
       updateAllowed.or(permissions.isSome.not()),
@@ -407,8 +407,8 @@ export class Pool extends TokenContract implements IPool {
     // token 0 need to be empty on mina pool
     const [, token1] = checkToken(this, true)
 
-    let tokenContract = new FungibleToken(token1)
-    let tokenAccount = AccountUpdate.create(this.address, tokenContract.deriveTokenId())
+    const tokenContract = new FungibleToken(token1)
+    const tokenAccount = AccountUpdate.create(this.address, tokenContract.deriveTokenId())
 
     tokenAccount.account.balance.requireBetween(UInt64.one, balanceInMax)
     this.account.balance.requireBetween(balanceOutMin, UInt64.MAXINT())
@@ -457,7 +457,7 @@ export class Pool extends TokenContract implements IPool {
     this.account.balance.requireBetween(UInt64.one, balanceInMax)
     const methodSender = this.sender.getUnconstrained()
     methodSender.assertEquals(sender)
-    let senderSigned = AccountUpdate.createSigned(sender)
+    const senderSigned = AccountUpdate.createSigned(sender)
     await senderSigned.send({ to: this.self, amount: amountMinaIn })
     this.emitEvent("receiveMina", new ReceiveMinaEvent({ sender, amountMinaIn }))
   }
@@ -587,7 +587,7 @@ export class Pool extends TokenContract implements IPool {
 
     if (isMinaPool) {
       // send mina to the pool
-      let senderUpdate = AccountUpdate.createSigned(sender)
+      const senderUpdate = AccountUpdate.createSigned(sender)
       senderUpdate.send({ to: this.self, amount: amountToken0 })
     } else {
       // send token 0 to the pool
@@ -613,12 +613,12 @@ export class Pool extends TokenContract implements IPool {
   }
 
   private async sendTokenAccount(tokenAccount: AccountUpdate, tokenAddress: PublicKey, amount: UInt64) {
-    let tokenContract = new FungibleToken(tokenAddress)
-    let sender = this.sender.getUnconstrained()
+    const tokenContract = new FungibleToken(tokenAddress)
+    const sender = this.sender.getUnconstrained()
     sender.equals(this.address).assertFalse("Can't transfer to/from the pool account")
 
     // send token to the pool
-    let senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
+    const senderToken = AccountUpdate.createSigned(sender, tokenContract.deriveTokenId())
     senderToken.send({ to: tokenAccount, amount: amount })
     await tokenContract.approveAccountUpdates([senderToken, tokenAccount])
   }

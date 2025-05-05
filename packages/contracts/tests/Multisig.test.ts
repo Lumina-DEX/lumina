@@ -11,8 +11,8 @@ import {
   UInt32,
   UInt64
 } from "o1js"
-
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+
 import {
   MultisigInfo,
   MultisigProgram,

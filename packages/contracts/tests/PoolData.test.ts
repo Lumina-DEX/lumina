@@ -2,7 +2,6 @@ import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
 import {
   Field,
   MerkleMap,
-  MerkleTree,
   Poseidon,
   Provable,
   PublicKey,
@@ -14,6 +13,7 @@ import {
 } from "o1js"
 import { AccountUpdate, Bool, Cache, Mina, PrivateKey, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+
 import {
   mulDiv,
   MultisigInfo,
@@ -39,7 +39,7 @@ import {
 
 import { PoolUpgradeTest } from "./PoolUpgradeTest"
 
-let proofsEnabled = false
+const proofsEnabled = false
 
 const vkUpgradeTest = new VerificationKey({
   data:
@@ -272,8 +272,8 @@ describe("Pool data", () => {
     await txn1.prove()
     await txn1.sign([deployerKey, bobKey]).send()
 
-    let poolDatav2 = new PoolUpgradeTest(zkPoolAddress)
-    let version = await poolDatav2.version()
+    const poolDatav2 = new PoolUpgradeTest(zkPoolAddress)
+    const version = await poolDatav2.version()
     expect(version?.toBigInt()).toEqual(33n)
   })
 
@@ -371,8 +371,8 @@ describe("Pool data", () => {
     await txn1.prove()
     await txn1.sign([deployerKey, bobKey]).send()
 
-    let poolDatav2 = new PoolUpgradeTest(zkPoolAddress, zkToken.deriveTokenId())
-    let version = await poolDatav2.version()
+    const poolDatav2 = new PoolUpgradeTest(zkPoolAddress, zkToken.deriveTokenId())
+    const version = await poolDatav2.version()
     expect(version?.toBigInt()).toEqual(33n)
   })
 
@@ -383,8 +383,8 @@ describe("Pool data", () => {
     await txn1.prove()
     await txn1.sign([deployerKey, bobKey]).send()
 
-    let poolDatav2 = new PoolUpgradeTest(zkAppAddress)
-    let version = await poolDatav2.version()
+    const poolDatav2 = new PoolUpgradeTest(zkAppAddress)
+    const version = await poolDatav2.version()
     expect(version?.toBigInt()).toEqual(33n)
   })
 
@@ -411,22 +411,22 @@ describe("Pool data", () => {
   })
 
   it("update protocol", async () => {
-    let protocol = await zkApp.protocol.fetch()
+    const protocol = await zkApp.protocol.fetch()
     expect(protocol?.toBase58()).toEqual(aliceAccount.toBase58())
 
     const proof = await getProofAccount(aliceAccount, deployerAccount, false)
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewProtocol(proof, deployerAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let protocolNew = await zkApp.protocol.fetch()
+    const protocolNew = await zkApp.protocol.fetch()
     expect(protocolNew?.toBase58()).toEqual(deployerAccount.toBase58())
   })
 
   it("set delegator", async () => {
-    let delegator = await zkApp.delegator.fetch()
+    const delegator = await zkApp.delegator.fetch()
     let poolAccount = zkPool.account?.delegate?.get()
     expect(delegator?.toBase58()).toEqual(dylanAccount.toBase58())
     expect(poolAccount?.toBase58()).toEqual(zkPoolAddress.toBase58())

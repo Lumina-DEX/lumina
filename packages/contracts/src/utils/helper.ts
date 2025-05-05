@@ -80,7 +80,7 @@ export function getAmountLiquidityOutUint(
   const amountBIn = mulDiv(liquidityA, balanceBMax, supplyMin)
   const liquidityB = mulDiv(amountBIn, supplyMin, balanceBMax)
 
-  let liquidity = liquidityA.lessThan(liquidityB) === Bool(true) ? liquidityA : liquidityB
+  const liquidity = liquidityA.lessThan(liquidityB) === Bool(true) ? liquidityA : liquidityB
 
   return { amountAIn, amountBIn, balanceAMax, balanceBMax, supplyMin, liquidity }
 }
