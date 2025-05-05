@@ -23,7 +23,6 @@ Deno.serve(async (request) => {
 		if (networks.includes(network) === false)
 			return new Response("Invalid Network", { status: 400 })
 
-		//TODO: This should accept a specific block height to start searching from
 		const [{ tokens, pools, currentBlock, startBlock }, { networkState }] = await Promise.all([
 			fetchAllFromPoolFactory({ network, from: from ? Number(from) : undefined }),
 			network.includes("zeko")

@@ -47,11 +47,9 @@ export const sync = async ({
 	context,
 	network
 }: { env: Env; network: Networks; context: ExecutionContext }) => {
-	console.log(`syncing ${network}`)
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
-	console.log(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN)
 	const request = new Request(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, {
 		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
 	})
