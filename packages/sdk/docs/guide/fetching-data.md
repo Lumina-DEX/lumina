@@ -11,8 +11,8 @@ import { fetchPoolList, fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
 const fetchTokens = async () => {
-	const result = await fetchTokenList("mina:devnet")
-	console.log("Token list:", result.tokens)
+	const tokens = await fetchTokenList("mina:devnet")
+	console.log("Token list:", tokens)
 
 	// Each token has properties like:
 	// - address: The token contract address
@@ -25,8 +25,8 @@ const fetchTokens = async () => {
 
 // Fetch pools for a specific network
 const fetchPools = async () => {
-	const result = await fetchPoolList("mina:devnet")
-	console.log("Pool list:", result.pools)
+	const pools = await fetchPoolList("mina:devnet")
+	console.log("Pool list:", pools)
 
 	// Each pool has properties like:
 	// - address: The pool contract address

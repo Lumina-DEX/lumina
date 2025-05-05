@@ -3,44 +3,38 @@ import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlit
 
 const chainIds = ["mina:devnet", "mina:mainnet", "zeko:testnet", "zeko:mainnet"] as const
 
-const tokenTable = (name: string) =>
-	sqliteTable(
-		name,
-		{
-			address: text().notNull(),
-			tokenId: text().notNull(),
-			symbol: text().notNull(),
-			chainId: text({ enum: chainIds }).notNull(),
-			decimals: integer().notNull(),
-			timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
-		},
-		(table) => [
-			primaryKey({ columns: [table.address, table.chainId] }),
-			index(`${name}_chainId_idx`).on(table.chainId)
-		]
-	)
-
-const poolTable = (name: string) =>
-	sqliteTable(
-		name,
-		{
-			address: text().notNull(),
-			token0Address: text().notNull(),
-			token1Address: text().notNull(),
-			chainId: text({ enum: chainIds }).notNull(),
-			name: text().notNull(),
-			timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
-		},
-		(table) => [
-			primaryKey({ columns: [table.address, table.chainId] }),
-			index(`${name}_chainId_idx`).on(table.chainId),
-			index(`${name}.token0_idx`).on(table.token0Address),
-			index(`${name}.token1_idx`).on(table.token1Address)
-		]
-	)
-
-export const tokens = tokenTable("Token")
-export const pools = poolTable("Pool")
+export const tokens = sqliteTable(
+	"Token",
+	{
+		address: text().notNull(),
+		tokenId: text().notNull(),
+		symbol: text().notNull(),
+		chainId: text({ enum: chainIds }).notNull(),
+		decimals: integer().notNull(),
+		timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		primaryKey({ columns: [table.address, table.chainId] }),
+		index("Token_chainId_idx").on(table.chainId)
+	]
+)
+export const pools = sqliteTable(
+	"Pool",
+	{
+		address: text().notNull(),
+		token0Address: text().notNull(),
+		token1Address: text().notNull(),
+		chainId: text({ enum: chainIds }).notNull(),
+		name: text().notNull(),
+		timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		primaryKey({ columns: [table.address, table.chainId] }),
+		index("Pool_chainId_idx").on(table.chainId),
+		index("Pool.token0_idx").on(table.token0Address),
+		index("Pool.token1_idx").on(table.token1Address)
+	]
+)
 
 export const relations = defineRelations({ tokens, pools }, (r) => ({
 	pools: {

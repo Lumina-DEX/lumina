@@ -1,6 +1,7 @@
 import type { Networks } from "@lumina-dex/sdk"
 import type { Env } from "../worker-configuration"
 import type { Token } from "./helper"
+import type { Pool } from "./helper"
 
 interface ServeAsset {
 	assetUrl: URL
@@ -56,17 +57,20 @@ export const sync = async ({
 	})
 	const response = await fetch(request)
 	if (response.ok) {
-		const data = (await response.json()) as { tokens: Token[]; pools: unknown[] }
+		const data = (await response.json()) as { tokens: Token[]; pools: Pool[] }
 		const { tokens, pools } = data
 		if (tokens.length === 0) return
 		//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
 		await tokenList.reset({ network })
 		const result = await tokenList.insertToken(tokens)
-		if (result.length > 0) {
-			// Only bust the cache if something changed.
-			const cacheKey = tokenCacheKey(network)
-			context.waitUntil(caches.default.delete(cacheKey))
-			return { tokens, pools, network, cacheBusted: cacheKey }
+		const poolResult = await tokenList.insertPool(pools)
+		// Only bust the cache if something changed.
+		if (result.length > 0 || poolResult.length > 0) {
+			const tKey = tokenCacheKey(network)
+			const pKey = poolCacheKey(network)
+			context.waitUntil(caches.default.delete(tKey))
+			context.waitUntil(caches.default.delete(pKey))
+			return { tokens, pools, network, cacheBusted: { token: tKey, pool: pKey } }
 		}
 		return { tokens, pools, network, cacheBusted: false }
 	}
@@ -74,6 +78,7 @@ export const sync = async ({
 }
 
 export const tokenCacheKey = (network: string) => new URL(`http://token.key/${network}`)
+export const poolCacheKey = (network: string) => new URL(`http://pool.key/${network}`)
 
 export const auth = ({ env, request }: { env: Env; request: Request }) =>
 	request.headers.get("Authorization") === `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}`

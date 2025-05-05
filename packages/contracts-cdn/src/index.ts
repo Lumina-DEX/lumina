@@ -1,17 +1,28 @@
 import type { Networks } from "@lumina-dex/sdk"
 import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
+import * as v from "valibot"
+
 import type { Env } from "../worker-configuration"
-import { type Token, createList } from "./helper"
-import { auth, getDb, headers, notFound, serveAsset, sync, tokenCacheKey } from "./http"
+import { PoolSchema, TokenSchema } from "./helper"
+import {
+	auth,
+	getDb,
+	headers,
+	notFound,
+	poolCacheKey,
+	serveAsset,
+	sync,
+	tokenCacheKey
+} from "./http"
 
 const router = createRouter<{ path: string }>()
 
 addRoute(router, "GET", "/api/manifest/:version", { path: "manifest" })
 
-addRoute(router, "GET", "/api/:network/tokens", { path: "tokens" })
-addRoute(router, "GET", "/api/:network/tokens/count", { path: "tokens/count" })
-addRoute(router, "POST", "/api/:network/token", { path: "token.post" })
+addRoute(router, "GET", "/api/:network/:entities", { path: "entities" })
+addRoute(router, "GET", "/api/:network/:entities/count", { path: "entities/count" })
+addRoute(router, "POST", "/api/:network/:entity", { path: "entity.post" })
 
 addRoute(router, "POST", "/api/:network/sync", { path: "sync" })
 addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
@@ -84,56 +95,85 @@ export default {
 		}
 
 		// Add a new token to the database and purge the cache
-		if (match?.data.path === "token.post" && match.params?.network && auth({ env, request })) {
+		if (
+			match?.data.path === "entity.post" &&
+			["token", "pool"].includes(match.params?.entity ?? "") &&
+			match.params?.network &&
+			auth({ env, request })
+		) {
+			const isToken = match.params.entity === "token"
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 			const db = getDb(env)
 			const body = await request.json()
-			// TODO: Validate the data
-			const token = body as Token
-			const result = await db.insertTokenIfExists({
+			if (isToken) {
+				const token = v.parse(TokenSchema, body)
+				const result = await db.insertTokenIfExists({
+					network,
+					address: token.address,
+					token
+				})
+				if (result === false) return new Response("Token already exists", { headers, status: 409 })
+				const cacheKey = tokenCacheKey(match.params.network)
+				context.waitUntil(caches.default.delete(cacheKey))
+				return new Response("Token Inserted", { headers, status: 201 })
+			}
+			const pool = v.parse(PoolSchema, body)
+			const result = await db.insertPoolIfExists({
 				network,
-				address: token.address,
-				token
+				address: pool.address,
+				pool
 			})
-			if (result === false) return new Response("Token already exists", { headers, status: 409 })
-			const cacheKey = tokenCacheKey(match.params.network)
+			if (result === false) return new Response("Pool already exists", { headers, status: 409 })
+			const cacheKey = poolCacheKey(match.params.network)
 			context.waitUntil(caches.default.delete(cacheKey))
-			return new Response("Token Inserted", { headers, status: 201 })
+			return new Response("Pool Inserted", { headers, status: 201 })
 		}
 
 		// Count the amount of tokens for a given network
-		if (match?.data.path === "tokens/count" && match.params?.network) {
+		if (
+			match?.data.path === "entities/count" &&
+			["tokens", "pools"].includes(match.params?.entities ?? "") &&
+			match.params?.network
+		) {
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 
 			const db = getDb(env)
-			const count = await db.countTokens({ network })
+			const count =
+				match.params.entities === "tokens"
+					? await db.countTokens({ network })
+					: await db.countPools({ network })
 
 			return Response.json(count)
 		}
 
-		// Return the token list for a given network
-		if (match?.data.path === "tokens" && match.params?.network) {
+		// Return the list of entities for a given network
+		if (
+			match?.data.path === "entities" &&
+			["tokens", "pools"].includes(match.params?.entities ?? "") &&
+			match.params?.network
+		) {
+			const isToken = match.params.entities === "tokens"
 			// Check for the cache
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 
-			const cacheKey = tokenCacheKey(match.params.network)
+			const cacheKey = isToken
+				? tokenCacheKey(match.params.network)
+				: poolCacheKey(match.params.network)
 			const cache = caches.default
 			const cacheResponse = await cache.match(cacheKey)
 			if (cacheResponse?.ok) {
 				return cacheResponse
 			}
 
-			// Fetch the Data from the database.
 			const db = getDb(env)
-			const data = await db.findAllTokens({ network })
-
-			const tokens = createList(network)(data)
-			if (!tokens) return notFound()
-			const response = Response.json(tokens, { headers })
-			// response.headers.append("Cache-Control", "s-maxage=60") // We don't want the user to cache the response in his browser.
+			const data = isToken
+				? await db.findAllTokens({ network })
+				: await db.findAllPools({ network })
+			if (!data) return notFound()
+			const response = Response.json(data, { headers })
 			context.waitUntil(cache.put(cacheKey, response.clone()))
 			data[Symbol.dispose]() //TODO: Use using keyword
 			return response

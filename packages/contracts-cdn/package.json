@@ -30,6 +30,7 @@
 	},
 	"dependencies": {
 		"drizzle-orm": "beta",
-		"rou3": "^0.5.1"
+		"rou3": "^0.5.1",
+		"valibot": "^1.0.0"
 	}
 }

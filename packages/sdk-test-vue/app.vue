@@ -182,12 +182,12 @@ const handleClaimFromFaucet = () => {
 }
 
 const fetchTokenBalances = async () => {
-  const result = await fetchTokenList("mina:devnet")
-  tokens.value = result.tokens
+  const resultTokens = await fetchTokenList("mina:devnet")
+  tokens.value = resultTokens
   Wallet.send({
     type: "FetchBalance",
     network: "mina:devnet",
-    tokens: result.tokens.map((token) => ({
+    tokens: resultTokens.map((token) => ({
       address: token.address,
       decimal: 10 ** token.decimals,
       tokenId: token.tokenId,

@@ -23,30 +23,6 @@ export interface LuminaToken {
 	decimals: number
 }
 
-export interface TokenDbList {
-	name: string
-	timestamp: string
-	version: {
-		major: number
-		minor: number
-		patch: number
-	}
-	keywords: string[]
-	tokens: LuminaToken[]
-}
-
-export interface PoolDbList {
-	name: string
-	timestamp: string
-	version: {
-		major: number
-		minor: number
-		patch: number
-	}
-	keywords: string[]
-	pools: LuminaPool[]
-}
-
 interface PoolAddedEventData {
 	sender: PublicKey
 	signer: PublicKey
@@ -336,13 +312,15 @@ export const fetchAllPoolsFromPoolFactory = async (
  */
 export const fetchTokenList = async (network: SupportedNetwork) => {
 	const response = await fetch(`${luminaCdnOrigin}/api/${network}/tokens`)
-	const tokens = await response.json() as TokenDbList
+	const tokens = await response.json() as LuminaToken[]
 	return tokens
 }
 
-// TODO: To implement
+/**
+ * Fetches the pool list from the CDN.
+ */
 export const fetchPoolList = async (network: SupportedNetwork) => {
-	// const response = await fetch(`${luminaCdnOrigin}/api/${network}/pools`)
-	// const pools = await response.json()
-	// return pools
+	const response = await fetch(`${luminaCdnOrigin}/api/${network}/pools`)
+	const pools = await response.json() as LuminaPool[]
+	return pools
 }

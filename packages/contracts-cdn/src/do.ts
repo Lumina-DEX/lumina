@@ -12,6 +12,7 @@ import {
 	type Network,
 	type Pool,
 	type Token,
+	formatPoolWithTokensResults,
 	pools,
 	tokens
 } from "./helper"
@@ -79,11 +80,20 @@ export class TokenList extends DurableObject {
 			tokenAddress: or(eq(pools.token0Address, value), eq(pools.token1Address, value)),
 			address: eq(pools.address, value)
 		}[by]
-		return this.db
+		const result = this.db
 			.select()
 			.from(pools)
+			.leftJoin(
+				tokens,
+				or(
+					and(eq(pools.token0Address, tokens.address), eq(pools.chainId, tokens.chainId)),
+					and(eq(pools.token1Address, tokens.address), eq(pools.chainId, tokens.chainId))
+				)
+			)
 			.where(and(condition, eq(pools.chainId, network)))
 			.all()
+
+		return formatPoolWithTokensResults(result)
 	}
 
 	/**
@@ -119,7 +129,20 @@ export class TokenList extends DurableObject {
 	}
 
 	async findAllPools({ network }: Network) {
-		return this.db.select().from(pools).where(eq(schema.pools.chainId, network)).all()
+		const result = this.db
+			.select()
+			.from(pools)
+			.leftJoin(
+				tokens,
+				or(
+					and(eq(pools.token0Address, tokens.address), eq(pools.chainId, tokens.chainId)),
+					and(eq(pools.token1Address, tokens.address), eq(pools.chainId, tokens.chainId))
+				)
+			)
+			.where(eq(pools.chainId, network))
+			.all()
+
+		return formatPoolWithTokensResults(result)
 	}
 
 	/**
@@ -146,8 +169,10 @@ export class TokenList extends DurableObject {
 	}
 
 	async reset({ network }: Network) {
-		const result = this.db.delete(tokens).where(eq(tokens.chainId, network)).returning().all()
-		return result
+		return {
+			tokens: this.db.delete(tokens).where(eq(tokens.chainId, network)).returning().all(),
+			pools: this.db.delete(pools).where(eq(pools.chainId, network)).returning().all()
+		}
 	}
 
 	async _migrate() {
@@ -155,14 +180,30 @@ export class TokenList extends DurableObject {
 	}
 
 	async seed() {
-		//This is only used for local development and tests
+		//This is only used for local development and tests like in api.spec.ts
 		this.insertToken([
+			{
+				address: "MINA",
+				tokenId: "MINA",
+				symbol: "MINA",
+				chainId: "mina:devnet",
+				decimals: 9
+			},
 			{
 				address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 				tokenId: "wTRtTRnW7hZCQSVgsuMVJRvnS1xEAbRRMWyaaJPkQsntSNh67n",
 				symbol: "TOKA",
 				chainId: "mina:devnet",
 				decimals: 9
+			}
+		])
+		this.insertPool([
+			{
+				address: "pool_test_address",
+				token0Address: "MINA",
+				token1Address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+				chainId: "mina:devnet",
+				name: "LLP-MINA_TOKA"
 			}
 		])
 	}
