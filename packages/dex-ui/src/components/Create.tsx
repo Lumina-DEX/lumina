@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
@@ -7,12 +7,15 @@ import { PublicKey } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
+import ButtonStatus from "./ButtonStatus"
+import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Create = ({ accountState }) => {
+const Create = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [tokenAddress, setTokenAddress] = useState("")
+	const { Wallet, Dex } = useContext(LuminaContext)
 
 	useEffect(() => {
 		if (window && (window as any).mina) {
@@ -20,20 +23,16 @@ const Create = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
-
 	const createPool = async () => {
 		try {
 			setLoading(true)
-			if (mina) {
-				console.time("create")
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				await zkState.zkappWorkerClient?.deployPoolInstance(tokenAddress, user)
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("create")
-				await mina.sendTransaction({ transaction: json })
-			}
+			Dex.send({
+				type: "DeployPool",
+				settings: {
+					tokenA: "MINA",
+					tokenB: tokenAddress
+				}
+			})
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
@@ -54,13 +53,7 @@ const Create = ({ accountState }) => {
 							onChange={(event) => setTokenAddress(event.target.value)}
 						></input>
 					</div>
-					<button
-						onClick={createPool}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Create Pool
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={createPool} text={"Create Pool"}></ButtonStatus>
 				</div>
 			</div>
 		</>

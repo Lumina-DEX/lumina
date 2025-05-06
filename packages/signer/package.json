@@ -11,7 +11,7 @@
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"arktype": "^2.0.4",
-		"o1js": "2.2.0"
+		"o1js": "2.4.0"
 	},
 	"devDependencies": {
 		"@types/bun": "1.2.2"

@@ -1,94 +1,57 @@
+"use client"
+
 import { Field, PublicKey } from "o1js"
-import { useEffect, useState } from "react"
-import GradientBG from "./GradientBG.js"
+import { useContext, useEffect, useState } from "react"
 import styles from "../styles/Home.module.css"
-import * as react from "../pages/reactCOIServiceWorker.js"
-import ZkappWorkerClient from "@/lib/zkappWorkerClient"
-import Swap from "@/components/Swap"
 import Account from "@/components/Account"
-import Tab from "@/components/Tab"
-import useAccount from "@/states/useAccount"
-import useLoad from "@/states/useLoad"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { createContext } from "react"
+import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
 
 let transactionFee = 0.1
 const ZKAPP_ADDRESS = "B62qjmz2oEe8ooqBmvj3a6fAbemfhk61rjxTYmUMP9A6LPdsBLmRAxK"
 const ZKTOKEN_ADDRESS = "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w"
-export const ZKFACTORY_ADDRESS = "B62qpfZ1egTLiRyX2DxfeFENrumeZowycer3Y5J9pKbiGVkgQBDkhW3"
+export const ZKFACTORY_ADDRESS = "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"
 const ZKFAUCET_ADDRESS = "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUAG"
 const WETH_ADDRESS = "B62qisgt5S7LwrBKEc8wvWNjW7SGTQjMZJTDL2N6FmZSVGrWiNkV21H"
 
-export default function Layout({ children }) {
-	const { loadUpdate } = useLoad((state) => ({
-		loadUpdate: state.update
-	}))
+const Wallet = createWallet()
+export const feeAmount = 10
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		frontendFee: {
+			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
+			amount: feeAmount
+		}
+	}
+})
+const Context: LC = { Dex, Wallet }
+export const LuminaContext = createContext(Context)
 
-	const { address, hasBeenSetup, accountUpdate } = useAccount((state) => ({
-		address: state.publicKeyBase58,
-		hasBeenSetup: state.hasBeenSetup,
-		accountUpdate: state.update
-	}))
+export default function Layout({ children }) {
+	const [isReady, setIsReady] = useState(false)
+
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const dexState = useSelector(Dex, (state) => state.value)
 
 	const [displayText, setDisplayText] = useState("")
+	const [displayTextWallet, setDisplayTextWallet] = useState("")
 	const [transactionlink, setTransactionLink] = useState("")
 
 	// -------------------------------------------------------
 	// Do Setup
 
 	useEffect(() => {
-		async function timeout(seconds: number): Promise<void> {
-			return new Promise<void>((resolve) => {
-				setTimeout(() => {
-					resolve()
-				}, seconds * 1000)
-			})
+		if (dexState?.contractSystem === "CONTRACTS_READY") {
+			setIsReady(true)
 		}
-		;(async () => {
-			if (!hasBeenSetup) {
-				setDisplayText("Loading web worker...")
-				console.log("Loading web worker...")
-				const zkappWorkerClient = new ZkappWorkerClient()
-				accountUpdate({ zkappWorkerClient })
-				await timeout(1)
+		setDisplayText(JSON.stringify(dexState))
+	}, [dexState])
 
-				setDisplayText("Done loading web worker")
-				console.log("Done loading web worker")
-
-				await zkappWorkerClient.setActiveInstanceToDevnet()
-
-				await zkappWorkerClient.loadContract()
-
-				console.log("Compiling zkApp...")
-				setDisplayText("Compiling zkApp...")
-				await zkappWorkerClient.compileContract()
-				console.log("zkApp compiled")
-				setDisplayText("zkApp compiled...")
-
-				const zkappPublicKey = PublicKey.fromBase58(ZKAPP_ADDRESS)
-
-				await zkappWorkerClient.initZkappInstance(
-					ZKAPP_ADDRESS,
-					ZKFAUCET_ADDRESS,
-					ZKFACTORY_ADDRESS
-				)
-
-				setDisplayText("")
-
-				// setState({
-				//   ...state,
-				//   zkappWorkerClient,
-				//   hasWallet: true,
-				//   hasBeenSetup: true,
-				//   zkappPublicKey,
-				// });
-
-				accountUpdate({
-					hasBeenSetup: true,
-					zkappPublicKey
-				})
-				loadUpdate({ state: true, process: 1 })
-			}
-		})()
-	}, [])
+	useEffect(() => {
+		setDisplayTextWallet(JSON.stringify(walletState))
+	}, [walletState])
 
 	// -------------------------------------------------------
 	// Create UI elements
@@ -103,7 +66,10 @@ export default function Layout({ children }) {
 			View transaction
 		</a>
 	) : (
-		displayText
+		<div>
+			<div className="text-sm">{displayText}</div>
+			<div className="text-sm">{displayTextWallet}</div>
+		</div>
 	)
 
 	let setup = (
@@ -118,18 +84,18 @@ export default function Layout({ children }) {
 	let mainContent = (
 		<div className="flex flex-col">
 			<Account></Account>
-			<div className="flex flex-row w-screen p-5 items-center justify-center">
-				{hasBeenSetup && children}
-			</div>
+			<div className="flex flex-row w-screen p-5 items-center justify-center">{children}</div>
 		</div>
 	)
 
 	return (
-		<div className={styles.main} style={{ padding: 0 }}>
-			<div className={styles.center} style={{ padding: 0 }}>
-				{setup}
-				{mainContent}
+		<LuminaContext.Provider value={Context}>
+			<div className={styles.main} style={{ padding: 0 }}>
+				<div className={styles.center} style={{ padding: 0 }}>
+					{mainContent}
+					<footer>{setup}</footer>
+				</div>
 			</div>
-		</div>
+		</LuminaContext.Provider>
 	)
 }

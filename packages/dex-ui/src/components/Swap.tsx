@@ -1,22 +1,25 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import { poolToka } from "@/utils/addresses"
+import { poolToka, toka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
+import { useSelector } from "@lumina-dex/sdk/react"
+import ButtonStatus from "./ButtonStatus"
+import { feeAmount, LuminaContext } from "./Layout"
 
 type Percent = number | string
 
 // @ts-ignore
-const Swap = ({ accountState }) => {
+const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: "" })
+	const [token, setToken] = useState({ address: toka, decimals: 9, poolAddress: poolToka })
 
 	const [loading, setLoading] = useState(false)
 
@@ -26,7 +29,17 @@ const Swap = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
+	function updateToken(newToken) {
+		setToken(newToken)
+	}
+
+	function updatePool(newPool) {
+		setPool(newPool)
+	}
+
+	const { Wallet, Dex } = useContext(LuminaContext)
+	const dexState = useSelector(Dex, (state) => state.value)
+	const walletState = useSelector(Wallet, (state) => state.value)
 
 	const [toDai, setToDai] = useState(true)
 
@@ -41,72 +54,58 @@ const Swap = ({ accountState }) => {
 	useEffect(() => {
 		const delayDebounceFn = setTimeout(() => {
 			if (parseFloat(fromAmount)) {
-				getSwapAmount(fromAmount, slippagePercent)
-					.then((x) => setData(x))
-					.catch((x) => console.error(x))
+				handleCalculateSwap(fromAmount)
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
-	}, [fromAmount, toDai, slippagePercent, pool, zkState.network])
+	}, [fromAmount, toDai, slippagePercent, token, walletState])
 
-	const getSwapAmount = async (fromAmt, slippagePcent) => {
-		const { getAmountOut } = await import("../../../contracts/build/src/indexmina")
-		const reserves = await zkState?.zkappWorkerClient?.getReserves(pool)
-		let calcul = { amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 }
-		const slippage = slippagePcent
-		if (reserves?.amountMina && reserves?.amountToken) {
-			const amountMina = parseInt(reserves?.amountMina)
-			const amountToken = parseInt(reserves?.amountToken)
-			let amt = parseFloat(fromAmt) * 10 ** 9
-			console.log("amtIn", amt)
-			if (!toDai) {
-				calcul = getAmountOut(amt, amountToken, amountMina, slippage)
-				console.log("calcul from dai", calcul)
-				let amtOut = calcul.amountOut / 10 ** 9
-				setToAmount(amtOut.toString())
-			} else {
-				calcul = getAmountOut(amt, amountMina, amountToken, slippage)
-				console.log("calcul from mina", calcul)
-				let amtOut = calcul.amountOut / 10 ** 9
-				setToAmount(amtOut.toString())
+	useEffect(() => {
+		const subscription = Dex.subscribe((snapshot) => {
+			// simple logging
+			console.log("Dex", snapshot)
+			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
+			if (token) {
+				valTo = valTo / 10 ** token.decimals
 			}
-		}
-		return calcul
+
+			setToAmount(valTo.toString())
+		})
+		return subscription.unsubscribe
+	}, [Dex])
+
+	// Action handlers
+	const handleCalculateSwap = (amount) => {
+		console.log("swap settings", {
+			pool: token.poolAddress,
+			from: {
+				address: toDai ? "MINA" : token.address,
+				amount: fromAmount
+			},
+			to: toDai ? token.address : "MINA",
+			slippagePercent: slippagePercent,
+			frontendFee: feeAmount
+		})
+		Dex.send({
+			type: "ChangeSwapSettings",
+			settings: {
+				pool: token.poolAddress,
+				from: {
+					address: toDai ? "MINA" : token.address,
+					amount: amount
+				},
+				to: toDai ? token.address : "MINA",
+				slippagePercent: slippagePercent
+			}
+		})
 	}
 
 	const swap = async () => {
 		try {
 			setLoading(true)
 			console.log("infos", { fromAmount, toAmount })
-
-			if (mina) {
-				console.log("zkState", zkState)
-				// get time proof generation
-				console.time("swap")
-				const user: string = (await mina.requestAccounts())[0]
-				if (!toDai) {
-					await zkState.zkappWorkerClient?.swapFromToken(
-						pool,
-						user,
-						data.amountIn,
-						data.amountOut,
-						data.balanceOutMin,
-						data.balanceInMax
-					)
-				} else {
-					await zkState.zkappWorkerClient?.swapFromMina(
-						pool,
-						user,
-						data.amountIn,
-						data.amountOut,
-						data.balanceOutMin,
-						data.balanceInMax
-					)
-				}
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("swap")
-				await mina.sendTransaction({ transaction: json })
-			}
+			const res = Dex.send({ type: "Swap" })
+			console.log("res", res)
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
@@ -139,7 +138,7 @@ const Swap = ({ accountState }) => {
 						{toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu pool={pool} setToken={setToken} setPool={setPool} />
+							<TokenMenu pool={pool} setToken={updateToken} setPool={updatePool} />
 						)}
 					</div>
 					<div>
@@ -165,13 +164,14 @@ const Swap = ({ accountState }) => {
 							<TokenMenu pool={pool} setToken={setToken} setPool={setPool} />
 						)}
 					</div>
-					<div>
-						Your token balance : <Balance tokenAddress={token.address}></Balance>
-					</div>
-					<button onClick={swap} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
-						Swap
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					{token?.address ? (
+						<div>
+							Your token balance : <Balance token={token} isPool={false}></Balance>
+						</div>
+					) : (
+						<div></div>
+					)}
+					<ButtonStatus onClick={swap} text={"Swap"}></ButtonStatus>
 				</div>
 			</div>
 		</>

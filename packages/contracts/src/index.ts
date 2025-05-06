@@ -11,6 +11,7 @@ export {
 export { FarmRewardTokenHolder } from "./farming/FarmRewardTokenHolder.js"
 export { FarmTokenHolder } from "./farming/FarmTokenHolder.js"
 export * from "./pool/MathLibrary.js"
+export * from "./pool/MultisigProof.js"
 export * from "./pool/Pool.js"
 export * from "./pool/PoolFactory.js"
 export * from "./pool/PoolTokenHolder.js"

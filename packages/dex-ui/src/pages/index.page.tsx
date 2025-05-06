@@ -1,12 +1,11 @@
 import { Field, PublicKey } from "o1js"
-import useAccount from "@/states/useAccount"
 import Swap from "@/components/Swap"
 import { useState } from "react"
 import TabButton from "@/components/TabButton"
 
 export default function Home() {
 	const [tab, setTab] = useState<any>("swap")
-	const accountState = useAccount()
+	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	return (
 		<>

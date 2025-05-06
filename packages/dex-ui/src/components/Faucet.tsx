@@ -3,9 +3,10 @@ import React, { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
+import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
-const Faucet = ({ accountState }) => {
+const Faucet = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [loading, setLoading] = useState(false)
@@ -16,22 +17,11 @@ const Faucet = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
-
 	const claim = async () => {
 		try {
 			setLoading(true)
 
 			if (mina) {
-				console.log("zkState", zkState)
-				// get time proof generation
-				console.time("claim")
-				const user: string = (await mina.requestAccounts())[0]
-				await zkState.zkappWorkerClient?.claim(user)
-
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("claim")
-				await mina.sendTransaction({ transaction: json })
 			}
 		} catch (error) {
 			console.log("swap error", error)
@@ -48,9 +38,7 @@ const Faucet = ({ accountState }) => {
 					<div>
 						<span>You can only claim TOKA once by network and address</span>
 					</div>
-					<button onClick={claim} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
-						Claim
-					</button>
+					<ButtonStatus onClick={claim} text={"Claim"}></ButtonStatus>
 					{loading && <p>Creating transaction ...</p>}
 					<a
 						className="text-blue-500 underline"

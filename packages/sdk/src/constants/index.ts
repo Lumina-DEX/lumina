@@ -42,7 +42,7 @@ export const archiveUrls = {
 
 // TODO: Add missing factories
 export const luminadexFactories = {
-	"mina:devnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
+	"mina:devnet": "B62qom88eeTzZSUv8DWg7SmUwRH47WVgC1QHPQLL6YAaKMRNLvj83N2",
 	"mina:mainnet": "NOT_IMPLEMENTED",
 	"zeko:testnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
