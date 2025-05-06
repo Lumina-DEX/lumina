@@ -518,6 +518,12 @@ async function addLiquidity() {
     console.log("add liquidity")
     const amt = UInt64.from(5000 * 10 ** 9)
     const amtMina = UInt64.from(20 * 10 ** 9)
+    await fetchAccount({ publicKey: zkPoolTokenAMinaAddress })
+    await fetchAccount({ publicKey: zkPoolTokenAMinaAddress, tokenId: zkTokenA.deriveTokenId() })
+    await fetchAccount({ publicKey: feepayerAddress })
+    await fetchAccount({ publicKey: feepayerAddress, tokenId: zkTokenA.deriveTokenId() })
+    await fetchAccount({ publicKey: feepayerAddress, tokenId: zkPoolTokenAMina.deriveTokenId() })
+
     const token = await zkPoolTokenAMina.token1.fetch()
     const tx = await Mina.transaction({ sender: feepayerAddress, fee }, async () => {
       AccountUpdate.fundNewAccount(feepayerAddress, 1)
