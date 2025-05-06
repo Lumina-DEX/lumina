@@ -462,12 +462,22 @@ export const createLuminaDexMachine = () => {
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "FungibleToken" }),
 							onDone: {
-								target: "COMPILE_POOL",
+								target: "COMPILE_MULTISIG",
 								actions: assign(({ context }) => loaded({ context, contract: "FungibleToken" }))
 							},
 							onError: {
 								target: "FAILED",
 								actions: assign(setContractError("Compile Contracts"))
+							}
+						}
+					},
+					COMPILE_MULTISIG: {
+						invoke: {
+							src: "compileContract",
+							input: ({ context }) => inputCompile({ context, contract: "MultisigProgram" }),
+							onDone: {
+								target: "COMPILE_POOL",
+								actions: assign(({ context }) => loaded({ context, contract: "MultisigProgram" }))
 							}
 						}
 					},
