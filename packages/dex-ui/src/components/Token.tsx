@@ -7,9 +7,10 @@ import { PrivateKey, PublicKey } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
+import ButtonStatus from "./ButtonStatus"
 
 // @ts-ignore
-const Token = ({ accountState }) => {
+const Token = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [symbol, setSymbol] = useState("SYM")
@@ -28,24 +29,11 @@ const Token = ({ accountState }) => {
 		generateInfo()
 	}, [])
 
-	const zkState = accountState
-
 	const createToken = async () => {
 		try {
 			setLoading(true)
 			if (symbol) {
 				console.time("token")
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				await zkState.zkappWorkerClient?.deployToken(
-					user,
-					tokenInfo.tokenKey,
-					tokenInfo.tokenAdminKey,
-					symbol
-				)
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("create")
-				await mina.sendTransaction({ transaction: json })
 			} else {
 				console.error("No symbol, set a symbol name")
 			}
@@ -108,13 +96,7 @@ const Token = ({ accountState }) => {
 							&#8635;
 						</button>
 					</div>
-					<button
-						onClick={createToken}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Create Token
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={createToken} text={"Create Token"}></ButtonStatus>
 				</div>
 			</div>
 		</>

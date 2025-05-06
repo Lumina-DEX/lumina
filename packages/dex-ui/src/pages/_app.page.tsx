@@ -1,6 +1,5 @@
 import "@/styles/globals.css"
 import type { AppProps } from "next/app"
-import "./reactCOIServiceWorker"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import Layout from "@/components/Layout"
 

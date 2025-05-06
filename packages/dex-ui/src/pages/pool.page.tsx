@@ -9,14 +9,12 @@ import Liquidity from "@/components/Liquidity"
 import Withdraw from "@/components//Withdraw"
 import TabButton from "@/components/TabButton"
 import Create from "@/components/Create"
-import useAccount from "@/states/useAccount"
 
 type Percent = number | string
 
 // @ts-ignore
 const Pool = () => {
 	const [tab, setTab] = useState<any>("create")
-	const accountState = useAccount()
 
 	return (
 		<>
@@ -35,17 +33,17 @@ const Pool = () => {
 				<div className="p-2">
 					{tab === "add" && (
 						<div>
-							<Liquidity accountState={accountState}></Liquidity>
+							<Liquidity></Liquidity>
 						</div>
 					)}
 					{tab === "withdraw" && (
 						<div>
-							<Withdraw accountState={accountState}></Withdraw>
+							<Withdraw></Withdraw>
 						</div>
 					)}
 					{tab === "create" && (
 						<div>
-							<Create accountState={accountState}></Create>
+							<Create></Create>
 						</div>
 					)}
 				</div>
