@@ -20,7 +20,6 @@ import {
 } from "../../constants/index"
 import type {
 	AddLiquidity,
-	CompileContract,
 	DeployPoolArgs,
 	FaucetSettings,
 	LuminaDexWorker,
@@ -42,6 +41,7 @@ import type {
 	AddLiquiditySettings,
 	Can,
 	ContractName,
+	DexWorker,
 	InputDexWorker,
 	LuminaDexMachineContext,
 	LuminaDexMachineEvent,
@@ -70,7 +70,7 @@ const luminaDexFactory = (c: LuminaDexMachineContext) => luminadexFactories[wall
 
 const inputCompile = (
 	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => ({ ...inputWorker(context), contract })
+) => ({ worker: context.contract.worker, contract })
 
 const loaded = (
 	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
@@ -156,10 +156,12 @@ export const createLuminaDexMachine = () => {
 				})
 			}),
 			compileContract: fromPromise(
-				async ({ input: { worker, ...config } }: { input: InputDexWorker & CompileContract }) =>
-					act(config.contract, async () => {
-						await worker.compileContract(config)
+				async ({ input }: { input: { worker: DexWorker; contract: ContractName } }) => {
+					const { worker, contract } = input
+					return act(contract, async () => {
+						await worker.compileContract({ contract })
 					})
+				}
 			),
 			claim: fromPromise(
 				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) =>

@@ -126,12 +126,8 @@ const loadContracts = async () => {
 	logger.success("Loaded contracts")
 }
 
-export interface CompileContract {
-	contract: ContractName
-}
-
 let cache: ReturnType<typeof readCache>
-const compileContract = async ({ contract }: CompileContract) => {
+const compileContract = async ({ contract }: { contract: ContractName }) => {
 	if (!cache) {
 		const cacheFiles = await fetchZippedContracts()
 		cache = readCache(cacheFiles)

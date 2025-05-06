@@ -1,0 +1,156 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "d6695c72-3ab4-41c4-806a-2d23c74b926d",
+	"prevId": "4e5b55a6-3a49-429a-93b7-25d9b6b1b625",
+	"tables": {
+		"Pool": {
+			"name": "Pool",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"token0Address": {
+					"name": "token0Address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"token1Address": {
+					"name": "token1Address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"chainId": {
+					"name": "chainId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"Pool_chainId_idx": {
+					"name": "Pool_chainId_idx",
+					"columns": ["chainId"],
+					"isUnique": false
+				},
+				"Pool.token0_idx": {
+					"name": "Pool.token0_idx",
+					"columns": ["token0Address"],
+					"isUnique": false
+				},
+				"Pool.token1_idx": {
+					"name": "Pool.token1_idx",
+					"columns": ["token1Address"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"Pool_address_chainId_pk": {
+					"columns": ["address", "chainId"],
+					"name": "Pool_address_chainId_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"Token": {
+			"name": "Token",
+			"columns": {
+				"address": {
+					"name": "address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tokenId": {
+					"name": "tokenId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"symbol": {
+					"name": "symbol",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"chainId": {
+					"name": "chainId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"decimals": {
+					"name": "decimals",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "(CURRENT_TIMESTAMP)"
+				}
+			},
+			"indexes": {
+				"Token_chainId_idx": {
+					"name": "Token_chainId_idx",
+					"columns": ["chainId"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"Token_address_chainId_pk": {
+					"columns": ["address", "chainId"],
+					"name": "Token_address_chainId_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}
