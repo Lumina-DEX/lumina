@@ -383,6 +383,7 @@ export const createLuminaDexMachine = () => {
 				contract: {
 					worker,
 					loaded: {
+						MultisigProgram: false,
 						Faucet: false,
 						FungibleToken: false,
 						FungibleTokenAdmin: false,
