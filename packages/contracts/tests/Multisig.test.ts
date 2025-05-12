@@ -1,3 +1,4 @@
+import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
 import {
   AccountUpdate,
   Bool,
@@ -10,7 +11,6 @@ import {
   Provable,
   PublicKey,
   Signature,
-  TokenId,
   UInt32,
   UInt64,
   UInt8,
@@ -32,8 +32,6 @@ import {
   UpdateSignerData,
   UpgradeInfo
 } from "../dist"
-
-import { FungibleToken, FungibleTokenAdmin } from "mina-fungible-token"
 
 const proofsEnabled = false
 

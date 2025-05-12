@@ -178,7 +178,7 @@ describe("Pool Factory Token", () => {
         delegator: dylanAccount,
         approvedSigner: root,
         signatures: array,
-        signatureInfo: multi
+        multisigInfo: multi
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount

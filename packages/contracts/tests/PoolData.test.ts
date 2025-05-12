@@ -16,24 +16,15 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   mulDiv,
+  Multisig,
   MultisigInfo,
-  MultisigInfo,
-  MultisigProgram,
-  MultisigProgram,
-  MultisigProof,
-  MultisigProof,
   Pool,
   PoolFactory,
   PoolTokenHolder,
   SignatureInfo,
-  SignatureInfo,
-  SignatureRight,
   SignatureRight,
   UpdateAccountInfo,
-  UpdateAccountInfo,
   UpdateSignerData,
-  UpdateSignerData,
-  UpgradeInfo,
   UpgradeInfo
 } from "../dist"
 
@@ -92,7 +83,6 @@ describe("Pool data", () => {
     compileKey = vkUpgradeTest
 
     const cache = Cache.FileSystem("./cache")
-    const multisigProgram = await MultisigProgram.compile({ proofsEnabled })
     // const compileResult = await PoolUpgradeTest.compile({ cache, });
 
     // console.log("poolUpgradeTest", compileResult.verificationKey.data);
@@ -213,7 +203,7 @@ describe("Pool data", () => {
         delegator: dylanAccount,
         approvedSigner: root,
         signatures: array,
-        signatureInfo: multi
+        multisigInfo: multi
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -312,8 +302,8 @@ describe("Pool data", () => {
       right: allRight
     })
     const array = [infoBob, infoAlice, infoDylan]
-    const multisig = await MultisigProgram.verifyUpdatePool(multi, info, array)
-    const proof = new MultisigProof(multisig.proof)
+    // const multisig = await MultisigProgram.verifyUpdatePool(multi, info, array);
+    const proof = new Multisig({ info: multi, signatures: array })
     return proof
   }
 
@@ -353,13 +343,7 @@ describe("Pool data", () => {
     })
     const array = [infoBob, infoAlice, infoDylan]
 
-    if (delegator) {
-      const multisig1 = await MultisigProgram.verifyUpdateDelegator(multi, info, array)
-      return new MultisigProof(multisig1.proof)
-    }
-
-    const multisig0 = await MultisigProgram.verifyUpdateProtocol(multi, info, array)
-    return new MultisigProof(multisig0.proof)
+    return new Multisig({ info: multi, signatures: array })
   }
 
   it("update pool holder", async () => {
