@@ -14,20 +14,10 @@ import {
   VerificationKey
 } from "o1js"
 
-import {
-  FungibleToken,
-  mulDiv,
-  MultisigProof,
-  Pool,
-  PoolFactory,
-  SignatureRight,
-  SwapEvent,
-  UpdateVerificationKeyEvent,
-  UpgradeInfo,
-  verifyProof
-} from "../indexpool.js"
+import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent, UpdateVerificationKeyEvent } from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
+import { Multisig, UpgradeInfo } from "./Multisig.js"
 
 /**
  * Event emitted when an user withdraw liquidity
@@ -107,16 +97,17 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
   /**
    * Upgrade to a new version, necessary due to o1js breaking verification key compatibility between versions
-   * @param proof multisig proof
+   * @param multisig multisig data
    * @param vk new verification key
    */
   @method
-  async updateVerificationKey(proof: MultisigProof, vk: VerificationKey) {
+  async updateVerificationKey(multisig: Multisig, vk: VerificationKey) {
     const factoryAddress = this.poolFactory.getAndRequireEquals()
     const factory = new PoolFactory(factoryAddress)
     const merkle = await factory.getApprovedSigner()
+    multisig.info.approvedUpgrader.equals(merkle).assertTrue("Incorrect signer list")
 
-    const deadlineSlot = proof.publicInput.deadlineSlot
+    const deadlineSlot = multisig.info.deadlineSlot
     // we can update only before the deadline to prevent signature reuse
     this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
 
@@ -126,7 +117,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
       newVkHash: vk.hash,
       deadlineSlot
     })
-    await verifyProof(proof, merkle, upgradeInfo.hash(), SignatureRight.canUpdatePool())
+    multisig.verifyUpdatePool(upgradeInfo)
 
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))

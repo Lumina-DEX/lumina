@@ -21,37 +21,38 @@ import {
   VerificationKey
 } from "o1js"
 
+import { FungibleToken } from "../indexpool.js"
+
 import {
-  FungibleToken,
+  Multisig,
   MultisigInfo,
-  MultisigProof,
+  MultisigSigner,
   SignatureInfo,
   SignatureRight,
   UpdateAccountInfo,
   UpdateFactoryInfo,
   UpdateSignerData,
-  verifyProof,
   verifySignature
-} from "../indexpool.js"
+} from "./Multisig.js"
 
 /**
  * Current verification key of pool contract
  */
 export const contractData =
-  "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"
+  "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"
 /**
  * Current hash of verification key of pool contract
  */
-export const contractHash = Field(22088920449266910463544792652207054139709579229651710584203461448689628238245n)
+export const contractHash = Field(15928779310448535503403675282845299696462388404855621576057467196340921865283n)
 /**
  * Current verification key of pool token holder contract
  */
 export const contractHolderData =
-  "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"
+  "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"
 /**
  * Current hash of verification key of pool token holder contract
  */
-export const contractHolderHash = Field(13058873845478387767176880682468944953157545591594557298961883198416093432169n)
+export const contractHolderHash = Field(2248010327563534436021614607134972833379623353601165266581260565350798646476n)
 
 /**
  * Interface of current data needed to deploy the pool factory
@@ -63,7 +64,7 @@ export interface PoolDeployProps extends Exclude<DeployArgs, undefined> {
   delegator: PublicKey
   approvedSigner: Field
   signatures: SignatureInfo[]
-  signatureInfo: MultisigInfo
+  multisigInfo: MultisigInfo
 }
 
 /**
@@ -168,20 +169,20 @@ export class PoolFactory extends TokenContract {
     args.approvedSigner.equals(Field.empty()).assertFalse("Approved signer is empty")
     args.approvedSigner.equals(defaultRoot).assertFalse("Approved signer is empty")
 
-    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, args.signatureInfo.deadlineSlot)
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, args.multisigInfo.deadlineSlot)
 
     const updateSignerData = new UpdateSignerData({
       oldRoot: Field.empty(),
       newRoot: args.approvedSigner,
-      deadlineSlot: args.signatureInfo.deadlineSlot
+      deadlineSlot: args.multisigInfo.deadlineSlot
     })
     // we need 3 signatures to update signer, prevent to deadlock contract update
     const right = SignatureRight.canUpdateSigner()
     verifySignature(
       args.signatures,
-      args.signatureInfo.deadlineSlot,
-      args.signatureInfo,
-      args.signatureInfo.approvedUpgrader,
+      args.multisigInfo.deadlineSlot,
+      args.multisigInfo,
+      args.multisigInfo.approvedUpgrader,
       updateSignerData.toFields(),
       right
     )
@@ -201,14 +202,18 @@ export class PoolFactory extends TokenContract {
 
   /**
    * Upgrade to a new version
-   * @param proof multisig proof
+   * @param multisig multisig data
    * @param vk new verification key
    */
   @method
-  async updateVerificationKey(proof: MultisigProof, vk: VerificationKey) {
-    const deadlineSlot = proof.publicInput.deadlineSlot
+  async updateVerificationKey(multisig: Multisig, vk: VerificationKey) {
+    const deadlineSlot = multisig.info.deadlineSlot
+    const approvedSigner = this.approvedSigner.getAndRequireEquals()
+    multisig.info.approvedUpgrader.equals(approvedSigner).assertTrue("Incorrect signer list")
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
     const upgradeInfo = new UpdateFactoryInfo({ newVkHash: vk.hash, deadlineSlot })
-    await this.verifyMultisigProof(proof, upgradeInfo.hash(), SignatureRight.canUpdateFactory())
+    multisig.verifyUpdateFactory(upgradeInfo)
 
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
@@ -216,15 +221,18 @@ export class PoolFactory extends TokenContract {
 
   /**
    * Update the list of approved signers
-   * @param proof multisig proof
+   * @param multisig multisig data
    * @param newRoot merkle root of the new list
    */
   @method
-  async updateApprovedSigner(proof: MultisigProof, newRoot: Field) {
+  async updateApprovedSigner(multisig: MultisigSigner, newRoot: Field) {
     const oldRoot = this.approvedSigner.getAndRequireEquals()
-    const deadlineSlot = proof.publicInput.deadlineSlot
+    multisig.info.approvedUpgrader.equals(oldRoot).assertTrue("Incorrect signer list")
+    const deadlineSlot = multisig.info.deadlineSlot
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
     const upgradeInfo = new UpdateSignerData({ oldRoot, newRoot, deadlineSlot })
-    await this.verifyMultisigProof(proof, upgradeInfo.hash(), SignatureRight.canUpdateSigner())
+    multisig.verifyUpdateSigner(upgradeInfo)
 
     this.approvedSigner.set(newRoot)
     this.emitEvent("updateSigner", new UpdateSignerEvent(newRoot))
@@ -232,15 +240,19 @@ export class PoolFactory extends TokenContract {
 
   /**
    * Update the protocol account address
-   * @param proof multisig proof
+   * @param multisig multisig data
    * @param newUser address of the new protocol collectord
    */
   @method
-  async setNewProtocol(proof: MultisigProof, newUser: PublicKey) {
+  async setNewProtocol(multisig: Multisig, newUser: PublicKey) {
     const oldUser = this.protocol.getAndRequireEquals()
-    const deadlineSlot = proof.publicInput.deadlineSlot
+    const deadlineSlot = multisig.info.deadlineSlot
+    const approvedSigner = this.approvedSigner.getAndRequireEquals()
+    multisig.info.approvedUpgrader.equals(approvedSigner).assertTrue("Incorrect signer list")
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
     const upgradeInfo = new UpdateAccountInfo({ oldUser, newUser, deadlineSlot })
-    await this.verifyMultisigProof(proof, upgradeInfo.hash(), SignatureRight.canUpdateProtocol())
+    multisig.verifyUpdateProtocol(upgradeInfo)
 
     this.protocol.set(newUser)
     this.emitEvent("updateProtocol", new UpdateUserEvent(newUser))
@@ -248,15 +260,19 @@ export class PoolFactory extends TokenContract {
 
   /**
    * Update the delgator address
-   * @param proof multisig proof
+   * @param multisig multisig data
    * @param newUser address of the new delegator
    */
   @method
-  async setNewDelegator(proof: MultisigProof, newUser: PublicKey) {
+  async setNewDelegator(multisig: Multisig, newUser: PublicKey) {
     const oldUser = this.delegator.getAndRequireEquals()
-    const deadlineSlot = proof.publicInput.deadlineSlot
+    const deadlineSlot = multisig.info.deadlineSlot
+    const approvedSigner = this.approvedSigner.getAndRequireEquals()
+    multisig.info.approvedUpgrader.equals(approvedSigner).assertTrue("Incorrect signer list")
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
     const upgradeInfo = new UpdateAccountInfo({ oldUser, newUser, deadlineSlot })
-    await this.verifyMultisigProof(proof, upgradeInfo.hash(), SignatureRight.canUpdateProtocol())
+    multisig.verifyUpdateDelegator(upgradeInfo)
 
     this.delegator.set(newUser)
     this.emitEvent("updateDelegator", new UpdateUserEvent(newUser))
@@ -485,13 +501,5 @@ export class PoolFactory extends TokenContract {
     poolHolderAccount.body.update.appState = appState
     await fungibleToken.approveAccountUpdate(poolHolderAccount)
     return poolHolderAccount
-  }
-
-  private async verifyMultisigProof(proof: MultisigProof, messageHash: Field, right: SignatureRight) {
-    const merkle = this.approvedSigner.getAndRequireEquals()
-    const deadlineSlot = proof.publicInput.deadlineSlot
-    // we can update only before the deadline to prevent signature reuse
-    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
-    verifyProof(proof, merkle, messageHash, right)
   }
 }

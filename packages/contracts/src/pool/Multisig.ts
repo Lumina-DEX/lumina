@@ -1,15 +1,4 @@
-import {
-  Bool,
-  Field,
-  MerkleMapWitness,
-  Poseidon,
-  Provable,
-  PublicKey,
-  Signature,
-  Struct,
-  UInt32,
-  ZkProgram
-} from "o1js"
+import { Bool, Field, MerkleMapWitness, Poseidon, Provable, PublicKey, Signature, Struct, UInt32 } from "o1js"
 
 /**
  * Signature right to update pool information
@@ -313,6 +302,127 @@ export class SignatureInfo extends Struct({
 }
 
 /**
+ * Information needed to verify the signatures is correct
+ */
+export class Multisig extends Struct({
+  info: MultisigInfo,
+  signatures: Provable.Array(SignatureInfo, 3)
+}) {
+  constructor(value: {
+    info: MultisigInfo
+    signatures: SignatureInfo[]
+  }) {
+    super(value)
+  }
+
+  /**
+   * Check if the signature match the current user and data subbit
+   * @param data needed to verify the signature
+   */
+  verifyUpdateFactory(updateInfo: UpdateFactoryInfo) {
+    const right = SignatureRight.canUpdateFactory()
+    verifySignature(
+      this.signatures,
+      updateInfo.deadlineSlot,
+      this.info,
+      this.info.approvedUpgrader,
+      updateInfo.toFields(),
+      right
+    )
+  }
+
+  /**
+   * Check if the signature match the current user and data subbit
+   * @param data needed to verify the signature
+   */
+  verifyUpdatePool(upgradeInfo: UpgradeInfo) {
+    const right = SignatureRight.canUpdatePool()
+    verifySignature(
+      this.signatures,
+      upgradeInfo.deadlineSlot,
+      this.info,
+      this.info.approvedUpgrader,
+      upgradeInfo.toFields(),
+      right
+    )
+  }
+
+  /**
+   * Check if the signature match the current user and data subbit
+   * @param data needed to verify the signature
+   */
+  verifyUpdateDelegator(updateInfo: UpdateAccountInfo) {
+    const right = SignatureRight.canUpdateDelegator()
+    verifySignature(
+      this.signatures,
+      updateInfo.deadlineSlot,
+      this.info,
+      this.info.approvedUpgrader,
+      updateInfo.toFields(),
+      right
+    )
+  }
+
+  /**
+   * Check if the signature match the current user and data subbit
+   * @param data needed to verify the signature
+   */
+  verifyUpdateProtocol(updateInfo: UpdateAccountInfo) {
+    const right = SignatureRight.canUpdateProtocol()
+    verifySignature(
+      this.signatures,
+      updateInfo.deadlineSlot,
+      this.info,
+      this.info.approvedUpgrader,
+      updateInfo.toFields(),
+      right
+    )
+  }
+}
+
+/**
+ * Information needed to verify the multisig is correct to update the signer list
+ */
+export class MultisigSigner extends Struct({
+  info: MultisigInfo,
+  signatures: Provable.Array(SignatureInfo, 3),
+  newSignatures: Provable.Array(SignatureInfo, 3)
+}) {
+  constructor(value: {
+    info: MultisigInfo
+    signatures: SignatureInfo[]
+    newSignatures: SignatureInfo[]
+  }) {
+    super(value)
+  }
+
+  /**
+   * Check if the signature match the current user and data subbit
+   * @param data needed to verify the signature
+   */
+  verifyUpdateSigner(upgradeInfo: UpdateSignerData) {
+    const right = SignatureRight.canUpdateSigner()
+    upgradeInfo.oldRoot.equals(upgradeInfo.newRoot).assertFalse("Can't reuse same merkle")
+    verifySignature(
+      this.signatures,
+      upgradeInfo.deadlineSlot,
+      this.info,
+      this.info.approvedUpgrader,
+      upgradeInfo.toFields(),
+      right
+    )
+    verifySignature(
+      this.newSignatures,
+      upgradeInfo.deadlineSlot,
+      this.info,
+      upgradeInfo.newRoot,
+      upgradeInfo.toFields(),
+      right
+    )
+  }
+}
+
+/**
  * Check if the 3 signatures are valid
  */
 export function verifySignature(
@@ -333,7 +443,7 @@ export function verifySignature(
   for (let index = 0; index < signatures.length; index++) {
     const element = signatures[index]
     // check if he can upgrade a pool
-    element.right.hasRight(right).assertTrue("User doesn't have the right to update a pool")
+    element.right.hasRight(right).assertTrue("User doesn't have the right for this operation")
     // verfify the signature validity for all users
     const valid = element.validate(root, data)
     // hash valid
@@ -341,118 +451,3 @@ export function verifySignature(
     valid.assertTrue("Invalid signature")
   }
 }
-
-/**
- * Check if the proof is valid
- */
-export function verifyProof(proof: MultisigProof, merkle: Field, messageHash: Field, right: SignatureRight) {
-  proof.publicInput.approvedUpgrader.equals(merkle).assertTrue("Incorrect signer list")
-
-  proof.publicInput.messageHash.assertEquals(messageHash)
-
-  // proof attest we can upgrade
-  proof.verify()
-
-  // check proof match the right required
-  proof.publicOutput.hasRight(right)
-}
-
-/**
- * Multisig proof program
- */
-export const MultisigProgram = ZkProgram({
-  name: "multisig",
-  publicInput: MultisigInfo,
-  publicOutput: SignatureRight,
-
-  methods: {
-    verifyUpdateSigner: {
-      privateInputs: [UpdateSignerData, Provable.Array(SignatureInfo, 3), Provable.Array(SignatureInfo, 3)],
-      async method(
-        info: MultisigInfo,
-        upgradeInfo: UpdateSignerData,
-        signatures: SignatureInfo[],
-        // the signer in the new merkle root need to sign to prevent to lock proof update
-        newSignatures: SignatureInfo[]
-      ) {
-        const right = SignatureRight.canUpdateSigner()
-        upgradeInfo.oldRoot.equals(upgradeInfo.newRoot).assertFalse("Can't reuse same merkle")
-        verifySignature(
-          signatures,
-          upgradeInfo.deadlineSlot,
-          info,
-          info.approvedUpgrader,
-          upgradeInfo.toFields(),
-          right
-        )
-        verifySignature(
-          newSignatures,
-          upgradeInfo.deadlineSlot,
-          info,
-          upgradeInfo.newRoot,
-          upgradeInfo.toFields(),
-          right
-        )
-        return { publicOutput: right }
-      }
-    },
-    verifyUpdatePool: {
-      privateInputs: [UpgradeInfo, Provable.Array(SignatureInfo, 3)],
-      async method(
-        info: MultisigInfo,
-        upgradeInfo: UpgradeInfo,
-        signatures: SignatureInfo[]
-      ) {
-        const right = SignatureRight.canUpdatePool()
-        verifySignature(
-          signatures,
-          upgradeInfo.deadlineSlot,
-          info,
-          info.approvedUpgrader,
-          upgradeInfo.toFields(),
-          right
-        )
-        return { publicOutput: right }
-      }
-    },
-    verifyUpdateDelegator: {
-      privateInputs: [UpdateAccountInfo, Provable.Array(SignatureInfo, 3)],
-      async method(
-        info: MultisigInfo,
-        updateInfo: UpdateAccountInfo,
-        signatures: SignatureInfo[]
-      ) {
-        const right = SignatureRight.canUpdateDelegator()
-        verifySignature(signatures, updateInfo.deadlineSlot, info, info.approvedUpgrader, updateInfo.toFields(), right)
-        return { publicOutput: right }
-      }
-    },
-    verifyUpdateProtocol: {
-      privateInputs: [UpdateAccountInfo, Provable.Array(SignatureInfo, 3)],
-      async method(
-        info: MultisigInfo,
-        updateInfo: UpdateAccountInfo,
-        signatures: SignatureInfo[]
-      ) {
-        const right = SignatureRight.canUpdateProtocol()
-        verifySignature(signatures, updateInfo.deadlineSlot, info, info.approvedUpgrader, updateInfo.toFields(), right)
-        return { publicOutput: right }
-      }
-    },
-    verifyUpdateFactory: {
-      privateInputs: [UpdateFactoryInfo, Provable.Array(SignatureInfo, 3)],
-      async method(
-        info: MultisigInfo,
-        updateInfo: UpdateFactoryInfo,
-        signatures: SignatureInfo[]
-      ) {
-        const right = SignatureRight.canUpdateFactory()
-        verifySignature(signatures, updateInfo.deadlineSlot, info, info.approvedUpgrader, updateInfo.toFields(), right)
-        return { publicOutput: right }
-      }
-    }
-  }
-})
-
-export const MultisigProof_ = ZkProgram.Proof(MultisigProgram)
-export class MultisigProof extends MultisigProof_ {}
