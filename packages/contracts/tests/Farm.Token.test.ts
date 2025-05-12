@@ -143,11 +143,11 @@ describe("Farming pool token", () => {
     zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
     zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
 
-    const keyTokenX = PrivateKey.random()
-    const keyTokenY = PrivateKey.random()
+    let keyTokenX = PrivateKey.random()
+    let keyTokenY = PrivateKey.random()
 
     // order token to create pool
-    const xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
+    let xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
 
     zkTokenPrivateKey0 = xIsLower.toBoolean() ? keyTokenX : keyTokenY
     zkTokenAddress0 = zkTokenPrivateKey0.toPublicKey()
@@ -215,7 +215,7 @@ describe("Farming pool token", () => {
         delegator: dylanAccount,
         approvedSigner: root,
         signatures: array,
-        signatureInfo: multi
+        multisigInfo: multi
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -293,14 +293,14 @@ describe("Farming pool token", () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn3.sign([deployerKey, zkPoolPrivateKey]).send()
 
-    const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+    let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
 
     let start = BigInt(Date.now() + 10_000)
     start = (start - genesisTimestamp.toBigInt()) / slotTime.toBigInt()
     let end = start + BigInt(1_000_000)
     end = end / slotTime.toBigInt()
 
-    const txn10 = await Mina.transaction(deployerAccount, async () => {
+    let txn10 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 2)
       await zkFarmToken.deploy({
         owner: deployerAccount,
@@ -323,17 +323,17 @@ describe("Farming pool token", () => {
     await mintToken(bobAccount)
     await mintToken(aliceAccount)
 
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn5 = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn5 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
     })
     await txn5.prove()
     await txn5.sign([senderKey]).send()
 
-    const amtMina = UInt64.from(1 * 10 ** 9)
-    const amtToken2 = UInt64.from(5 * 10 ** 9)
+    let amtMina = UInt64.from(1 * 10 ** 9)
+    let amtToken2 = UInt64.from(5 * 10 ** 9)
     let totalLiquidity = Mina.getBalance(zkPoolAddress, zkPool.deriveTokenId())
     let amtToken0 = Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
     let amtToken1 = Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
@@ -632,6 +632,6 @@ function generateMapReward(events: any, userList: Map<string, farmInfo[]>, event
 }
 
 function globalSlotToTimestamp(slot: UInt32) {
-  const { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
+  let { genesisTimestamp, slotTime } = Mina.getNetworkConstants()
   return UInt64.from(slot).mul(slotTime).add(genesisTimestamp)
 }
