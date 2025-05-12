@@ -18,7 +18,6 @@ import {
 	type Faucet,
 	type FungibleToken,
 	type FungibleTokenAdmin,
-	type MultisigProgram,
 	type Pool,
 	type PoolFactory,
 	type PoolTokenHolder,
@@ -33,7 +32,6 @@ const logger = prefixedLogger("[DEX WORKER]")
 const measure = createMeasure(logger)
 // Types
 type Contracts = {
-	MultisigProgram: typeof MultisigProgram
 	Pool: typeof Pool
 	PoolFactory: typeof PoolFactory
 	PoolTokenHolder: typeof PoolTokenHolder
@@ -102,7 +100,6 @@ const proveTransaction = async (transaction: Transaction) => {
 const loadContracts = async () => {
 	logger.start("Importing contracts ...")
 	const {
-		MultisigProgram,
 		PoolFactory,
 		Pool,
 		PoolTokenHolder,
@@ -114,7 +111,6 @@ const loadContracts = async () => {
 	workerState.send({
 		type: "SetContracts",
 		contracts: {
-			MultisigProgram,
 			PoolFactory,
 			Pool,
 			PoolTokenHolder,

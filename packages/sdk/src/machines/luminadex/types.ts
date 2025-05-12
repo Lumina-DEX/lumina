@@ -166,7 +166,6 @@ export interface User {
 }
 
 export type ContractName =
-	| "MultisigProgram"
 	| "PoolFactory"
 	| "Pool"
 	| "PoolTokenHolder"
