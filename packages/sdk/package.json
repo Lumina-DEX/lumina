@@ -26,7 +26,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload"
+    "deploy:preview": "wrangler versions upload",
+    "swap": "node --env-file=.env dist/swap.mjs"
   },
   "files": [
     "dist"
@@ -47,6 +48,10 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.mjs"
+    },
+    "./swap": {
+      "types": "./dist/swap.d.ts",
+      "import": "./dist/swap.mjs"
     }
   },
   "main": "./dist/index.mjs",
