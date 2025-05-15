@@ -1,7 +1,7 @@
 {
-	"name": "worker-example",
-	"version": "0.8.2",
-	"author": "DFST",
+	"name": "@lumina-dex/dex-cloudworker",
+	"version": "0.16.0",
+	"author": "youtpout",
 	"scripts": {
 		"test": "jest",
 		"local": "jest --chain=local --cloud=local --deploy=true --send=false --one=true --many=true",

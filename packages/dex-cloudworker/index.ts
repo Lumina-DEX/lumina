@@ -3,6 +3,13 @@ import { initializeBindings } from "o1js"
 import { AddWorker } from "./src/worker"
 import packageJson from "./package.json"
 import { AddContract, AddProgram } from "./src/contract"
+import {
+	FungibleToken,
+	FungibleTokenAdmin,
+	Pool,
+	PoolFactory,
+	PoolTokenHolder
+} from "@lumina-dex/contracts"
 
 export async function zkcloudworker(cloud: Cloud): Promise<zkCloudWorker> {
 	console.log(
@@ -16,10 +23,10 @@ export async function zkcloudworker(cloud: Cloud): Promise<zkCloudWorker> {
 export async function verify(chain: blockchain): Promise<VerificationData> {
 	if (chain !== "devnet") throw new Error("Unsupported chain")
 	return {
-		contract: AddContract,
-		programDependencies: [AddProgram],
+		contract: Pool,
+		programDependencies: [PoolFactory, PoolTokenHolder, FungibleToken, FungibleTokenAdmin],
 		contractDependencies: [],
-		address: "B62qrZso6WMaxZPrkDHW9sa7BTtVKjHon6BJxUbN3q6PwdTNQXWvADD",
+		address: "B62qp71rC3GU4bzoB6DfhrydBwkZ94R91JmfLevffMxBipRNcTxeYvh",
 		chain: "devnet"
 	} as VerificationData
 }
