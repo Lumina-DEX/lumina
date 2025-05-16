@@ -27,7 +27,8 @@
     "docs:preview": "vitepress preview docs",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler versions upload",
-    "swap": "node --env-file=.env dist/swap.mjs"
+    "swap": "node --env-file=.env dist/swap.mjs",
+    "swap:worker": "node --env-file=.env dist/swap-worker.mjs"
   },
   "files": [
     "dist"
@@ -52,6 +53,10 @@
     "./swap": {
       "types": "./dist/swap.d.ts",
       "import": "./dist/swap.mjs"
+    },
+    "./swap-worker": {
+      "types": "./dist/swap-worker.d.ts",
+      "import": "./dist/swap-worker.mjs"
     }
   },
   "main": "./dist/index.mjs",
@@ -72,7 +77,8 @@
     "p-limit": "^6.2.0",
     "urql": "^4.1.0",
     "vue": "^3.5.11",
-    "xstate": "^5.18.2"
+    "xstate": "^5.18.2",
+    "zkcloudworker": "^0.25.12"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

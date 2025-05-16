@@ -108,8 +108,6 @@ export class PoolWorker extends zkCloudWorker {
 	public async execute(transactions: string[]): Promise<string | undefined> {
 		if (this.cloud.args === undefined) throw new Error("this.cloud.args is undefined")
 		const args = JSON.parse(this.cloud.args)
-		//console.log("args", args);
-		if (args.contractAddress === undefined) throw new Error("args.contractAddress is undefined")
 
 		switch (this.cloud.task) {
 			case "swap":
@@ -148,74 +146,100 @@ export class PoolWorker extends zkCloudWorker {
 		balanceInMax: number
 		factory: string
 	}): Promise<string> {
-		const privateKey = PrivateKey.random()
-		const address = privateKey.toPublicKey()
-		console.log("Address", address.toBase58())
+		try {
+			const privateKey = PrivateKey.random()
+			const address = privateKey.toPublicKey()
+			console.log("Address", address.toBase58())
 
-		await this.compile()
+			await this.compile()
 
-		console.log(`Sending tx...`)
-		console.time("prepared tx")
+			console.log(`Sending tx...`)
+			console.time("prepared tx")
 
-		const { poolKey, zkTokenId, zkToken } = await this.getZkTokenFromPool(args.pool)
-		const userKey = PublicKey.fromBase58(args.user)
-		const TAX_RECEIVER = PublicKey.fromBase58(args.frontendFeeDestination)
+			const { poolKey, zkTokenId, zkToken } = await this.getZkTokenFromPool(args.pool)
+			const userKey = PublicKey.fromBase58(args.user)
+			const TAX_RECEIVER = PublicKey.fromBase58(args.frontendFeeDestination)
 
-		await Promise.all([
-			fetchAccount({ publicKey: poolKey }),
-			fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
-			fetchAccount({ publicKey: userKey }),
-			fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
-		])
+			await Promise.all([
+				fetchAccount({ publicKey: poolKey }),
+				fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+				fetchAccount({ publicKey: userKey }),
+				fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
+			])
 
-		const zkPool = new Pool(poolKey)
-		const luminaAddress = await zkPool.protocol.fetch()
-		if (!luminaAddress) throw new Error("Lumina Address not found")
+			const zkPool = new Pool(poolKey)
+			const luminaAddress = await zkPool.protocol.fetch()
+			if (!luminaAddress) throw new Error("Lumina Address not found")
 
-		const [acc, accFront, accProtocol] = await Promise.all([
-			fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
-			fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
-			fetchAccount({
-				publicKey: luminaAddress,
-				tokenId: zkTokenId
+			const [acc, accFront, accProtocol] = await Promise.all([
+				fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
+				fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
+				fetchAccount({
+					publicKey: luminaAddress,
+					tokenId: zkTokenId
+				})
+			])
+
+			const newAcc = acc.account ? 0 : 1
+			const newFront = accFront.account ? 0 : 1
+			const newAccProtocol = accProtocol.account ? 0 : 1
+
+			const total = newAcc + newFront + newAccProtocol
+			const swapArgList = [
+				TAX_RECEIVER,
+				UInt64.from(Math.trunc(args.frontendFee)),
+				UInt64.from(Math.trunc(args.amount)),
+				UInt64.from(Math.trunc(args.minOut)),
+				UInt64.from(Math.trunc(args.balanceInMax)),
+				UInt64.from(Math.trunc(args.balanceOutMin))
+			] as const
+
+			const MINA_ADDRESS = "MINA"
+
+			let tx = await Mina.transaction({ sender: userKey, fee: await fee() }, async () => {
+				if (args.to === MINA_ADDRESS) {
+					const zkPool = new Pool(poolKey)
+					await zkPool.swapFromTokenToMina(...swapArgList)
+				} else {
+					AccountUpdate.fundNewAccount(userKey, total)
+					const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
+					await zkPoolHolder[
+						args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"
+					](...swapArgList)
+					await zkToken.approveAccountUpdate(zkPoolHolder.self)
+				}
 			})
-		])
 
-		const newAcc = acc.account ? 0 : 1
-		const newFront = accFront.account ? 0 : 1
-		const newAccProtocol = accProtocol.account ? 0 : 1
+			if (tx === undefined) throw new Error("tx is undefined")
+			const txProved = await tx.prove()
+			const txJSON = txProved.toJSON()
 
-		const total = newAcc + newFront + newAccProtocol
-		const swapArgList = [
-			TAX_RECEIVER,
-			UInt64.from(Math.trunc(args.frontendFee)),
-			UInt64.from(Math.trunc(args.amount)),
-			UInt64.from(Math.trunc(args.minOut)),
-			UInt64.from(Math.trunc(args.balanceInMax)),
-			UInt64.from(Math.trunc(args.balanceOutMin))
-		] as const
+			console.timeEnd("prepared tx")
 
-		const MINA_ADDRESS = "MINA"
+			return this.stringifyJobResult({
+				success: true,
+				tx: txJSON
+			})
+		} catch (error) {
+			return this.stringifyJobResult({
+				success: false,
+				tx: "",
+				error: String(error)
+			})
+		}
+	}
 
-		let tx = await Mina.transaction(userKey, async () => {
-			if (args.to === MINA_ADDRESS) {
-				const zkPool = new Pool(poolKey)
-				await zkPool.swapFromTokenToMina(...swapArgList)
-			} else {
-				AccountUpdate.fundNewAccount(userKey, total)
-				const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
-				await zkPoolHolder[
-					args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"
-				](...swapArgList)
-				await zkToken.approveAccountUpdate(zkPoolHolder.self)
-			}
-		})
-
-		if (tx === undefined) throw new Error("tx is undefined")
-		await tx.prove()
-
-		console.timeEnd("prepared tx")
-
-		return tx.toJSON()
+	private stringifyJobResult(result: {
+		success: boolean
+		error?: string
+		tx?: string
+		hash?: string
+		jobStatus?: string
+	}): string {
+		const strippedResult = {
+			...result,
+			tx: result.hash ? undefined : result.tx
+		}
+		return JSON.stringify(strippedResult, null, 2)
 	}
 }

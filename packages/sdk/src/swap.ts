@@ -133,6 +133,7 @@ async function swapMina() {
 	try {
 		console.log("swap Mina")
 
+		console.time("execute tx")
 		await fetchAccount({ publicKey: zkPoolTokenAMinaAddress })
 		await fetchAccount({ publicKey: zkPoolTokenAMinaAddress, tokenId: zkTokenA.deriveTokenId() })
 		await fetchAccount({ publicKey: feepayerAddress })
@@ -163,6 +164,7 @@ async function swapMina() {
 			await zkTokenA.approveAccountUpdate(dexTokenHolder.self)
 		})
 		await tx.prove()
+		console.timeEnd("execute tx")
 		const sentTx = await tx.sign([feepayerKey]).send()
 		if (sentTx.status === "pending") {
 			console.log("hash", sentTx.hash)
