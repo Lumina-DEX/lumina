@@ -15,13 +15,24 @@ import {
 	Mina,
 	PrivateKey,
 	AccountUpdate,
-	Cache
+	Cache,
+	UInt64,
+	fetchAccount
 } from "o1js"
-import { AddContract, AddProgram, AddProgramProof, AddValue } from "./contract"
+import {
+	FungibleToken,
+	FungibleTokenAdmin,
+	Pool,
+	PoolFactory,
+	PoolTokenHolder
+} from "@lumina-dex/contracts"
 
 export class PoolWorker extends zkCloudWorker {
-	static programVerificationKey: VerificationKey | undefined = undefined
-	static contractVerificationKey: VerificationKey | undefined = undefined
+	static fungibleTokenAdminVerificationKey: VerificationKey | undefined = undefined
+	static fungibleTokenVerificationKey: VerificationKey | undefined = undefined
+	static poolFactoryVerificationKey: VerificationKey | undefined = undefined
+	static poolVerificationKey: VerificationKey | undefined = undefined
+	static poolTokenVerificationKey: VerificationKey | undefined = undefined
 	readonly cache: Cache
 
 	constructor(cloud: Cloud) {
@@ -32,29 +43,60 @@ export class PoolWorker extends zkCloudWorker {
 	private async compile(compileSmartContracts: boolean = true): Promise<void> {
 		try {
 			console.time("compiled")
-			if (PoolWorker.programVerificationKey === undefined) {
-				console.time("compiled AddProgram")
-				PoolWorker.programVerificationKey = (
-					await AddProgram.compile({
-						cache: this.cache
-					})
-				).verificationKey
-				console.timeEnd("compiled AddProgram")
-			}
 
 			if (compileSmartContracts === false) {
 				console.timeEnd("compiled")
 				return
 			}
 
-			if (PoolWorker.contractVerificationKey === undefined) {
-				console.time("compiled AddContract")
-				PoolWorker.contractVerificationKey = (
-					await AddContract.compile({
+			if (PoolWorker.fungibleTokenAdminVerificationKey === undefined) {
+				console.time("compiled fungibleTokenAdmin")
+				PoolWorker.fungibleTokenAdminVerificationKey = (
+					await FungibleTokenAdmin.compile({
 						cache: this.cache
 					})
 				).verificationKey
-				console.timeEnd("compiled AddContract")
+				console.timeEnd("compiled fungibleTokenAdmin")
+			}
+
+			if (PoolWorker.fungibleTokenVerificationKey === undefined) {
+				console.time("compiled fungibleToken")
+				PoolWorker.fungibleTokenVerificationKey = (
+					await FungibleToken.compile({
+						cache: this.cache
+					})
+				).verificationKey
+				console.timeEnd("compiled fungibleToken")
+			}
+
+			if (PoolWorker.poolFactoryVerificationKey === undefined) {
+				console.time("compiled poolFactory")
+				PoolWorker.poolFactoryVerificationKey = (
+					await PoolFactory.compile({
+						cache: this.cache
+					})
+				).verificationKey
+				console.timeEnd("compiled poolFactory")
+			}
+
+			if (PoolWorker.poolVerificationKey === undefined) {
+				console.time("compiled pool")
+				PoolWorker.poolVerificationKey = (
+					await Pool.compile({
+						cache: this.cache
+					})
+				).verificationKey
+				console.timeEnd("compiled pool")
+			}
+
+			if (PoolWorker.poolTokenVerificationKey === undefined) {
+				console.time("compiled poolToken")
+				PoolWorker.poolTokenVerificationKey = (
+					await PoolTokenHolder.compile({
+						cache: this.cache
+					})
+				).verificationKey
+				console.timeEnd("compiled poolToken")
 			}
 			console.timeEnd("compiled")
 		} catch (error) {
@@ -72,162 +114,108 @@ export class PoolWorker extends zkCloudWorker {
 		if (args.contractAddress === undefined) throw new Error("args.contractAddress is undefined")
 
 		switch (this.cloud.task) {
-			case "one":
-				return await this.sendTx({ ...args, isMany: false })
-
-			case "many":
-				return await this.sendTx({ ...args, isMany: true })
-
-			case "verifyProof":
-				return await this.verifyProof(args)
+			case "swap":
+				return await this.swap({ ...args, isMany: false })
 
 			default:
 				throw new Error(`Unknown task: ${this.cloud.task}`)
 		}
 	}
 
-	private async verifyProof(args: { proof: string }): Promise<string> {
-		if (args.proof === undefined) throw new Error("args.proof is undefined")
-		const proof = (await AddProgramProof.fromJSON(
-			JSON.parse(args.proof) as JsonProof
-		)) as AddProgramProof
+	private async getZkTokenFromPool(pool: string) {
+		const poolKey = PublicKey.fromBase58(pool)
 
-		await this.compile(false)
-		if (PoolWorker.programVerificationKey === undefined)
-			throw new Error("verificationKey is undefined")
+		const zkPool = new Pool(poolKey)
+		const zkPoolTokenKey = await zkPool.token1.fetch()
+		if (!zkPoolTokenKey) throw new Error("ZKPool Token Key not found")
 
-		const ok = await verify(proof, PoolWorker.programVerificationKey)
-		if (ok) return "Proof verified"
-		else return "Proof verification failed"
+		const zkToken = new FungibleToken(zkPoolTokenKey)
+
+		const zkPoolTokenId = zkPool.deriveTokenId()
+		const zkTokenId = zkToken.deriveTokenId()
+
+		return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 	}
 
-	private async sendTx(args: {
-		proof?: string
-		addValue?: string
-		isMany: boolean
-		contractAddress: string
+	private async swap(args: {
+		from: string
+		to: string
+		pool: string
+		user: string
+		frontendFee: number
+		frontendFeeDestination: string
+		amount: number
+		minOut: number
+		balanceOutMin: number
+		balanceInMax: number
+		factory: string
 	}): Promise<string> {
-		if (args.isMany === undefined) throw new Error("args.isMany is undefined")
-		const isMany = args.isMany as boolean
-		console.log("isMany:", isMany)
-		if (isMany) {
-			if (args.proof === undefined) throw new Error("args.proof is undefined")
-		} else {
-			if (args.addValue === undefined) throw new Error("args.addValue is undefined")
-		}
-
 		const privateKey = PrivateKey.random()
 		const address = privateKey.toPublicKey()
 		console.log("Address", address.toBase58())
-		const contractAddress = PublicKey.fromBase58(args.contractAddress)
-		const zkApp = new AddContract(contractAddress)
 
 		console.log(`Sending tx...`)
 		console.time("prepared tx")
-		const memo = isMany ? "many" : "one"
 
-		const deployerKeyPair = await this.cloud.getDeployer()
-		if (deployerKeyPair === undefined) throw new Error("deployerKeyPair is undefined")
-		const deployer = PrivateKey.fromBase58(deployerKeyPair.privateKey)
-		console.log("cloud deployer:", deployer.toPublicKey().toBase58())
-		if (deployer === undefined) throw new Error("deployer is undefined")
-		const sender = deployer.toPublicKey()
-
-		await fetchMinaAccount({
-			publicKey: contractAddress,
-			force: true
-		})
-		await fetchMinaAccount({
-			publicKey: sender,
-			force: true
-		})
-
-		console.log("sender:", sender.toBase58())
-		console.log("Sender balance:", await accountBalanceMina(sender))
 		await this.compile()
 
-		let tx
-		let value: string
-		let limit: string
-		if (isMany) {
-			const proof = (await AddProgramProof.fromJSON(
-				JSON.parse(args.proof!) as JsonProof
-			)) as AddProgramProof
-			value = proof.publicOutput.value.toJSON()
-			limit = proof.publicOutput.limit.toJSON()
+		const { poolKey, zkTokenId, zkToken } = await this.getZkTokenFromPool(args.pool)
+		const userKey = PublicKey.fromBase58(args.user)
+		const TAX_RECEIVER = PublicKey.fromBase58(args.frontendFeeDestination)
 
-			tx = await Mina.transaction({ sender, fee: await fee(), memo }, async () => {
-				AccountUpdate.fundNewAccount(sender)
-				await zkApp.addMany(address, proof)
-			})
-		} else {
-			const addValue = AddValue.fromFields(deserializeFields(args.addValue!)) as AddValue
-			console.log("addValue:", {
-				value: addValue.value.toJSON(),
-				limit: addValue.limit.toJSON()
-			})
-			value = addValue.value.toJSON()
-			limit = addValue.limit.toJSON()
+		await Promise.all([
+			fetchAccount({ publicKey: poolKey }),
+			fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+			fetchAccount({ publicKey: userKey }),
+			fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
+		])
 
-			tx = await Mina.transaction({ sender, fee: await fee(), memo }, async () => {
-				AccountUpdate.fundNewAccount(sender)
-				await zkApp.addOne(address, addValue)
+		const zkPool = new Pool(poolKey)
+		const luminaAddress = await zkPool.protocol.fetch()
+		if (!luminaAddress) throw new Error("Lumina Address not found")
+
+		const [acc, accFront, accProtocol] = await Promise.all([
+			fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
+			fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
+			fetchAccount({
+				publicKey: luminaAddress,
+				tokenId: zkTokenId
 			})
-		}
+		])
+
+		const newAcc = acc.account ? 0 : 1
+		const newFront = accFront.account ? 0 : 1
+		const newAccProtocol = accProtocol.account ? 0 : 1
+
+		const total = newAcc + newFront + newAccProtocol
+		const swapArgList = [
+			TAX_RECEIVER,
+			UInt64.from(Math.trunc(args.frontendFee)),
+			UInt64.from(Math.trunc(args.amount)),
+			UInt64.from(Math.trunc(args.minOut)),
+			UInt64.from(Math.trunc(args.balanceInMax)),
+			UInt64.from(Math.trunc(args.balanceOutMin))
+		] as const
+
+		const MINA_ADDRESS = "MINA"
+
+		let tx = await Mina.transaction(userKey, async () => {
+			if (args.to === MINA_ADDRESS) {
+				const zkPool = new Pool(poolKey)
+				await zkPool.swapFromTokenToMina(...swapArgList)
+			} else {
+				AccountUpdate.fundNewAccount(userKey, total)
+				const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
+				await zkPoolHolder[
+					args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"
+				](...swapArgList)
+				await zkToken.approveAccountUpdate(zkPoolHolder.self)
+			}
+		})
+
 		if (tx === undefined) throw new Error("tx is undefined")
 		await tx.prove()
 
-		tx.sign([deployer, privateKey])
-		try {
-			await tx.prove()
-			console.timeEnd("prepared tx")
-			let txSent
-			let sent = false
-			while (!sent) {
-				txSent = await tx.safeSend()
-				if (txSent.status == "pending") {
-					sent = true
-					console.log(`${memo} tx sent: hash: ${txSent.hash} status: ${txSent.status}`)
-				} else if (this.cloud.chain === "zeko") {
-					console.log("Retrying Zeko tx")
-					await sleep(10000)
-				} else {
-					console.log(
-						`${memo} tx NOT sent: hash: ${txSent?.hash} status: ${
-							txSent?.status
-						} errors: ${txSent.errors.join(", ")}`
-					)
-					return "Error sending transaction"
-				}
-			}
-			if (this.cloud.isLocalCloud && txSent?.status === "pending") {
-				const txIncluded = await txSent.safeWait()
-				console.log(
-					`one tx included into block: hash: ${txIncluded.hash} status: ${txIncluded.status}`
-				)
-				await this.cloud.releaseDeployer({
-					publicKey: deployerKeyPair.publicKey,
-					txsHashes: [txIncluded.hash]
-				})
-				return txIncluded.hash
-			}
-			await this.cloud.releaseDeployer({
-				publicKey: deployerKeyPair.publicKey,
-				txsHashes: txSent?.hash ? [txSent.hash] : []
-			})
-			if (txSent?.hash)
-				this.cloud.publishTransactionMetadata({
-					txId: txSent?.hash,
-					metadata: {
-						method: isMany ? "addMany" : "addOne",
-						value,
-						limit
-					} as any
-				})
-			return txSent?.hash ?? "Error sending transaction"
-		} catch (error) {
-			console.error("Error sending transaction", error)
-			return "Error sending transaction"
-		}
+		return tx.toJSON()
 	}
 }

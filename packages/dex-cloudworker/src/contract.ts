@@ -2,8 +2,6 @@ import {
 	SelfProof,
 	ZkProgram,
 	method,
-	state,
-	State,
 	Struct,
 	TokenContract,
 	AccountUpdateForest,
@@ -11,7 +9,9 @@ import {
 	AccountUpdate,
 	UInt64,
 	Bool,
-	Field
+	Field,
+	state,
+	State
 } from "o1js"
 
 export const limit = 1000
