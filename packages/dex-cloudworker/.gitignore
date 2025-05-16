@@ -1,2 +1,4 @@
 cache
 env.json
+.zkcloudworker
+.yarn

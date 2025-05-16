@@ -15,6 +15,6 @@
 		"moduleResolution": "node",
 		"resolveJsonModule": true
 	},
-	"include": ["**/*.ts", "package.json", "env.json"],
+	"include": ["**/*.ts", "package.json", "env.json", "src"],
 	"exclude": ["node_modules", "dist"]
 }

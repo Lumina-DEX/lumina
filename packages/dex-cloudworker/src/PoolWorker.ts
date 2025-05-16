@@ -154,10 +154,10 @@ export class PoolWorker extends zkCloudWorker {
 		const address = privateKey.toPublicKey()
 		console.log("Address", address.toBase58())
 
+		await this.compile()
+
 		console.log(`Sending tx...`)
 		console.time("prepared tx")
-
-		await this.compile()
 
 		const { poolKey, zkTokenId, zkToken } = await this.getZkTokenFromPool(args.pool)
 		const userKey = PublicKey.fromBase58(args.user)
@@ -215,6 +215,8 @@ export class PoolWorker extends zkCloudWorker {
 
 		if (tx === undefined) throw new Error("tx is undefined")
 		await tx.prove()
+
+		console.timeEnd("prepared tx")
 
 		return tx.toJSON()
 	}
