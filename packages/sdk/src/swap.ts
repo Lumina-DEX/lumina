@@ -94,13 +94,12 @@ console.log("pool token A/Mina", zkPoolTokenAMinaAddress.toBase58())
 console.log("compile the contract...")
 
 async function compile() {
+	console.time("compile")
 	const cache: Cache = Cache.FileSystem("./cache")
 	const keyPoolLatest = await Pool.compile({ cache })
 	await FungibleToken.compile({ cache })
-	await FungibleTokenAdmin.compile({ cache })
 	const keyPoolHolderLatest = await PoolTokenHolder.compile({ cache })
-	const factoryKey = await PoolFactory.compile({ cache })
-	await Faucet.compile({ cache })
+	console.timeEnd("compile")
 }
 
 async function ask() {
@@ -131,9 +130,7 @@ compile().then(x => ask().then())
 
 async function swapMina() {
 	try {
-		console.log("swap Mina")
-
-		console.time("execute tx")
+		console.time("swap Mina")
 		await fetchAccount({ publicKey: zkPoolTokenAMinaAddress })
 		await fetchAccount({ publicKey: zkPoolTokenAMinaAddress, tokenId: zkTokenA.deriveTokenId() })
 		await fetchAccount({ publicKey: feepayerAddress })
@@ -164,7 +161,8 @@ async function swapMina() {
 			await zkTokenA.approveAccountUpdate(dexTokenHolder.self)
 		})
 		await tx.prove()
-		console.timeEnd("execute tx")
+		console.timeEnd("swap Mina")
+		console.log("swap mina proof", tx.toPretty())
 		const sentTx = await tx.sign([feepayerKey]).send()
 		if (sentTx.status === "pending") {
 			console.log("hash", sentTx.hash)
@@ -176,7 +174,7 @@ async function swapMina() {
 
 async function swapToken() {
 	try {
-		console.log("swap Token")
+		console.time("swap Token")
 		const amountIn = UInt64.from(20 * 10 ** 9)
 
 		await fetchAccount({ publicKey: zkPoolTokenAMinaAddress })
@@ -204,6 +202,7 @@ async function swapToken() {
 			)
 		})
 		await tx.prove()
+		console.timeEnd("swap Token")
 		console.log("swap token proof", tx.toPretty())
 		const sentTx = await tx.sign([feepayerKey]).send()
 		if (sentTx.status === "pending") {

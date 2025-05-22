@@ -39,7 +39,7 @@ const tokens = ref<LuminaToken[]>([])
 
 const swapSettings = computed(() => Dex.snapshot.value.context.dex.swap)
 const swapForm = reactive({
-  pool: "B62qp71rC3GU4bzoB6DfhrydBwkZ94R91JmfLevffMxBipRNcTxeYvh",
+  pool: "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
   fromAddress: "MINA",
   toAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
   fromAmount: "1",
@@ -50,7 +50,7 @@ const addLiquiditySettings = computed(() =>
   Dex.snapshot.value.context.dex.addLiquidity
 )
 const addLiquidityForm = reactive({
-  pool: "B62qp71rC3GU4bzoB6DfhrydBwkZ94R91JmfLevffMxBipRNcTxeYvh",
+  pool: "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
   tokenAAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
   tokenAAmount: "10",
   tokenBAddress: "MINA",
@@ -62,7 +62,7 @@ const removedLiquiditySettings = computed(() =>
   Dex.snapshot.value.context.dex.removeLiquidity
 )
 const removeLiquidityForm = reactive({
-  pool: "B62qp71rC3GU4bzoB6DfhrydBwkZ94R91JmfLevffMxBipRNcTxeYvh",
+  pool: "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
   lpAmount: "5",
   slippagePercent: 0.5
 })
