@@ -425,7 +425,7 @@ export class Pool extends TokenContract implements IPool {
 		const frontendReceiver = Provable.if(frontend.equals(PublicKey.empty()), this.address, frontend)
 		await this.send({ to: frontendReceiver, amount: feeFrontend })
 		// send mina to protocol
-		const protocol = await this.getProtocolAddress()
+		const protocol = this.protocol.getAndRequireEquals()
 		const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
 		await this.send({ to: protocolReceiver, amount: feeProtocol })
 

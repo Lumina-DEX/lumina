@@ -27,7 +27,7 @@ export async function verify(chain: blockchain): Promise<VerificationData> {
 		contract: PoolFactory,
 		programDependencies: [FungibleToken, FungibleTokenAdmin],
 		contractDependencies: [],
-		address: "B62qrfxeWqZF16Bm87xyb9fyXDs5APqqKuPmbMqaEsNUWj8Ju8GSRxM",
+		address: "B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv",
 		chain: "devnet"
 	} as unknown as VerificationData
 }

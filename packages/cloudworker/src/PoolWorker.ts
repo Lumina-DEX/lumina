@@ -26,9 +26,7 @@ import { PoolFactory } from "./pool/PoolFactory"
 import { PoolTokenHolder } from "./pool/PoolTokenHolder"
 
 export class PoolWorker extends zkCloudWorker {
-	static fungibleTokenAdminVerificationKey: VerificationKey | undefined = undefined
 	static fungibleTokenVerificationKey: VerificationKey | undefined = undefined
-	static poolFactoryVerificationKey: VerificationKey | undefined = undefined
 	static poolVerificationKey: VerificationKey | undefined = undefined
 	static poolTokenVerificationKey: VerificationKey | undefined = undefined
 	readonly cache: Cache
@@ -47,16 +45,6 @@ export class PoolWorker extends zkCloudWorker {
 				return
 			}
 
-			if (PoolWorker.fungibleTokenAdminVerificationKey === undefined) {
-				console.time("compiled fungibleTokenAdmin")
-				PoolWorker.fungibleTokenAdminVerificationKey = (
-					await FungibleTokenAdmin.compile({
-						cache: this.cache
-					})
-				).verificationKey
-				console.timeEnd("compiled fungibleTokenAdmin")
-			}
-
 			if (PoolWorker.fungibleTokenVerificationKey === undefined) {
 				console.time("compiled fungibleToken")
 				PoolWorker.fungibleTokenVerificationKey = (
@@ -65,16 +53,6 @@ export class PoolWorker extends zkCloudWorker {
 					})
 				).verificationKey
 				console.timeEnd("compiled fungibleToken")
-			}
-
-			if (PoolWorker.poolFactoryVerificationKey === undefined) {
-				console.time("compiled poolFactory")
-				PoolWorker.poolFactoryVerificationKey = (
-					await PoolFactory.compile({
-						cache: this.cache
-					})
-				).verificationKey
-				console.timeEnd("compiled poolFactory")
 			}
 
 			if (PoolWorker.poolVerificationKey === undefined) {
