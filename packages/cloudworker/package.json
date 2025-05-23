@@ -1,6 +1,6 @@
 {
 	"name": "lumina-cloudworker",
-	"version": "0.16.3",
+	"version": "0.16.5",
 	"author": "youtpout",
 	"scripts": {
 		"test": "jest",

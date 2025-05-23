@@ -61,6 +61,10 @@ export class PoolWorker extends zkCloudWorker {
 						cache: this.cache
 					})
 				).verificationKey
+				console.log(
+					"vk hash fungibleToken",
+					PoolWorker.fungibleTokenVerificationKey.hash.toBigInt()
+				)
 				console.timeEnd("compiled fungibleToken")
 			}
 
@@ -71,6 +75,7 @@ export class PoolWorker extends zkCloudWorker {
 						cache: this.cache
 					})
 				).verificationKey
+				console.log("vk hash pool", PoolWorker.poolVerificationKey.hash.toBigInt())
 				console.timeEnd("compiled pool")
 			}
 
@@ -81,6 +86,7 @@ export class PoolWorker extends zkCloudWorker {
 						cache: this.cache
 					})
 				).verificationKey
+				console.log("vk hash poolToken", PoolWorker.poolTokenVerificationKey.hash.toBigInt())
 				console.timeEnd("compiled poolToken")
 			}
 			console.timeEnd("compiled")
@@ -118,6 +124,7 @@ export class PoolWorker extends zkCloudWorker {
 						cache: this.cache
 					})
 				).verificationKey
+				console.log("vk hash pool", PoolWorker.poolFactoryVerificationKey.hash.toBigInt())
 				console.timeEnd("compiled pool factory")
 			}
 
