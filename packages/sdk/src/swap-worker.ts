@@ -94,7 +94,8 @@ console.log("token a")
 const zkTokenA = new FungibleToken(zkTokenAAddress)
 
 const api = new zkCloudWorkerClient({
-	jwt: process.env.JWT!
+	jwt: process.env.JWT!,
+	chain: "devnet"
 })
 
 async function ask() {

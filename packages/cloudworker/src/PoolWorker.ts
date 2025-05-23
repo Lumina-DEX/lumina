@@ -416,6 +416,7 @@ export class PoolWorker extends zkCloudWorker {
 		metadata: TransactionMetadata
 	}): Promise<string> {
 		const { tx, txJSON, memo, metadata } = params
+		console.log("tx pretty", tx.toPretty())
 		let txSent
 		let sent = false
 		const start = Date.now()
