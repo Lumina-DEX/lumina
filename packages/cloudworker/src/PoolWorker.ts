@@ -7,7 +7,8 @@ import {
 	fetchMinaAccount,
 	accountBalanceMina,
 	FungibleToken,
-	FungibleTokenAdmin
+	FungibleTokenAdmin,
+	TransactionMetadata
 } from "zkcloudworker"
 import {
 	verify,
@@ -23,12 +24,14 @@ import {
 	Poseidon,
 	Signature,
 	Bool,
-	MerkleMap
+	MerkleMap,
+	Transaction
 } from "o1js"
 import { Pool } from "./pool/Pool"
 import { PoolFactory } from "./pool/PoolFactory"
 import { PoolTokenHolder } from "./pool/PoolTokenHolder"
 import { SignatureRight } from "./pool/Multisig"
+import { parseTransactionPayloads, transactionParams } from "@silvana-one/mina-utils"
 
 export class PoolWorker extends zkCloudWorker {
 	static fungibleTokenVerificationKey: VerificationKey | undefined = undefined
@@ -157,24 +160,24 @@ export class PoolWorker extends zkCloudWorker {
 		return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 	}
 
-	private async swap(args: {
-		from: string
-		to: string
-		pool: string
-		user: string
-		frontendFee: number
-		frontendFeeDestination: string
-		amount: number
-		minOut: number
-		balanceOutMin: number
-		balanceInMax: number
-		factory: string
-		tx: string
-	}): Promise<string> {
+	private async swap(parameters: any): Promise<string> {
 		try {
-			const privateKey = PrivateKey.random()
-			const address = privateKey.toPublicKey()
-			console.log("Address", address.toBase58())
+			const args: {
+				from: string
+				to: string
+				pool: string
+				user: string
+				frontendFee: number
+				frontendFeeDestination: string
+				amount: number
+				minOut: number
+				balanceOutMin: number
+				balanceInMax: number
+				factory: string
+				tx: string
+			} = parameters.request
+
+			const { fee, sender, nonce, memo } = transactionParams(parameters)
 
 			await this.compile()
 
@@ -221,29 +224,42 @@ export class PoolWorker extends zkCloudWorker {
 
 			const MINA_ADDRESS = "MINA"
 
-			let tx = await Mina.transaction({ sender: userKey, fee: await fee() }, async () => {
-				if (args.to === MINA_ADDRESS) {
-					const zkPool = new Pool(poolKey)
-					await zkPool.swapFromTokenToMina(...swapArgList)
-				} else {
-					AccountUpdate.fundNewAccount(userKey, total)
-					const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
-					await zkPoolHolder[
-						args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"
-					](...swapArgList)
-					await zkToken.approveAccountUpdate(zkPoolHolder.self)
+			const txNew = await Mina.transaction(
+				{ sender, fee, memo: memo ?? `swap ${Date.now()}`, nonce },
+				async () => {
+					if (args.to === MINA_ADDRESS) {
+						const zkPool = new Pool(poolKey)
+						await zkPool.swapFromTokenToMina(...swapArgList)
+					} else {
+						AccountUpdate.fundNewAccount(userKey, total)
+						const zkPoolHolder = new PoolTokenHolder(poolKey, zkTokenId)
+						await zkPoolHolder[
+							args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"
+						](...swapArgList)
+						await zkToken.approveAccountUpdate(zkPoolHolder.self)
+					}
 				}
-			})
+			)
+
+			const tx = parseTransactionPayloads({ payloads: parameters, txNew })
 
 			if (tx === undefined) throw new Error("tx is undefined")
+
+			console.time("proved tx")
 			const txProved = await tx.prove()
 			const txJSON = txProved.toJSON()
-
+			console.timeEnd("proved tx")
 			console.timeEnd("prepared tx")
 
-			return this.stringifyJobResult({
-				success: true,
-				tx: txJSON
+			return await this.sendTokenTransaction({
+				tx: txProved,
+				txJSON,
+				memo,
+				metadata: {
+					sender: sender.toBase58(),
+					...args,
+					txType: "swap"
+				} as any
 			})
 		} catch (error) {
 			return this.stringifyJobResult({
@@ -254,22 +270,24 @@ export class PoolWorker extends zkCloudWorker {
 		}
 	}
 
-	private async createPool(args: {
-		tokenA: string
-		tokenB: string
-		user: string
-		factory: string
-		user0: string
-		signer: string
-		tx: string
-	}): Promise<string> {
+	private async createPool(parameters: any): Promise<string> {
 		try {
+			const args: {
+				tokenA: string
+				tokenB: string
+				user: string
+				factory: string
+				user0: string
+				signer: string
+				tx: string
+			} = parameters.request
+
 			const poolKey = PrivateKey.random()
 			const MINA_ADDRESS = "MINA"
 
 			console.log("Pool Key", poolKey.toBase58())
 
-			await this.compile()
+			await this.compileFactory()
 
 			console.log(`Sending tx...`)
 			console.time("prepared tx")
@@ -323,31 +341,38 @@ export class PoolWorker extends zkCloudWorker {
 
 			const isMinaTokenPool = args.tokenA === MINA_ADDRESS || args.tokenB === MINA_ADDRESS
 
-			const tx = await Mina.transaction(PublicKey.fromBase58(args.user), async () => {
-				AccountUpdate.fundNewAccount(PublicKey.fromBase58(args.user), 4)
-				if (isMinaTokenPool) {
-					const token = args.tokenA === MINA_ADDRESS ? args.tokenB : args.tokenA
-					await zkFactory.createPool(
-						poolKey.toPublicKey(),
-						PublicKey.fromBase58(token),
-						user1,
-						signature,
-						witness,
-						deployRight
-					)
+			const { fee, sender, nonce, memo } = transactionParams(parameters)
+
+			const txNew = await Mina.transaction(
+				{ sender, fee, memo: memo ?? `create pool ${Date.now()}`, nonce },
+				async () => {
+					AccountUpdate.fundNewAccount(PublicKey.fromBase58(args.user), 4)
+					if (isMinaTokenPool) {
+						const token = args.tokenA === MINA_ADDRESS ? args.tokenB : args.tokenA
+						await zkFactory.createPool(
+							poolKey.toPublicKey(),
+							PublicKey.fromBase58(token),
+							user1,
+							signature,
+							witness,
+							deployRight
+						)
+					}
+					if (!isMinaTokenPool) {
+						await zkFactory.createPoolToken(
+							poolKey.toPublicKey(),
+							PublicKey.fromBase58(args.tokenA),
+							PublicKey.fromBase58(args.tokenB),
+							user1,
+							signature,
+							witness,
+							deployRight
+						)
+					}
 				}
-				if (!isMinaTokenPool) {
-					await zkFactory.createPoolToken(
-						poolKey.toPublicKey(),
-						PublicKey.fromBase58(args.tokenA),
-						PublicKey.fromBase58(args.tokenB),
-						user1,
-						signature,
-						witness,
-						deployRight
-					)
-				}
-			})
+			)
+
+			const tx = parseTransactionPayloads({ payloads: parameters, txNew })
 
 			if (tx === undefined) throw new Error("tx is undefined")
 			const txProved = await tx.prove()
@@ -355,9 +380,18 @@ export class PoolWorker extends zkCloudWorker {
 
 			console.timeEnd("prepared tx")
 
-			return this.stringifyJobResult({
-				success: true,
-				tx: txJSON
+			return await this.sendTokenTransaction({
+				tx: txProved,
+				txJSON,
+				memo,
+				metadata: {
+					admin: sender.toBase58(),
+					poolAddress: poolKey.toPublicKey().toBase58(),
+					poolKey: poolKey.toBase58(),
+					tokenA: args.tokenA,
+					tokenB: args.tokenA,
+					txType: "create pool"
+				} as any
 			})
 		} catch (error) {
 			return this.stringifyJobResult({
@@ -368,12 +402,85 @@ export class PoolWorker extends zkCloudWorker {
 		}
 	}
 
+	private async sendTokenTransaction(params: {
+		tx: Transaction<true, true>
+		txJSON: string
+		memo: string
+		metadata: TransactionMetadata
+	}): Promise<string> {
+		const { tx, txJSON, memo, metadata } = params
+		let txSent
+		let sent = false
+		const start = Date.now()
+		const timeout = 60 * 1000
+		while (!sent) {
+			txSent = await tx.safeSend()
+			if (txSent.status == "pending") {
+				sent = true
+				console.log(`${memo} tx sent: hash: ${txSent.hash} status: ${txSent.status}`)
+			} else if (this.cloud.chain === "zeko" && Date.now() - start < timeout) {
+				console.log("Retrying Zeko tx", txSent.status, txSent.errors)
+				await sleep(10000)
+			} else {
+				console.log(
+					`${memo} tx NOT sent: hash: ${txSent?.hash} status: ${txSent?.status}`,
+					txSent.errors
+				)
+				// TODO: handle right API handling on tx-result
+				this.cloud.publishTransactionMetadata({
+					txId: txSent?.hash,
+					metadata: {
+						...metadata,
+						txStatus: txSent?.status,
+						txErrors: txSent?.errors,
+						txHash: txSent?.hash
+					} as any
+				})
+				return this.stringifyJobResult({
+					success: false,
+					tx: txJSON,
+					hash: txSent.hash,
+					status: txSent.status,
+					error: String(txSent.errors)
+				})
+			}
+		}
+		if (this.cloud.isLocalCloud && txSent?.status === "pending") {
+			const txIncluded = await txSent.safeWait()
+			console.log(
+				`${memo} tx included into block: hash: ${txIncluded.hash} status: ${txIncluded.status}`
+			)
+			return this.stringifyJobResult({
+				success: true,
+				tx: txJSON,
+				hash: txIncluded.hash
+			})
+		}
+		if (txSent?.hash)
+			this.cloud.publishTransactionMetadata({
+				txId: txSent?.hash,
+				metadata: {
+					...metadata,
+					txStatus: txSent?.status,
+					txErrors: txSent?.errors,
+					txHash: txSent?.hash
+				} as any
+			})
+		return this.stringifyJobResult({
+			success: txSent?.hash !== undefined && txSent?.status == "pending" ? true : false,
+			tx: txJSON,
+			hash: txSent?.hash,
+			status: txSent?.status,
+			error: String(txSent?.errors ?? "")
+		})
+	}
+
 	private stringifyJobResult(result: {
 		success: boolean
 		error?: string
 		tx?: string
 		hash?: string
-		jobStatus?: string
+		status?: string
 	}): string {
 		const strippedResult = {
 			...result,
