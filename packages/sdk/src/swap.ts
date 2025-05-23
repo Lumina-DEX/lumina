@@ -14,35 +14,9 @@
  */
 import readline from "readline/promises"
 
-import {
-	AccountUpdate,
-	Bool,
-	Cache,
-	fetchAccount,
-	Field,
-	MerkleMap,
-	Mina,
-	Poseidon,
-	PrivateKey,
-	Provable,
-	PublicKey,
-	Signature,
-	SmartContract,
-	UInt32,
-	UInt64,
-	UInt8
-} from "o1js"
+import { Cache, fetchAccount, Mina, PrivateKey, PublicKey, UInt64 } from "o1js"
 
-import {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	mulDiv,
-	Pool,
-	PoolFactory,
-	PoolTokenHolder,
-	SignatureRight
-} from "@lumina-dex/contracts"
+import { FungibleToken, mulDiv, Pool, PoolTokenHolder } from "@lumina-dex/contracts"
 
 const prompt = async (message: string) => {
 	const rl = readline.createInterface({

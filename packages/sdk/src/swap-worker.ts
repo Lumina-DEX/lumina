@@ -14,39 +14,11 @@
  */
 import readline from "readline/promises"
 
-import {
-	AccountUpdate,
-	Bool,
-	Cache,
-	fetchAccount,
-	Field,
-	MerkleMap,
-	Mina,
-	Poseidon,
-	PrivateKey,
-	Provable,
-	PublicKey,
-	Signature,
-	SmartContract,
-	UInt32,
-	UInt64,
-	UInt8
-} from "o1js"
+import { AccountUpdate, fetchAccount, Mina, PrivateKey, PublicKey, UInt64 } from "o1js"
 
-import {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	mulDiv,
-	Pool,
-	PoolFactory,
-	PoolTokenHolder,
-	SignatureRight
-} from "@lumina-dex/contracts"
+import { FungibleToken, mulDiv, Pool, PoolTokenHolder } from "@lumina-dex/contracts"
 import { createTransactionPayloads } from "@silvana-one/mina-utils"
-import { request } from "http"
-import { sender } from "o1js/dist/node/lib/mina/v1/mina"
-import { JobData, zkCloudWorkerClient } from "zkcloudworker"
+import { zkCloudWorkerClient } from "zkcloudworker"
 
 const prompt = async (message: string) => {
 	const rl = readline.createInterface({
