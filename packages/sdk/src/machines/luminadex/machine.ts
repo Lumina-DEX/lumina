@@ -488,7 +488,7 @@ export const createLuminaDexMachine = () => {
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolTokenHolder" }),
 							onDone: {
-								target: "COMPILE_FUNGIBLE_TOKEN_ADMIN",
+								target: "COMPILE_POOL_FACTORY",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
 							}
 						}
@@ -511,7 +511,7 @@ export const createLuminaDexMachine = () => {
 							input: ({ context }: { context: LuminaDexMachineContext }) =>
 								inputCompile({ context, contract: "PoolFactory" }),
 							onDone: {
-								target: "COMPILE_FAUCET",
+								target: "CONTRACTS_READY",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
 							}
 						}

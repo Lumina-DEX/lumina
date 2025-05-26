@@ -131,7 +131,7 @@ const compileContract = async ({ contract }: { contract: ContractName }) => {
 	const contracts = context().contracts
 	logger.start("Compiling contract", contract)
 	try {
-		await contracts[contract].compile({})
+		await contracts[contract].compile({ cache })
 		logger.success("Compiled contract successfully", contract)
 	} catch (error) {
 		logger.error("Contract compilation failed:", error)

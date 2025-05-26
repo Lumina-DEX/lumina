@@ -15,7 +15,8 @@
 		"files.local": "jest --chain=local --cloud=local --deploy=false --one=false --many=false --send=false --files=true",
 		"files.devnet": "jest --chain=devnet --deploy=false --one=false --many=false --send=false --files=true",
 		"encrypt.local": "jest --chain=local --cloud=local --deploy=false --one=false --many=false --send=false --encrypt=true",
-		"encrypt.devnet": "jest --chain=devnet --deploy=false --one=false --many=false --send=false --encrypt=true"
+		"encrypt.devnet": "jest --chain=devnet --deploy=false --one=false --many=false --send=false --encrypt=true",
+		"lint": "npx eslint src/**/*.ts --fix"
 	},
 	"devDependencies": {
 		"@jest/globals": "^29.7.0",
@@ -28,6 +29,9 @@
 	"packageManager": "yarn@4.5.2",
 	"dependencies": {
 		"@silvana-one/mina-utils": "^1.0.11",
+		"eslint": "^8.7.0",
+		"eslint-plugin-o1js": "^0.4.0",
+		"eslint-plugin-unused-imports": "^4.1.4",
 		"o1js": "^2.4.0",
 		"zkcloudworker": "^0.18.15"
 	},
