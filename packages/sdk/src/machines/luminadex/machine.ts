@@ -493,18 +493,6 @@ export const createLuminaDexMachine = () => {
 							}
 						}
 					},
-					COMPILE_FUNGIBLE_TOKEN_ADMIN: {
-						invoke: {
-							src: "compileContract",
-							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
-							onDone: {
-								target: "COMPILE_POOL_FACTORY",
-								actions: assign(({ context }) =>
-									loaded({ context, contract: "FungibleTokenAdmin" })
-								)
-							}
-						}
-					},
 					COMPILE_POOL_FACTORY: { // We don't need to target INITIALIZE_POOL_FACTORY as its done in the worker.
 						invoke: {
 							src: "compileContract",
@@ -513,16 +501,6 @@ export const createLuminaDexMachine = () => {
 							onDone: {
 								target: "CONTRACTS_READY",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
-							}
-						}
-					},
-					COMPILE_FAUCET: {
-						invoke: {
-							src: "compileContract",
-							input: ({ context }) => inputCompile({ context, contract: "Faucet" }),
-							onDone: {
-								target: "CONTRACTS_READY",
-								actions: assign(({ context }) => loaded({ context, contract: "Faucet" }))
 							}
 						}
 					},

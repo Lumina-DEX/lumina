@@ -27,8 +27,7 @@
     "docs:preview": "vitepress preview docs",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler versions upload",
-    "swap": "node --env-file=.env dist/swap.mjs",
-    "swap:worker": "node --env-file=.env dist/swap-worker.mjs"
+    "swap": "bunx --env-file=.env scripts/swap.ts"
   },
   "files": [
     "dist"
@@ -49,14 +48,6 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.mjs"
-    },
-    "./swap": {
-      "types": "./dist/swap.d.ts",
-      "import": "./dist/swap.mjs"
-    },
-    "./swap-worker": {
-      "types": "./dist/swap-worker.d.ts",
-      "import": "./dist/swap-worker.mjs"
     }
   },
   "main": "./dist/index.mjs",
@@ -65,7 +56,6 @@
     "@aurowallet/mina-provider": "^1.0.6",
     "@gql.tada/vue-support": "^1.0.1",
     "@lumina-dex/contracts": "workspace:^",
-    "@silvana-one/mina-utils": "^1.0.11",
     "@urql/exchange-retry": "^1.3.0",
     "@urql/vue": "^1.4.1",
     "@xstate/react": "^4.1.3",
@@ -78,8 +68,7 @@
     "p-limit": "^6.2.0",
     "urql": "^4.1.0",
     "vue": "^3.5.11",
-    "xstate": "^5.18.2",
-    "zkcloudworker": "^0.25.12"
+    "xstate": "^5.18.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
