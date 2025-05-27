@@ -22,6 +22,7 @@ import {
   Field,
   MerkleMap,
   Mina,
+  NetworkId,
   Poseidon,
   PrivateKey,
   Provable,
@@ -86,7 +87,7 @@ const approvedSigner = PrivateKey.fromBase58("EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVn
 const Network = Mina.Network({
   // We need to default to the testnet networkId if none is specified for this deploy alias in config.json
   // This is to ensure the backward compatibility.
-  networkId: "testnet",
+  networkId: process.env.NETWORK_ID! as NetworkId,
   mina: process.env.GRAPHQL!,
   archive: process.env.ARCHIVE!
 })
