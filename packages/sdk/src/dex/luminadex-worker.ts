@@ -4,7 +4,7 @@ import {
 	AccountUpdate,
 	Bool,
 	fetchAccount,
-	MerkleTree,
+	MerkleMap,
 	Mina,
 	Poseidon,
 	PrivateKey,
@@ -21,7 +21,7 @@ import {
 	type Pool,
 	type PoolFactory,
 	type PoolTokenHolder,
-	SignerMerkleWitness
+	SignatureRight
 } from "@lumina-dex/contracts"
 import { MINA_ADDRESS, type NetworkUri, urls } from "../constants"
 import { createMeasure, prefixedLogger } from "../helpers/logs"
@@ -200,19 +200,48 @@ const deployPoolInstance = async (
 	const poolKey = PrivateKey.random()
 	logger.debug({ poolKey })
 
-	const merkle = new MerkleTree(32)
+	const allRight = new SignatureRight(
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true)
+	)
+	const deployRight = SignatureRight.canDeployPool()
+
+	const merkle = new MerkleMap()
 	// TODO: temporary solution for testnet
 	const signerPk = PrivateKey.fromBase58(signer)
 	const user0Pk = PublicKey.fromBase58(user0)
 	const user1 = signerPk.toPublicKey()
 	logger.debug({ user0, user1 })
-	merkle.setLeaf(0n, Poseidon.hash(user0Pk.toFields()))
-	merkle.setLeaf(1n, Poseidon.hash(user1.toFields()))
+
+	const ownerPublic = PublicKey.fromBase58(
+		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
+	)
+	const signer1Public = PublicKey.fromBase58(
+		"B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt"
+	)
+	const signer2Public = PublicKey.fromBase58(
+		"B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy"
+	)
+	const signer3Public = PublicKey.fromBase58(
+		"B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6"
+	)
+	const approvedSignerPublic = PublicKey.fromBase58(
+		"B62qpko6oWqKU4LwAaT7PSX3b6TYvroj6umbpyEXL5EEeBbiJTUMU5Z"
+	)
+
+	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
 	const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 	logger.debug({ signature })
-	const witness = merkle.getWitness(1n)
-	const circuitWitness = new SignerMerkleWitness(witness)
-	logger.debug({ witness, circuitWitness })
+	const witness = merkle.getWitness(Poseidon.hash(approvedSignerPublic.toFields()))
+	logger.debug({ witness })
 	const factoryKey = PublicKey.fromBase58(factory)
 	logger.debug({ factoryKey })
 	const contracts = context().contracts
@@ -231,7 +260,8 @@ const deployPoolInstance = async (
 				PublicKey.fromBase58(token),
 				user1,
 				signature,
-				circuitWitness
+				witness,
+				deployRight
 			)
 		}
 		if (!isMinaTokenPool) {
@@ -241,7 +271,8 @@ const deployPoolInstance = async (
 				PublicKey.fromBase58(tokenB),
 				user1,
 				signature,
-				circuitWitness
+				witness,
+				deployRight
 			)
 		}
 	})

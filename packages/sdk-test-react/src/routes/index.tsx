@@ -38,11 +38,11 @@ function HomeComponent() {
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
-				pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
+				pool: "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
 				slippagePercent: 1,
 				to: "MINA",
 				from: {
-					address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+					address: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
 					amount: "1",
 					decimal: 10 ** 9
 				}

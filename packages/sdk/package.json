@@ -26,7 +26,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload"
+    "deploy:preview": "wrangler versions upload",
+    "swap": "bunx --env-file=.env scripts/swap.ts"
   },
   "files": [
     "dist"
@@ -63,7 +64,7 @@
     "consola": "^3.4.0",
     "fflate": "^0.8.2",
     "gql.tada": "^1.8.10",
-    "o1js": "2.2.0",
+    "o1js": "2.4.0",
     "p-limit": "^6.2.0",
     "urql": "^4.1.0",
     "vue": "^3.5.11",

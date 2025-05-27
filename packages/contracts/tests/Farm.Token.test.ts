@@ -3,10 +3,12 @@ import {
   Bool,
   fetchAccount,
   Field,
+  MerkleMap,
   MerkleTree,
   Mina,
   Poseidon,
   PrivateKey,
+  Provable,
   PublicKey,
   Signature,
   UInt32,
@@ -16,18 +18,27 @@ import {
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  claimerNumber,
+  Farm,
   FarmingEvent,
+  FarmMerkleWitness,
+  FarmReward,
+  FarmRewardTokenHolder,
+  FarmTokenHolder,
   FungibleToken,
   FungibleTokenAdmin,
   minTimeUnlockFarmReward,
+  MultisigInfo,
   Pool,
   PoolFactory,
   PoolTokenHolder,
-  SignerMerkleWitness
+  SignatureInfo,
+  SignatureRight,
+  UpdateSignerData
 } from "../dist"
-import { claimerNumber, Farm, FarmMerkleWitness, FarmReward, FarmRewardTokenHolder, FarmTokenHolder } from "../dist"
 
 const proofsEnabled = false
+
 describe("Farming pool token", () => {
   let deployerAccount: Mina.TestPublicKey,
     deployerKey: PrivateKey,
@@ -35,10 +46,17 @@ describe("Farming pool token", () => {
     senderKey: PrivateKey,
     bobAccount: Mina.TestPublicKey,
     bobKey: PrivateKey,
-    merkle: MerkleTree,
+    merkle: MerkleMap,
     aliceAccount: Mina.TestPublicKey,
     aliceKey: PrivateKey,
     dylanAccount: Mina.TestPublicKey,
+    bobPublic: PublicKey,
+    alicePublic: PublicKey,
+    dylanPublic: PublicKey,
+    senderPublic: PublicKey,
+    deployerPublic: PublicKey,
+    allRight: SignatureRight,
+    deployRight: SignatureRight,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: PoolFactory,
@@ -99,6 +117,15 @@ describe("Farming pool token", () => {
     bobKey = bobAccount.key
     aliceKey = aliceAccount.key
 
+    senderPublic = senderKey.toPublicKey()
+    bobPublic = bobKey.toPublicKey()
+    alicePublic = aliceKey.toPublicKey()
+    dylanPublic = dylanAccount.key.toPublicKey()
+    deployerPublic = deployerKey.toPublicKey()
+
+    allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
+    deployRight = SignatureRight.canDeployPool()
+
     zkAppPrivateKey = PrivateKey.random()
     zkAppAddress = zkAppPrivateKey.toPublicKey()
     zkApp = new PoolFactory(zkAppAddress)
@@ -136,20 +163,59 @@ describe("Farming pool token", () => {
 
     tokenHolder = new PoolTokenHolder(zkPoolAddress, zkToken0.deriveTokenId())
 
-    merkle = new MerkleTree(32)
-    merkle.setLeaf(0n, Poseidon.hash(bobAccount.toFields()))
-    merkle.setLeaf(1n, Poseidon.hash(aliceAccount.toFields()))
+    merkle = new MerkleMap()
+    merkle.set(Poseidon.hash(bobPublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(alicePublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(senderPublic.toFields()), allRight.hash())
+    merkle.set(Poseidon.hash(deployerPublic.toFields()), deployRight.hash())
+
     const root = merkle.getRoot()
+
+    const today = new Date()
+    today.setDate(today.getDate() + 1)
+    const tomorrow = today.getTime()
+    const time = getSlotFromTimestamp(tomorrow)
+    const info = new UpdateSignerData({ oldRoot: Field.empty(), newRoot: root, deadlineSlot: UInt32.from(time) })
+
+    const signBob = Signature.create(bobKey, info.toFields())
+    const signAlice = Signature.create(aliceKey, info.toFields())
+    const signDylan = Signature.create(senderAccount.key, info.toFields())
+
+    const multi = new MultisigInfo({
+      approvedUpgrader: root,
+      messageHash: info.hash(),
+      deadlineSlot: UInt32.from(time)
+    })
+    const infoBob = new SignatureInfo({
+      user: bobPublic,
+      witness: merkle.getWitness(Poseidon.hash(bobPublic.toFields())),
+      signature: signBob,
+      right: allRight
+    })
+    const infoAlice = new SignatureInfo({
+      user: alicePublic,
+      witness: merkle.getWitness(Poseidon.hash(alicePublic.toFields())),
+      signature: signAlice,
+      right: allRight
+    })
+    const infoDylan = new SignatureInfo({
+      user: senderPublic,
+      witness: merkle.getWitness(Poseidon.hash(senderPublic.toFields())),
+      signature: signDylan,
+      right: allRight
+    })
+    const array = [infoBob, infoAlice, infoDylan]
 
     const txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
       await zkApp.deploy({
         symbol: "FAC",
         src: "https://luminadex.com/",
-        owner: bobAccount,
         protocol: aliceAccount,
         delegator: dylanAccount,
-        approvedSigner: root
+        approvedSigner: root,
+        signatures: array,
+        multisigInfo: multi
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -206,8 +272,8 @@ describe("Farming pool token", () => {
     await txn4.sign([deployerKey, zkAppPrivateKey, zkTokenAdminPrivateKey, zkTokenPrivateKey2]).send()
 
     const signature = Signature.create(bobKey, zkPoolAddress.toFields())
-    const witness = merkle.getWitness(0n)
-    const circuitWitness = new SignerMerkleWitness(witness)
+    const witness = merkle.getWitness(Poseidon.hash(bobPublic.toFields()))
+
     const txn3 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 5)
       await zkApp.createPoolToken(
@@ -216,7 +282,8 @@ describe("Farming pool token", () => {
         zkTokenAddress1,
         bobAccount,
         signature,
-        circuitWitness
+        witness,
+        allRight
       )
     })
 
@@ -287,6 +354,14 @@ describe("Farming pool token", () => {
     await txn8.prove()
     await txn8.sign([aliceKey]).send()
   })
+
+  function getSlotFromTimestamp(date: number) {
+    const { genesisTimestamp, slotTime } = Mina.activeInstance.getNetworkConstants()
+    let slotCalculated = UInt64.from(date)
+    slotCalculated = (slotCalculated.sub(genesisTimestamp)).div(slotTime)
+    Provable.log("slotCalculated64", slotCalculated)
+    return slotCalculated.toUInt32()
+  }
 
   it("deposit withdraw", async () => {
     await fetchAccount({ publicKey: zkFarmTokenAddress })

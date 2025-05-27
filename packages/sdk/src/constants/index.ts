@@ -42,9 +42,9 @@ export const archiveUrls = {
 
 // TODO: Add missing factories
 export const luminadexFactories = {
-	"mina:devnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
+	"mina:devnet": "B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv",
 	"mina:mainnet": "NOT_IMPLEMENTED",
-	"zeko:testnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
+	"zeko:testnet": "B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
@@ -61,9 +61,9 @@ export const chainFaucets = {
 		tokenId: "NOT_IMPLEMENTED"
 	},
 	"zeko:testnet": {
-		address: "NOT_IMPLEMENTED",
-		tokenAddress: "NOT_IMPLEMENTED",
-		tokenId: "NOT_IMPLEMENTED"
+		address: "B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq",
+		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn"
 	},
 	"zeko:mainnet": {
 		address: "NOT_IMPLEMENTED",
@@ -91,5 +91,8 @@ export const poolInstance = {
 	},
 	"mina:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
-	"zeko:testnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" }
+	"zeko:testnet": {
+		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+	}
 } as const

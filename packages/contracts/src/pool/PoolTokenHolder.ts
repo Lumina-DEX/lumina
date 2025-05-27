@@ -9,6 +9,7 @@ import {
   state,
   Struct,
   TokenId,
+  UInt32,
   UInt64,
   VerificationKey
 } from "o1js"
@@ -16,6 +17,7 @@ import {
 import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent, UpdateVerificationKeyEvent } from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
+import { Multisig, UpgradeInfo } from "./Multisig.js"
 
 /**
  * Event emitted when an user withdraw liquidity
@@ -95,15 +97,28 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
   /**
    * Upgrade to a new version, necessary due to o1js breaking verification key compatibility between versions
+   * @param multisig multisig data
    * @param vk new verification key
    */
   @method
-  async updateVerificationKey(vk: VerificationKey) {
+  async updateVerificationKey(multisig: Multisig, vk: VerificationKey) {
     const factoryAddress = this.poolFactory.getAndRequireEquals()
     const factory = new PoolFactory(factoryAddress)
-    const owner = await factory.getOwner()
-    // only protocol owner can update a pool
-    AccountUpdate.createSigned(owner)
+    const merkle = await factory.getApprovedSigner()
+    multisig.info.approvedUpgrader.equals(merkle).assertTrue("Incorrect signer list")
+
+    const deadlineSlot = multisig.info.deadlineSlot
+    // we can update only before the deadline to prevent signature reuse
+    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
+
+    const upgradeInfo = new UpgradeInfo({
+      contractAddress: this.address,
+      tokenId: this.tokenId,
+      newVkHash: vk.hash,
+      deadlineSlot
+    })
+    multisig.verifyUpdatePool(upgradeInfo)
+
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
   }
@@ -162,9 +177,9 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     balanceInMax: UInt64,
     balanceOutMin: UInt64
   ) {
-    const poolDataAddress = this.poolFactory.getAndRequireEquals()
-    const poolData = new PoolFactory(poolDataAddress)
-    const protocol = await poolData.getProtocol()
+    const pool = new Pool(this.address)
+    // we check the protocol in the pool
+    const protocol = pool.protocol.get()
     const sender = this.sender.getUnconstrained()
     await this.swap(
       sender,

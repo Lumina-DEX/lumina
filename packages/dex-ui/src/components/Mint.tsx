@@ -9,7 +9,7 @@ import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 
 // @ts-ignore
-const Mint = ({ accountState }) => {
+const Mint = ({}) => {
 	const [mina, setMina] = useState<any>()
 	const [loading, setLoading] = useState(false)
 	const [to, setTo] = useState("")
@@ -28,19 +28,11 @@ const Mint = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
-
 	const mintToken = async () => {
 		try {
 			setLoading(true)
 			if (token) {
 				console.time("token")
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				await zkState.zkappWorkerClient?.mintToken(user, token, to, amount)
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				console.timeEnd("create")
-				await mina.sendTransaction({ transaction: json })
 			}
 		} catch (error) {
 			console.log("token minting error", error)
@@ -86,6 +78,7 @@ const Mint = ({ accountState }) => {
 					<button onClick={mintToken} className="w-full bg-cyan-500 text-lg text-white p-1 rounded">
 						Mint Token
 					</button>
+					Create Token
 					{loading && <p>Creating transaction ...</p>}
 				</div>
 			</div>

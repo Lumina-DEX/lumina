@@ -488,20 +488,8 @@ export const createLuminaDexMachine = () => {
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolTokenHolder" }),
 							onDone: {
-								target: "COMPILE_FUNGIBLE_TOKEN_ADMIN",
-								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
-							}
-						}
-					},
-					COMPILE_FUNGIBLE_TOKEN_ADMIN: {
-						invoke: {
-							src: "compileContract",
-							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
-							onDone: {
 								target: "COMPILE_POOL_FACTORY",
-								actions: assign(({ context }) =>
-									loaded({ context, contract: "FungibleTokenAdmin" })
-								)
+								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
 							}
 						}
 					},
@@ -511,18 +499,8 @@ export const createLuminaDexMachine = () => {
 							input: ({ context }: { context: LuminaDexMachineContext }) =>
 								inputCompile({ context, contract: "PoolFactory" }),
 							onDone: {
-								target: "COMPILE_FAUCET",
-								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
-							}
-						}
-					},
-					COMPILE_FAUCET: {
-						invoke: {
-							src: "compileContract",
-							input: ({ context }) => inputCompile({ context, contract: "Faucet" }),
-							onDone: {
 								target: "CONTRACTS_READY",
-								actions: assign(({ context }) => loaded({ context, contract: "Faucet" }))
+								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
 							}
 						}
 					},
