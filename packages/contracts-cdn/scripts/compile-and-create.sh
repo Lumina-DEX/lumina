@@ -1,15 +1,18 @@
 #!/bin/bash
 
+# Number of lagrange-basis files required
+REQUIRED_LAGRANGE_FILES=14
+
 check_lagrange_basis() {
     # Count lagrange-basis files in ../cache/
     count=$(find ../cache/ -maxdepth 1 -type f -name "*lagrange-basis*" | wc -l)
     echo "Found $count lagrange-basis files"
-    [ "$count" -lt 8 ]
+    [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
 }
 
-# Run your command while there are fewer than 8 lagrange files
+# Run your command while there are fewer than required lagrange files
 while check_lagrange_basis; do
-    echo "Fewer than 8 lagrange files found, compiling contracts..."
+    echo "Fewer than $REQUIRED_LAGRANGE_FILES lagrange files found, compiling contracts..."
     # Compile the contracts
     node --experimental-strip-types compile-contracts.ts
 
@@ -17,7 +20,7 @@ while check_lagrange_basis; do
     sleep 1
 done
 
-echo "Succesfully compiled contracts - 8 or more lagrange files found"
+echo "Successfully compiled contracts - $REQUIRED_LAGRANGE_FILES or more lagrange files found"
 
 echo "Creating the cache ..."
 
