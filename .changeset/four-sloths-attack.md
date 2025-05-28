@@ -1,6 +1,6 @@
 ---
-"@lumina-dex/contracts": major
-"@lumina-dex/sdk": major
+"@lumina-dex/contracts": minor
+"@lumina-dex/sdk": minor
 ---
 
 Add multisig in the pools contracts
