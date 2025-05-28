@@ -1,14 +1,7 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 
-import {
-	Faucet,
-	FungibleToken,
-	FungibleTokenAdmin,
-	Pool,
-	PoolFactory,
-	PoolTokenHolder
-} from "@lumina-dex/contracts"
+import { FungibleToken, Pool, PoolFactory, PoolTokenHolder } from "@lumina-dex/contracts"
 import { Cache } from "o1js"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
@@ -38,8 +31,6 @@ export async function compileContracts() {
 	await ct(Pool)
 	await ct(PoolTokenHolder)
 	await ct(FungibleToken)
-	await ct(FungibleTokenAdmin)
-	await ct(Faucet)
 	console.log("Compilation done")
 }
 
