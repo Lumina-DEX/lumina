@@ -1,5 +1,18 @@
 # @lumina-dex/sdk
 
+## 1.0.0
+
+### Major Changes
+
+- 8098bc5: Add multisig in the pools contracts
+  Update contract address in the sdk
+  Remove faucet and token admin contract from sdk compile list (you can't deploy a new token)
+
+### Patch Changes
+
+- Updated dependencies [8098bc5]
+  - @lumina-dex/contracts@1.0.0
+
 ## 0.15.1
 
 ### Patch Changes

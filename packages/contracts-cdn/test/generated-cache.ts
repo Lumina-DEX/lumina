@@ -1,7 +1,10 @@
 export const cache = [
 	"lagrange-basis-fp-1024",
+	"lagrange-basis-fp-16384",
 	"lagrange-basis-fp-2048",
+	"lagrange-basis-fp-32768",
 	"lagrange-basis-fp-4096",
+	"lagrange-basis-fp-65536",
 	"lagrange-basis-fp-8192",
 	"srs-fp-65536",
 	"srs-fq-32768",
@@ -40,11 +43,10 @@ export const cache = [
 	"step-vk-poolfactory-approvebase",
 	"step-vk-poolfactory-createpool",
 	"step-vk-poolfactory-createpooltoken",
+	"step-vk-poolfactory-getapprovedsigner",
 	"step-vk-poolfactory-getdelegator",
-	"step-vk-poolfactory-getowner",
 	"step-vk-poolfactory-getprotocol",
 	"step-vk-poolfactory-setnewdelegator",
-	"step-vk-poolfactory-setnewowner",
 	"step-vk-poolfactory-setnewprotocol",
 	"step-vk-poolfactory-updateapprovedsigner",
 	"step-vk-poolfactory-updateverificationkey",
@@ -61,4 +63,4 @@ export const cache = [
 	"wrap-vk-poolfactory",
 	"wrap-vk-pooltokenholder"
 ].join()
-export const version = "0.5.0"
+export const version = "1.0.0"
