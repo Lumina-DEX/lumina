@@ -1,7 +1,7 @@
 {
   "version": "4",
   "specifiers": {
-    "npm:@lumina-dex/sdk@0.15.1": "0.15.1_typescript@5.8.3_vue@3.5.15__typescript@5.8.3_xstate@5.19.3_@gql.tada+vue-support@1.0.1__typescript@5.8.3",
+    "npm:@lumina-dex/sdk@0.16.0": "0.16.0_typescript@5.8.3_vue@3.5.15__typescript@5.8.3_xstate@5.19.3_@gql.tada+vue-support@1.0.1__typescript@5.8.3",
     "npm:graphql-request@7.1.2": "7.1.2_graphql@16.11.0"
   },
   "npm": {
@@ -82,15 +82,15 @@
     "@jridgewell/sourcemap-codec@1.5.0": {
       "integrity": "sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ=="
     },
-    "@lumina-dex/contracts@0.5.0_o1js@2.2.0": {
-      "integrity": "sha512-OS4dJFSVKXuhL4n0HzCbp/vCRs2T5QYnYuUWnOwc6xJRNm3FTrkogEPJd0Blb342+eax/8VKjBFbpBXWlrqqag==",
+    "@lumina-dex/contracts@0.6.0_o1js@2.4.0": {
+      "integrity": "sha512-o/6if1bByl50AEo2iqWunGH6fve7QnV6femDjbFXKla/XaeNuGOHtyWPCLFW8Wbh1qL0nzQyQCc3aYHYvBcTwg==",
       "dependencies": [
         "mina-fungible-token",
         "o1js"
       ]
     },
-    "@lumina-dex/sdk@0.15.1_typescript@5.8.3_vue@3.5.15__typescript@5.8.3_xstate@5.19.3_@gql.tada+vue-support@1.0.1__typescript@5.8.3": {
-      "integrity": "sha512-/5Ryvt+1DWSEO2tEJ5dxKHr00zc7GkHPhHD16nGLseTYHkoPb4Gtbby8NnHiCmTZfMGymnWkunBNPBpnKQXISQ==",
+    "@lumina-dex/sdk@0.16.0_typescript@5.8.3_vue@3.5.15__typescript@5.8.3_xstate@5.19.3_@gql.tada+vue-support@1.0.1__typescript@5.8.3": {
+      "integrity": "sha512-XaqgDoH19Ai8t6DEjg1ft7FysPH1fQ9VD27CK36B6FwqzVDi/ihKWkdkD4IZFlCkFVkm6ckJ9XFGGz2+TCLXaA==",
       "dependencies": [
         "@aurowallet/mina-provider",
         "@gql.tada/vue-support",
@@ -288,6 +288,12 @@
     "entities@4.5.0": {
       "integrity": "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="
     },
+    "error-stack-parser@2.1.4": {
+      "integrity": "sha512-Sk5V6wVazPhq5MhpO+AUxJn5x7XSXGl1R93Vn7i+zS15KDVxQijejNCrz8340/2bgLBjR9GtEG8ZVKONDjcqGQ==",
+      "dependencies": [
+        "stackframe"
+      ]
+    },
     "estree-walker@2.0.2": {
       "integrity": "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="
     },
@@ -320,18 +326,20 @@
     "he@1.2.0": {
       "integrity": "sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw=="
     },
-    "isomorphic-fetch@3.0.0": {
-      "integrity": "sha512-qvUtwJ3j6qwsF3jLxkZ72qCgjMysPzDfeV240JHiGZsANBYd+EEuu35v7dfrJ9Up0Ak07D7GGSkGhCHTqg/5wA==",
-      "dependencies": [
-        "node-fetch",
-        "whatwg-fetch"
-      ]
-    },
     "js-sha256@0.9.0": {
       "integrity": "sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA=="
     },
     "js-tokens@4.0.0": {
       "integrity": "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="
+    },
+    "libsodium-sumo@0.7.15": {
+      "integrity": "sha512-5tPmqPmq8T8Nikpm1Nqj0hBHvsLFCXvdhBFV7SGOitQPZAA6jso8XoL0r4L7vmfKXr486fiQInvErHtEvizFMw=="
+    },
+    "libsodium-wrappers-sumo@0.7.15": {
+      "integrity": "sha512-aSWY8wKDZh5TC7rMvEdTHoyppVq/1dTSAeAR7H6pzd6QRT3vQWcT5pGwCotLcpPEOLXX6VvqihSPkpEhYAjANA==",
+      "dependencies": [
+        "libsodium-sumo"
+      ]
     },
     "loose-envify@1.4.0": {
       "integrity": "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==",
@@ -345,7 +353,7 @@
         "@jridgewell/sourcemap-codec"
       ]
     },
-    "mina-fungible-token@1.1.0_o1js@2.2.0": {
+    "mina-fungible-token@1.1.0_o1js@2.4.0": {
       "integrity": "sha512-nfpKQuo49KBUkTFQjE+H47sXs2SzzAs484S6IXwSX38JX+VJKSEihuMv08Mi+x8cVjJ2hVsPlsvRcApIUI1lug==",
       "dependencies": [
         "o1js"
@@ -363,20 +371,15 @@
     "nanoid@3.3.11": {
       "integrity": "sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w=="
     },
-    "node-fetch@2.7.0": {
-      "integrity": "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==",
-      "dependencies": [
-        "whatwg-url"
-      ]
-    },
-    "o1js@2.2.0": {
-      "integrity": "sha512-lR8vmBlvzz3h+tDUajZfC/zVM+yKyrJFoIa57nED7F8WRfCGZHHy5lUpaUgHwVsC3ZE+aRaFtj2B2IzYyJu1AQ==",
+    "o1js@2.4.0": {
+      "integrity": "sha512-IxwPmSJxN+9H+IFwJ5mzasJ6XBcWhamfN9jPqqyUsXgmI8mWuEH3A3s83F9z0570wuO69dbNFvaPCwsIi0QoPA==",
       "dependencies": [
         "blakejs",
         "cachedir",
-        "isomorphic-fetch",
         "js-sha256",
+        "libsodium-wrappers-sumo",
         "reflect-metadata",
+        "stacktrace-js",
         "tslib"
       ]
     },
@@ -412,8 +415,32 @@
     "source-map-js@1.2.1": {
       "integrity": "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="
     },
-    "tr46@0.0.3": {
-      "integrity": "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="
+    "source-map@0.5.6": {
+      "integrity": "sha512-MjZkVp0NHr5+TPihLcadqnlVoGIoWo4IBHptutGh9wI3ttUYvCG26HkSuDi+K6lsZ25syXJXcctwgyVCt//xqA=="
+    },
+    "stack-generator@2.0.10": {
+      "integrity": "sha512-mwnua/hkqM6pF4k8SnmZ2zfETsRUpWXREfA/goT8SLCV4iOFa4bzOX2nDipWAZFPTjLvQB82f5yaodMVhK0yJQ==",
+      "dependencies": [
+        "stackframe"
+      ]
+    },
+    "stackframe@1.3.4": {
+      "integrity": "sha512-oeVtt7eWQS+Na6F//S4kJ2K2VbRlS9D43mAlMyVpVWovy9o+jfgH8O9agzANzaiLjclA0oYzUXEM4PurhSUChw=="
+    },
+    "stacktrace-gps@3.1.2": {
+      "integrity": "sha512-GcUgbO4Jsqqg6RxfyTHFiPxdPqF+3LFmQhm7MgCuYQOYuWyqxo5pwRPz5d/u6/WYJdEnWfK4r+jGbyD8TSggXQ==",
+      "dependencies": [
+        "source-map",
+        "stackframe"
+      ]
+    },
+    "stacktrace-js@2.0.2": {
+      "integrity": "sha512-Je5vBeY4S1r/RnLydLl0TBTi3F2qdfWmYsGvtfZgEI+SCprPppaIhQf5nGcal4gI4cGpCV/duLcAzT1np6sQqg==",
+      "dependencies": [
+        "error-stack-parser",
+        "stack-generator",
+        "stacktrace-gps"
+      ]
     },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
@@ -455,19 +482,6 @@
         "typescript"
       ]
     },
-    "webidl-conversions@3.0.1": {
-      "integrity": "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="
-    },
-    "whatwg-fetch@3.6.20": {
-      "integrity": "sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg=="
-    },
-    "whatwg-url@5.0.0": {
-      "integrity": "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==",
-      "dependencies": [
-        "tr46",
-        "webidl-conversions"
-      ]
-    },
     "wonka@6.3.5": {
       "integrity": "sha512-SSil+ecw6B4/Dm7Pf2sAshKQ5hWFvfyGlfPbEd6A14dOH6VDjrmbY86u6nZvy9omGwwIPFR8V41+of1EezgoUw=="
     },
@@ -480,7 +494,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@lumina-dex/sdk@0.15.1",
+      "npm:@lumina-dex/sdk@0.16.0",
       "npm:graphql-request@7.1.2"
     ],
     "packageJson": {
