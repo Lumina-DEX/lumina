@@ -23,9 +23,10 @@ curl "http://localhost:8787/__scheduled?cron=*%2F3+*+*+*+*"
 ## How to deploy when contracts are updated
 
 1. Deploy the SDK with the new contract addresses.
-2. Re Deploy the `lumina-tokens` service with `bun run deploy:prod` using the exact deployed SDK version in `deno.json`.
+2. Re Deploy the `lumina-tokens` service with `bun run deploy:prod` using the exact deployed SDK version in `deno.json`. _If the Pool Factory has not been updated, you can skip this step._
+3. Make sure the 3 compile scripts in `packages/contracts-cdn` are up to date with the latest changes in contracts and sdk
+4. Build contracts locally in `packages/contracts` with `bun run build` and Test that its working by deleting the `cdn/cache`directory and running `compile-and-create.sh`
+5. Merge the PR. If there's no existing release PR, you should trigger a release by bumping the sdk version or manually triggering the changeset GA.
+6. Merge the release PR.
 
-3. Build contracts locally in `packages/contracts` with `bun run build`
-4. Delete the cache directory in `packages/contracts-cdn`, then rebuild with `bun run cache:create` until the lagrange files are generated
-5. Deploy the `contracts-cdn` service with `bun run deploy`
-6. Reset the network if the PoolFactory has been updated and the token data is wrong (see can reset network state in api.spec.ts)
+_Manually reset the network if the PoolFactory has been updated and the token data is wrong (see can reset network state in api.spec.ts)_

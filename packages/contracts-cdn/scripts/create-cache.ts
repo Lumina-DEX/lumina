@@ -7,6 +7,7 @@ import { execSync } from "node:child_process"
 
 import contracts from "../../contracts/package.json" with { type: "json" }
 const { version } = contracts
+console.log(`Creating cache for version ${version}`)
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 export const cacheDir = path.resolve(__dirname, "../cache")
