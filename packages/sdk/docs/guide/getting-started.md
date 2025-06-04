@@ -100,9 +100,9 @@ See the [React Integration](/guide/react-integration) and [Vue Integration](/gui
 
 ## Debugging and Caching
 
-There is 2 values that can be set in localStorage to help with debugging and caching:
+There are 2 values that can be set in localStorage to help with debugging and caching:
 
-```js
+```ts
 localStorage.setItem("disableCache", true) // default false
 localStorage.setItem("debugLogs", true) // default false in prod
 ```

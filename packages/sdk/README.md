@@ -158,6 +158,38 @@ const { tokens, pools } = await fetchAllFromPoolFactory({
 })
 ```
 
+## Load Additional Features
+
+By default, the SDK initializes with the `Swap` feature. You can specify which features you want to load during initialization:
+
+```ts
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		features: ["Swap", "DeployPool"], // Load specific features
+		frontendFee: {
+			destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
+			amount: 1
+		}
+	}
+})
+```
+
+You can load additional features dynamically after initialization:
+
+```ts
+Dex.send({ type: "LoadFeatures", features: ["DeployPool", "Claim"] })
+```
+
+## Debugging
+
+You can set in localStorage some specific values to help with debugging and caching:
+
+```ts
+localStorage.setItem("disableCache", true) // default false
+localStorage.setItem("debugLogs", true) // default false in prod
+```
+
 ## Documentation
 
 For complete documentation, visit [https://lumina-dex.github.io/sdk/](https://lumina-dex.github.io/sdk/)
