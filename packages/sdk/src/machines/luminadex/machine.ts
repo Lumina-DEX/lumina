@@ -33,7 +33,7 @@ import {
 	getAmountOutFromLiquidity,
 	getFirstAmountLiquidityOut
 } from "../../dex/utils"
-import { createMeasure, prefixedLogger } from "../../helpers/logs"
+import { createMeasure, getDebugConfig, prefixedLogger } from "../../helpers/debug"
 import { sendTransaction } from "../../helpers/transfer"
 import { isBetween } from "../../helpers/validation"
 import { detectWalletChange } from "../wallet/actors"
@@ -151,7 +151,7 @@ export const createLuminaDexMachine = () => {
 		actors: {
 			detectWalletChange,
 			loadContracts: fromPromise(async ({ input: { worker } }: { input: InputDexWorker }) => {
-				act("loadContracts", async () => {
+				return act("loadContracts", async () => {
 					await worker.loadContracts()
 				})
 			}),
@@ -159,7 +159,8 @@ export const createLuminaDexMachine = () => {
 				async ({ input }: { input: { worker: DexWorker; contract: ContractName } }) => {
 					const { worker, contract } = input
 					return act(contract, async () => {
-						await worker.compileContract({ contract })
+						const disableCache = getDebugConfig().disableCache
+						await worker.compileContract({ contract, disableCache })
 					})
 				}
 			),

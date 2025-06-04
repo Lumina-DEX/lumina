@@ -5,7 +5,7 @@ import type { Client } from "urql"
 import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
-import { prefixedLogger } from "../../helpers/logs"
+import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import type {
 	AllTokenBalances,

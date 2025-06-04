@@ -1,5 +1,5 @@
 import type { ActorRefFromLogic, EventObject } from "xstate"
-import { logger } from "../../helpers/logs"
+import { logger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import type { createWalletMachine } from "./machine"
 import type { WalletEmit } from "./types"

@@ -1,7 +1,18 @@
 import { type ConsolaInstance, createConsola } from "consola"
 
+export const getDebugConfig = () => {
+	return {
+		disableCache: globalThis.localStorage?.getItem("disableCache") === "true"
+			|| process.env.SDK_DEBUG_CONFIG_disableCache === "true",
+		debugLogs: globalThis.localStorage?.getItem("debugLevel") === "true"
+				|| process.env.NODE_ENV === "production"
+			? 0
+			: 5
+	}
+}
+
 export const logger = createConsola({
-	level: process.env.NODE_ENV === "production" ? 0 : 5,
+	level: getDebugConfig().debugLogs,
 	fancy: true
 }).withTag("SDK")
 

@@ -24,7 +24,7 @@ import {
 	SignatureRight
 } from "@lumina-dex/contracts"
 import { MINA_ADDRESS, type NetworkUri, urls } from "../constants"
-import { createMeasure, prefixedLogger } from "../helpers/logs"
+import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
 
@@ -122,19 +122,31 @@ const loadContracts = async () => {
 	logger.success("Loaded contracts")
 }
 
-let cache: ReturnType<typeof readCache>
-const compileContract = async ({ contract }: { contract: ContractName }) => {
-	if (!cache) {
-		const cacheFiles = await fetchZippedContracts()
-		cache = readCache(cacheFiles)
-	}
-	const contracts = context().contracts
-	logger.start("Compiling contract", contract)
+let globalCache: ReturnType<typeof readCache>
+const compileContract = async (
+	{ contract, disableCache }: { contract: ContractName; disableCache: boolean }
+) => {
 	try {
-		await contracts[contract].compile({ cache })
-		logger.success("Compiled contract successfully", contract)
+		const contracts = context().contracts
+
+		if (disableCache) {
+			logger.start("Compiling contract without cache", contract)
+			logger.warn("Cache is disabled")
+			await contracts[contract].compile({})
+			logger.success("Compiled contract successfully without cache", contract)
+			return
+		}
+
+		if (!globalCache) {
+			logger.warn("No global cache found, fetching zipped contracts")
+			const cacheFiles = await fetchZippedContracts()
+			globalCache = readCache(cacheFiles)
+		}
+		logger.start("Compiling contract with cache", contract)
+		await contracts[contract].compile({ cache: globalCache })
+		logger.success("Compiled contract successfully with cache", contract)
 	} catch (error) {
-		logger.error("Contract compilation failed:", error)
+		logger.error(`Contract compilation failed for ${contract}`, error)
 		throw error
 	}
 }
@@ -213,7 +225,6 @@ const deployPoolInstance = async (
 	const merkle = new MerkleMap()
 	// TODO: temporary solution for testnet
 	const signerPk = PrivateKey.fromBase58(signer)
-	const user0Pk = PublicKey.fromBase58(user0)
 	const user1 = signerPk.toPublicKey()
 	logger.debug({ user0, user1 })
 
