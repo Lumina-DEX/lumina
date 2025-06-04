@@ -6,7 +6,7 @@ import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
 import { prefixedLogger } from "./logs"
 
-type SupportedNetwork = keyof typeof urls
+export type SupportedNetwork = keyof typeof urls
 
 export interface LuminaPool {
 	address: string

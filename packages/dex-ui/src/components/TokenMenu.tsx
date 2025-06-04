@@ -3,8 +3,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { Addresses } from "@/utils/addresses"
 import { minaTestnet } from "@/lib/wallet"
 import { Box, Typography, Modal } from "@mui/material"
-import { fetchAccount, fetchEvents, Field, PublicKey, SmartContract } from "o1js"
-import { ZKFACTORY_ADDRESS } from "./Layout"
+import { SupportedNetwork } from "@lumina-dex/sdk"
 
 const TokenMenu = ({ pool, setPool, setToken }) => {
 	const [cdnList, setCdnList] = useState([])
@@ -25,7 +24,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 	const getTokens = async () => {
 		//	const network: Networks = accountState.network === minaTestnet ? "mina:devnet" : "zeko:testnet"
 		// TODO support zeko
-		const network: string = "mina:devnet"
+		const network: SupportedNetwork = "mina:devnet"
 		const tokens = await Addresses.getList(network)
 		setCdnList(tokens)
 

@@ -16,7 +16,7 @@ export default function Home() {
 				<div className="p-2">
 					{tab === "swap" && (
 						<div>
-							<Swap accountState={accountState}></Swap>
+							<Swap></Swap>
 						</div>
 					)}
 				</div>

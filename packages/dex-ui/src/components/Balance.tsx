@@ -47,8 +47,8 @@ const Balance = ({ token, isPool }: { token: any; isPool: boolean | undefined })
 				() => {
 					Wallet.send({
 						type: "FetchBalance",
-						networks: [walletContext.currentNetwork],
-						token: data
+						network: walletContext.currentNetwork,
+						tokens: [data]
 					})
 				},
 				isPool ? 2000 : 100

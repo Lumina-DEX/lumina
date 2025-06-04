@@ -1,6 +1,6 @@
 import { ZKFACTORY_ADDRESS } from "@/components/Layout"
 import { fetchAccount, fetchEvents, Field, Mina, PublicKey } from "o1js"
-import { fetchTokenList, Networks } from "@lumina-dex/sdk"
+import { fetchTokenList, SupportedNetwork } from "@lumina-dex/sdk"
 
 export const poolToka = "B62qq47Pu4rmDAs86jRLcwDRD3XDheJU9dmRq5pfSpfWYi2aY7b1KNH"
 export const toka = "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
@@ -13,7 +13,7 @@ export class Addresses {
 	private static currentNetworkEvent = "mina:devnet"
 	private static currentNetworkCDN = "mina:devnet"
 
-	public static async getList(network: Networks) {
+	public static async getList(network: SupportedNetwork) {
 		if (Addresses.currentNetworkCDN === network && Addresses.listFromCDN.length) {
 			return Addresses.listFromCDN
 		}
@@ -33,7 +33,9 @@ export class Addresses {
 		return Addresses.listFromCDN
 	}
 
-	public static async getEventList(network: Networks) {
+	public static async getEventList(
+		network: "mina:devnet" | "mina:mainnet" | "zeko:testnet" | "zeko:mainnet"
+	) {
 		if (Addresses.currentNetworkEvent === network && Addresses.listFromEvent.length) {
 			return Addresses.listFromEvent
 		}
