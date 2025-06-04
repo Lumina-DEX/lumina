@@ -1,6 +1,6 @@
 import { AccountUpdate, Field, Mina, PublicKey, type Types } from "o1js"
 import type { WalletActorRef } from "../machines/wallet/actors"
-import { logger } from "./logs"
+import { logger } from "./debug"
 
 export const l1NodeUrl = "https://api.minascan.io/node/devnet/v1/graphql"
 
@@ -90,9 +90,15 @@ export const sendTransaction = async (
 			JSON.stringify({ timestamp, currentNetwork, account, hash, transaction })
 		)
 		logger.success("Transaction sent and saved to localStorage", updateResult)
+		const baseUrl = {
+			"mina:devnet": "https://minascan.io/devnet",
+			"mina:mainnet": "https://minascan.io/mainnet",
+			"zeko:testnet": "https://zekoscan.io/testnet",
+			"zeko:mainnet": "https://zekoscan.io/mainnet"
+		} as const
 		return {
 			hash: updateResult.hash,
-			url: `https://zekoscan.io/testnet/account/${updateResult.hash}/zk-txs`
+			url: `${baseUrl[currentNetwork]}/account/${updateResult.hash}/zk-txs` as const
 		}
 	}
 	logger.warn("An unexpected transaction result was received", updateResult)
