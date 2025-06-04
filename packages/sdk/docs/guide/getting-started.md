@@ -70,6 +70,19 @@ The SDK provides dedicated integration modules for both React and Vue, making it
 The SDK is framework-agnostic, but it provides dedicated integration modules for both React and Vue.
 See the [React Integration](/guide/react-integration) and [Vue Integration](/guide/vue-integration) pages for complete examples.
 
+## Debugging and Caching
+
+There is 2 values that can be set in localStorage to help with debugging and caching:
+
+```js
+localStorage.setItem("disableCache", true) // default false
+localStorage.setItem("debugLogs", true) // default false in prod
+```
+
+Disabling cache will prevent the SDK from using the remote cache for contract compilation, and will force a compilation of the contracts from scratch. This takes longer, but can be useful for debugging.
+
+Debug Logs will enable additional logging in the console, which can help with debugging issues in the SDK in your application during production or preview stage of the development. These logs are enabled by default in development mode.
+
 ## What's Next?
 
 - Learn about the [Core Concepts](/guide/core-concepts) behind the SDK's design
