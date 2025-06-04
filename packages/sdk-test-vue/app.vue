@@ -16,6 +16,7 @@ const Wallet = useActor(walletMachine)
 const Dex = useActor(dexMachine, {
   input: {
     wallet: Wallet.actorRef,
+    features: ["Swap"],
     frontendFee: {
       destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
       amount: 1
@@ -30,6 +31,11 @@ const dexError = computed(() => ({
   contractError: Dex.snapshot.value.context.contract.error
 }))
 const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
+const contractStatus = computed(() => ({
+  toLoad: Dex.snapshot.value.context.contract.toLoad,
+  currentlyLoading: Dex.snapshot.value.context.contract.currentlyLoading,
+  loaded: Dex.snapshot.value.context.contract.loaded
+}))
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:devnet"]
 )
@@ -181,6 +187,18 @@ const handleClaimFromFaucet = () => {
   Dex.send({ type: "ClaimTokensFromFaucet" })
 }
 
+const enableDeployPool = () => {
+  Dex.send({ type: "LoadFeatures", settings: ["DeployPool"] })
+}
+
+const enableDeployToken = () => {
+  Dex.send({ type: "LoadFeatures", settings: ["DeployToken"] })
+}
+
+const enableClaim = () => {
+  Dex.send({ type: "LoadFeatures", settings: ["Claim"] })
+}
+
 const fetchTokenBalances = async () => {
   const resultTokens = await fetchTokenList("mina:devnet")
   tokens.value = resultTokens
@@ -214,6 +232,9 @@ const notEmpty = (obj: Reactive<unknown>) =>
 <template>
   <div>
     <h2>Lumina SDK Test v{{ sdkVersion }}</h2>
+    <hr>
+    {{ contractStatus }}
+    <hr>
     <div>
       <button @click="fetchTokenBalances">Fetch Balances</button>
       <div>Mina Balances: {{ minaBalances }}</div>
@@ -315,6 +336,12 @@ const notEmpty = (obj: Reactive<unknown>) =>
     </div>
 
     <h2>Deploy</h2>
+    <button :disabled="canDo.deployPool" @click="enableDeployPool">
+      Enable Deploy Pool
+    </button>
+    <button :disabled="canDo.deployToken" @click="enableDeployToken">
+      Enable Deploy Token
+    </button>
     <pre>{{ deployPoolSettings }}</pre>
     <pre>{{ deployTokenSettings }}</pre>
     <div>
@@ -352,6 +379,7 @@ const notEmpty = (obj: Reactive<unknown>) =>
     </div>
 
     <h2>Faucet</h2>
+    <button :disabled="canDo.claim" @click="enableClaim">Enable Claim</button>
     <pre>{{ claimSettings }}</pre>
     <div>
       <button :disabled="!canDo.claim" @click="handleClaimFromFaucet">

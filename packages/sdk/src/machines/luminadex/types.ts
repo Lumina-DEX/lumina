@@ -21,6 +21,8 @@ interface ContractContext {
 	loaded: {
 		[name in ContractName]: boolean
 	}
+	toLoad: Set<ContractName>
+	currentlyLoading: ContractName | null
 	error: LuminaError | null
 }
 
@@ -68,7 +70,10 @@ interface DexContext {
 	}
 }
 
-type ContractEvent = { type: "LoadContracts" }
+type ContractEvent =
+	| { type: "LoadContracts" }
+	| { type: "LoadNextContract" }
+	| { type: "LoadFeatures"; settings: DexFeatures }
 
 type DexEvent =
 	// Swap
@@ -119,6 +124,7 @@ export interface Can {
 }
 
 export interface LuminaDexMachineContext {
+	features: DexFeatures
 	can: Can
 	wallet: WalletActorRef
 	dex: DexContext
@@ -126,9 +132,14 @@ export interface LuminaDexMachineContext {
 	frontendFee: FrontendFee
 }
 
+type DexFeature = "Swap" | "DeployPool" | "DeployToken" | "Claim"
+
+export type DexFeatures = DexFeature[]
+
 export interface LuminaDexMachineInput {
 	wallet: WalletActorRef
 	frontendFee: FrontendFee
+	features?: DexFeatures
 }
 
 export interface InputDexWorker {

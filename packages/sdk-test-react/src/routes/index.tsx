@@ -51,6 +51,7 @@ function HomeComponent() {
 	}, [Dex])
 
 	const [loaded, setLoaded] = useState(false)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		Wallet.send({ type: "Connect" })
 		const end = Wallet.subscribe(() => {
@@ -61,7 +62,7 @@ function HomeComponent() {
 				end.unsubscribe()
 			}
 		})
-	}, [Wallet, loaded, fetchTokenBalances])
+	}, [])
 
 	return (
 		<div>
