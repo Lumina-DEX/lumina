@@ -118,6 +118,9 @@ const act = async <T>(label: string, body: (stop: () => void) => Promise<T>) => 
 	}
 }
 
+/**
+ * Verify if the contracts are loaded for a given action.
+ */
 const canStartDexAction = (context: LuminaDexMachineContext) => {
 	const loaded = context.contract.loaded
 	return {
@@ -134,6 +137,9 @@ const canStartDexAction = (context: LuminaDexMachineContext) => {
 	} satisfies Record<keyof Can, boolean>
 }
 
+/**
+ * Verify if the user can perform a Dex action based on loaded contracts and calculated values.
+ */
 export const canDoDexAction = (context: LuminaDexMachineContext) => {
 	const start = canStartDexAction(context)
 	return {
@@ -498,9 +504,10 @@ export const createLuminaDexMachine = () => {
 							input: ({ context }) => ({ ...inputWorker(context), features: context.features }),
 							onDone: {
 								target: "IDLE",
-								actions: assign(({ context, event }) => {
-									return { ...context, contract: { ...context.contract, toLoad: event.output } }
-								})
+								actions: assign(({ context, event }) => ({
+									...context,
+									contract: { ...context.contract, toLoad: event.output }
+								}))
 							},
 							onError: {
 								target: "FAILED",
@@ -626,8 +633,7 @@ export const createLuminaDexMachine = () => {
 								description: "Load additional features on the fly.",
 								reenter: true,
 								actions: enqueueActions(({ context, event, enqueue }) => {
-									assertEvent(event, "LoadFeatures")
-									const features = new Set(event.settings)
+									const features = new Set(event.features)
 									const currentFeatures = new Set(context.features)
 									const missingFeatures = features.difference(currentFeatures)
 									if (missingFeatures.size === 0) return

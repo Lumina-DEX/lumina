@@ -63,7 +63,35 @@ const Dex = createDex({
 Wallet.send({ type: "Connect" })
 ```
 
-The SDK provides dedicated integration modules for both React and Vue, making it easy to use in your framework of choice.
+## Feature Loading
+
+You can choose which specific features you need from the SDK when initializing it.
+
+```ts
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		features: ["Swap"] // This is the default.
+		frontendFee: {
+			destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
+			amount: 1
+		}
+	}
+})
+```
+
+You can load the following features:
+
+- `Swap`: For token swapping functionality
+- `DeployPool`: For deploying liquidity pools
+- `DeployToken`: For deploying new tokens
+- `Claim`: For claiming tokens from the Faucet
+
+If you want to load additional features after the SDK has been initialized, you can use `LoadFeatures` :
+
+```ts
+Dex.send({ type: "LoadFeatures", features: ["DeployPool"] })
+```
 
 ## Framework Integration
 

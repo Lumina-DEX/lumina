@@ -73,7 +73,7 @@ interface DexContext {
 type ContractEvent =
 	| { type: "LoadContracts" }
 	| { type: "LoadNextContract" }
-	| { type: "LoadFeatures"; settings: DexFeatures }
+	| { type: "LoadFeatures"; features: DexFeatures }
 
 type DexEvent =
 	// Swap

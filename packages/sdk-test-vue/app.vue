@@ -188,15 +188,15 @@ const handleClaimFromFaucet = () => {
 }
 
 const enableDeployPool = () => {
-  Dex.send({ type: "LoadFeatures", settings: ["DeployPool"] })
+  Dex.send({ type: "LoadFeatures", features: ["DeployPool"] })
 }
 
 const enableDeployToken = () => {
-  Dex.send({ type: "LoadFeatures", settings: ["DeployToken"] })
+  Dex.send({ type: "LoadFeatures", features: ["DeployToken"] })
 }
 
 const enableClaim = () => {
-  Dex.send({ type: "LoadFeatures", settings: ["Claim"] })
+  Dex.send({ type: "LoadFeatures", features: ["Claim"] })
 }
 
 const fetchTokenBalances = async () => {
