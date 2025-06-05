@@ -33,6 +33,8 @@ export const urls = {
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
+export type SupportedNetwork = keyof typeof urls
+
 export const archiveUrls = {
 	"mina:mainnet": "https://api.minascan.io/archive/mainnet/v1/graphql",
 	"mina:devnet": "https://api.minascan.io/archive/devnet/v1/graphql",
