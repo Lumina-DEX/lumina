@@ -226,6 +226,19 @@ These events are handled automatically from the wallet:
 - `NetworkChanged`: When the network has changed
 - `AccountChanged`: When the account has changed
 
+### Other Events
+
+#### `LoadFeatures`
+
+Loads additional features or capabilities of the wallet.
+
+```ts
+Wallet.send({
+	type: "LoadFeatures",
+	features: ["Swap", "DeployPool", "DeployToken", "Claim"]
+})
+```
+
 ## Context
 
 The DEX machine maintains a complex context object with multiple sections that you can find in the [source code](https://github.com/Lumina-DEX/lumina/blob/main/packages/sdk/src/machines/luminadex/types.ts).

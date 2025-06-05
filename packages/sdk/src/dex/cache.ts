@@ -1,6 +1,6 @@
 import { unzipSync } from "fflate"
 import { contractsVersion, luminaCdnOrigin } from "../constants"
-import { prefixedLogger } from "../helpers/logs"
+import { prefixedLogger } from "../helpers/debug"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>

@@ -103,7 +103,7 @@ Wallet.send({
 })
 ```
 
-### Internal Events
+## Internal Events
 
 These events are handled internally and shouldn't be sent manually:
 

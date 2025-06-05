@@ -4,9 +4,9 @@ import pLimit from "p-limit"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
-import { prefixedLogger } from "./logs"
+import { prefixedLogger } from "./debug"
 
-type SupportedNetwork = keyof typeof urls
+import type { SupportedNetwork } from "../constants"
 
 export interface LuminaPool {
 	address: string
