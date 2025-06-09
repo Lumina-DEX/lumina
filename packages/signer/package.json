@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsx src/index.ts",
+		"worker": "tsx src/workerBull.ts",
 		"build": "tsc",
 		"serve": "node dist/src/index.js",
 		"format": "dprint check",
@@ -11,10 +12,13 @@
 	},
 	"dependencies": {
 		"@lumina-dex/contracts": "workspace:^",
+		"@lumina-dex/sdk": "workspace:^",
 		"arktype": "^2.0.4",
 		"bullmq": "^5.53.2",
+		"cors": "^2.8.5",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"ioredis": "^5.6.1",
 		"o1js": "2.4.0",
 		"tsx": "^4.19.4"
 	},

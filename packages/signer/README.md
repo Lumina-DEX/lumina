@@ -12,13 +12,37 @@ This can't run on cloudflare workers because of o1js limitations:
 
 ## Usage
 
-Use bun to run the service :
+Use redis, expressJs and bullMQ
 
 ```bash
-bun run dev
+docker run -p 6379:6379 -d redis:8.0.2
 ```
 
-The server with listen on http://0.0.0.0:8000/.
+Run the worker and express js in parrallel :
+
+```bash
+pnpm run worker
+```
+
+```bash
+pnpm run dev
+```
+
+The server with listen on http://0.0.0.0:3000/.
+
+Create pool post url :
+
+http://localhost:3000/create-pool
+
+Example data :
+
+```
+{
+    "tokenA": "MINA",
+    "tokenB": "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
+    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+}
+```
 
 ## Deploy
 
