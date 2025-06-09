@@ -14,6 +14,8 @@ This can't run on cloudflare workers because of o1js limitations:
 
 Use redis, expressJs and bullMQ
 
+Launch redis first in docker :
+
 ```bash
 docker run -p 6379:6379 -d redis:8.0.2
 ```
