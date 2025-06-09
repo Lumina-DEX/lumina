@@ -97,6 +97,7 @@ const worker = new Worker(
 		await fetchAccount({ publicKey: factoryKey })
 		const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 		console.debug({ isMinaTokenPool })
+		console.time("prove")
 		const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
 			fundNewAccount(PublicKey.fromBase58(user), 4)
 			if (isMinaTokenPool) {

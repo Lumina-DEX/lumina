@@ -26,10 +26,12 @@ app.post("/create-pool", async (request: Request, response: Response) => {
 	const formData = request.body
 
 	console.time("total")
+	const start = Date.now()
 	const ret = await addJobs(formData)
-	const time = console.timeEnd("total")
+	const time = Date.now() - start
+	console.timeEnd("total")
 
-	response.status(200).send(JSON.stringify({ msg: "create pool", result: ret, time: time }))
+	response.status(200).send(JSON.stringify({ msg: "create pool", time: time, result: ret }))
 })
 
 app
