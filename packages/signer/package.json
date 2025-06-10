@@ -3,10 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "tsx src/index.ts",
-		"worker": "tsx src/workerBull.ts",
 		"build": "tsc",
-		"serve": "node dist/src/index.js",
+		"start": "node dist/src/index.js",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose"
 	},

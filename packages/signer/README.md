@@ -20,14 +20,11 @@ Launch redis first in docker :
 docker run -p 6379:6379 -d redis:8.0.2
 ```
 
-Run the worker and express js in parrallel :
+Buil and run :
 
 ```bash
-pnpm run worker
-```
-
-```bash
-pnpm run dev
+pnpm run build
+pnpm run start
 ```
 
 The server with listen on http://0.0.0.0:3000/.
