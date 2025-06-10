@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express"
 import dotenv from "dotenv"
 import cors from "cors"
-import { addJobs } from "./proverBull"
+import { addJobs } from "./queue.js"
 
 // configures dotenv to work in your application
 dotenv.config()
@@ -24,6 +24,8 @@ app.get("/", (request: Request, response: Response) => {
 
 app.post("/create-pool", async (request: Request, response: Response) => {
 	const formData = request.body
+
+	console.log("request data", formData)
 
 	console.time("total")
 	const start = Date.now()

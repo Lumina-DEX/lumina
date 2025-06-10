@@ -371,6 +371,9 @@ importers:
       '@lumina-dex/contracts':
         specifier: workspace:^
         version: link:../contracts
+      '@lumina-dex/sdk':
+        specifier: workspace:^
+        version: link:../sdk
       arktype:
         specifier: ^2.0.4
         version: 2.0.4
