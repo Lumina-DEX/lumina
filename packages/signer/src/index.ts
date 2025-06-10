@@ -18,6 +18,9 @@ app.use(express.json())
 
 const PORT = process.env.PORT
 
+// we preload contract
+await addJobs({ onlyLoad: true })
+
 app.get("/", (request: Request, response: Response) => {
 	response.status(200).send("Hello World")
 })

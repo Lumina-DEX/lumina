@@ -51,7 +51,11 @@ export default async function (job: Job) {
 		console.log("job id", id)
 		setNumberOfWorkers(4)
 
-		const { tokenA, tokenB, user } = job.data
+		const { tokenA, tokenB, user, onlyLoad } = job.data
+
+		if (onlyLoad) {
+			return
+		}
 
 		console.log("data", { tokenA, tokenB, user })
 		const poolKey = PrivateKey.random()

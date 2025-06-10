@@ -1,28 +1,29 @@
 import { Queue, Worker, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
-import { fileURLToPath } from "url"
+import { fileURLToPath, pathToFileURL } from "url"
 import { dirname, join } from "path"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const file = join(__dirname, "workers", "sandbox.js")
-console.log("file", file)
+const processorUrl = pathToFileURL(file)
 
 const connection = new IORedis({ maxRetriesPerRequest: null })
 
-const createPool = new Worker("createPool", file, {
-	connection
+const createPool = new Worker("createPool", processorUrl, {
+	connection,
+	concurrency: 5
 })
 
 const createPoolQueue = new Queue("createPool", { connection })
 const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 
 export async function addJobs(data: any) {
-	const res = await createPoolQueue.add("createPool", data)
-	await createPoolQueue.close()
+	console.log("addjobs", data)
+	const job = await createPoolQueue.add("createPool", data)
+	const res = await job.waitUntilFinished(createPoolQueueEvents)
 
 	return res
-	//console.log("res", res);
 }
 
 createPoolQueueEvents.on("waiting", ({ jobId }) => {
