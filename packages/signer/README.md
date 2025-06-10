@@ -43,6 +43,18 @@ Example data :
 }
 ```
 
+Curl example :
+
+```
+curl --location 'http://localhost:3000/create-pool' \
+--header 'Content-Type: application/json' \
+--data '{
+    "tokenA": "MINA",
+    "tokenB": "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+}'
+```
+
 ## Deploy
 
 We should containerize this service and deploy it to a big Hetzner server

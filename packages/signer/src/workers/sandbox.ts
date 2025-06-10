@@ -24,6 +24,8 @@ dotenv.config()
 const networId = process.env.NETWORK_ID as NetworkId
 const networkUrl = process.env.NETWORK_URL
 
+setNumberOfWorkers(4)
+
 const Network = Mina.Network({
 	networkId: networId,
 	mina: networkUrl
@@ -49,26 +51,17 @@ export default async function (job: Job) {
 		await job.log("Start processing job")
 		const id = job.id
 		console.log("job id", id)
-		setNumberOfWorkers(4)
 
-		const { tokenA, tokenB, user, onlyLoad } = job.data
+		const { tokenA, tokenB, user, onlyCompile } = job.data
 
-		if (onlyLoad) {
-			return
+		if (onlyCompile) {
+			return "Compiled"
 		}
 
 		console.log("data", { tokenA, tokenB, user })
 		const poolKey = PrivateKey.random()
-		console.debug({ poolKey })
+		console.debug("pool public Key", poolKey.toPublicKey().toBase58())
 
-		const allRight = new SignatureRight(
-			Bool(true),
-			Bool(true),
-			Bool(true),
-			Bool(true),
-			Bool(true),
-			Bool(true)
-		)
 		const deployRight = SignatureRight.canDeployPool()
 
 		const merkle = getMerkle()

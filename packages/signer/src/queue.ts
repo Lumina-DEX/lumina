@@ -12,7 +12,7 @@ const connection = new IORedis({ maxRetriesPerRequest: null })
 
 const createPool = new Worker("createPool", processorUrl, {
 	connection,
-	concurrency: 5
+	concurrency: 3
 })
 
 const createPoolQueue = new Queue("createPool", { connection })
@@ -21,6 +21,9 @@ const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 export async function addJobs(data: any) {
 	console.log("addjobs", data)
 	const job = await createPoolQueue.add("createPool", data)
+	if (data.onlyCompile) {
+		return "only compile"
+	}
 	const res = await job.waitUntilFinished(createPoolQueueEvents)
 
 	return res
@@ -39,5 +42,6 @@ createPoolQueueEvents.on("completed", ({ jobId, returnvalue }) => {
 })
 
 createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
+	console.error("queue failed", failedReason)
 	console.log(`${jobId} has failed with reason ${failedReason}`)
 })
