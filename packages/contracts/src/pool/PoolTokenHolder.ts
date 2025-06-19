@@ -12,15 +12,8 @@ import {
   UInt64
 } from "o1js"
 
-import {
-  FungibleToken,
-  mulDiv,
-  Pool,
-  PoolFactory,
-  PoolFactoryBase,
-  SwapEvent,
-  UpdateVerificationKeyEvent
-} from "../indexpool.js"
+import { PoolFactory, PoolFactoryBase, UpdateVerificationKeyEvent } from "../indexfactory.js"
+import { FungibleToken, mulDiv, Pool, SwapEvent } from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
 

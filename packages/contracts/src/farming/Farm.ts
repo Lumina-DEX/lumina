@@ -15,7 +15,8 @@ import {
   VerificationKey
 } from "o1js"
 
-import { Pool, UpdateVerificationKeyEvent } from "../indexpool.js"
+import { UpdateVerificationKeyEvent } from "../indexfactory.js"
+import { Pool } from "../indexpool.js"
 
 export class FarmingInfo extends Struct({
   startTimestamp: UInt64,
