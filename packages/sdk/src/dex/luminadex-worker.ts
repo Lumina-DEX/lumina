@@ -222,33 +222,12 @@ const deployPoolInstance = async (
 	)
 	const deployRight = SignatureRight.canDeployPool()
 
-	const merkle = new MerkleMap()
+	const merkle = getMerkle()
 	// TODO: temporary solution for testnet
 	const signerPk = PrivateKey.fromBase58(signer)
-	const user1 = signerPk.toPublicKey()
-	logger.debug({ user0, user1 })
+	const approvedSignerPublic = signerPk.toPublicKey()
+	logger.debug({ user0, approvedSignerPublic })
 
-	const ownerPublic = PublicKey.fromBase58(
-		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
-	)
-	const signer1Public = PublicKey.fromBase58(
-		"B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt"
-	)
-	const signer2Public = PublicKey.fromBase58(
-		"B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy"
-	)
-	const signer3Public = PublicKey.fromBase58(
-		"B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6"
-	)
-	const approvedSignerPublic = PublicKey.fromBase58(
-		"B62qpko6oWqKU4LwAaT7PSX3b6TYvroj6umbpyEXL5EEeBbiJTUMU5Z"
-	)
-
-	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
 	const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 	logger.debug({ signature })
 	const witness = merkle.getWitness(Poseidon.hash(approvedSignerPublic.toFields()))
@@ -269,7 +248,7 @@ const deployPoolInstance = async (
 			await zkFactory.createPool(
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(token),
-				user1,
+				approvedSignerPublic,
 				signature,
 				witness,
 				deployRight
@@ -280,7 +259,7 @@ const deployPoolInstance = async (
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(tokenA),
 				PublicKey.fromBase58(tokenB),
-				user1,
+				approvedSignerPublic,
 				signature,
 				witness,
 				deployRight
@@ -665,6 +644,53 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 		await zkToken.approveAccountUpdate(zkFaucet.self)
 	})
 	return await proveTransaction(transaction)
+}
+export function getMerkle(): MerkleMap {
+	const ownerPublic = PublicKey.fromBase58(
+		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
+	)
+	const approvedSignerPublic = PublicKey.fromBase58(
+		"B62qjpbiYvHwbU5ARVbE5neMcuxfxg2zt8wHjkWVKHEiD1micG92CtJ"
+	)
+	const signer1Public = PublicKey.fromBase58(
+		"B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt"
+	)
+	const signer2Public = PublicKey.fromBase58(
+		"B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy"
+	)
+	const signer3Public = PublicKey.fromBase58(
+		"B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6"
+	)
+	const externalSigner1 = PublicKey.fromBase58(
+		"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+	)
+	const externalSigner2 = PublicKey.fromBase58(
+		"B62qpLxXFg4rmhce762uiJjNRnp5Bzc9PnCEAcraeaMkVWkPi7kgsWV"
+	)
+	const externalSigner3 = PublicKey.fromBase58(
+		"B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ"
+	)
+
+	const allRight = new SignatureRight(
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true)
+	)
+	const deployRight = SignatureRight.canDeployPool()
+	const merkle = new MerkleMap()
+	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
+	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+
+	return merkle
 }
 
 const minaInstance = (networkUrl: NetworkUri) => {
