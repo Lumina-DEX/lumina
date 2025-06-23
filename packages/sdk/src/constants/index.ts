@@ -1,3 +1,4 @@
+import { UInt64 } from "o1js"
 import { version } from "../../../contracts/package.json" with { type: "json" }
 
 export type NetworkLayer = "mina" | "zeko"
@@ -86,15 +87,17 @@ export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
 export const contractsVersion = `${version}`
 
+export const defaultFee = UInt64.from(5 * 10 ** 8)
+
 export const poolInstance = {
 	"mina:devnet": {
-		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	},
 	"mina:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:testnet": {
-		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	}
 } as const
