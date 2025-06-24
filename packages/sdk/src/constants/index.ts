@@ -1,4 +1,3 @@
-import { UInt64 } from "o1js"
 import { version } from "../../../contracts/package.json" with { type: "json" }
 
 export type NetworkLayer = "mina" | "zeko"
@@ -88,7 +87,7 @@ export const luminaCdnOrigin = "https://cdn.luminadex.com"
 export const contractsVersion = `${version}`
 
 export const defaultFee = {
-	"zeko:testnet": UInt64.from(5 * 10 ** 8),
+	"zeko:testnet": 5 * 10 ** 8,
 	"zeko:mainnet": undefined,
 	"mina:devnet": undefined,
 	"mina:mainnet": undefined
