@@ -1,4 +1,5 @@
-import { FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder } from "../indexpool.js"
+import { PoolFactory } from "../indexfactory.js"
+import { FungibleToken, FungibleTokenAdmin, Pool, PoolTokenHolder } from "../indexpool.js"
 
 // node dist/utils/verificationKey.js
 

@@ -306,7 +306,7 @@ export class SignatureInfo extends Struct({
  */
 export class Multisig extends Struct({
   info: MultisigInfo,
-  signatures: Provable.Array(SignatureInfo, 3)
+  signatures: Provable.Array(SignatureInfo, 2)
 }) {
   constructor(value: {
     info: MultisigInfo
@@ -327,22 +327,6 @@ export class Multisig extends Struct({
       this.info,
       this.info.approvedUpgrader,
       updateInfo.toFields(),
-      right
-    )
-  }
-
-  /**
-   * Check if the signature match the current user and data subbit
-   * @param data needed to verify the signature
-   */
-  verifyUpdatePool(upgradeInfo: UpgradeInfo) {
-    const right = SignatureRight.canUpdatePool()
-    verifySignature(
-      this.signatures,
-      upgradeInfo.deadlineSlot,
-      this.info,
-      this.info.approvedUpgrader,
-      upgradeInfo.toFields(),
       right
     )
   }
@@ -385,8 +369,8 @@ export class Multisig extends Struct({
  */
 export class MultisigSigner extends Struct({
   info: MultisigInfo,
-  signatures: Provable.Array(SignatureInfo, 3),
-  newSignatures: Provable.Array(SignatureInfo, 3)
+  signatures: Provable.Array(SignatureInfo, 2),
+  newSignatures: Provable.Array(SignatureInfo, 2)
 }) {
   constructor(value: {
     info: MultisigInfo
@@ -423,7 +407,7 @@ export class MultisigSigner extends Struct({
 }
 
 /**
- * Check if the 3 signatures are valid
+ * Check if the 2 signatures are valid
  */
 export function verifySignature(
   signatures: SignatureInfo[],
@@ -434,10 +418,8 @@ export function verifySignature(
   right: SignatureRight
 ) {
   info.deadlineSlot.equals(deadlineSlot).assertTrue("Deadline doesn't match")
-  // check the signature come from 3 different users
+  // check the signature come from 2 different users
   signatures[0].user.equals(signatures[1].user).assertFalse("Can't include same signer")
-  signatures[1].user.equals(signatures[2].user).assertFalse("Can't include same signer")
-  signatures[0].user.equals(signatures[2].user).assertFalse("Can't include same signer")
 
   const hash = Poseidon.hash(data)
   for (let index = 0; index < signatures.length; index++) {
