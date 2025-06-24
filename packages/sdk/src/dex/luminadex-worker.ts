@@ -196,6 +196,16 @@ const fundNewAccount = async (feePayer: PublicKey, numberOfAccounts = 1) => {
 	}
 }
 
+const getFee = () => {
+	try {
+		const network = workerState.getSnapshot().context.network
+		const fee = network ? defaultFee[network] : undefined
+		return fee
+	} catch (error) {
+		return undefined
+	}
+}
+
 export interface DeployPoolArgs {
 	tokenA: string
 	tokenB: string
@@ -243,7 +253,7 @@ const deployPoolInstance = async (
 	logger.debug({ isMinaTokenPool })
 	const transaction = await Mina.transaction({
 		sender: PublicKey.fromBase58(user),
-		fee: defaultFee
+		fee: getFee()
 	}, async () => {
 		fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (isMinaTokenPool) {
@@ -291,7 +301,7 @@ const deployToken = async ({ user, tokenKey, tokenAdminKey, symbol }: DeployToke
 	const zkTokenAdmin = new contracts.FungibleTokenAdmin(tokenAdminPrivateKey.toPublicKey())
 	logger.debug({ zkToken, zkTokenAdmin })
 	const transaction = await Mina.transaction(
-		{ sender: userPublicKey, fee: defaultFee },
+		{ sender: userPublicKey, fee: getFee() },
 		async () => {
 			fundNewAccount(userPublicKey, 3)
 			await zkTokenAdmin.deploy({
@@ -333,7 +343,7 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 		tokenId: zkToken.deriveTokenId()
 	})
 
-	const transaction = await Mina.transaction({ sender: userKey, fee: defaultFee }, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		fundNewAccount(userKey, acc.account ? 0 : 1)
 		await zkToken.mint(receiver, tokenAmount)
 	})
@@ -436,7 +446,7 @@ const swap = async (args: SwapArgs) => {
 		UInt64.from(Math.trunc(args.balanceOutMin))
 	] as const
 
-	const transaction = await Mina.transaction({ sender: userKey, fee: defaultFee }, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		if (args.to === MINA_ADDRESS) {
 			const zkPool = new contracts.Pool(poolKey)
 			logger.debug({ zkPool })
@@ -529,7 +539,7 @@ const addLiquidity = async (args: AddLiquidity) => {
 		)
 	}
 
-	const transaction = await Mina.transaction({ sender: userKey, fee: defaultFee }, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		fundNewAccount(userKey, newAccount)
 		await createSupplyLiquidity({ tokenA: args.tokenA, tokenB: args.tokenB, supply })
 	})
@@ -606,7 +616,7 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 		)
 	}
 
-	const transaction = await Mina.transaction({ sender: userKey, fee: defaultFee }, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		await createWithdrawLiquidity({ tokenA: args.tokenA, tokenB: args.tokenB, liquidity, supply })
 		await zkToken.approveAccountUpdate(zkHolder.self)
 	})
@@ -646,7 +656,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 
 	logger.debug({ newAcc, newFau, total })
 
-	const transaction = await Mina.transaction({ sender: userKey, fee: defaultFee }, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		fundNewAccount(userKey, total)
 		await zkFaucet.claim()
 		await zkToken.approveAccountUpdate(zkFaucet.self)
