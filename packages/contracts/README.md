@@ -34,5 +34,5 @@ between 0-0.10% for frontend operators
 ## Testnet address
 
 TOKA="B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"\
-FACTORY="B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv"
-POOL_TOKA_MINA="B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy"
+FACTORY="B62qmd6mCFwMsVTbithqqSYMLgELaF5kZT714ea5MtR6gquB5stCBbz"\
+POOL_TOKA_MINA="B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY"

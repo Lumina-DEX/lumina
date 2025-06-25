@@ -44,9 +44,9 @@ export const archiveUrls = {
 
 // TODO: Add missing factories
 export const luminadexFactories = {
-	"mina:devnet": "B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv",
+	"mina:devnet": "B62qmd6mCFwMsVTbithqqSYMLgELaF5kZT714ea5MtR6gquB5stCBbz",
 	"mina:mainnet": "NOT_IMPLEMENTED",
-	"zeko:testnet": "B62qp6x4PfXbqhL3rWgshwkfS2sHTzPDYWBmgTxBsBGSPihJaNEEUXv",
+	"zeko:testnet": "B62qmd6mCFwMsVTbithqqSYMLgELaF5kZT714ea5MtR6gquB5stCBbz",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
@@ -86,15 +86,22 @@ export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
 export const contractsVersion = `${version}`
 
+export const defaultFee = {
+	"zeko:testnet": 5 * 10 ** 8,
+	"zeko:mainnet": undefined,
+	"mina:devnet": undefined,
+	"mina:mainnet": undefined
+}
+
 export const poolInstance = {
 	"mina:devnet": {
-		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	},
 	"mina:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:testnet": {
-		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	}
 } as const

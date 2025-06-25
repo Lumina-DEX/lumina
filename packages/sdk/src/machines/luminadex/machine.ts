@@ -322,31 +322,35 @@ export const createLuminaDexMachine = () => {
 						const { worker, pool, tokenA, tokenB, slippagePercent } = input
 						const reserves = await worker.getReserves(pool)
 
-						const ok = reserves.token0.address === tokenA.address
+						const isToken0 = reserves.token0.address === tokenA.address
 
 						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-							const balanceA = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-							const balanceB = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
+							const balanceA = Number.parseInt(
+								isToken0 ? reserves.token0.amount : reserves.token1.amount
+							)
+							const balanceB = Number.parseInt(
+								isToken0 ? reserves.token1.amount : reserves.token0.amount
+							)
 
 							const liquidity = Number.parseInt(reserves.liquidity)
 
 							if (liquidity > 0) {
-								const amountAIn = amount(ok ? tokenA : tokenB)
+								const amountAIn = amount(tokenA)
 								const liquidityAmount = getAmountLiquidityOut({
 									tokenA: {
-										address: ok ? tokenA.address : tokenB.address,
+										address: tokenA.address,
 										amountIn: amountAIn,
 										balance: balanceA
 									},
-									tokenB: { address: ok ? tokenB.address : tokenA.address, balance: balanceB },
+									tokenB: { address: tokenB.address, balance: balanceB },
 									supply: liquidity,
 									slippagePercent
 								})
 								return liquidityAmount
 							}
 
-							const amountAIn = amount(ok ? tokenA : tokenB)
-							const amountBIn = amount(ok ? tokenB : tokenA)
+							const amountAIn = amount(tokenA)
+							const amountBIn = amount(tokenB)
 							const liquidityAmount = getFirstAmountLiquidityOut({
 								tokenA: { address: tokenA.address, amountIn: amountAIn },
 								tokenB: { address: tokenB.address, amountIn: amountBIn }

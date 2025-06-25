@@ -38,7 +38,7 @@ function HomeComponent() {
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
-				pool: "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
+				pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
 				slippagePercent: 1,
 				to: "MINA",
 				from: {

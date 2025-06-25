@@ -9,15 +9,13 @@ import {
   state,
   Struct,
   TokenId,
-  UInt32,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
-import { FungibleToken, mulDiv, Pool, PoolFactory, SwapEvent, UpdateVerificationKeyEvent } from "../indexpool.js"
+import { PoolFactory, PoolFactoryBase, UpdateVerificationKeyEvent } from "../indexfactory.js"
+import { FungibleToken, mulDiv, Pool, SwapEvent } from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
-import { Multisig, UpgradeInfo } from "./Multisig.js"
 
 /**
  * Event emitted when an user withdraw liquidity
@@ -78,6 +76,11 @@ export class PoolTokenHolder extends SmartContract implements IPool {
   poolFactory = State<PublicKey>()
 
   /**
+   * We declare the factory contract as a static property so that it can be easily replaced in case of factory upgrade
+   */
+  static FactoryContract: new(...args: any) => PoolFactoryBase = PoolFactory
+
+  /**
    * List of pool token holder events
    */
   events = {
@@ -97,27 +100,12 @@ export class PoolTokenHolder extends SmartContract implements IPool {
 
   /**
    * Upgrade to a new version, necessary due to o1js breaking verification key compatibility between versions
-   * @param multisig multisig data
-   * @param vk new verification key
    */
   @method
-  async updateVerificationKey(multisig: Multisig, vk: VerificationKey) {
+  async updateVerificationKey() {
     const factoryAddress = this.poolFactory.getAndRequireEquals()
-    const factory = new PoolFactory(factoryAddress)
-    const merkle = await factory.getApprovedSigner()
-    multisig.info.approvedUpgrader.equals(merkle).assertTrue("Incorrect signer list")
-
-    const deadlineSlot = multisig.info.deadlineSlot
-    // we can update only before the deadline to prevent signature reuse
-    this.network.globalSlotSinceGenesis.requireBetween(UInt32.zero, deadlineSlot)
-
-    const upgradeInfo = new UpgradeInfo({
-      contractAddress: this.address,
-      tokenId: this.tokenId,
-      newVkHash: vk.hash,
-      deadlineSlot
-    })
-    multisig.verifyUpdatePool(upgradeInfo)
+    const factory = new PoolTokenHolder.FactoryContract(factoryAddress)
+    const vk = await factory.getPoolTokenHolderVK()
 
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
@@ -178,8 +166,8 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     balanceOutMin: UInt64
   ) {
     const pool = new Pool(this.address)
-    // we check the protocol in the pool
-    const protocol = pool.protocol.get()
+    // we need to create a proof to be ensure is the correct protocol address
+    const protocol = await pool.getProtocol()
     const sender = this.sender.getUnconstrained()
     await this.swap(
       sender,

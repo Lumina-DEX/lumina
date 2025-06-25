@@ -13,7 +13,7 @@ import {
   VerificationKey
 } from "o1js"
 
-import { UpdateVerificationKeyEvent } from "../indexpool.js"
+import { UpdateVerificationKeyEvent } from "../indexfactory.js"
 
 import { Farm, FarmingEvent, minTimeUnlockFarm, UpdateInitEvent } from "./Farm.js"
 
