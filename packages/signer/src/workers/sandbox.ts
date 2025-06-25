@@ -4,11 +4,14 @@ import {
 	AccountUpdate,
 	Bool,
 	Cache,
+	Encoding,
+	Encryption,
 	MerkleMap,
 	Mina,
 	NetworkId,
 	Poseidon,
 	PrivateKey,
+	Provable,
 	PublicKey,
 	Signature,
 	UInt32,
@@ -20,6 +23,7 @@ import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contract
 import dotenv from "dotenv"
 import { createClient } from "@supabase/supabase-js"
 import { Database } from "../supabase"
+import { Cipher } from "crypto"
 
 dotenv.config()
 
@@ -27,6 +31,9 @@ const supabase = createClient<Database>(process.env.SUPABASE_URL, process.env.SU
 
 const networId = process.env.NETWORK_ID as NetworkId
 const networkUrl = process.env.NETWORK_URL
+
+// list of different approved user to sign
+let users = []
 
 setNumberOfWorkers(4)
 
@@ -64,7 +71,8 @@ export default async function (job: Job) {
 
 		console.log("data", { tokenA, tokenB, user })
 		const poolKey = PrivateKey.random()
-		console.debug("pool public Key", poolKey.toPublicKey().toBase58())
+		const poolPublic = poolKey.toPublicKey()
+		console.debug("pool public Key", poolPublic.toBase58())
 
 		const deployRight = SignatureRight.canDeployPool()
 
@@ -73,6 +81,23 @@ export default async function (job: Job) {
 		const signer = process.env.SIGNER_PRIVATE_KEY
 		const signerPk = PrivateKey.fromBase58(signer)
 		const signerPublic = signerPk.toPublicKey()
+
+		// insert this new pool in database
+		const { error } = await supabase
+			.from("Pool")
+			.insert({ public_key: poolPublic.toBase58(), token_a: tokenA, token_b: tokenB, user: user })
+		if (error) {
+			console.error("on insert pool", error)
+			throw error
+		}
+
+		const listPair = getUniqueUserPairs(users, poolKey.toBase58(), poolPublic.toBase58())
+		// insert the encrypted key of the pool in database
+		const { error: errorKey } = await supabase.from("PoolKey").insert(listPair)
+		if (errorKey) {
+			console.error("on insert pool private key", errorKey)
+			throw errorKey
+		}
 
 		const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 		const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
@@ -89,7 +114,7 @@ export default async function (job: Job) {
 			if (isMinaTokenPool) {
 				const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 				await zkFactory.createPool(
-					poolKey.toPublicKey(),
+					poolPublic,
 					PublicKey.fromBase58(token),
 					signerPublic,
 					signature,
@@ -99,7 +124,7 @@ export default async function (job: Job) {
 			}
 			if (!isMinaTokenPool) {
 				await zkFactory.createPoolToken(
-					poolKey.toPublicKey(),
+					poolPublic,
 					PublicKey.fromBase58(tokenA),
 					PublicKey.fromBase58(tokenB),
 					signerPublic,
@@ -119,6 +144,30 @@ export default async function (job: Job) {
 	}
 }
 
+function getUniqueUserPairs(users: any[], key: string, publicKey: string): any[] {
+	const pairs = []
+
+	for (let i = 0; i < users.length; i++) {
+		for (let j = i + 1; j < users.length; j++) {
+			const userA = users[i]
+			const userB = users[j]
+			// double encryption to need multisig to decode the key
+			const encrypA = Encryption.encrypt(Encoding.stringToFields(key), PublicKey.fromBase58(userA))
+			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
+			const encrypted_key = encrypB.cipherText.join(",")
+			const poolKeyRow = {
+				public_key: publicKey,
+				signer_1: userA,
+				signer_2: userB,
+				encrypted_key: encrypted_key
+			}
+			pairs.push(poolKeyRow)
+		}
+	}
+
+	return pairs
+}
+
 export async function getMerkle(): Promise<MerkleMap> {
 	const { data, error } = await supabase.from("Merkle").select().eq("active", true)
 
@@ -132,6 +181,7 @@ export async function getMerkle(): Promise<MerkleMap> {
 	)
 	const deployRight = SignatureRight.canDeployPool()
 	const merkle = new MerkleMap()
+	users = []
 	data.forEach((x) => {
 		let right = allRight.hash()
 		switch (x.right) {
@@ -144,6 +194,10 @@ export async function getMerkle(): Promise<MerkleMap> {
 		}
 		const pubKey = PublicKey.fromBase58(x.user)
 		merkle.set(Poseidon.hash(pubKey.toFields()), right)
+
+		if (x.right === "all") {
+			users.push(x.user)
+		}
 	})
 
 	return merkle
