@@ -18,8 +18,12 @@ import {
 } from "o1js"
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
+import { createClient } from "@supabase/supabase-js"
+import { Database } from "../supabase"
 
 dotenv.config()
+
+const supabase = createClient<Database>(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
 const networId = process.env.NETWORK_ID as NetworkId
 const networkUrl = process.env.NETWORK_URL
@@ -64,7 +68,7 @@ export default async function (job: Job) {
 
 		const deployRight = SignatureRight.canDeployPool()
 
-		const merkle = getMerkle()
+		const merkle = await getMerkle()
 		// TODO: temporary solution for testnet
 		const signer = process.env.SIGNER_PRIVATE_KEY
 		const signerPk = PrivateKey.fromBase58(signer)
@@ -115,31 +119,8 @@ export default async function (job: Job) {
 	}
 }
 
-export function getMerkle(): MerkleMap {
-	const ownerPublic = PublicKey.fromBase58(
-		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
-	)
-	const approvedSignerPublic = PublicKey.fromBase58(
-		"B62qpko6oWqKU4LwAaT7PSX3b6TYvroj6umbpyEXL5EEeBbiJTUMU5Z"
-	)
-	const signer1Public = PublicKey.fromBase58(
-		"B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt"
-	)
-	const signer2Public = PublicKey.fromBase58(
-		"B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy"
-	)
-	const signer3Public = PublicKey.fromBase58(
-		"B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6"
-	)
-	const externalSigner1 = PublicKey.fromBase58(
-		"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
-	)
-	const externalSigner2 = PublicKey.fromBase58(
-		"B62qpLxXFg4rmhce762uiJjNRnp5Bzc9PnCEAcraeaMkVWkPi7kgsWV"
-	)
-	const externalSigner3 = PublicKey.fromBase58(
-		"B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ"
-	)
+export async function getMerkle(): Promise<MerkleMap> {
+	const { data, error } = await supabase.from("Merkle").select().eq("active", true)
 
 	const allRight = new SignatureRight(
 		Bool(true),
@@ -151,14 +132,19 @@ export function getMerkle(): MerkleMap {
 	)
 	const deployRight = SignatureRight.canDeployPool()
 	const merkle = new MerkleMap()
-	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
-	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+	data.forEach((x) => {
+		let right = allRight.hash()
+		switch (x.right) {
+			case "deploy":
+				right = deployRight.hash()
+				break
+			default:
+				right = allRight.hash()
+				break
+		}
+		const pubKey = PublicKey.fromBase58(x.user)
+		merkle.set(Poseidon.hash(pubKey.toFields()), right)
+	})
 
 	return merkle
 }

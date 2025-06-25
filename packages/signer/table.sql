@@ -6,6 +6,7 @@ CREATE TABLE public.Merkle (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   user character varying NOT NULL UNIQUE,
   right character varying NOT NULL,
+  active boolean NOT NULL DEFAULT true,
   CONSTRAINT Merkle_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.Multisig (
@@ -32,6 +33,11 @@ CREATE TABLE public.PoolKey (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   public_key character varying NOT NULL,
+  signer_1 character varying NOT NULL,
+  signer_2 character varying NOT NULL,
+  encrypted_key character varying NOT NULL,
   CONSTRAINT PoolKey_pkey PRIMARY KEY (id),
-  CONSTRAINT PoolKey_public_key_fkey FOREIGN KEY (public_key) REFERENCES public.Pool(public_key)
+  CONSTRAINT PoolKey_public_key_fkey FOREIGN KEY (public_key) REFERENCES public.Pool(public_key),
+  CONSTRAINT PoolKey_signer_1_fkey FOREIGN KEY (signer_1) REFERENCES public.Merkle(user),
+  CONSTRAINT PoolKey_signer_2_fkey FOREIGN KEY (signer_2) REFERENCES public.Merkle(user)
 );
