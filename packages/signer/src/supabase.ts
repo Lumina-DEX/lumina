@@ -121,6 +121,8 @@ export type Database = {
 				Row: {
 					created_at: string
 					encrypted_key: string
+					generated_public_1: string
+					generated_public_2: string
 					id: string
 					public_key: string
 					signer_1: string
@@ -129,6 +131,8 @@ export type Database = {
 				Insert: {
 					created_at?: string
 					encrypted_key: string
+					generated_public_1: string
+					generated_public_2: string
 					id?: string
 					public_key: string
 					signer_1: string
@@ -137,6 +141,8 @@ export type Database = {
 				Update: {
 					created_at?: string
 					encrypted_key?: string
+					generated_public_1?: string
+					generated_public_2?: string
 					id?: string
 					public_key?: string
 					signer_1?: string

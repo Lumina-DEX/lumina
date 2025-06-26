@@ -36,6 +36,8 @@ CREATE TABLE public.PoolKey (
   signer_1 character varying NOT NULL,
   signer_2 character varying NOT NULL,
   encrypted_key character varying NOT NULL,
+  generated_public_1 character varying NOT NULL,
+  generated_public_2 character varying NOT NULL,
   CONSTRAINT PoolKey_pkey PRIMARY KEY (id),
   CONSTRAINT PoolKey_public_key_fkey FOREIGN KEY (public_key) REFERENCES public.Pool(public_key),
   CONSTRAINT PoolKey_signer_1_fkey FOREIGN KEY (signer_1) REFERENCES public.Merkle(user),
