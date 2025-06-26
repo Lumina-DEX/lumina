@@ -33,6 +33,10 @@ Create pool post url :
 
 http://localhost:3000/create-pool
 
+Create pool frontend url :
+
+http://localhost:3000/pool
+
 Example data :
 
 ```
