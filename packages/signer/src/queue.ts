@@ -2,6 +2,7 @@ import { Queue, Worker, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
 import { fileURLToPath, pathToFileURL } from "url"
 import { dirname, join } from "path"
+import dotenv from "dotenv"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -10,9 +11,14 @@ const processorUrl = pathToFileURL(file)
 
 const connection = new IORedis({ maxRetriesPerRequest: null })
 
+dotenv.config()
+
+const concurrency = process.env.CONCURRENCY
+const nbProcess = concurrency ? parseInt(concurrency) : 1
+
 const createPool = new Worker("createPool", processorUrl, {
 	connection,
-	concurrency: 3
+	concurrency: nbProcess
 })
 
 const createPoolQueue = new Queue("createPool", { connection })

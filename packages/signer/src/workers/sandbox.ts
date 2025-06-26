@@ -24,7 +24,7 @@ import dotenv from "dotenv"
 import { createClient } from "@supabase/supabase-js"
 import { Database } from "../supabase"
 import { Cipher } from "crypto"
-import { getUniqueUserPairs } from "@/utils/utils"
+import { getUniqueUserPairs } from "../utils/utils.js"
 
 dotenv.config()
 

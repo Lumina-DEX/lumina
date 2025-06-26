@@ -19,9 +19,13 @@ app.use(express.json())
 const PORT = process.env.PORT
 
 // we preload contract
-await addJobs({ onlyCompile: true })
-await addJobs({ onlyCompile: true })
-await addJobs({ onlyCompile: true })
+const concurrency = process.env.CONCURRENCY
+const nbProcess = concurrency ? parseInt(concurrency) : 1
+console.log("concurrency", concurrency)
+
+for (let index = 0; index < nbProcess; index++) {
+	await addJobs({ onlyCompile: true })
+}
 
 app.get("/", (request: Request, response: Response) => {
 	response.status(200).send("Hello World")
