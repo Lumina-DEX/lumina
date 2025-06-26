@@ -24,24 +24,25 @@ import dotenv from "dotenv"
 import { createClient } from "@supabase/supabase-js"
 import { Database } from "../supabase"
 import { Cipher } from "crypto"
-import { getUniqueUserPairs } from "../utils/utils.js"
+import { getNetwork, getUniqueUserPairs } from "../utils/utils.js"
 
 dotenv.config()
 
 const supabase = createClient<Database>(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-
-const networId = process.env.NETWORK_ID as NetworkId
-const networkUrl = process.env.NETWORK_URL
 
 // list of different approved user to sign
 let users = []
 
 setNumberOfWorkers(4)
 
-const Network = Mina.Network({
-	networkId: networId,
-	mina: networkUrl
-})
+export const urls = {
+	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
+	"mina:devnet": "https://api.minascan.io/node/devnet/v1/graphql",
+	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"zeko:mainnet": "NOT_IMPLEMENTED"
+} as const
+
+const Network = getNetwork("mina:devnet")
 Mina.setActiveInstance(Network)
 
 console.time("compile")
@@ -64,11 +65,14 @@ export default async function (job: Job) {
 		const id = job.id
 		console.log("job id", id)
 
-		const { tokenA, tokenB, user, onlyCompile } = job.data
+		const { tokenA, tokenB, user, network, onlyCompile } = job.data
 
 		if (onlyCompile) {
 			return "Compiled"
 		}
+
+		const Network = getNetwork(network)
+		Mina.setActiveInstance(Network)
 
 		console.log("data", { tokenA, tokenB, user })
 		const poolKey = PrivateKey.random()
@@ -111,7 +115,7 @@ export default async function (job: Job) {
 		console.debug({ isMinaTokenPool })
 		console.time("prove")
 		const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-			fundNewAccount(PublicKey.fromBase58(user), 4)
+			fundNewAccount(network, PublicKey.fromBase58(user), 4)
 			if (isMinaTokenPool) {
 				const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 				await zkFactory.createPool(
@@ -180,9 +184,9 @@ export async function getMerkle(): Promise<MerkleMap> {
 	return merkle
 }
 
-const fundNewAccount = async (feePayer: PublicKey, numberOfAccounts = 1) => {
+const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAccounts = 1) => {
 	try {
-		const isZeko = networkUrl.includes("zeko")
+		const isZeko = network.includes("zeko")
 		const accountUpdate = AccountUpdate.createSigned(feePayer)
 		accountUpdate.label = "AccountUpdate.fundNewAccount()"
 		const fee = (

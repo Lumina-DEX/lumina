@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express"
 import dotenv from "dotenv"
 import cors from "cors"
+import path from "path"
+import { fileURLToPath } from "url"
 import { addJobs } from "./queue.js"
 
 // configures dotenv to work in your application
@@ -27,9 +29,16 @@ for (let index = 0; index < nbProcess; index++) {
 	await addJobs({ onlyCompile: true })
 }
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const fullPath = path.join(__dirname, "public")
+console.log("fullPath", fullPath)
+
 app.get("/", (request: Request, response: Response) => {
 	response.status(200).send("Hello World")
 })
+
+app.use("/pool", express.static(fullPath))
 
 app.post("/create-pool", async (request: Request, response: Response) => {
 	const formData = request.body

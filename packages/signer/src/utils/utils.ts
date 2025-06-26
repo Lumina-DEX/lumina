@@ -1,4 +1,4 @@
-import { Encoding, Encryption, Field, PublicKey } from "o1js"
+import { Encoding, Encryption, Field, Mina, PublicKey } from "o1js"
 
 export type PoolKey = {
 	public_key: string
@@ -7,6 +7,20 @@ export type PoolKey = {
 	encrypted_key: string
 	generated_public_1: string
 	generated_public_2: string
+}
+
+export const urls = {
+	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
+	"mina:devnet": "https://api.minascan.io/node/devnet/v1/graphql",
+	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"zeko:mainnet": "NOT_IMPLEMENTED"
+}
+
+export function getNetwork(network: string) {
+	return Mina.Network({
+		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
+		mina: urls[network]
+	})
 }
 
 export function getUniqueUserPairs(users: any[], key: string, publicKey: string): PoolKey[] {

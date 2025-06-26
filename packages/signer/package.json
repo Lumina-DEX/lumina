@@ -3,7 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "tsc",
+		"build": "tsc && pnpm run copy-public",
+		"copy-public": "cpx \"src/public/**/*\" dist/src/public",
 		"start": "node dist/src/index.js",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
@@ -26,6 +27,7 @@
 	"devDependencies": {
 		"@types/dotenv": "^8.2.3",
 		"@types/express": "^5.0.2",
+		"cpx": "^1.5.0",
 		"typescript": "^5.8.3"
 	}
 }
