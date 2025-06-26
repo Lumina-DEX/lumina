@@ -24,6 +24,7 @@ import dotenv from "dotenv"
 import { createClient } from "@supabase/supabase-js"
 import { Database } from "../supabase"
 import { Cipher } from "crypto"
+import { getUniqueUserPairs } from "@/utils/utils"
 
 dotenv.config()
 
@@ -142,30 +143,6 @@ export default async function (job: Job) {
 	} catch (error) {
 		console.error(error)
 	}
-}
-
-function getUniqueUserPairs(users: any[], key: string, publicKey: string): any[] {
-	const pairs = []
-
-	for (let i = 0; i < users.length; i++) {
-		for (let j = i + 1; j < users.length; j++) {
-			const userA = users[i]
-			const userB = users[j]
-			// double encryption to need multisig to decode the key
-			const encrypA = Encryption.encrypt(Encoding.stringToFields(key), PublicKey.fromBase58(userA))
-			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
-			const encrypted_key = encrypB.cipherText.join(",")
-			const poolKeyRow = {
-				public_key: publicKey,
-				signer_1: userA,
-				signer_2: userB,
-				encrypted_key: encrypted_key
-			}
-			pairs.push(poolKeyRow)
-		}
-	}
-
-	return pairs
 }
 
 export async function getMerkle(): Promise<MerkleMap> {
