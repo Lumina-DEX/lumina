@@ -1,5 +1,18 @@
 # @lumina-dex/sdk
 
+## 0.18.0
+
+### Minor Changes
+
+- 0694cae: Move multisig from pool to factory
+  Update sdk to integrate the new contracts
+  Correct a calculation bug on add liquidity
+
+### Patch Changes
+
+- Updated dependencies [0694cae]
+  - @lumina-dex/contracts@0.7.0
+
 ## 0.17.0
 
 ### Minor Changes
