@@ -12,13 +12,52 @@ This can't run on cloudflare workers because of o1js limitations:
 
 ## Usage
 
-Use bun to run the service :
+Use redis, expressJs and bullMQ
+
+Launch redis first in docker :
 
 ```bash
-bun run dev
+docker run -p 6379:6379 -d redis:8.0.2
 ```
 
-The server with listen on http://0.0.0.0:8000/.
+Buil and run :
+
+```bash
+pnpm run build
+pnpm run start
+```
+
+The server with listen on http://0.0.0.0:3000/.
+
+Create pool post url :
+
+http://localhost:3000/create-pool
+
+Create pool frontend url :
+
+http://localhost:3000/pool
+
+Example data :
+
+```
+{
+    "tokenA": "MINA",
+    "tokenB": "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+}
+```
+
+Curl example :
+
+```
+curl --location 'http://localhost:3000/create-pool' \
+--header 'Content-Type: application/json' \
+--data '{
+    "tokenA": "MINA",
+    "tokenB": "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+}'
+```
 
 ## Deploy
 

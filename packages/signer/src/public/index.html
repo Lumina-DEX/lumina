@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Pool with Auro Wallet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f0f0f0;
+    }
+    form {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      font-size: 1rem;
+    }
+    select{
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      font-size: 1rem;
+    }
+    #connect {
+      margin-bottom: 2rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #connect:disabled {
+      background: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <form id="createPoolForm">
+    <h2>Create Pool</h2>
+
+    <button type="button" id="connect">Connect Auro Wallet</button>
+
+    <input type="text" id="tokenA" name="tokenA" placeholder="Token A" required />
+    <input type="text" id="tokenB" name="tokenB" placeholder="Token B" required />
+    <input type="text" id="user" name="user" placeholder="User Public Key" readonly />
+     <label>
+      Network:
+      <select name="network" id="network" required>
+        <option value="mina:devnet">mina:devnet</option>
+        <option value="mina:mainnet">mina:mainnet</option>
+        <option value="zeko:testnet">zeko:testnet</option>
+        <option value="zeko:mainnet">zeko:mainnet</option>
+      </select>
+    </label><br /><br />
+
+    <button type="submit">Create Pool</button>
+
+     <div id="status" style="margin-top:20px; font-weight:bold;"></div>
+
+    <div id="result"></div>
+  </form>
+
+  <script>
+    const connectButton = document.getElementById('connect');
+    const userField = document.getElementById('user');
+    const resultBox = document.getElementById('result');
+    const statusDiv = document.getElementById('status');
+    
+    let userAddress = "";
+
+    connectButton.addEventListener('click', async () => {
+      if (!window.mina) {
+        alert("Auro Wallet is not installed. Please install it first.");
+        return;
+      }
+
+      try {
+        const accounts = await window.mina.requestAccounts();
+        userAddress = accounts[0];
+        userField.value = userAddress;
+        connectButton.textContent = "Connected";
+        connectButton.disabled = true;
+      } catch (err) {
+        alert("Failed to connect to Auro Wallet: " + err.message);
+      }
+    });
+
+    document.getElementById('createPoolForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      if (!userAddress) {
+        alert("Please connect Auro Wallet first.");
+        return;
+      }
+
+      const tokenA = document.getElementById('tokenA').value;
+      const tokenB = document.getElementById('tokenB').value;
+        const network = document.getElementById('network').value;
+
+      const payload = {   
+        tokenA: tokenA,
+        tokenB: tokenB,
+        user: userAddress,
+        network: network
+      };
+
+      try {
+         statusDiv.textContent = 'Loading...';
+        // Step 1: POST to backend
+        const response = await fetch('http://localhost:3000/create-pool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const poolResponse = await response.json();
+
+        console.log("poolResponse",poolResponse);
+
+        if (!poolResponse.result.transaction) {
+          throw new Error("Backend did not return a transaction.");
+        }
+
+        // Step 2: Send transaction with Auro
+        const txResult = await window.mina.sendTransaction({
+          transaction: poolResponse.result.transaction
+        });
+
+        statusDiv.textContent = 'Success';
+
+        resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
+      } catch (err) {
+        resultBox.innerText = 'Error: ' + err.message;
+         statusDiv.textContent = 'Erreur : ' + err.message;
+      }
+    });
+  </script>
+
+</body>
+</html>
