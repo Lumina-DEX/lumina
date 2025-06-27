@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of lagrange-basis files required
-REQUIRED_LAGRANGE_FILES=14
+REQUIRED_LAGRANGE_FILES=12
 
 check_lagrange_basis() {
     # Count lagrange-basis files in ../cache/
