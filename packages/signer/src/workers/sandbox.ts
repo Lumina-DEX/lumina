@@ -25,6 +25,7 @@ import { createClient } from "@supabase/supabase-js"
 import { Database } from "../supabase"
 import { Cipher } from "crypto"
 import { getNetwork, getUniqueUserPairs } from "../utils/utils.js"
+import { InfisicalSDK } from "@infisical/sdk"
 
 dotenv.config()
 
@@ -82,8 +83,8 @@ export default async function (job: Job) {
 		const deployRight = SignatureRight.canDeployPool()
 
 		const merkle = await getMerkle()
-		// TODO: temporary solution for testnet
-		const signer = process.env.SIGNER_PRIVATE_KEY
+
+		const signer = await getSigner()
 		const signerPk = PrivateKey.fromBase58(signer)
 		const signerPublic = signerPk.toPublicKey()
 
@@ -182,6 +183,21 @@ export async function getMerkle(): Promise<MerkleMap> {
 	})
 
 	return merkle
+}
+
+async function getSigner(): Promise<string> {
+	const client = new InfisicalSDK()
+
+	// Authenticate with Infisical
+	await client.auth().accessToken(process.env.INFISICAL_TOKEN)
+
+	const singleSecret = await client.secrets().getSecret({
+		environment: process.env.INFISICAL_ENVIRONMENT, // stg, dev, prod, or custom environment slugs
+		projectId: process.env.INFISICAL_PROJECT_ID,
+		secretName: process.env.INFISICAL_SECRET_NAME
+	})
+
+	return singleSecret.secretValue
 }
 
 const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAccounts = 1) => {

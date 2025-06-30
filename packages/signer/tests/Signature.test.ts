@@ -16,6 +16,7 @@ import { createClient } from "@supabase/supabase-js"
 import { Database } from "../src/supabase.js"
 import { SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
+import { InfisicalSDK } from "@infisical/sdk"
 
 // configures dotenv to work in your application
 dotenv.config()
@@ -158,5 +159,21 @@ describe("Signature", () => {
 		const privPool = PrivateKey.fromBase58(plainKey)
 
 		expect(privPool.toPublicKey().toBase58()).toEqual(element.public_key)
+	})
+
+	it("fetch secret", async () => {
+		const client = new InfisicalSDK()
+
+		// Authenticate with Infisical
+		await client.auth().accessToken(process.env.INFISICAL_TOKEN)
+
+		const singleSecret = await client.secrets().getSecret({
+			environment: process.env.INFISICAL_ENVIRONMENT, // stg, dev, prod, or custom environment slugs
+			projectId: process.env.INFISICAL_PROJECT_ID,
+			secretName: process.env.INFISICAL_SECRET_NAME
+		})
+
+		expect(singleSecret?.secretValue).toBeDefined()
+		console.log("Fetched secrets", singleSecret)
 	})
 })

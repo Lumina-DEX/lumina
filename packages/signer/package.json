@@ -11,6 +11,7 @@
 		"test": "vitest run --testTimeout=150000"
 	},
 	"dependencies": {
+		"@infisical/sdk": "^4.0.2",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"@supabase/supabase-js": "^2.50.1",
