@@ -49,7 +49,7 @@ async function seed() {
 	]
 
 	for (const entry of entries) {
-		const existing = db
+		const existing = await db
 			.select()
 			.from(signerMerkle)
 			.where(eq(signerMerkle.publicKey, entry.publicKey))

@@ -10,6 +10,23 @@ This can't run on cloudflare workers because of o1js limitations:
 - FinalizationRegistry can't be used
 - eval or new Function can't be used
 
+## Installation
+
+This app use drizle as ORM and infisical as vault
+
+```
+pnpm i
+```
+
+Create an .env file base on .env.test (Signer1 and Signer2 is optionnal)
+
+Create the sqlite db and populate it
+
+```
+npx drizzle-kit push
+bun seed.ts
+```
+
 ## Usage
 
 Use redis, expressJs and bullMQ
