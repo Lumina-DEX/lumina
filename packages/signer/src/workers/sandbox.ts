@@ -28,8 +28,11 @@ dotenv.config()
 
 const db = drizzle(process.env.DB_FILE_NAME!)
 
+type NewPoolKey = typeof tPoolKey.$inferInsert
+type NewSignerMerkle = typeof signerMerkle.$inferSelect
+
 // list of different approved user to sign
-let users = []
+let users: NewSignerMerkle[] = []
 
 setNumberOfWorkers(4)
 
@@ -44,8 +47,6 @@ await PoolFactory.compile({ cache })
 console.log("compile pool fungible token")
 await FungibleToken.compile({ cache })
 console.timeEnd("compile")
-
-type NewPoolKey = typeof tPoolKey.$inferInsert
 
 export function getNetwork(network: string) {
 	return Mina.Network({
@@ -87,59 +88,64 @@ export default async function (job: Job) {
 		const signerPk = PrivateKey.fromBase58(signer)
 		const signerPublic = signerPk.toPublicKey()
 
-		// insert this new pool in database
-		const result = await db
-			.insert(pool)
-			.values({ publicKey: poolPublic.toBase58(), tokenA: tokenA, tokenB: tokenB, user: user })
-			.returning({ insertedId: pool.id })
+		let minaTx
 
-		const poolId = result[0].insertedId
-		const listPair = getUniqueUserPairs(users, poolId, poolKey.toBase58(), poolPublic.toBase58())
-		// insert the encrypted key of the pool in database
-		const resultInserPair = await db.insert(tPoolKey).values(listPair)
+		await db.transaction(async (txOrm) => {
+			// insert this new pool in database
+			const result = await txOrm
+				.insert(pool)
+				.values({ publicKey: poolPublic.toBase58(), tokenA: tokenA, tokenB: tokenB, user: user })
+				.returning({ insertedId: pool.id })
 
-		const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
-		const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
-		const factory = process.env.FACTORY
-		const factoryKey = PublicKey.fromBase58(factory)
-		const zkFactory = new PoolFactory(factoryKey)
+			const poolId = result[0].insertedId
+			const listPair = getUniqueUserPairs(users, poolId, poolKey.toBase58())
+			// insert the encrypted key of the pool in database
+			const resultInserPair = await txOrm.insert(tPoolKey).values(listPair)
 
-		await fetchAccount({ publicKey: factoryKey })
-		const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
-		console.debug({ isMinaTokenPool })
-		console.time("prove")
-		const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-			fundNewAccount(network, PublicKey.fromBase58(user), 4)
-			if (isMinaTokenPool) {
-				const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
-				await zkFactory.createPool(
-					poolPublic,
-					PublicKey.fromBase58(token),
-					signerPublic,
-					signature,
-					witness,
-					deployRight
-				)
-			}
-			if (!isMinaTokenPool) {
-				await zkFactory.createPoolToken(
-					poolPublic,
-					PublicKey.fromBase58(tokenA),
-					PublicKey.fromBase58(tokenB),
-					signerPublic,
-					signature,
-					witness,
-					deployRight
-				)
-			}
+			const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
+			const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
+			const factory = process.env.FACTORY
+			const factoryKey = PublicKey.fromBase58(factory)
+			const zkFactory = new PoolFactory(factoryKey)
+
+			await fetchAccount({ publicKey: factoryKey })
+			const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
+			console.debug({ isMinaTokenPool })
+			console.time("prove")
+			minaTx = await Mina.transaction(PublicKey.fromBase58(user), async () => {
+				fundNewAccount(network, PublicKey.fromBase58(user), 4)
+				if (isMinaTokenPool) {
+					const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
+					await zkFactory.createPool(
+						poolPublic,
+						PublicKey.fromBase58(token),
+						signerPublic,
+						signature,
+						witness,
+						deployRight
+					)
+				}
+				if (!isMinaTokenPool) {
+					await zkFactory.createPoolToken(
+						poolPublic,
+						PublicKey.fromBase58(tokenA),
+						PublicKey.fromBase58(tokenB),
+						signerPublic,
+						signature,
+						witness,
+						deployRight
+					)
+				}
+			})
+			minaTx.sign([poolKey])
+			await minaTx.prove()
+			console.timeEnd("prove")
+			console.log("job end", id)
 		})
-		transaction.sign([poolKey])
-		await transaction.prove()
-		console.timeEnd("prove")
-		console.log("job end", id)
-		return { pool: poolKey.toPublicKey().toBase58(), transaction: transaction.toJSON() }
+		return { pool: poolKey.toPublicKey().toBase58(), transaction: minaTx.toJSON() }
 	} catch (error) {
 		console.error(error)
+		throw error
 	}
 }
 
@@ -171,7 +177,7 @@ export async function getMerkle(): Promise<MerkleMap> {
 		merkle.set(Poseidon.hash(pubKey.toFields()), right)
 
 		if (x.right === "all") {
-			users.push(x.publicKey)
+			users.push(x)
 		}
 	})
 
@@ -179,10 +185,9 @@ export async function getMerkle(): Promise<MerkleMap> {
 }
 
 export function getUniqueUserPairs(
-	users: any[],
+	users: NewSignerMerkle[],
 	poolId: number,
-	key: string,
-	publicKey: string
+	key: string
 ): NewPoolKey[] {
 	const pairs = []
 
@@ -191,15 +196,18 @@ export function getUniqueUserPairs(
 			const userA = users[i]
 			const userB = users[j]
 			// double encryption to need multisig to decode the key
-			const encrypA = Encryption.encrypt(Encoding.stringToFields(key), PublicKey.fromBase58(userA))
+			const encrypA = Encryption.encrypt(
+				Encoding.stringToFields(key),
+				PublicKey.fromBase58(userA.publicKey)
+			)
 			const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
-			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
+			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB.publicKey))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
 			const poolKeyRow: NewPoolKey = {
 				poolId: poolId,
-				signer1Id: userA,
-				signer2Id: userB,
+				signer1Id: userA.id,
+				signer2Id: userB.id,
 				generatedPublic1: encryptAPub,
 				generatedPublic2: encryptBPub,
 				encryptedKey: encrypted_key
