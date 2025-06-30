@@ -23,13 +23,13 @@ import {
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
 import { createClient } from "@supabase/supabase-js"
-import { Database } from "../supabase"
 import { InfisicalSDK } from "@infisical/sdk"
 import { urls } from "@lumina-dex/sdk"
+import { drizzle } from "drizzle-orm/libsql"
 
 dotenv.config()
 
-const supabase = createClient<Database>(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+const db = drizzle(process.env.DB_FILE_NAME!)
 
 // list of different approved user to sign
 let users = []

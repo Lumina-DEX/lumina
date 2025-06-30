@@ -4,6 +4,7 @@ import cors from "cors"
 import path from "path"
 import { fileURLToPath } from "url"
 import { addJobs } from "./queue.js"
+import { drizzle } from "drizzle-orm/libsql"
 
 // configures dotenv to work in your application
 dotenv.config()
@@ -17,6 +18,8 @@ var corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
+
+const db = drizzle(process.env.DB_FILE_NAME!)
 
 const PORT = process.env.PORT
 
@@ -32,7 +35,6 @@ for (let index = 0; index < nbProcess; index++) {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const fullPath = path.join(__dirname, "public")
-console.log("fullPath", fullPath)
 
 app.get("/", (request: Request, response: Response) => {
 	response.status(200).send("Hello World")
