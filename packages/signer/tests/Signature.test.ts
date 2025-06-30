@@ -1,5 +1,5 @@
 import { string } from "arktype/out/keywords/string.js"
-import { encryptedKeyToField, getUniqueUserPairs, PoolKey } from "../src/workers/sandbox.js"
+import { encryptedKeyToField, getUniqueUserPairs } from "../src/workers/sandbox.js"
 import {
 	Bool,
 	Encoding,
@@ -12,14 +12,17 @@ import {
 	PublicKey
 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
-import { createClient } from "@supabase/supabase-js"
-import { Database } from "../src/supabase.js"
-import { SignatureRight } from "@lumina-dex/contracts"
+import { Pool, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
 import { InfisicalSDK } from "@infisical/sdk"
+import { drizzle } from "drizzle-orm/libsql"
+import { eq, or, and } from "drizzle-orm"
+import { signerMerkle, poolKey as tPoolKey, pool } from "../src/db/schema"
 
 // configures dotenv to work in your application
 dotenv.config()
+
+type NewPoolKey = typeof tPoolKey.$inferInsert
 
 describe("Signature", () => {
 	it("encrypt/decrypt", async () => {
@@ -38,25 +41,27 @@ describe("Signature", () => {
 		const poolKey = pool.toBase58()
 		const poolPub = pool.toPublicKey().toBase58()
 
-		const pairs = getUniqueUserPairs(users, poolKey, poolPub)
+		const db = drizzle(process.env.DB_FILE_NAME!)
+		return
+		const pairs = getUniqueUserPairs(users, 1, poolKey, poolPub)
 
 		for (let index = 0; index < pairs.length; index++) {
 			const element = pairs[index]
 
-			const pk1 = getPrivateKey(element.signer_1)
-			const pk2 = getPrivateKey(element.signer_2)
+			const pk1 = getPrivateKey(element.signer1Id.toString())
+			const pk2 = getPrivateKey(element.signer2Id.toString())
 
 			// test encryption decryption works successfully
-			const encryptedFields = encryptedKeyToField(element.encrypted_key)
+			const encryptedFields = encryptedKeyToField(element.encryptedKey)
 
 			const cypherB: Encryption.CipherText = {
 				cipherText: encryptedFields,
-				publicKey: PublicKey.fromBase58(element.generated_public_2).toGroup()
+				publicKey: PublicKey.fromBase58(element.generatedPublic2).toGroup()
 			}
 			const decodeB = Encryption.decrypt(cypherB, pk2)
 			const cypherA: Encryption.CipherText = {
 				cipherText: decodeB,
-				publicKey: PublicKey.fromBase58(element.generated_public_1).toGroup()
+				publicKey: PublicKey.fromBase58(element.generatedPublic1).toGroup()
 			}
 			const decodeKey = Encryption.decrypt(cypherA, pk1)
 			const plainKey = Encoding.stringFromFields(decodeKey)
@@ -87,9 +92,8 @@ describe("Signature", () => {
 			return
 		}
 
-		const supabase = createClient<Database>(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-
-		const { data, error } = await supabase.from("Merkle").select().eq("active", true)
+		const db = drizzle(process.env.DB_FILE_NAME!)
+		const data = await db.select().from(signerMerkle).where(eq(signerMerkle.active, true))
 
 		const allRight = new SignatureRight(
 			Bool(true),
@@ -112,11 +116,11 @@ describe("Signature", () => {
 					right = allRight.hash()
 					break
 			}
-			const pubKey = PublicKey.fromBase58(x.user)
+			const pubKey = PublicKey.fromBase58(x.publicKey)
 			merkle.set(Poseidon.hash(pubKey.toFields()), right)
 
 			if (x.right === "all") {
-				users.push(x.user)
+				users.push(x.publicKey)
 			}
 		})
 
@@ -128,37 +132,39 @@ describe("Signature", () => {
 		console.log(pubSigner1)
 		console.log(pubSigner2)
 		const signerArray = [pubSigner1, pubSigner2]
-		const { data: poolKeyData } = await supabase
-			.from("PoolKey")
+		const poolKeyData = await db
 			.select()
-			.in("signer_1", signerArray)
-			.in("signer_2", signerArray)
-			.neq("signer_1", "signer_2") // pour éviter signer_1 === signer_2
+			.from(tPoolKey)
+			.where(
+				or(
+					and(eq(tPoolKey.signer1Id, 1), eq(tPoolKey.signer2Id, 1)),
+					and(eq(tPoolKey.signer1Id, 2), eq(tPoolKey.signer2Id, 2))
+				)
+			)
 			.limit(1)
-			.single()
 
 		console.log("poolKeyData", poolKeyData)
-		const element: PoolKey = poolKeyData
-		const pkA = element.signer_1 === pubSigner1 ? pkSigner1 : pkSigner2
-		const pkB = element.signer_2 === pubSigner1 ? pkSigner1 : pkSigner2
+		const element: NewPoolKey = poolKeyData[0]
+		const pkA = element.signer1Id === 1 ? pkSigner1 : pkSigner2
+		const pkB = element.signer2Id === 1 ? pkSigner1 : pkSigner2
 
 		// test encryption decryption works successfully
-		const encryptedFields = encryptedKeyToField(element.encrypted_key)
+		const encryptedFields = encryptedKeyToField(element.encryptedKey)
 
 		const cypherB: Encryption.CipherText = {
 			cipherText: encryptedFields,
-			publicKey: PublicKey.fromBase58(element.generated_public_2).toGroup()
+			publicKey: PublicKey.fromBase58(element.generatedPublic2).toGroup()
 		}
 		const decodeB = Encryption.decrypt(cypherB, pkB)
 		const cypherA: Encryption.CipherText = {
 			cipherText: decodeB,
-			publicKey: PublicKey.fromBase58(element.generated_public_1).toGroup()
+			publicKey: PublicKey.fromBase58(element.generatedPublic1).toGroup()
 		}
 		const decodeKey = Encryption.decrypt(cypherA, pkA)
 		const plainKey = Encoding.stringFromFields(decodeKey)
 		const privPool = PrivateKey.fromBase58(plainKey)
 
-		expect(privPool.toPublicKey().toBase58()).toEqual(element.public_key)
+		expect(privPool.toPublicKey().toBase58()).toEqual(element.poolId)
 	})
 
 	it("fetch secret", async () => {

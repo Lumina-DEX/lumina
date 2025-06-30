@@ -15,7 +15,6 @@
 		"@libsql/client": "^0.15.9",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
-		"@supabase/supabase-js": "^2.50.1",
 		"arktype": "^2.0.4",
 		"bullmq": "^5.53.2",
 		"cors": "^2.8.5",

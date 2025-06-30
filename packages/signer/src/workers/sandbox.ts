@@ -1,6 +1,5 @@
 import { Job } from "bullmq"
 import {
-	Account,
 	AccountUpdate,
 	Bool,
 	Cache,
@@ -9,23 +8,21 @@ import {
 	Field,
 	MerkleMap,
 	Mina,
-	NetworkId,
 	Poseidon,
 	PrivateKey,
-	Provable,
 	PublicKey,
 	Signature,
-	UInt32,
 	UInt64,
 	fetchAccount,
 	setNumberOfWorkers
 } from "o1js"
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
-import { createClient } from "@supabase/supabase-js"
 import { InfisicalSDK } from "@infisical/sdk"
 import { urls } from "@lumina-dex/sdk"
 import { drizzle } from "drizzle-orm/libsql"
+import { eq } from "drizzle-orm"
+import { signerMerkle, poolKey as tPoolKey, pool } from "../db/schema.js"
 
 dotenv.config()
 
@@ -48,14 +45,7 @@ console.log("compile pool fungible token")
 await FungibleToken.compile({ cache })
 console.timeEnd("compile")
 
-export type PoolKey = {
-	public_key: string
-	signer_1: string
-	signer_2: string
-	encrypted_key: string
-	generated_public_1: string
-	generated_public_2: string
-}
+type NewPoolKey = typeof tPoolKey.$inferInsert
 
 export function getNetwork(network: string) {
 	return Mina.Network({
@@ -98,21 +88,15 @@ export default async function (job: Job) {
 		const signerPublic = signerPk.toPublicKey()
 
 		// insert this new pool in database
-		const { error } = await supabase
-			.from("Pool")
-			.insert({ public_key: poolPublic.toBase58(), token_a: tokenA, token_b: tokenB, user: user })
-		if (error) {
-			console.error("on insert pool", error)
-			throw error
-		}
+		const result = await db
+			.insert(pool)
+			.values({ publicKey: poolPublic.toBase58(), tokenA: tokenA, tokenB: tokenB, user: user })
+			.returning({ insertedId: pool.id })
 
-		const listPair = getUniqueUserPairs(users, poolKey.toBase58(), poolPublic.toBase58())
+		const poolId = result[0].insertedId
+		const listPair = getUniqueUserPairs(users, poolId, poolKey.toBase58(), poolPublic.toBase58())
 		// insert the encrypted key of the pool in database
-		const { error: errorKey } = await supabase.from("PoolKey").insert(listPair)
-		if (errorKey) {
-			console.error("on insert pool private key", errorKey)
-			throw errorKey
-		}
+		const resultInserPair = await db.insert(tPoolKey).values(listPair)
 
 		const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 		const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
@@ -160,7 +144,7 @@ export default async function (job: Job) {
 }
 
 export async function getMerkle(): Promise<MerkleMap> {
-	const { data, error } = await supabase.from("Merkle").select().eq("active", true)
+	const data = await db.select().from(signerMerkle).where(eq(signerMerkle.active, true))
 
 	const allRight = new SignatureRight(
 		Bool(true),
@@ -183,18 +167,23 @@ export async function getMerkle(): Promise<MerkleMap> {
 				right = allRight.hash()
 				break
 		}
-		const pubKey = PublicKey.fromBase58(x.user)
+		const pubKey = PublicKey.fromBase58(x.publicKey)
 		merkle.set(Poseidon.hash(pubKey.toFields()), right)
 
 		if (x.right === "all") {
-			users.push(x.user)
+			users.push(x.publicKey)
 		}
 	})
 
 	return merkle
 }
 
-export function getUniqueUserPairs(users: any[], key: string, publicKey: string): PoolKey[] {
+export function getUniqueUserPairs(
+	users: any[],
+	poolId: number,
+	key: string,
+	publicKey: string
+): NewPoolKey[] {
 	const pairs = []
 
 	for (let i = 0; i < users.length; i++) {
@@ -207,13 +196,13 @@ export function getUniqueUserPairs(users: any[], key: string, publicKey: string)
 			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
-			const poolKeyRow: PoolKey = {
-				public_key: publicKey,
-				signer_1: userA,
-				signer_2: userB,
-				generated_public_1: encryptAPub,
-				generated_public_2: encryptBPub,
-				encrypted_key: encrypted_key
+			const poolKeyRow: NewPoolKey = {
+				poolId: poolId,
+				signer1Id: userA,
+				signer2Id: userB,
+				generatedPublic1: encryptAPub,
+				generatedPublic2: encryptBPub,
+				encryptedKey: encrypted_key
 			}
 			pairs.push(poolKeyRow)
 		}

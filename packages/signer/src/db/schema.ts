@@ -43,9 +43,7 @@ export const pool = sqliteTable(
 		tokenA: text("token_a").notNull(),
 		tokenB: text("token_b").notNull(),
 		publicKey: text("public_key").notNull(),
-		userId: integer("user")
-			.notNull()
-			.references(() => signerMerkle.id),
+		user: text("user").notNull(),
 		deployed: integer("deployed", { mode: "boolean" }).notNull().default(false)
 	},
 	(table) => ({
