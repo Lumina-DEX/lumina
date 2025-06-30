@@ -1,5 +1,5 @@
 import { string } from "arktype/out/keywords/string.js"
-import { encryptedKeyToField, getUniqueUserPairs, PoolKey } from "../src/utils/utils.js"
+import { encryptedKeyToField, getUniqueUserPairs, PoolKey } from "../src/workers/sandbox.js"
 import {
 	Bool,
 	Encoding,
