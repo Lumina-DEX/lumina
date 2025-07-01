@@ -1,5 +1,4 @@
-import { string } from "arktype/out/keywords/string.js"
-import { encryptedKeyToField, getUniqueUserPairs } from "../src/workers/sandbox.js"
+import { encryptedKeyToField } from "../src/workers/sandbox.js"
 import {
 	Bool,
 	Encoding,
@@ -17,7 +16,7 @@ import dotenv from "dotenv"
 import { InfisicalSDK } from "@infisical/sdk"
 import { drizzle } from "drizzle-orm/libsql"
 import { eq, or, and } from "drizzle-orm"
-import { signerMerkle, poolKey as tPoolKey, pool } from "../src/db/schema"
+import { pool, signerMerkle, poolKey as tPoolKey } from "../src/db/schema"
 
 // configures dotenv to work in your application
 dotenv.config()
@@ -133,8 +132,20 @@ describe("Signature", () => {
 
 		const pkSigner1 = PrivateKey.fromBase58(sign1)
 		const pubSigner1 = pkSigner1.toPublicKey().toBase58()
+		const signer1Db = await db
+			.select()
+			.from(signerMerkle)
+			.where(eq(signerMerkle.publicKey, pubSigner1))
+			.limit(1)
+		const pkSigner1Id = signer1Db[0].id
 		const pkSigner2 = PrivateKey.fromBase58(sign2)
 		const pubSigner2 = pkSigner2.toPublicKey().toBase58()
+		const signer2Db = await db
+			.select()
+			.from(signerMerkle)
+			.where(eq(signerMerkle.publicKey, pubSigner2))
+			.limit(1)
+		const pkSigner2Id = signer2Db[0].id
 		// @ts-ignore
 		console.log(pubSigner1)
 		console.log(pubSigner2)
@@ -144,16 +155,20 @@ describe("Signature", () => {
 			.from(tPoolKey)
 			.where(
 				or(
-					and(eq(tPoolKey.signer1Id, 1), eq(tPoolKey.signer2Id, 1)),
-					and(eq(tPoolKey.signer1Id, 2), eq(tPoolKey.signer2Id, 2))
+					and(eq(tPoolKey.signer1Id, pkSigner1Id), eq(tPoolKey.signer2Id, pkSigner2Id)),
+					and(eq(tPoolKey.signer1Id, pkSigner1Id), eq(tPoolKey.signer2Id, pkSigner2Id))
 				)
 			)
 			.limit(1)
 
 		console.log("poolKeyData", poolKeyData)
 		const element: NewPoolKey = poolKeyData[0]
-		const pkA = element.signer1Id === 1 ? pkSigner1 : pkSigner2
-		const pkB = element.signer2Id === 1 ? pkSigner1 : pkSigner2
+
+		const poolPublicInfo = await db.select().from(pool).where(eq(pool.id, element.poolId)).limit(1)
+		const poolPublicKey = poolPublicInfo[0].publicKey
+
+		const pkA = element.signer1Id === pkSigner1Id ? pkSigner1 : pkSigner2
+		const pkB = element.signer2Id === pkSigner1Id ? pkSigner1 : pkSigner2
 
 		// test encryption decryption works successfully
 		const encryptedFields = encryptedKeyToField(element.encryptedKey)
@@ -171,7 +186,7 @@ describe("Signature", () => {
 		const plainKey = Encoding.stringFromFields(decodeKey)
 		const privPool = PrivateKey.fromBase58(plainKey)
 
-		expect(privPool.toPublicKey().toBase58()).toEqual(element.poolId)
+		expect(privPool.toPublicKey().toBase58()).toEqual(poolPublicKey)
 	})
 
 	it("fetch secret", async () => {
