@@ -19,7 +19,7 @@ import {
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
 import { InfisicalSDK } from "@infisical/sdk"
-import { defaultCreationFee, MINA_ADDRESS, urls } from "@lumina-dex/sdk"
+import { defaultCreationFee, defaultFee, MINA_ADDRESS, urls } from "@lumina-dex/sdk"
 import { drizzle } from "drizzle-orm/libsql"
 import { eq } from "drizzle-orm"
 import { signerMerkle, poolKey as tPoolKey, pool } from "../db/schema.js"
@@ -112,31 +112,37 @@ export default async function (job: Job) {
 			const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 			console.debug({ isMinaTokenPool })
 			console.time("prove")
-			minaTx = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-				fundNewAccount(network, PublicKey.fromBase58(user), 4)
-				if (isMinaTokenPool) {
-					const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
-					await zkFactory.createPool(
-						poolPublic,
-						PublicKey.fromBase58(token),
-						signerPublic,
-						signature,
-						witness,
-						deployRight
-					)
+			minaTx = await Mina.transaction(
+				{
+					sender: PublicKey.fromBase58(user),
+					fee: getFee(network)
+				},
+				async () => {
+					fundNewAccount(network, PublicKey.fromBase58(user), 4)
+					if (isMinaTokenPool) {
+						const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
+						await zkFactory.createPool(
+							poolPublic,
+							PublicKey.fromBase58(token),
+							signerPublic,
+							signature,
+							witness,
+							deployRight
+						)
+					}
+					if (!isMinaTokenPool) {
+						await zkFactory.createPoolToken(
+							poolPublic,
+							PublicKey.fromBase58(tokenA),
+							PublicKey.fromBase58(tokenB),
+							signerPublic,
+							signature,
+							witness,
+							deployRight
+						)
+					}
 				}
-				if (!isMinaTokenPool) {
-					await zkFactory.createPoolToken(
-						poolPublic,
-						PublicKey.fromBase58(tokenA),
-						PublicKey.fromBase58(tokenB),
-						signerPublic,
-						signature,
-						witness,
-						deployRight
-					)
-				}
-			})
+			)
 			minaTx.sign([poolKey])
 			await minaTx.prove()
 			console.timeEnd("prove")
@@ -253,5 +259,14 @@ const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAcco
 	} catch (error) {
 		console.error("fund new account", error)
 		return AccountUpdate.fundNewAccount(feePayer, numberOfAccounts)
+	}
+}
+
+const getFee = (network: string) => {
+	try {
+		const fee = network ? defaultFee[network] : undefined
+		return fee
+	} catch (error) {
+		return undefined
 	}
 }
