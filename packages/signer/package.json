@@ -3,17 +3,34 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "bun --env-file=.env.test --port 8000 --watch src/main.ts",
+		"build": "tsc && pnpm run copy-public",
+		"copy-public": "cpx \"src/public/**/*\" dist/src/public",
+		"start": "node dist/src/index.js",
 		"format": "dprint check",
-		"format:fix": "dprint fmt --verbose"
+		"format:fix": "dprint fmt --verbose",
+		"test": "vitest run --testTimeout=150000"
 	},
 	"dependencies": {
+		"@infisical/sdk": "^4.0.2",
+		"@libsql/client": "^0.15.9",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"arktype": "^2.0.4",
-		"o1js": "2.4.0"
+		"bullmq": "^5.53.2",
+		"cors": "^2.8.5",
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "1.0.0-beta.1-c0277c0",
+		"express": "^5.1.0",
+		"ioredis": "^5.6.1",
+		"o1js": "2.4.0",
+		"vitest": "^3.2.4"
 	},
 	"devDependencies": {
-		"@types/bun": "1.2.2"
+		"@types/dotenv": "^8.2.3",
+		"@types/express": "^5.0.2",
+		"cpx": "^1.5.0",
+		"drizzle-kit": "1.0.0-beta.1-c0277c0",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.3"
 	}
 }

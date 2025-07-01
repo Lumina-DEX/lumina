@@ -93,6 +93,13 @@ export const defaultFee = {
 	"mina:mainnet": undefined
 }
 
+export const defaultCreationFee = {
+	"zeko:testnet": 10 ** 8,
+	"zeko:mainnet": undefined,
+	"mina:devnet": undefined,
+	"mina:mainnet": undefined
+}
+
 export const poolInstance = {
 	"mina:devnet": {
 		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
