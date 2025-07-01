@@ -19,7 +19,7 @@ import {
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import dotenv from "dotenv"
 import { InfisicalSDK } from "@infisical/sdk"
-import { urls } from "@lumina-dex/sdk"
+import { defaultCreationFee, MINA_ADDRESS, urls } from "@lumina-dex/sdk"
 import { drizzle } from "drizzle-orm/libsql"
 import { eq } from "drizzle-orm"
 import { signerMerkle, poolKey as tPoolKey, pool } from "../db/schema.js"
@@ -100,7 +100,7 @@ export default async function (job: Job) {
 			const poolId = result[0].insertedId
 			const listPair = getUniqueUserPairs(users, poolId, poolKey.toBase58())
 			// insert the encrypted key of the pool in database
-			const resultInserPair = await txOrm.insert(tPoolKey).values(listPair)
+			await txOrm.insert(tPoolKey).values(listPair)
 
 			const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 			const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
@@ -240,11 +240,13 @@ async function getSigner(): Promise<string> {
 
 const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAccounts = 1) => {
 	try {
-		const isZeko = network.includes("zeko")
+		const creationFee = defaultCreationFee[network]
 		const accountUpdate = AccountUpdate.createSigned(feePayer)
 		accountUpdate.label = "AccountUpdate.fundNewAccount()"
 		const fee = (
-			isZeko ? UInt64.from(10 ** 8) : Mina.activeInstance.getNetworkConstants().accountCreationFee
+			creationFee
+				? UInt64.from(creationFee)
+				: Mina.activeInstance.getNetworkConstants().accountCreationFee
 		).mul(numberOfAccounts)
 		accountUpdate.balance.subInPlace(fee)
 		return accountUpdate
@@ -253,4 +255,3 @@ const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAcco
 		return AccountUpdate.fundNewAccount(feePayer, numberOfAccounts)
 	}
 }
-const MINA_ADDRESS = "MINA"
