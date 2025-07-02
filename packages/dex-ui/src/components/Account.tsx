@@ -9,7 +9,7 @@ import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from 
 import Menu from "./Menu"
 import { feeAmount, LuminaContext } from "./Layout"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { Networks } from "@lumina-dex/sdk"
+import { MINA_ADDRESS, Networks } from "@lumina-dex/sdk"
 
 // @ts-ignore
 const Account = () => {
@@ -42,9 +42,9 @@ const Account = () => {
 	}, [walletState])
 
 	useEffect(() => {
-		if (walletContext) {
+		if (walletContext?.currentNetwork) {
 			try {
-				const bal = walletContext.balances[walletContext.currentNetwork]["MINA"]
+				const bal = walletContext.balances[walletContext.currentNetwork][MINA_ADDRESS]
 				setBalance(bal.balance)
 			} catch (error) {}
 
