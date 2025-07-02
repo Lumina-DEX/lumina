@@ -20,6 +20,7 @@ export const feeAmount = 10
 const Dex = createDex({
 	input: {
 		wallet: Wallet,
+		features: ["Swap", "DeployPool"],
 		frontendFee: {
 			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
 			amount: feeAmount
@@ -43,7 +44,7 @@ export default function Layout({ children }) {
 	// Do Setup
 
 	useEffect(() => {
-		if (dexState?.contractSystem === "CONTRACTS_READY") {
+		if (dexState?.contractSystem === "IDLE") {
 			setIsReady(true)
 		}
 		setDisplayText(JSON.stringify(dexState))

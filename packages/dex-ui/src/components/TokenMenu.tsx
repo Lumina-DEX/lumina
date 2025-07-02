@@ -30,6 +30,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 		setCdnList(tokens)
 
 		const fetchEvent = await Addresses.getEventList(network)
+		console.log("fetch event", fetchEvent)
 		setEventList([])
 		if (fetchEvent?.length) {
 			setEventList(fetchEvent)
