@@ -19,7 +19,7 @@ const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: toka, decimals: 9, poolAddress: poolToka })
+	const [token, setToken] = useState({ address: toka, decimals: 9 })
 
 	const [loading, setLoading] = useState(false)
 
