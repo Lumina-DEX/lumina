@@ -1,18 +1,12 @@
 "use client"
 import React, { useContext, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/router"
-import { useSearchParams } from "next/navigation"
-import { PrivateKey, PublicKey, TokenId, UInt64 } from "o1js"
 // @ts-ignore
-import CurrencyFormat from "react-currency-format"
-import { poolToka } from "@/utils/addresses"
-import TokenMenu from "./TokenMenu"
-import { LuminaToken, Networks } from "@lumina-dex/sdk"
+import { LuminaPool, LuminaToken, Networks, PublicKey, TokenId } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Balance = ({ token, isPool }: { token: LuminaToken; isPool: boolean | undefined }) => {
+const Balance = ({ token, pool }: { token: LuminaToken; pool?: LuminaPool }) => {
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
@@ -28,7 +22,7 @@ const Balance = ({ token, isPool }: { token: LuminaToken; isPool: boolean | unde
 	}, [token])
 
 	const getBalance = async () => {
-		if (token && token?.symbol?.length) {
+		if (token && token.decimals) {
 			let data = {
 				address: token.address,
 				decimal: 10 ** token.decimals,
@@ -36,30 +30,39 @@ const Balance = ({ token, isPool }: { token: LuminaToken; isPool: boolean | unde
 				symbol: token.symbol
 			}
 
-			if (isPool) {
-				const tokenIdPool = TokenId.derive(PublicKey.fromBase58(token.address))
-				data.address = token.address
+			if (pool) {
+				const tokenIdPool = TokenId.derive(PublicKey.fromBase58(pool.address))
+				data.address = pool.address
 				data.tokenId = TokenId.toBase58(tokenIdPool)
 				data.symbol = "LUM"
 				data.decimal = 10 ** 9
 			}
 			setTimeout(
 				() => {
+					console.log({
+						type: "FetchBalance",
+						network: walletContext.currentNetwork,
+						tokens: [data]
+					})
 					Wallet.send({
 						type: "FetchBalance",
 						network: walletContext.currentNetwork,
 						tokens: [data]
 					})
 				},
-				isPool ? 2000 : 100
+				pool ? 2000 : 100
 			)
 		}
 	}
 
 	useEffect(() => {
-		const symbol = isPool ? "LUM" : token?.symbol
-		if (walletContext?.currentNetwork && token.tokenId) {
-			const tokenBalance = walletContext.balances[walletContext.currentNetwork][token.tokenId]
+		let tokenId = token.tokenId
+		if (pool) {
+			const tokenIdPool = TokenId.derive(PublicKey.fromBase58(pool.address))
+			tokenId = TokenId.toBase58(tokenIdPool)
+		}
+		if (walletContext?.currentNetwork && tokenId) {
+			const tokenBalance = walletContext.balances[walletContext.currentNetwork][tokenId]
 			if (tokenBalance && tokenBalance.balance) {
 				setBalance(tokenBalance.balance.toFixed(2).toString())
 			} else {

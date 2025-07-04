@@ -5,11 +5,11 @@ import { useSearchParams } from "next/navigation"
 import { PublicKey, TokenId } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import { poolToka } from "@/utils/addresses"
+import { poolToka, tokenA } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { useActor, useSelector } from "@lumina-dex/sdk/react"
-import { dexMachine, walletMachine } from "@lumina-dex/sdk"
+import { dexMachine, LuminaPool, LuminaToken, walletMachine } from "@lumina-dex/sdk"
 import ButtonStatus from "./ButtonStatus"
 import { mina } from "@/lib/wallet"
 import { LuminaContext } from "./Layout"
@@ -18,13 +18,14 @@ import { LuminaContext } from "./Layout"
 const Liquidity = ({}) => {
 	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [token, setToken] = useState({ address: "", poolAddress: "", symbol: "", decimals: 9 })
+	const [token, setToken] = useState<LuminaToken>(tokenA)
 
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
 
-	const [pool, setPool] = useState(poolToka)
+	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [pool, setPool] = useState<LuminaPool>()
 	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
@@ -67,7 +68,7 @@ const Liquidity = ({}) => {
 			type: "ChangeAddLiquiditySettings",
 			settings: {
 				// The pool address
-				pool: token.poolAddress,
+				pool: pool.address,
 
 				// Token A settings
 				tokenA: {
@@ -152,7 +153,7 @@ const Liquidity = ({}) => {
 						{toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
+							<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
 						)}
 					</div>
 					<div>
@@ -175,14 +176,14 @@ const Liquidity = ({}) => {
 						{!toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
+							<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
 						)}
 					</div>
 					<div>
-						Your token balance : <Balance token={token} isPool={false}></Balance>
+						Your token balance : <Balance token={token}></Balance>
 					</div>
 					<div>
-						Your liquidity balance : <Balance token={token} isPool={true}></Balance>
+						Your liquidity balance : <Balance token={token} pool={pool}></Balance>
 					</div>
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>

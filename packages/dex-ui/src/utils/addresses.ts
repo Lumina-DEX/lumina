@@ -5,11 +5,20 @@ import {
 	fetchPoolList,
 	fetchTokenList,
 	LuminaPool,
+	LuminaToken,
 	Networks
 } from "@lumina-dex/sdk"
 
 export const poolToka = "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY"
 export const toka = "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
+
+export const tokenA: LuminaToken = {
+	address: toka,
+	chainId: "mina:devnet",
+	tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
+	symbol: "TokenA",
+	decimals: 9
+}
 
 //export const poolWeth = "B62qphnhqrRW6DFFR39onHNKnBcoB9Gqi3M8Emytg26nwZWUYXR1itw";
 

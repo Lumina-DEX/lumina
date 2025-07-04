@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import { poolToka, toka } from "@/utils/addresses"
+import { poolToka, toka, tokenA } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { useSelector } from "@lumina-dex/sdk/react"
@@ -22,7 +22,7 @@ const Swap = ({}) => {
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
-	const [token, setToken] = useState<LuminaToken | MinimalToken>({ address: toka, decimals: 9 })
+	const [token, setToken] = useState<LuminaToken>(tokenA)
 
 	const [loading, setLoading] = useState(false)
 
@@ -41,7 +41,6 @@ const Swap = ({}) => {
 	}
 
 	const { Wallet, Dex } = useContext(LuminaContext)
-	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
 
 	const [toDai, setToDai] = useState(true)
@@ -51,8 +50,6 @@ const Swap = ({}) => {
 	const [toAmount, setToAmount] = useState("0.0")
 
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
-
-	const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 })
 
 	useEffect(() => {
 		const delayDebounceFn = setTimeout(() => {
@@ -156,7 +153,7 @@ const Swap = ({}) => {
 					</div>
 					{token?.address ? (
 						<div>
-							Your token balance : <Balance token={token} isPool={false}></Balance>
+							Your token balance : <Balance token={token}></Balance>
 						</div>
 					) : (
 						<div></div>
