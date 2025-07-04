@@ -183,7 +183,7 @@ const Liquidity = ({}) => {
 						Your token balance : <Balance token={token}></Balance>
 					</div>
 					<div>
-						Your liquidity balance : <Balance token={token} pool={pool}></Balance>
+						Your liquidity balance : <Balance token={pool}></Balance>
 					</div>
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>

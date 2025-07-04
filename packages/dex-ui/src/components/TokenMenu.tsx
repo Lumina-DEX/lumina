@@ -26,11 +26,10 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 
 	const getPools = async () => {
 		const network: Networks = walletContext.currentNetwork || minaTestnet
-		// const pools = await Addresses.getList(network)
-		// setCdnList(pools)
+		const pools = await Addresses.getList(network)
+		setCdnList(pools)
 
 		const fetchEvent = await Addresses.getEventList(network)
-		const pools = fetchEvent
 		console.log("fetch event", fetchEvent)
 		setEventList([])
 		if (fetchEvent?.length) {

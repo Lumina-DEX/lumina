@@ -6,18 +6,19 @@ import { PublicKey, TokenId } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
 import TokenMenu from "./TokenMenu"
-import { poolToka } from "@/utils/addresses"
+import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "./Layout"
+import { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 
 // @ts-ignore
 const Withdraw = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [loading, setLoading] = useState(false)
-	const [token, setToken] = useState({ address: "", poolAddress: "" })
+	const [token, setToken] = useState<LuminaToken>(tokenA)
 
 	useEffect(() => {
 		if (window && (window as any).mina) {
@@ -26,7 +27,8 @@ const Withdraw = ({}) => {
 	}, [])
 
 	const [toDai, setToDai] = useState(true)
-	const [pool, setPool] = useState(poolToka)
+	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [pool, setPool] = useState<LuminaPool>()
 	const [fromAmount, setFromAmount] = useState("")
 	const [toMina, setToMina] = useState(0)
 	const [toToken, setToToken] = useState(0)
@@ -80,8 +82,7 @@ const Withdraw = ({}) => {
 			type: "ChangeRemoveLiquiditySettings",
 			settings: {
 				// The pool address
-				pool: token.poolAddress,
-				tokenB: token.address,
+				pool: pool.address,
 				lpAmount: fromAmount,
 				// Maximum allowed slippage in percentage
 				slippagePercent: slippagePercent
@@ -122,7 +123,7 @@ const Withdraw = ({}) => {
 						></input>
 					</div>
 					<div>
-						Pool : <TokenMenu setToken={setToken} pool={pool} setPool={setPool} />
+						Pool : <TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
 					</div>
 					<div className="flex flex-row w-full">
 						<CurrencyFormat
@@ -142,7 +143,7 @@ const Withdraw = ({}) => {
 						<span>Token out : {toFixedIfNecessary(toToken, 2)}</span>
 					</div>
 					<div>
-						Your liquidity balance : <Balance token={token} isPool={false}></Balance>
+						Your liquidity balance : <Balance token={pool}></Balance>
 					</div>
 					<ButtonStatus onClick={withdrawLiquidity} text={"Withdraw Liquidity"}></ButtonStatus>
 				</div>

@@ -13,9 +13,6 @@ import ButtonStatus from "./ButtonStatus"
 import { feeAmount, LuminaContext } from "./Layout"
 import { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 
-type Percent = number | string
-type MinimalToken = { address: string; decimals: number }
-
 // @ts-ignore
 const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
@@ -148,7 +145,7 @@ const Swap = ({}) => {
 						{!toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu poolAddress={poolAddress} setToken={setToken} setPool={setPool} />
+							<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
 						)}
 					</div>
 					{token?.address ? (
