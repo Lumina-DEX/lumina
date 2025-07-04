@@ -47,8 +47,6 @@ const Account = () => {
 				const bal = walletContext.balances[walletContext.currentNetwork][MINA_ADDRESS]
 				setBalance(bal.balance)
 			} catch (error) {}
-
-			console.log("walletContext", walletContext)
 		}
 	}, [walletContext])
 

@@ -46,6 +46,7 @@ export default function Layout({ children }) {
 	useEffect(() => {
 		if (dexState?.contractSystem === "IDLE") {
 			setIsReady(true)
+			setDisplayText("")
 		}
 		setDisplayText(JSON.stringify(dexState))
 	}, [dexState])

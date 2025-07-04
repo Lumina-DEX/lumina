@@ -7,12 +7,12 @@ import { PrivateKey, PublicKey, TokenId, UInt64 } from "o1js"
 import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
-import { Networks } from "@lumina-dex/sdk"
+import { LuminaToken, Networks } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Balance = ({ token, isPool }: { token: any; isPool: boolean | undefined }) => {
+const Balance = ({ token, isPool }: { token: LuminaToken; isPool: boolean | undefined }) => {
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
@@ -37,8 +37,8 @@ const Balance = ({ token, isPool }: { token: any; isPool: boolean | undefined })
 			}
 
 			if (isPool) {
-				const tokenIdPool = TokenId.derive(PublicKey.fromBase58(token.poolAddress))
-				data.address = token.poolAddress
+				const tokenIdPool = TokenId.derive(PublicKey.fromBase58(token.address))
+				data.address = token.address
 				data.tokenId = TokenId.toBase58(tokenIdPool)
 				data.symbol = "LUM"
 				data.decimal = 10 ** 9
@@ -58,9 +58,8 @@ const Balance = ({ token, isPool }: { token: any; isPool: boolean | undefined })
 
 	useEffect(() => {
 		const symbol = isPool ? "LUM" : token?.symbol
-		if (walletContext?.currentNetwork && symbol?.length) {
-			const tokenBalance =
-				walletContext.balances[walletContext.currentNetwork][symbol.toUpperCase()]
+		if (walletContext?.currentNetwork && token.tokenId) {
+			const tokenBalance = walletContext.balances[walletContext.currentNetwork][token.tokenId]
 			if (tokenBalance && tokenBalance.balance) {
 				setBalance(tokenBalance.balance.toFixed(2).toString())
 			} else {

@@ -17,17 +17,18 @@ const ButtonStatus = ({ onClick, text }) => {
 	}, [dexState])
 	return (
 		<>
-			{!dexState?.contractSystem || dexState.contractSystem !== "CONTRACTS_READY" ? (
-				<Button color="success" variant="contained" size="large" disabled>
+			{!dexState?.contractSystem || dexState.contractSystem !== "IDLE" ? (
+				<Button color="success" variant="contained" size="large" className="w-full" disabled>
 					Contracts Loading...
 				</Button>
 			) : walletState === "INIT" ? (
-				<Button color="success" variant="contained" size="large" disabled>
+				<Button color="success" variant="contained" size="large" className="w-full" disabled>
 					Connect your wallet...
 				</Button>
 			) : (
 				<Button
 					loading={loading}
+					variant="contained"
 					className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
 					onClick={onClick}
 				>

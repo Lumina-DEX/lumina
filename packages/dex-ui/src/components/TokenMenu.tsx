@@ -7,7 +7,7 @@ import { LuminaContext } from "./Layout"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaPool, Networks } from "@lumina-dex/sdk"
 
-const TokenMenu = ({ pool, setPool, setToken }) => {
+const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 	const [cdnList, setCdnList] = useState<LuminaPool[]>([])
 	const [eventList, setEventList] = useState<LuminaPool[]>([])
 	const { Wallet, Dex } = useContext(LuminaContext)
@@ -19,7 +19,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 	const handleClose = () => setOpen(false)
 
 	useEffect(() => {
-		console.log("token", pool)
+		console.log("token", poolAddress)
 		console.log("accountState update")
 		getPools().then()
 	}, [walletContext.currentNetwork])
@@ -36,18 +36,19 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 			setEventList(fetchEvent)
 		}
 
-		let poolExist = pools.find((z) => z.address === pool)
+		let poolExist = pools.find((z) => z.address === poolAddress)
 		console.log("pool exist", poolExist)
 		if (!poolExist && pools?.length) {
-			poolExist = fetchEvent?.find((z) => z.address === pool)
+			poolExist = fetchEvent?.find((z) => z.address === poolAddress)
 			console.log("pool exist 2", poolExist)
 			if (poolExist) {
-				setToken(poolExist)
+				setPool(poolExist)
+				setToken(poolExist.tokens[1])
 				setCurrent(poolExist)
 			} else {
 				// if this pool didn't exist for this network we select the first token
-				setPool(pools[0].address)
-				setToken(pools[0])
+				setPool(pools[0])
+				setToken(pools[0].tokens[1])
 				setCurrent(pools[0])
 			}
 		} else if (poolExist) {
@@ -58,7 +59,7 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 
 	const selectPool = (pool: any) => {
 		console.log("pool", pool)
-		setPool(pool.address)
+		setPool(pool)
 		setToken(pool.tokens[1])
 		setCurrent(pool)
 		setOpen(false)
@@ -85,10 +86,6 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 		return text.substring(0, 6) + "..." + text.substring(text.length - 6, text.length)
 	}
 
-	const alreadyExist = (poolAddress: string) => {
-		return cdnList?.find((z) => z.address === poolAddress) || false
-	}
-
 	return (
 		<div>
 			<button onClick={handleOpen} className=" ml-3 p-1 bg-white">
@@ -102,8 +99,8 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 			>
 				<Box sx={style}>
 					<div className="flex flex-col">
-						{cdnList &&
-							cdnList.map((x) => (
+						{eventList &&
+							eventList.map((x) => (
 								<div
 									style={{ borderBottom: "1px solid black" }}
 									onClick={() => selectPool(x)}
@@ -119,29 +116,6 @@ const TokenMenu = ({ pool, setPool, setToken }) => {
 									</span>
 								</div>
 							))}
-					</div>
-					<div className="flex flex-col">
-						{eventList &&
-							eventList.map((x) => {
-								return alreadyExist ? (
-									<div key={x.address}></div>
-								) : (
-									<div
-										style={{ borderBottom: "1px solid black" }}
-										onClick={() => selectPool(x)}
-										className="flex flex-col bg-red-100 p-3"
-										key={x.address}
-									>
-										<span title={x.tokens[1].symbol}>{x.tokens[1].symbol}</span>
-										<span className="text-sm" title={x.tokens[1].address}>
-											Address : {trimText(x.tokens[1].address)}
-										</span>
-										<span className="text-sm" title={x.address}>
-											Pool : {trimText(x.address)}
-										</span>
-									</div>
-								)
-							})}
 					</div>
 				</Box>
 			</Modal>
