@@ -33,14 +33,6 @@ const Withdraw = ({}) => {
 	const [toMina, setToMina] = useState(0)
 	const [toToken, setToToken] = useState(0)
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
-	const [data, setData] = useState({
-		amountAOut: 0,
-		amountBOut: 0,
-		balanceAMin: 0,
-		balanceBMin: 0,
-		supplyMax: 0,
-		liquidity: 0
-	})
 
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
@@ -63,35 +55,27 @@ const Withdraw = ({}) => {
 
 			console.log("liquidity calculated", result)
 			if (result) {
-				setData(result)
-
 				const amountA = result.tokenA.amountOut / 10 ** 9
 				const amountB = result.tokenB.amountOut / 10 ** 9
 				const liquidity = result.liquidity / 10 ** 9
 				setToToken(amountB)
 				setToMina(amountA)
 			}
-			//setToAmount(valTo.toString())
 		})
 		return subscription.unsubscribe
 	}, [Dex])
 
 	const getLiquidityAmount = async (fromAmt, slippagePcent) => {
-		console.log("getLiquidityAmount", fromAmt)
-		const settings = {
+		Dex.send({
 			type: "ChangeRemoveLiquiditySettings",
 			settings: {
 				// The pool address
 				pool: pool.address,
-				lpAmount: fromAmount,
+				lpAmount: fromAmt,
 				// Maximum allowed slippage in percentage
-				slippagePercent: slippagePercent
+				slippagePercent: slippagePcent
 			}
-		}
-
-		console.log("ChangeRemoveLiquiditySettings", settings)
-
-		Dex.send(settings)
+		})
 	}
 
 	const withdrawLiquidity = async () => {

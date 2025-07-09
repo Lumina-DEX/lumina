@@ -1,20 +1,17 @@
 "use client"
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/router"
-import { useSearchParams } from "next/navigation"
-import { fetchAccount, PublicKey } from "o1js"
+import React, { useContext, useEffect, useState } from "react"
 // @ts-ignore
-import CurrencyFormat from "react-currency-format"
-import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Menu from "./Menu"
-import { feeAmount, LuminaContext } from "./Layout"
+import { LuminaContext } from "./Layout"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { MINA_ADDRESS, Networks } from "@lumina-dex/sdk"
+
+export const zekoTestnet: Networks = "zeko:testnet"
+export const minaTestnet: Networks = "mina:devnet"
 
 // @ts-ignore
 const Account = () => {
 	const [balance, setBalance] = useState(0)
-	const zkState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
@@ -26,15 +23,6 @@ const Account = () => {
 			}, seconds * 1000)
 		})
 	}
-
-	useEffect(() => {
-		timeout(1).then(() => {
-			connect().then((x) => {
-				console.log("network", zkState.network)
-			})
-		})
-	}, [])
-
 	useEffect(() => {
 		if (walletState && walletState === "INIT") {
 			handleConnect()

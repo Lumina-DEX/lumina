@@ -11,34 +11,21 @@ import Balance from "./Balance"
 import { useActor, useSelector } from "@lumina-dex/sdk/react"
 import { dexMachine, LuminaPool, LuminaToken, walletMachine } from "@lumina-dex/sdk"
 import ButtonStatus from "./ButtonStatus"
-import { mina } from "@/lib/wallet"
 import { LuminaContext } from "./Layout"
 
 // @ts-ignore
 const Liquidity = ({}) => {
-	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
 	const [token, setToken] = useState<LuminaToken>(tokenA)
 
 	const { Wallet, Dex } = useContext(LuminaContext)
-	const dexState = useSelector(Dex, (state) => state.value)
-	const walletState = useSelector(Wallet, (state) => state.value)
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
-	const [updateAmount, setUpdateAmount] = useState("0")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
-	const [data, setData] = useState({
-		amountAIn: 0,
-		amountBIn: 0,
-		balanceAMax: 0,
-		balanceBMax: 0,
-		supplyMin: 0,
-		liquidity: 0
-	})
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
@@ -48,8 +35,6 @@ const Liquidity = ({}) => {
 
 			console.log("liquidity calculated", result)
 			if (result) {
-				setData(result)
-
 				const from = result.tokenA.amountIn / 10 ** 9
 				const to = result.tokenB.amountIn / 10 ** 9
 				const liquidity = result.liquidity / 10 ** 9
@@ -62,9 +47,7 @@ const Liquidity = ({}) => {
 		return subscription.unsubscribe
 	}, [Dex])
 	const getLiquidityAmount = async () => {
-		console.log("getLiquidityAmount")
-
-		const settings = {
+		Dex.send({
 			type: "ChangeAddLiquiditySettings",
 			settings: {
 				// The pool address
@@ -85,32 +68,22 @@ const Liquidity = ({}) => {
 				// Maximum allowed slippage in percentage
 				slippagePercent: slippagePercent
 			}
-		}
-
-		console.log("ChangeAddLiquiditySettings", settings)
-
-		Dex.send(settings)
+		})
 	}
 
 	const addLiquidity = async () => {
 		try {
-			setLoading(true)
 			Dex.send({ type: "AddLiquidity" })
 		} catch (error) {
 			console.log("swap error", error)
-		} finally {
-			setLoading(false)
 		}
 	}
 
 	const calculateLiquidity = async () => {
 		try {
-			setLoading(true)
 			await getLiquidityAmount()
 		} catch (error) {
 			console.log("swap error", error)
-		} finally {
-			setLoading(false)
 		}
 	}
 
