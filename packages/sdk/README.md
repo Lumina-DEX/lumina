@@ -5,6 +5,16 @@
 [![npm version](https://img.shields.io/npm/v/@lumina-dex/sdk.svg)](https://www.npmjs.com/package/@lumina-dex/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+## ⚠️ Disclaimer
+
+The Lumina DEX SDK is provided "as is" without any warranties or guarantees. While we strive to ensure the SDK's reliability and security, users should be aware that:
+
+- Lumina is not liable for any losses, damages, or issues arising from the use of this SDK
+- Users are responsible for validating and testing the SDK's functionality in their applications
+- Smart contract interactions always carry inherent risks including potential loss of funds
+
+By using this SDK, you acknowledge and accept these risks and limitations.
+
 ## Quick Links
 
 - 📚 [Documentation](https://lumina-dex.github.io/sdk/) - Comprehensive guides and API reference
@@ -133,18 +143,51 @@ const connect = () => Wallet.send({ type: "Connect" })
 ## Data Fetching
 
 ```ts
-import { fetchPoolTokenList } from "@lumina-dex/sdk"
+import { fetchPoolList, fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
-const result = await fetchPoolTokenList("mina:devnet")
-console.log("Token list:", result.tokens)
+const tokens = await fetchTokenList("mina:devnet")
+const pools = await fetchPoolList("mina:devnet")
+console.log("Token list:", tokens)
+console.log("Pool list:", pools)
 
 // For direct blockchain queries (slower, use server-side)
-import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
-
-const tokens = await fetchAllTokensFromPoolFactory({
+import { fetchAllFromPoolFactory } from "@lumina-dex/sdk"
+const { tokens, pools } = await fetchAllFromPoolFactory({
 	network: "mina:devnet"
 })
+```
+
+## Load Additional Features
+
+By default, the SDK initializes with the `Swap` feature. You can specify which features you want to load during initialization:
+
+```ts
+const Dex = createDex({
+	input: {
+		wallet: Wallet,
+		features: ["Swap", "DeployPool"], // Load specific features
+		frontendFee: {
+			destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
+			amount: 1
+		}
+	}
+})
+```
+
+You can load additional features dynamically after initialization:
+
+```ts
+Dex.send({ type: "LoadFeatures", features: ["DeployPool", "Claim"] })
+```
+
+## Debugging
+
+You can set in localStorage some specific values to help with debugging and caching:
+
+```ts
+localStorage.setItem("disableCache", true) // default false
+localStorage.setItem("debugLogs", true) // default false in prod
 ```
 
 ## Documentation

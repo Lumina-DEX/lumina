@@ -311,7 +311,8 @@ SDK: SDK {
   }
   
   helpers: Helper Functions {
-    fetchPoolTokenList: Fetch Pool Tokens from CDN
+    fetchTokenList: Fetch Pool Tokens from CDN
+    fetchPoolList: Fetch Pool List from CDN
     fetchEvents: Fetch Pool Events from Blockchain
     fetchTokens: Fetch Pool Tokens from Blockchain 
   }
@@ -345,5 +346,6 @@ cdn: Lumina CDN {
   tokenLists: Token Lists
 }
 
-SDK.helpers.fetchPoolTokenList -> cdn: HTTP
+SDK.helpers.fetchTokenList -> cdn: HTTP
+SDK.helpers.fetchPoolList -> cdn: HTTP
 ```

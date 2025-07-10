@@ -7,7 +7,6 @@
 		"lint:fix": "bunx @biomejs/biome lint --write src/",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
-		"cache:create": "node --experimental-strip-types scripts/create-cache.ts",
 		"compile:benchmark": "bun scripts/compile-benchmark.ts",
 		"deploy": "wrangler deploy",
 		"deploy:preview": "wrangler versions upload",
@@ -22,15 +21,16 @@
 		"@cloudflare/workers-types": "^4.20241127.0",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
-		"drizzle-kit": "^0.29.1",
+		"drizzle-kit": "beta",
 		"fflate": "^0.8.2",
-		"o1js": "2.2.0",
+		"o1js": "2.4.0",
 		"typescript": "^5.5.2",
 		"vitest": "2.0.5",
 		"wrangler": "^4.1.0"
 	},
 	"dependencies": {
-		"drizzle-orm": "^0.37.0",
-		"rou3": "^0.5.1"
+		"drizzle-orm": "beta",
+		"rou3": "^0.5.1",
+		"valibot": "^1.0.0"
 	}
 }

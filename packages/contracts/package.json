@@ -1,6 +1,6 @@
 {
   "name": "@lumina-dex/contracts",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "type": "module",
   "sideEffects": false,
   "description": "Contracts for Lumina DEX.",
@@ -35,13 +35,14 @@
     "format:fix": "dprint fmt --verbose",
     "lint": "eslint src/* tests/*",
     "lint:fix": "eslint src/* tests/* --fix",
-    "test": "vitest run",
+    "test": "vitest run --testTimeout=150000",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "test:factory": "vitest run Factory",
-    "test:faucet": "vitest run Faucet",
-    "test:data": "vitest run PoolData",
-    "test:token": "vitest run PoolToken"
+    "test:factory": "vitest run Factory --testTimeout=150000",
+    "test:faucet": "vitest run Faucet --testTimeout=150000",
+    "test:data": "vitest run PoolData --testTimeout=150000",
+    "test:token": "vitest run PoolToken --testTimeout=150000",
+    "test:multisig": "vitest run Multisig --testTimeout=150000"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.1",
@@ -66,6 +67,6 @@
   },
   "dependencies": {
     "mina-fungible-token": "1.1.0",
-    "o1js": "2.2.0"
+    "o1js": "2.4.0"
   }
 }

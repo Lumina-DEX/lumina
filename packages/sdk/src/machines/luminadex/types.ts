@@ -1,10 +1,9 @@
-import type { ProviderError, SendZkTransactionResult } from "@aurowallet/mina-provider"
 import type * as Comlink from "comlink"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
 import type { WalletEmit } from "../wallet/types"
 
-type DexWorker = Comlink.Remote<LuminaDexWorker>
+export type DexWorker = Comlink.Remote<LuminaDexWorker>
 
 export interface Token {
 	address: string
@@ -22,6 +21,8 @@ interface ContractContext {
 	loaded: {
 		[name in ContractName]: boolean
 	}
+	toLoad: Set<ContractName>
+	currentlyLoading: ContractName | null
 	error: LuminaError | null
 }
 
@@ -30,10 +31,8 @@ interface DexContext {
 	addLiquidity: {
 		transactionResult: DexTransactionResult
 		calculated: {
-			amountAIn: number
-			amountBIn: number
-			balanceAMax: number
-			balanceBMax: number
+			tokenA: { address: string; amountIn: number; balanceMax: number }
+			tokenB: { address: string; amountIn: number; balanceMax: number }
 			liquidity: number
 			supplyMin: number
 		} | null
@@ -41,11 +40,9 @@ interface DexContext {
 	removeLiquidity: {
 		transactionResult: DexTransactionResult
 		calculated: {
+			tokenA: { address: string; amountOut: number; balanceMin: number }
+			tokenB: { address: string; amountOut: number; balanceMin: number }
 			liquidity: number
-			amountAOut: number
-			amountBOut: number
-			balanceAMin: number
-			balanceBMin: number
 			supplyMax: number
 		} | null
 	} & RemoveLiquiditySettings
@@ -73,7 +70,10 @@ interface DexContext {
 	}
 }
 
-type ContractEvent = { type: "LoadContracts" }
+type ContractEvent =
+	| { type: "LoadContracts" }
+	| { type: "LoadNextContract" }
+	| { type: "LoadFeatures"; features: DexFeatures }
 
 type DexEvent =
 	// Swap
@@ -124,6 +124,7 @@ export interface Can {
 }
 
 export interface LuminaDexMachineContext {
+	features: DexFeatures
 	can: Can
 	wallet: WalletActorRef
 	dex: DexContext
@@ -131,13 +132,19 @@ export interface LuminaDexMachineContext {
 	frontendFee: FrontendFee
 }
 
+type DexFeature = "Swap" | "DeployPool" | "DeployToken" | "Claim"
+
+export type DexFeatures = DexFeature[]
+
 export interface LuminaDexMachineInput {
 	wallet: WalletActorRef
 	frontendFee: FrontendFee
+	features?: DexFeatures
 }
 
 export interface InputDexWorker {
 	worker: DexWorker
+	wallet: WalletActorRef
 }
 
 export interface SwapSettings {
@@ -156,8 +163,7 @@ export interface AddLiquiditySettings {
 
 export interface RemoveLiquiditySettings {
 	pool: string
-	tokenA: Token
-	tokenB: Token
+	lpAmount: string
 	slippagePercent: number
 }
 
@@ -178,4 +184,4 @@ export type ContractName =
 	| "FungibleTokenAdmin"
 	| "Faucet"
 
-export type DexTransactionResult = SendZkTransactionResult | ProviderError | null
+export type DexTransactionResult = { hash: string; url: string } | null

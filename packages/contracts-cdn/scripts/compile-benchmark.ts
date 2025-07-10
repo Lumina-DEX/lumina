@@ -17,17 +17,16 @@ const createCt = (cache: Cache) => async (contract: Contract) => {
 }
 
 async function compileContracts(cache: Cache) {
-	const { Faucet, FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder } =
-		await import("@lumina-dex/contracts")
+	const { FungibleToken, Pool, PoolFactory, PoolTokenHolder } = await import(
+		"@lumina-dex/contracts"
+	)
 
 	const ct = createCt(cache)
 	console.time("CompileContracts")
 	await ct(PoolFactory)
 	await ct(Pool)
 	await ct(FungibleToken)
-	await ct(FungibleTokenAdmin)
 	await ct(PoolTokenHolder)
-	await ct(Faucet)
 	console.timeEnd("CompileContracts")
 }
 

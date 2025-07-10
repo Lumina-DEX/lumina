@@ -1,5 +1,21 @@
 # @lumina-dex/contracts
 
+## 0.7.0
+
+### Minor Changes
+
+- 0694cae: Move multisig from pool to factory
+  Update sdk to integrate the new contracts
+  Correct a calculation bug on add liquidity
+
+## 0.6.0
+
+### Minor Changes
+
+- 8098bc5: Add multisig in the pools contracts
+  Update contract address in the sdk
+  Remove faucet and token admin contract from sdk compile list (you can't deploy a new token)
+
 ## 0.5.0
 
 ### Minor Changes

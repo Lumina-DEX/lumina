@@ -14,11 +14,11 @@ import {
   TokenContract,
   TokenId,
   Types,
-  UInt64,
-  VerificationKey
+  UInt64
 } from "o1js"
 
-import { FungibleToken, mulDiv, PoolFactory, UpdateUserEvent, UpdateVerificationKeyEvent } from "../indexpool.js"
+import { PoolFactory, PoolFactoryBase, UpdateUserEvent, UpdateVerificationKeyEvent } from "../indexfactory.js"
+import { FungibleToken, mulDiv } from "../indexpool.js"
 
 import { checkToken, IPool } from "./IPoolState.js"
 
@@ -142,6 +142,11 @@ export class Pool extends TokenContract implements IPool {
   static minimumLiquidity: UInt64 = UInt64.from(1000)
 
   /**
+   * We declare the factory contract as a static property so that it can be easily replaced in case of factory upgrade
+   */
+  static FactoryContract: new(...args: any) => PoolFactoryBase = PoolFactory
+
+  /**
    * List of pool events
    */
   events = {
@@ -166,15 +171,13 @@ export class Pool extends TokenContract implements IPool {
 
   /**
    * Upgrade to a new version, necessary due to o1js breaking verification key compatibility between versions
-   * @param vk new verification key
    */
   @method
-  async updateVerificationKey(vk: VerificationKey) {
+  async updateVerificationKey() {
     const factoryAddress = this.poolFactory.getAndRequireEquals()
-    const factory = new PoolFactory(factoryAddress)
-    const owner = await factory.getOwner()
-    // only protocol owner can update a pool
-    AccountUpdate.createSigned(owner)
+    const factory = new Pool.FactoryContract(factoryAddress)
+    const vk = await factory.getPoolVK()
+
     this.account.verificationKey.set(vk)
     this.emitEvent("upgrade", new UpdateVerificationKeyEvent(vk.hash))
   }
@@ -185,7 +188,7 @@ export class Pool extends TokenContract implements IPool {
   @method
   async setDelegator() {
     const poolFactoryAddress = this.poolFactory.getAndRequireEquals()
-    const poolFactory = new PoolFactory(poolFactoryAddress)
+    const poolFactory = new Pool.FactoryContract(poolFactoryAddress)
     const delegator = await poolFactory.getDelegator()
     const currentDelegator = this.account.delegate.getAndRequireEquals()
     Provable.asProver(() => {
@@ -408,7 +411,7 @@ export class Pool extends TokenContract implements IPool {
     const frontendReceiver = Provable.if(frontend.equals(PublicKey.empty()), this.address, frontend)
     await this.send({ to: frontendReceiver, amount: feeFrontend })
     // send mina to protocol
-    const protocol = await this.getProtocolAddress()
+    const protocol = this.protocol.getAndRequireEquals()
     const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
     await this.send({ to: protocolReceiver, amount: feeProtocol })
 
@@ -486,6 +489,16 @@ export class Pool extends TokenContract implements IPool {
       "burnLiquidity",
       new BurnLiqudityEvent({ sender, amountMinaOut: UInt64.zero, amountLiquidity: liquidityAmount })
     )
+  }
+
+  /**
+   * Get protocol address
+   * @returns address of the protocol
+   */
+  @method.returns(PublicKey)
+  async getProtocol() {
+    const protocol = this.protocol.getAndRequireEquals()
+    return protocol
   }
 
   private async burnLiquidity(sender: PublicKey, liquidityAmount: UInt64, supplyMax: UInt64, isMinaPool: boolean) {
@@ -602,7 +615,7 @@ export class Pool extends TokenContract implements IPool {
 
   private async getProtocolAddress(): Promise<PublicKey> {
     const poolFactoryAddress = this.poolFactory.getAndRequireEquals()
-    const poolFactory = new PoolFactory(poolFactoryAddress)
+    const poolFactory = new Pool.FactoryContract(poolFactoryAddress)
     return await poolFactory.getProtocol()
   }
 
@@ -623,7 +636,7 @@ export class Pool extends TokenContract implements IPool {
     const amountOutBeforeFee = mulDiv(balanceOutMin, amountTokenIn, balanceInMax.add(amountTokenIn))
     // 0.20% tax fee for liquidity provider directly on amount out
     const feeLP = mulDiv(amountOutBeforeFee, UInt64.from(2), UInt64.from(1000))
-    // 0.10% fee max for the frontend
+    // 0.15% fee max for the frontend
     const feeFrontend = mulDiv(amountOutBeforeFee, taxFeeFrontend, UInt64.from(10000))
     // 0.05% to the protocol
     const feeProtocol = mulDiv(amountOutBeforeFee, UInt64.from(5), UInt64.from(10000))

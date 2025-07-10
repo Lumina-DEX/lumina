@@ -151,14 +151,7 @@ Dex.send({
 	type: "ChangeRemoveLiquiditySettings",
 	settings: {
 		pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
-		tokenA: {
-			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-			amount: "2.5"
-		},
-		tokenB: {
-			address: "MINA",
-			amount: "0" // Often ignored for removal
-		},
+		lpAmount : "100"
 		slippagePercent: 0.5
 	}
 })
@@ -232,6 +225,19 @@ These events are handled automatically from the wallet:
 
 - `NetworkChanged`: When the network has changed
 - `AccountChanged`: When the account has changed
+
+### Other Events
+
+#### `LoadFeatures`
+
+Loads additional features or capabilities of the wallet.
+
+```ts
+Wallet.send({
+	type: "LoadFeatures",
+	features: ["Swap", "DeployPool", "DeployToken", "Claim"]
+})
+```
 
 ## Context
 

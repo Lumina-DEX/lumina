@@ -10,6 +10,7 @@ const Wallet = createWallet()
 const Dex = createDex({
 	input: {
 		wallet: Wallet,
+		features: ["Swap"],
 		frontendFee: { destination: "", amount: 0 }
 	}
 })

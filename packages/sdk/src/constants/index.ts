@@ -33,6 +33,8 @@ export const urls = {
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
+export type SupportedNetwork = keyof typeof urls
+
 export const archiveUrls = {
 	"mina:mainnet": "https://api.minascan.io/archive/mainnet/v1/graphql",
 	"mina:devnet": "https://api.minascan.io/archive/devnet/v1/graphql",
@@ -42,9 +44,9 @@ export const archiveUrls = {
 
 // TODO: Add missing factories
 export const luminadexFactories = {
-	"mina:devnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
+	"mina:devnet": "B62qmd6mCFwMsVTbithqqSYMLgELaF5kZT714ea5MtR6gquB5stCBbz",
 	"mina:mainnet": "NOT_IMPLEMENTED",
-	"zeko:testnet": "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd",
+	"zeko:testnet": "B62qmd6mCFwMsVTbithqqSYMLgELaF5kZT714ea5MtR6gquB5stCBbz",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
@@ -61,9 +63,9 @@ export const chainFaucets = {
 		tokenId: "NOT_IMPLEMENTED"
 	},
 	"zeko:testnet": {
-		address: "NOT_IMPLEMENTED",
-		tokenAddress: "NOT_IMPLEMENTED",
-		tokenId: "NOT_IMPLEMENTED"
+		address: "B62qkUoCRMDTndXpGan1g7iVPAGnXASVT3fqV8QnGqJ5KNiRhnS8nyq",
+		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn"
 	},
 	"zeko:mainnet": {
 		address: "NOT_IMPLEMENTED",
@@ -74,16 +76,39 @@ export const chainFaucets = {
 
 export const MINA_ADDRESS = "MINA"
 
+/**
+ * CDN URL Scheme
+ * @example https://cdn.luminadex.com/api/manifest/v1.0.0
+ * @example https://cdn.luminadex.com/v1.0.0/cache/file.txt
+ * @example https://cdn.luminadex.com/v1.0.0/bundle.zip
+ */
 export const luminaCdnOrigin = "https://cdn.luminadex.com"
 
-export const contractsVersion = `v${version}`
+export const contractsVersion = `${version}`
+
+export const defaultFee = {
+	"zeko:testnet": 5 * 10 ** 8,
+	"zeko:mainnet": undefined,
+	"mina:devnet": undefined,
+	"mina:mainnet": undefined
+}
+
+export const defaultCreationFee = {
+	"zeko:testnet": 10 ** 8,
+	"zeko:mainnet": undefined,
+	"mina:devnet": undefined,
+	"mina:mainnet": undefined
+}
 
 export const poolInstance = {
 	"mina:devnet": {
-		signer: "EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi",
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	},
 	"mina:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
 	"zeko:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
-	"zeko:testnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" }
+	"zeko:testnet": {
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
+		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+	}
 } as const

@@ -6,7 +6,8 @@
 	"main": "src/index.ts",
 	"workers_dev": true,
 	"preview_urls": true,
-	"route": "cdn.luminadex.com",
+	"upload_source_maps": true,
+	"routes": [{ "pattern": "cdn.luminadex.com", "custom_domain": true }],
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
@@ -38,8 +39,8 @@
 	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 	// Schedule cron triggers:
 	"triggers": {
-		// At midnight everyday
-		"crons": ["0 0 * * *"]
+		// Every 30 minutes
+		"crons": ["*/30 * * * *"]
 	},
 	"unsafe": {
 		"bindings": [

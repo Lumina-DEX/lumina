@@ -113,22 +113,44 @@ interface CanDo {
 
 ## Data Fetching Functions
 
-### `fetchPoolTokenList`
+### `fetchTokenList`
 
 Fetches token list from the Lumina CDN for a given network.
 
 ```ts
-import { fetchPoolTokenList } from "@lumina-dex/sdk"
+import { fetchTokenList } from "@lumina-dex/sdk"
 
 // Fetch tokens for a specific network
-const result = await fetchPoolTokenList("mina:devnet")
-
-// Access token data
-const tokens = result.tokens
-
+const tokens = await fetchTokenList("mina:devnet")
 console.log(`Found ${tokens.length} tokens:`)
 tokens.forEach(token => {
 	console.log(`${token.symbol}: ${token.address}`)
+})
+```
+
+### `fetchPoolList`
+
+Fetches pool list from the Lumina CDN for a given network.
+
+```ts
+import { fetchPoolList } from "@lumina-dex/sdk"
+// Fetch pools for a specific network
+const pools = await fetchPoolList("mina:devnet")
+console.log(`Found ${pools.length} pools:`)
+pools.forEach(pool => {
+	console.log(`${pool.name}: ${pool.address}`)
+})
+```
+
+### `fetchAllFromPoolFactory`
+
+Fetches all tokens and pools from pool factory events on the blockchain.
+
+```ts
+import { fetchAllFromPoolFactory } from "@lumina-dex/sdk"
+// Fetch tokens and pools for a specific network
+const { tokens, pools } = await fetchAllFromPoolFactory({
+	network: "mina:devnet"
 })
 ```
 
@@ -143,15 +165,20 @@ import { fetchAllTokensFromPoolFactory } from "@lumina-dex/sdk"
 const tokensResult = await fetchAllTokensFromPoolFactory({
 	network: "mina:devnet"
 })
+```
 
-// Filter successful results and process tokens
-const tokens = tokensResult
-	.filter(result => result.status === "fulfilled")
-	.map(result => result.value)
+### `fetchAllPoolsFromPoolFactory`
 
-console.log(`Found ${tokens.length} tokens on-chain`)
+Fetches all pools from pool factory events on the blockchain.
+
+```ts
+import { fetchAllPoolsFromPoolFactory } from "@lumina-dex/sdk"
+// Fetch pools for a specific network
+const poolsResult = await fetchAllPoolsFromPoolFactory({
+	network: "mina:devnet"
+})
 ```
 
 ::: warning
-The direct blockchain fetching methods (`internal_*`) are slower and should primarily be used for development or server-side operations. For client applications, prefer the CDN-based `fetchPoolTokenList` function.
+The direct blockchain fetching methods are slower and should primarily be used for development or server-side operations. For client applications, prefer the CDN-based `fetchTokenList` and `fetchPoolList` function.
 :::

@@ -17,7 +17,7 @@ import {
   VerificationKey
 } from "o1js"
 
-import { UpdateVerificationKeyEvent } from "../indexpool"
+import { UpdateVerificationKeyEvent } from "../indexfactory"
 
 import { UpdateInitEvent } from "./Farm"
 

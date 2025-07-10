@@ -2,9 +2,8 @@
 import {
   canDoDexAction,
   dexMachine,
-  fetchPoolTokenList,
-  type Networks,
-  type TokenDbToken,
+  fetchTokenList,
+  type LuminaToken,
   walletMachine
 } from "@lumina-dex/sdk"
 import { useActor } from "@lumina-dex/sdk/vue"
@@ -17,6 +16,7 @@ const Wallet = useActor(walletMachine)
 const Dex = useActor(dexMachine, {
   input: {
     wallet: Wallet.actorRef,
+    features: ["Swap"],
     frontendFee: {
       destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
       amount: 1
@@ -31,18 +31,23 @@ const dexError = computed(() => ({
   contractError: Dex.snapshot.value.context.contract.error
 }))
 const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
+const contractStatus = computed(() => ({
+  toLoad: Dex.snapshot.value.context.contract.toLoad,
+  currentlyLoading: Dex.snapshot.value.context.contract.currentlyLoading,
+  loaded: Dex.snapshot.value.context.contract.loaded
+}))
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:devnet"]
 )
-const tokens = ref<TokenDbToken[]>([])
+const tokens = ref<LuminaToken[]>([])
 
 // Form states for each operation
 
 const swapSettings = computed(() => Dex.snapshot.value.context.dex.swap)
 const swapForm = reactive({
-  pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
+  pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
   fromAddress: "MINA",
-  toAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+  toAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
   fromAmount: "1",
   slippagePercent: 0.5
 })
@@ -51,8 +56,8 @@ const addLiquiditySettings = computed(() =>
   Dex.snapshot.value.context.dex.addLiquidity
 )
 const addLiquidityForm = reactive({
-  pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
-  tokenAAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+  pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
+  tokenAAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
   tokenAAmount: "10",
   tokenBAddress: "MINA",
   tokenBAmount: "10",
@@ -63,11 +68,8 @@ const removedLiquiditySettings = computed(() =>
   Dex.snapshot.value.context.dex.removeLiquidity
 )
 const removeLiquidityForm = reactive({
-  pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
-  tokenAAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-  tokenAAmount: "5",
-  tokenBAddress: "MINA",
-  tokenBAmount: "5",
+  pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
+  lpAmount: "5",
   slippagePercent: 0.5
 })
 
@@ -141,14 +143,7 @@ const calculateRemoveLiquidity = () => {
     type: "ChangeRemoveLiquiditySettings",
     settings: {
       pool: removeLiquidityForm.pool,
-      tokenA: {
-        address: removeLiquidityForm.tokenAAddress,
-        amount: removeLiquidityForm.tokenAAmount
-      },
-      tokenB: {
-        address: removeLiquidityForm.tokenBAddress,
-        amount: removeLiquidityForm.tokenBAmount
-      },
+      lpAmount: removeLiquidityForm.lpAmount,
       slippagePercent: removeLiquidityForm.slippagePercent
     }
   })
@@ -192,16 +187,31 @@ const handleClaimFromFaucet = () => {
   Dex.send({ type: "ClaimTokensFromFaucet" })
 }
 
+const enableDeployPool = () => {
+  Dex.send({ type: "LoadFeatures", features: ["DeployPool"] })
+}
+
+const enableDeployToken = () => {
+  Dex.send({ type: "LoadFeatures", features: ["DeployToken"] })
+}
+
+const enableClaim = () => {
+  Dex.send({ type: "LoadFeatures", features: ["Claim"] })
+}
+
 const fetchTokenBalances = async () => {
-  const result = await fetchPoolTokenList("mina:devnet")
-  tokens.value = result.tokens
-  for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
-    Wallet.send({
-      type: "FetchBalance",
-      networks: [chainId as Networks],
-      token: { address, decimal: 10 ** decimals, tokenId, symbol }
-    })
-  }
+  const resultTokens = await fetchTokenList("mina:devnet")
+  tokens.value = resultTokens
+  Wallet.send({
+    type: "FetchBalance",
+    network: "mina:devnet",
+    tokens: resultTokens.map((token) => ({
+      address: token.address,
+      decimal: 10 ** token.decimals,
+      tokenId: token.tokenId,
+      symbol: token.symbol
+    }))
+  })
 }
 
 onMounted(() => {
@@ -222,6 +232,9 @@ const notEmpty = (obj: Reactive<unknown>) =>
 <template>
   <div>
     <h2>Lumina SDK Test v{{ sdkVersion }}</h2>
+    <hr>
+    {{ contractStatus }}
+    <hr>
     <div>
       <button @click="fetchTokenBalances">Fetch Balances</button>
       <div>Mina Balances: {{ minaBalances }}</div>
@@ -297,20 +310,8 @@ const notEmpty = (obj: Reactive<unknown>) =>
     <div>
       <input v-model="removeLiquidityForm.pool" placeholder="Pool Address">
       <input
-        v-model="removeLiquidityForm.tokenAAddress"
-        placeholder="Token A Address"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenAAmount"
-        placeholder="Token A Amount"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenBAddress"
-        placeholder="Token B Address"
-      >
-      <input
-        v-model="removeLiquidityForm.tokenBAmount"
-        placeholder="Token B Amount"
+        v-model="removeLiquidityForm.lpAmount"
+        placeholder="LP Amount"
       >
       <input
         v-model="removeLiquidityForm.slippagePercent"
@@ -335,6 +336,12 @@ const notEmpty = (obj: Reactive<unknown>) =>
     </div>
 
     <h2>Deploy</h2>
+    <button :disabled="canDo.deployPool" @click="enableDeployPool">
+      Enable Deploy Pool
+    </button>
+    <button :disabled="canDo.deployToken" @click="enableDeployToken">
+      Enable Deploy Token
+    </button>
     <pre>{{ deployPoolSettings }}</pre>
     <pre>{{ deployTokenSettings }}</pre>
     <div>
@@ -372,6 +379,7 @@ const notEmpty = (obj: Reactive<unknown>) =>
     </div>
 
     <h2>Faucet</h2>
+    <button :disabled="canDo.claim" @click="enableClaim">Enable Claim</button>
     <pre>{{ claimSettings }}</pre>
     <div>
       <button :disabled="!canDo.claim" @click="handleClaimFromFaucet">

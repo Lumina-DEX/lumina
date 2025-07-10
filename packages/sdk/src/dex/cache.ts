@@ -1,6 +1,6 @@
 import { unzipSync } from "fflate"
 import { contractsVersion, luminaCdnOrigin } from "../constants"
-import { prefixedLogger } from "../helpers/logs"
+import { prefixedLogger } from "../helpers/debug"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>
@@ -42,7 +42,7 @@ export const fetchCachedContracts = async () => {
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
 				const response = await fetchWithRetry(3)(
-					`${luminaCdnOrigin}/${contractsVersion}/cache/${file}.txt`,
+					`${luminaCdnOrigin}/v${contractsVersion}/cache/${file}.txt`,
 					{ headers }
 				)
 				return {
@@ -65,7 +65,7 @@ type CacheData = {
  * @returns CacheList
  */
 export const fetchZippedContracts = async () => {
-	const response = await fetch(`${luminaCdnOrigin}/bundle.zip`)
+	const response = await fetch(`${luminaCdnOrigin}/v${contractsVersion}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 	const zipBuffer = await response.arrayBuffer()
 	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<

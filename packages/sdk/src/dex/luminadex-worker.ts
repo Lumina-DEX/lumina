@@ -4,7 +4,7 @@ import {
 	AccountUpdate,
 	Bool,
 	fetchAccount,
-	MerkleTree,
+	MerkleMap,
 	Mina,
 	Poseidon,
 	PrivateKey,
@@ -21,10 +21,10 @@ import {
 	type Pool,
 	type PoolFactory,
 	type PoolTokenHolder,
-	SignerMerkleWitness
+	SignatureRight
 } from "@lumina-dex/contracts"
-import { MINA_ADDRESS, type NetworkUri, urls } from "../constants"
-import { createMeasure, prefixedLogger } from "../helpers/logs"
+import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
+import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
 
@@ -46,6 +46,7 @@ type Nullable<T> = T | null
 type WorkerState = {
 	readonly contracts: Contracts
 	readonly transaction: Nullable<Transaction>
+	readonly network: Nullable<NetworkUri>
 }
 
 const las = new Map<string, string>()
@@ -68,14 +69,16 @@ const getLuminaAddress = async (
 // Initial state
 const initialState: WorkerState = {
 	contracts: {} as Contracts,
-	transaction: null
+	transaction: null,
+	network: null
 }
 
 const workerState = createStore({
 	context: initialState,
 	on: {
 		SetContracts: { contracts: (_, event: { contracts: Contracts }) => event.contracts },
-		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction }
+		SetTransaction: { transaction: (_, event: { transaction: Transaction }) => event.transaction },
+		SetNetwork: { network: (_, event: { network: NetworkUri }) => event.network }
 	}
 })
 
@@ -119,23 +122,31 @@ const loadContracts = async () => {
 	logger.success("Loaded contracts")
 }
 
-export interface CompileContract {
-	contract: ContractName
-}
-
-let cache: ReturnType<typeof readCache>
-const compileContract = async ({ contract }: CompileContract) => {
-	if (!cache) {
-		const cacheFiles = await fetchZippedContracts()
-		cache = readCache(cacheFiles)
-	}
-	const contracts = context().contracts
-	logger.start("Compiling contract", contract)
+let globalCache: ReturnType<typeof readCache>
+const compileContract = async (
+	{ contract, disableCache }: { contract: ContractName; disableCache: boolean }
+) => {
 	try {
-		await contracts[contract].compile({ cache })
-		logger.success("Compiled contract successfully", contract)
+		const contracts = context().contracts
+
+		if (disableCache) {
+			logger.start("Compiling contract without cache", contract)
+			logger.warn("Cache is disabled")
+			await contracts[contract].compile({})
+			logger.success("Compiled contract successfully without cache", contract)
+			return
+		}
+
+		if (!globalCache) {
+			logger.warn("No global cache found, fetching zipped contracts")
+			const cacheFiles = await fetchZippedContracts()
+			globalCache = readCache(cacheFiles)
+		}
+		logger.start("Compiling contract with cache", contract)
+		await contracts[contract].compile({ cache: globalCache })
+		logger.success("Compiled contract successfully with cache", contract)
 	} catch (error) {
-		logger.error("Contract compilation failed:", error)
+		logger.error(`Contract compilation failed for ${contract}`, error)
 		throw error
 	}
 }
@@ -158,6 +169,43 @@ const getZkTokenFromPool = async (pool: string) => {
 	return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
 }
 
+/**
+ * Use this method to pay the account creation fee for another account (or, multiple accounts using the optional second argument).
+ * (Based on native o1js method)
+ * Beware that you _don't_ need to specify the account that is created!
+ * Instead, the protocol will automatically identify that accounts need to be created,
+ * and require that the net balance change of the transaction covers the account creation fee.
+ *
+ * @param feePayer the address of the account that pays the fee
+ * @param numberOfAccounts the number of new accounts to fund (default: 1)
+ * @returns they {@link AccountUpdate} for the account which pays the fee
+ */
+const fundNewAccount = async (feePayer: PublicKey, numberOfAccounts = 1) => {
+	try {
+		const isZeko = workerState.getSnapshot().context.network?.includes("zeko")
+		const accountUpdate = AccountUpdate.createSigned(feePayer)
+		accountUpdate.label = "AccountUpdate.fundNewAccount()"
+		const fee = (isZeko
+			? UInt64.from(10 ** 8)
+			: Mina.activeInstance.getNetworkConstants().accountCreationFee).mul(numberOfAccounts)
+		accountUpdate.balance.subInPlace(fee)
+		return accountUpdate
+	} catch (error) {
+		logger.error("fund new account", error)
+		return AccountUpdate.fundNewAccount(feePayer, numberOfAccounts)
+	}
+}
+
+const getFee = () => {
+	try {
+		const network = workerState.getSnapshot().context.network
+		const fee = network ? defaultFee[network] : undefined
+		return fee
+	} catch (error) {
+		return undefined
+	}
+}
+
 export interface DeployPoolArgs {
 	tokenA: string
 	tokenB: string
@@ -174,19 +222,26 @@ const deployPoolInstance = async (
 	const poolKey = PrivateKey.random()
 	logger.debug({ poolKey })
 
-	const merkle = new MerkleTree(32)
+	const allRight = new SignatureRight(
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true)
+	)
+	const deployRight = SignatureRight.canDeployPool()
+
+	const merkle = getMerkle()
 	// TODO: temporary solution for testnet
 	const signerPk = PrivateKey.fromBase58(signer)
-	const user0Pk = PublicKey.fromBase58(user0)
-	const user1 = signerPk.toPublicKey()
-	logger.debug({ user0, user1 })
-	merkle.setLeaf(0n, Poseidon.hash(user0Pk.toFields()))
-	merkle.setLeaf(1n, Poseidon.hash(user1.toFields()))
+	const approvedSignerPublic = signerPk.toPublicKey()
+	logger.debug({ user0, approvedSignerPublic })
+
 	const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 	logger.debug({ signature })
-	const witness = merkle.getWitness(1n)
-	const circuitWitness = new SignerMerkleWitness(witness)
-	logger.debug({ witness, circuitWitness })
+	const witness = merkle.getWitness(Poseidon.hash(approvedSignerPublic.toFields()))
+	logger.debug({ witness })
 	const factoryKey = PublicKey.fromBase58(factory)
 	logger.debug({ factoryKey })
 	const contracts = context().contracts
@@ -196,16 +251,20 @@ const deployPoolInstance = async (
 
 	const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 	logger.debug({ isMinaTokenPool })
-	const transaction = await Mina.transaction(PublicKey.fromBase58(user), async () => {
-		AccountUpdate.fundNewAccount(PublicKey.fromBase58(user), 4)
+	const transaction = await Mina.transaction({
+		sender: PublicKey.fromBase58(user),
+		fee: getFee()
+	}, async () => {
+		fundNewAccount(PublicKey.fromBase58(user), 4)
 		if (isMinaTokenPool) {
 			const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 			await zkFactory.createPool(
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(token),
-				user1,
+				approvedSignerPublic,
 				signature,
-				circuitWitness
+				witness,
+				deployRight
 			)
 		}
 		if (!isMinaTokenPool) {
@@ -213,9 +272,10 @@ const deployPoolInstance = async (
 				poolKey.toPublicKey(),
 				PublicKey.fromBase58(tokenA),
 				PublicKey.fromBase58(tokenB),
-				user1,
+				approvedSignerPublic,
 				signature,
-				circuitWitness
+				witness,
+				deployRight
 			)
 		}
 	})
@@ -240,18 +300,21 @@ const deployToken = async ({ user, tokenKey, tokenAdminKey, symbol }: DeployToke
 	const zkToken = new contracts.FungibleToken(tokenPrivateKey.toPublicKey())
 	const zkTokenAdmin = new contracts.FungibleTokenAdmin(tokenAdminPrivateKey.toPublicKey())
 	logger.debug({ zkToken, zkTokenAdmin })
-	const transaction = await Mina.transaction(userPublicKey, async () => {
-		AccountUpdate.fundNewAccount(userPublicKey, 3)
-		await zkTokenAdmin.deploy({
-			adminPublicKey: userPublicKey
-		})
-		await zkToken.deploy({
-			symbol,
-			src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
-			allowUpdates: true
-		})
-		await zkToken.initialize(tokenAdminPrivateKey.toPublicKey(), UInt8.from(9), Bool(false))
-	})
+	const transaction = await Mina.transaction(
+		{ sender: userPublicKey, fee: getFee() },
+		async () => {
+			fundNewAccount(userPublicKey, 3)
+			await zkTokenAdmin.deploy({
+				adminPublicKey: userPublicKey
+			})
+			await zkToken.deploy({
+				symbol,
+				src: "https://github.com/MinaFoundation/mina-fungible-token/blob/main/FungibleToken.ts",
+				allowUpdates: true
+			})
+			await zkToken.initialize(tokenAdminPrivateKey.toPublicKey(), UInt8.from(9), Bool(false))
+		}
+	)
 
 	await transaction.prove()
 	transaction.sign([tokenPrivateKey, tokenAdminPrivateKey])
@@ -280,8 +343,8 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 		tokenId: zkToken.deriveTokenId()
 	})
 
-	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, acc.account ? 0 : 1)
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
+		fundNewAccount(userKey, acc.account ? 0 : 1)
 		await zkToken.mint(receiver, tokenAmount)
 	})
 
@@ -383,13 +446,13 @@ const swap = async (args: SwapArgs) => {
 		UInt64.from(Math.trunc(args.balanceOutMin))
 	] as const
 
-	const transaction = await Mina.transaction(userKey, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		if (args.to === MINA_ADDRESS) {
 			const zkPool = new contracts.Pool(poolKey)
 			logger.debug({ zkPool })
 			await zkPool.swapFromTokenToMina(...swapArgList)
 		} else {
-			AccountUpdate.fundNewAccount(userKey, total)
+			fundNewAccount(userKey, total)
 			const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
 			logger.debug({ zkPoolHolder })
 			await zkPoolHolder
@@ -427,8 +490,10 @@ const addLiquidity = async (args: AddLiquidity) => {
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
 		fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkPoolTokenId }),
 		fetchAccount({ publicKey: userKey }),
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
+		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	])
 	const acc = await fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	const newAccount = acc.account ? 0 : 1
@@ -474,8 +539,8 @@ const addLiquidity = async (args: AddLiquidity) => {
 		)
 	}
 
-	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, newAccount)
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
+		fundNewAccount(userKey, newAccount)
 		await createSupplyLiquidity({ tokenA: args.tokenA, tokenB: args.tokenB, supply })
 	})
 
@@ -551,7 +616,7 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 		)
 	}
 
-	const transaction = await Mina.transaction(userKey, async () => {
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
 		await createWithdrawLiquidity({ tokenA: args.tokenA, tokenB: args.tokenB, liquidity, supply })
 		await zkToken.approveAccountUpdate(zkHolder.self)
 	})
@@ -577,15 +642,12 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	const zkFaucet = new contracts.Faucet(publicKeyFaucet, zkToken.deriveTokenId())
 	logger.debug({ zkFaucet })
 
-	await Promise.all([
+	const [acc, accFau] = await Promise.all([
+		fetchAccount({ publicKey: userKey, tokenId: zkToken.deriveTokenId() }),
+		fetchAccount({ publicKey: userKey, tokenId: zkFaucet.deriveTokenId() }),
 		fetchAccount({ publicKey: zkFaucet.address }),
 		fetchAccount({ publicKey: zkFaucet.address, tokenId: faucet.tokenId }),
 		fetchAccount({ publicKey: userKey })
-	])
-
-	const [acc, accFau] = await Promise.all([
-		fetchAccount({ publicKey: userKey, tokenId: zkToken.deriveTokenId() }),
-		fetchAccount({ publicKey: userKey, tokenId: zkFaucet.deriveTokenId() })
 	])
 
 	const newAcc = acc.account?.balance ? 0 : 1
@@ -594,15 +656,63 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 
 	logger.debug({ newAcc, newFau, total })
 
-	const transaction = await Mina.transaction(userKey, async () => {
-		AccountUpdate.fundNewAccount(userKey, total)
+	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
+		fundNewAccount(userKey, total)
 		await zkFaucet.claim()
 		await zkToken.approveAccountUpdate(zkFaucet.self)
 	})
 	return await proveTransaction(transaction)
 }
+export function getMerkle(): MerkleMap {
+	const ownerPublic = PublicKey.fromBase58(
+		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
+	)
+	const approvedSignerPublic = PublicKey.fromBase58(
+		"B62qjpbiYvHwbU5ARVbE5neMcuxfxg2zt8wHjkWVKHEiD1micG92CtJ"
+	)
+	const signer1Public = PublicKey.fromBase58(
+		"B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt"
+	)
+	const signer2Public = PublicKey.fromBase58(
+		"B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy"
+	)
+	const signer3Public = PublicKey.fromBase58(
+		"B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6"
+	)
+	const externalSigner1 = PublicKey.fromBase58(
+		"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
+	)
+	const externalSigner2 = PublicKey.fromBase58(
+		"B62qpLxXFg4rmhce762uiJjNRnp5Bzc9PnCEAcraeaMkVWkPi7kgsWV"
+	)
+	const externalSigner3 = PublicKey.fromBase58(
+		"B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ"
+	)
+
+	const allRight = new SignatureRight(
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true),
+		Bool(true)
+	)
+	const deployRight = SignatureRight.canDeployPool()
+	const merkle = new MerkleMap()
+	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
+	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+
+	return merkle
+}
 
 const minaInstance = (networkUrl: NetworkUri) => {
+	workerState.send({ type: "SetNetwork", network: networkUrl })
 	const url = urls[networkUrl]
 	Mina.setActiveInstance(Mina.Network(url))
 	logger.success("Mina instance set", url)

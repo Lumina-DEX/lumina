@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { LuminaContext } from "../main"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { fetchPoolTokenList, type Networks, type TokenDbToken } from "@lumina-dex/sdk"
+import { fetchTokenList, type LuminaToken } from "@lumina-dex/sdk"
 import { version } from "../../../sdk/package.json" with { type: "json" }
 
 export const Route = createFileRoute("/")({
@@ -17,30 +17,32 @@ function HomeComponent() {
 
 	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:devnet"])
 
-	const [tokens, setTokens] = useState<TokenDbToken[]>([])
+	const [tokens, setTokens] = useState<LuminaToken[]>([])
 
 	const fetchTokenBalances = useCallback(async () => {
-		const result = await fetchPoolTokenList("mina:devnet")
-		console.log(result)
-		setTokens(result.tokens)
-		for (const { address, symbol, tokenId, decimals, chainId } of tokens) {
-			Wallet.send({
-				type: "FetchBalance",
-				networks: [chainId as Networks],
-				token: { address, decimal: 10 ** decimals, tokenId, symbol }
-			})
-		}
-	}, [Wallet, tokens])
+		const tokens = await fetchTokenList("mina:devnet")
+		setTokens(tokens)
+		Wallet.send({
+			type: "FetchBalance",
+			network: "mina:devnet",
+			tokens: tokens.map((token) => ({
+				address: token.address,
+				decimal: 10 ** token.decimals,
+				tokenId: token.tokenId,
+				symbol: token.symbol
+			}))
+		})
+	}, [Wallet])
 
 	const swapSettings = useCallback(() => {
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
-				pool: "B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH",
+				pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
 				slippagePercent: 1,
 				to: "MINA",
 				from: {
-					address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+					address: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
 					amount: "1",
 					decimal: 10 ** 9
 				}
@@ -49,6 +51,7 @@ function HomeComponent() {
 	}, [Dex])
 
 	const [loaded, setLoaded] = useState(false)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		Wallet.send({ type: "Connect" })
 		const end = Wallet.subscribe(() => {
@@ -59,7 +62,7 @@ function HomeComponent() {
 				end.unsubscribe()
 			}
 		})
-	}, [Wallet, loaded, fetchTokenBalances])
+	}, [])
 
 	return (
 		<div>

@@ -89,22 +89,25 @@ Here's how to fetch token data and update balances in a Vue component:
 ```vue
 <script setup lang="ts">
 import { useLuminaDex } from "../composables/useLuminaDex"
-import { fetchPoolTokenList, type Networks, type TokenDbToken } from "@lumina-dex/sdk"
+import { fetchTokenList, type Networks, type LuminaToken } from "@lumina-dex/sdk"
 import { onMounted, ref, watch } from "vue"
 
 const { Wallet } = useLuminaDex()
-const tokens = ref<TokenDbToken[]>([])
+const tokens = ref<LuminaToken[]>([])
 
 const fetchTokenBalances = async () => {
-  const result = await fetchPoolTokenList("mina:devnet")
-  tokens.value = result.tokens
-  for (const { address, symbol, tokenId, decimals, chainId } of tokens.value) {
-    Wallet.send({
-      type: "FetchBalance",
-      networks: [chainId as Networks],
-      token: { address, decimal: 10 ** decimals, tokenId, symbol }
-    })
-  }
+  const resultTokens = await fetchTokenList("mina:devnet")
+  tokens.value = resultTokens
+	Wallet.send({
+			type: "FetchBalance",
+			network: "mina:devnet",
+			tokens: resultTokens.map((token) => ({
+			  address: token.address,
+			  decimal: 10 ** token.decimals,
+			  tokenId: token.tokenId,
+			  symbol: token.symbol
+			}))
+	})
 }
 
 // Watch for wallet ready state

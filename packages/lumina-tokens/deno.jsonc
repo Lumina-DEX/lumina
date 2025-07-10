@@ -1,16 +1,19 @@
 {
 	"tasks": {
 		"dev": "deno run --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test --watch src/main.ts",
-		"deploy": "deployctl deploy --project=lumina-tokens --env-file=.env --import-map=import_map.json",
-		"deploy:prod": "deployctl deploy --project=lumina-tokens --env-file=.env --import-map=import_map.json && deployctl deployments redeploy --prod"
+		"deploy": "deployctl deploy --project=lumina-tokens --env-file=.env",
+		"deploy:prod": "deployctl deploy --project=lumina-tokens --env-file=.env && deployctl deployments redeploy --last --prod"
 	},
-	"nodeModulesDir": "manual",
+	// "nodeModulesDir": "manual",
+	"imports": {
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.16.0",
+		"graphql-request": "npm:graphql-request@7.1.2"
+	},
 	"fmt": {
 		"semiColons": false
 	},
 	"deploy": {
 		"project": "4a0bfe07-dea4-448a-9f9f-f11622601d7a",
-		"include": ["node_modules", "src", "deno.json", "import_map.json"],
 		"entrypoint": "src/main.ts"
 	}
 }

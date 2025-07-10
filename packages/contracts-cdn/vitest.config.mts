@@ -10,7 +10,7 @@ export default defineWorkersConfig({
 					// This is necessary to use scheduled with vitest
 					compatibilityFlags: ["service_binding_extra_handlers"]
 				},
-				wrangler: { configPath: "./wrangler.toml" }
+				wrangler: { configPath: "./wrangler.jsonc" }
 			}
 		}
 	}

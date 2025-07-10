@@ -73,26 +73,37 @@ Wallet.send({
 Fetches token balances for the current account.
 
 ```ts
-// Fetch MINA balance on specific networks
+// Fetch MINA balance
 Wallet.send({
 	type: "FetchBalance",
-	networks: ["mina:devnet"]
+	network: "mina:devnet"
 })
 
 // Fetch custom token balance
 Wallet.send({
 	type: "FetchBalance",
-	networks: ["mina:devnet"],
-	token: {
+	network: "mina:devnet",
+	token: [{
 		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9,
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
 		symbol: "USDC"
-	}
+	}]
+})
+
+// Fetch Lumina LP token balance
+Wallet.send({
+	type: "FetchBalance",
+	network: "mina:devnet",
+	token: [{
+		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+		decimal: 1e9,
+		symbol: "LLP-USDC_MINA"
+	}]
 })
 ```
 
-### Internal Events
+## Internal Events
 
 These events are handled internally and shouldn't be sent manually:
 
@@ -116,10 +127,10 @@ type WalletContext = {
 }
 
 type Balance = {
-	"mina:mainnet": { [symbol: string]: number }
-	"mina:devnet": { [symbol: string]: number }
-	"zeko:testnet": { [symbol: string]: number }
-	"zeko:mainnet": { [symbol: string]: number }
+	"mina:mainnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"mina:devnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"zeko:testnet": { [tokenId: string]: { balance: number; symbol: string } }
+	"zeko:mainnet": { [tokenId: string]: { balance: number; symbol: string } }
 }
 ```
 

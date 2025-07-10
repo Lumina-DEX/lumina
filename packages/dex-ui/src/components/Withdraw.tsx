@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey, TokenId } from "o1js"
@@ -8,9 +8,12 @@ import CurrencyFormat from "react-currency-format"
 import TokenMenu from "./TokenMenu"
 import { poolToka } from "@/utils/addresses"
 import Balance from "./Balance"
+import ButtonStatus from "./ButtonStatus"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Withdraw = ({ accountState }) => {
+const Withdraw = ({}) => {
 	const [mina, setMina] = useState<any>()
 
 	const [loading, setLoading] = useState(false)
@@ -22,7 +25,6 @@ const Withdraw = ({ accountState }) => {
 		}
 	}, [])
 
-	const zkState = accountState
 	const [toDai, setToDai] = useState(true)
 	const [pool, setPool] = useState(poolToka)
 	const [fromAmount, setFromAmount] = useState("")
@@ -38,67 +40,63 @@ const Withdraw = ({ accountState }) => {
 		liquidity: 0
 	})
 
+	const { Wallet, Dex } = useContext(LuminaContext)
+	const dexState = useSelector(Dex, (state) => state.value)
+	const walletState = useSelector(Wallet, (state) => state.value)
+
 	useEffect(() => {
 		const delayDebounceFn = setTimeout(() => {
 			if (parseFloat(fromAmount)) {
-				getLiquidityAmount(fromAmount, slippagePercent).then((x) => setData(x))
+				getLiquidityAmount(fromAmount, slippagePercent)
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
 	}, [fromAmount, slippagePercent])
 
+	useEffect(() => {
+		const subscription = Dex.subscribe((snapshot) => {
+			// simple logging
+			console.log("Dex snapshot", snapshot)
+			let result = snapshot.context.dex.removeLiquidity.calculated
+
+			console.log("liquidity calculated", result)
+			if (result) {
+				setData(result)
+
+				const amountA = result.tokenA.amountOut / 10 ** 9
+				const amountB = result.tokenB.amountOut / 10 ** 9
+				const liquidity = result.liquidity / 10 ** 9
+				setToToken(amountB)
+				setToMina(amountA)
+			}
+			//setToAmount(valTo.toString())
+		})
+		return subscription.unsubscribe
+	}, [Dex])
+
 	const getLiquidityAmount = async (fromAmt, slippagePcent) => {
 		console.log("getLiquidityAmount", fromAmt)
-		const { getAmountOutFromLiquidity } = await import("../../../contracts/build/src/indexmina")
-		const reserves = await zkState?.zkappWorkerClient?.getReserves(pool)
-		console.log("reserve", reserves)
-		let calcul = {
-			amountAOut: 0,
-			amountBOut: 0,
-			balanceAMin: 0,
-			balanceBMin: 0,
-			supplyMax: 0,
-			liquidity: 0
+		const settings = {
+			type: "ChangeRemoveLiquiditySettings",
+			settings: {
+				// The pool address
+				pool: token.poolAddress,
+				tokenB: token.address,
+				lpAmount: fromAmount,
+				// Maximum allowed slippage in percentage
+				slippagePercent: slippagePercent
+			}
 		}
-		const slippage = slippagePcent
-		if (reserves?.amountMina && reserves?.amountToken) {
-			const amountMina = parseInt(reserves?.amountMina)
-			const amountToken = parseInt(reserves?.amountToken)
-			const liquidity = parseInt(reserves?.liquidity)
-			let amt = parseFloat(fromAmt) * 10 ** 9
-			console.log("amtIn", amt)
-			calcul = getAmountOutFromLiquidity(amt, amountMina, amountToken, liquidity, slippage)
-			console.log("calcul from dai", calcul)
-			let amtMina = calcul.amountAOut / 10 ** 9
-			let amtToken = calcul.amountBOut / 10 ** 9
-			setToMina(amtMina)
-			setToToken(amtToken)
-		}
-		return calcul
+
+		console.log("ChangeRemoveLiquiditySettings", settings)
+
+		Dex.send(settings)
 	}
 
 	const withdrawLiquidity = async () => {
 		try {
 			setLoading(true)
-			console.log("infos", { fromAmount })
-
-			if (mina) {
-				const user: string = (await mina.requestAccounts())[0]
-
-				await zkState.zkappWorkerClient?.withdrawLiquidity(
-					pool,
-					user,
-					data.liquidity,
-					data.amountAOut,
-					data.amountBOut,
-					data.balanceAMin,
-					data.balanceBMin,
-					data.supplyMax
-				)
-
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				await mina.sendTransaction({ transaction: json })
-			}
+			Dex.send({ type: "RemoveLiquidity" })
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
@@ -144,15 +142,9 @@ const Withdraw = ({ accountState }) => {
 						<span>Token out : {toFixedIfNecessary(toToken, 2)}</span>
 					</div>
 					<div>
-						Your liquidity balance : <Balance tokenAddress={token.poolAddress}></Balance>
+						Your liquidity balance : <Balance token={token} isPool={false}></Balance>
 					</div>
-					<button
-						onClick={withdrawLiquidity}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Withdraw Liquidity
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={withdrawLiquidity} text={"Withdraw Liquidity"}></ButtonStatus>
 				</div>
 			</div>
 		</>

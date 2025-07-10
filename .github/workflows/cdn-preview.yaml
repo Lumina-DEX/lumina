@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/workflows/actions/install
-
+      
       - name: Build contracts
         working-directory: packages/contracts
         run: bun run build
@@ -33,10 +33,14 @@ jobs:
       - name: Build sdk
         working-directory: packages/sdk
         run: bun run build
-    
-      - name: Build cache
+
+      - name: Test CDN
         working-directory: packages/contracts-cdn
-        run: bun run cache:create
+        run: cp .dev.vars.example .dev.vars && bun run test
+
+      - name: Build cache
+        working-directory: packages/contracts-cdn/scripts
+        run: sh compile-and-create.sh
 
       - name: Deploy to Cloudflare Workers Static Assets
         id: cloudflare

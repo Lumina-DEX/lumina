@@ -1,43 +1,67 @@
-import type { Networks, TokenDbList } from "@lumina-dex/sdk"
-import { minaDevnet, minaMainnet, zekoMainnet, zekoTestnet } from "../drizzle/schema"
+import type { Networks } from "@lumina-dex/sdk"
+import * as v from "valibot"
+import { pools, tokens } from "../drizzle/schema"
 
-export const getTable = (network: Networks) => {
-	const table = {
-		"mina:mainnet": minaMainnet,
-		"mina:devnet": minaDevnet,
-		"zeko:testnet": zekoTestnet,
-		"zeko:mainnet": zekoMainnet
-	}[network]
-	if (!table) throw new Error(`Table not found for network: ${network}`)
-	return table
-}
+export { tokens, pools }
 
-export type Token = typeof minaMainnet.$inferInsert
+export type Token = typeof tokens.$inferInsert
+export type Pool = typeof pools.$inferInsert
+
+export type PoolWithTokens = Pool & { tokens: Token[] }
 
 export interface Network {
 	network: Networks
 }
 export interface FindTokenBy extends Network {
-	by: "symbol" | "address" | "poolAddress"
+	by: "symbol" | "address"
 	value: string
 }
 
-export interface TokenExists extends Network {
-	address: string
-	poolAddress: string
+export interface FindPoolBy extends Network {
+	by: "address" | "tokenAddress"
+	value: string
 }
 
-const version = { major: 1, minor: 0, patch: 0 }
-const keywords = ["uniswap", "default", "list"]
+export interface Exists extends Network {
+	address: string
+}
 
-export const createList =
-	(network: Networks) =>
-	(data: Token[]): TokenDbList => {
-		return {
-			name: "Mina alpha",
-			timestamp: new Date().toJSON(),
-			version,
-			keywords,
-			tokens: data.map((t) => ({ ...t, chainId: network }))
+export const formatPoolWithTokensResults = (data: { Pool: Pool; Token: Token | null }[]) => {
+	const formatted = data.reduce((acc, { Pool, Token }) => {
+		const pool = acc.get(Pool?.address)
+		if (pool && Token) {
+			pool.tokens.push(Token)
+			return acc
 		}
-	}
+
+		acc.set(Pool?.address, {
+			...Pool,
+			tokens: Token ? [Token] : []
+		})
+		return acc
+	}, new Map<string, PoolWithTokens>())
+	return formatted.size > 0 ? Array.from(formatted.values()) : []
+}
+
+const chainId = v.union([
+	v.literal("mina:devnet"),
+	v.literal("mina:mainnet"),
+	v.literal("zeko:testnet"),
+	v.literal("zeko:mainnet")
+])
+
+export const TokenSchema = v.object({
+	symbol: v.string(),
+	address: v.string(),
+	tokenId: v.string(),
+	decimals: v.number(),
+	chainId: chainId
+})
+
+export const PoolSchema = v.object({
+	address: v.string(),
+	token0Address: v.string(),
+	token1Address: v.string(),
+	name: v.string(),
+	chainId: chainId
+})

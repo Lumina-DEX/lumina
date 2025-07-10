@@ -12,11 +12,13 @@ import {
 	// Actor creation
 	createWallet,
 	dexMachine,
-	fetchPoolTokenList,
+	fetchPoolList,
+	fetchTokenList,
 	// Types
 	type LuminaContext,
+	type LuminaPool,
+	type LuminaToken,
 	type Networks,
-	type TokenDbToken,
 	// State machines
 	walletMachine
 } from "@lumina-dex/sdk"
@@ -55,8 +57,11 @@ Functions to create and start state machine actors:
 Utility functions for common operations:
 
 - `canDoDexAction(context)`: Checks what operations are currently possible
-- `fetchPoolTokenList(network)`: Fetches token lists from the CDN
+- `fetchTokenList(network)`: Fetches token lists from the CDN
+- `fetchPoolList(network)`: Fetches pool lists from the CDN
+- `fetchAllFromPoolFactory({ network })`: Fetches all tokens and pools from the blockchain
 - `fetchAllTokensFromPoolFactory({ network })`: Fetches tokens from blockchain
+- `fetchAllPoolsFromPoolFactory({ network })`: Fetches pools from blockchain
 - `minaNetwork(network)`: Creates a Mina network instance
 
 ### Framework Integration
@@ -88,14 +93,22 @@ type DexActor = ReturnType<typeof createActor<DexMachine>>
 // Context type for passing actors to components
 type LuminaContext = { Wallet: WalletActor; Dex: DexActor }
 
-// Token data types
-interface TokenDbToken {
+// Token data type
+interface LuminaToken {
 	address: string
 	poolAddress: string
 	chainId: string
 	tokenId: string
 	symbol: string
 	decimals: number
+}
+
+// Pool data type
+export interface LuminaPool {
+	address: string
+	tokens: [LuminaToken, LuminaToken]
+	chainId: string
+	name: string
 }
 ```
 

@@ -103,35 +103,36 @@ You can fetch token data and update balances as follows:
 
 ```tsx
 import {
-	fetchPoolTokenList,
-	type Networks,
-	type TokenDbToken
+	fetchTokenList,
+	type LuminaToken,
+	type Networks
 } from "@lumina-dex/sdk"
 import { useContext, useEffect, useState } from "react"
 import { LuminaContext } from "../providers/LuminaProvider"
 
 export function TokenList() {
 	const { Wallet } = useContext(LuminaContext)
-	const [tokens, setTokens] = useState<TokenDbToken[]>([])
+	const [tokens, setTokens] = useState<LuminaToken[]>([])
 	const [loading, setLoading] = useState(false)
 
 	const fetchTokens = async () => {
 		setLoading(true)
 		try {
 			// Fetch token list from CDN
-			const result = await fetchPoolTokenList("mina:devnet")
-			setTokens(result.tokens)
+			const tokens = await fetchTokenList("mina:devnet")
+			setTokens(tokens)
 
 			// Update token balances in wallet
-			for (
-				const { address, symbol, tokenId, decimals, chainId } of result.tokens
-			) {
-				Wallet.send({
-					type: "FetchBalance",
-					networks: [chainId as Networks],
-					token: { address, decimal: 10 ** decimals, tokenId, symbol }
-				})
-			}
+			Wallet.send({
+				type: "FetchBalance",
+				network: "mina:devnet",
+				tokens: tokens.map((token) => ({
+					address: token.address,
+					decimal: 10 ** token.decimals,
+					tokenId: token.tokenId,
+					symbol: token.symbol
+				}))
+			})
 		} catch (error) {
 			console.error("Failed to fetch tokens:", error)
 		} finally {

@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/router"
 import { useSearchParams } from "next/navigation"
 import { PublicKey, TokenId } from "o1js"
@@ -8,25 +8,27 @@ import CurrencyFormat from "react-currency-format"
 import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
+import { useActor, useSelector } from "@lumina-dex/sdk/react"
+import { dexMachine, walletMachine } from "@lumina-dex/sdk"
+import ButtonStatus from "./ButtonStatus"
+import { mina } from "@/lib/wallet"
+import { LuminaContext } from "./Layout"
 
 // @ts-ignore
-const Liquidity = ({ accountState }) => {
-	const [mina, setMina] = useState<any>()
+const Liquidity = ({}) => {
 	const [loading, setLoading] = useState(false)
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [token, setToken] = useState({ address: "", poolAddress: "" })
+	const [token, setToken] = useState({ address: "", poolAddress: "", symbol: "", decimals: 9 })
 
-	useEffect(() => {
-		if (window && (window as any).mina) {
-			setMina((window as any).mina)
-		}
-	}, [])
+	const { Wallet, Dex } = useContext(LuminaContext)
+	const dexState = useSelector(Dex, (state) => state.value)
+	const walletState = useSelector(Wallet, (state) => state.value)
 
-	const zkState = accountState
 	const [pool, setPool] = useState(poolToka)
 	const [toDai, setToDai] = useState(true)
-	const [fromAmount, setFromAmount] = useState("")
+	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
+	const [updateAmount, setUpdateAmount] = useState("0")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
 	const [data, setData] = useState({
 		amountAIn: 0,
@@ -38,103 +40,72 @@ const Liquidity = ({ accountState }) => {
 	})
 
 	useEffect(() => {
-		const delayDebounceFn = setTimeout(() => {
-			if (parseFloat(fromAmount)) {
-				getLiquidityAmount(fromAmount, slippagePercent).then((x) => setData(x))
-			}
-		}, 500)
-		return () => clearTimeout(delayDebounceFn)
-	}, [fromAmount, toDai, toAmount, slippagePercent, pool])
+		const subscription = Dex.subscribe((snapshot) => {
+			// simple logging
+			console.log("Dex snapshot", snapshot)
+			let result = snapshot.context.dex.addLiquidity.calculated
 
-	const getLiquidityAmount = async (fromAmt, slippagePcent) => {
-		console.log("getLiquidityAmount", fromAmt)
-		const { getAmountLiquidityOut, getFirstAmountLiquidityOut } = await import(
-			"../../../contracts/build/src/indexmina"
-		)
-		const reserves = await zkState?.zkappWorkerClient?.getReserves(pool)
-		console.log("reserve", reserves)
-		let calcul = {
-			amountAIn: 0,
-			amountBIn: 0,
-			balanceAMax: 0,
-			balanceBMax: 0,
-			supplyMin: 0,
-			liquidity: 0
-		}
-		const slippage = slippagePcent
-		if (reserves?.amountMina && reserves?.amountToken) {
-			const amountMina = parseInt(reserves?.amountMina)
-			const amountToken = parseInt(reserves?.amountToken)
-			const liquidity = parseInt(reserves?.liquidity)
-			if (liquidity > 0) {
-				let amt = parseFloat(fromAmt) * 10 ** 9
-				console.log("amtIn", amt)
-				if (!toDai) {
-					calcul = getAmountLiquidityOut(amt, amountToken, amountMina, liquidity, slippage)
-					console.log("calcul from dai", calcul)
-					let amtOut = calcul.amountBIn / 10 ** 9
-					setToAmount(amtOut.toString())
-					let liq = calcul.liquidity / 10 ** 9
-					setLiquidityMinted(liq)
-				} else {
-					calcul = getAmountLiquidityOut(amt, amountMina, amountToken, liquidity, slippage)
-					console.log("calcul from mina", calcul)
-					let amtOut = calcul.amountBIn / 10 ** 9
-					setToAmount(amtOut.toString())
-					let liq = calcul.liquidity / 10 ** 9
-					setLiquidityMinted(liq)
-				}
-			} else {
-				let amtA = parseFloat(fromAmt) * 10 ** 9
-				let amtB = parseFloat(toAmount) * 10 ** 9
-				if (!toDai) {
-					calcul = getFirstAmountLiquidityOut(amtB, amtA)
-					console.log("calcul from dai", calcul)
-					let liq = calcul.liquidity / 10 ** 9
-					setLiquidityMinted(liq)
-				} else {
-					calcul = getFirstAmountLiquidityOut(amtA, amtB)
-					console.log("calcul from mina", calcul)
-					let liq = calcul.liquidity / 10 ** 9
-					setLiquidityMinted(liq)
-				}
+			console.log("liquidity calculated", result)
+			if (result) {
+				setData(result)
+
+				const from = result.tokenA.amountIn / 10 ** 9
+				const to = result.tokenB.amountIn / 10 ** 9
+				const liquidity = result.liquidity / 10 ** 9
+				setFromAmount(from.toFixed(2).toString())
+				setToAmount(to.toFixed(2).toString())
+				setLiquidityMinted(liquidity)
+			}
+			//setToAmount(valTo.toString())
+		})
+		return subscription.unsubscribe
+	}, [Dex])
+	const getLiquidityAmount = async () => {
+		console.log("getLiquidityAmount")
+
+		const settings = {
+			type: "ChangeAddLiquiditySettings",
+			settings: {
+				// The pool address
+				pool: token.poolAddress,
+
+				// Token A settings
+				tokenA: {
+					address: "MINA",
+					amount: fromAmount
+				},
+
+				// Token B settings
+				tokenB: {
+					address: token.address, // Native MINA token
+					amount: toAmount
+				},
+
+				// Maximum allowed slippage in percentage
+				slippagePercent: slippagePercent
 			}
 		}
-		return calcul
+
+		console.log("ChangeAddLiquiditySettings", settings)
+
+		Dex.send(settings)
 	}
 
 	const addLiquidity = async () => {
 		try {
 			setLoading(true)
-			console.log("infos", { fromAmount, toAmount })
+			Dex.send({ type: "AddLiquidity" })
+		} catch (error) {
+			console.log("swap error", error)
+		} finally {
+			setLoading(false)
+		}
+	}
 
-			if (mina) {
-				console.log("zkState", zkState)
-				const user: string = (await mina.requestAccounts())[0]
-				if (!toDai) {
-					await zkState.zkappWorkerClient?.addLiquidity(
-						pool,
-						user,
-						data.amountBIn,
-						data.amountAIn,
-						data.balanceBMax,
-						data.balanceAMax,
-						data.supplyMin
-					)
-				} else {
-					await zkState.zkappWorkerClient?.addLiquidity(
-						pool,
-						user,
-						data.amountAIn,
-						data.amountBIn,
-						data.balanceAMax,
-						data.balanceBMax,
-						data.supplyMin
-					)
-				}
-				const json = await zkState.zkappWorkerClient?.getTransactionJSON()
-				await mina.sendTransaction({ transaction: json })
-			}
+	const calculateLiquidity = async () => {
+		try {
+			setLoading(true)
+			await getLiquidityAmount()
 		} catch (error) {
 			console.log("swap error", error)
 		} finally {
@@ -144,6 +115,16 @@ const Liquidity = ({ accountState }) => {
 
 	function toFixedIfNecessary(value, dp) {
 		return +parseFloat(value).toFixed(dp)
+	}
+
+	const setAmountA = (value: string) => {
+		setFromAmount(value)
+		//setUpdateAmount(value);
+	}
+
+	const setAmountB = (value: string) => {
+		setToAmount(value)
+		//setUpdateAmount(value);
 	}
 
 	return (
@@ -166,7 +147,7 @@ const Liquidity = ({ accountState }) => {
 							decimalScale={2}
 							placeholder="0.0"
 							value={fromAmount}
-							onValueChange={({ value }) => setFromAmount(value)}
+							onValueChange={({ value }) => setAmountA(value)}
 						/>
 						{toDai ? (
 							<span className="w-24 text-center">MINA</span>
@@ -189,7 +170,7 @@ const Liquidity = ({ accountState }) => {
 							decimalScale={2}
 							placeholder="0.0"
 							value={toAmount}
-							onValueChange={({ value }) => setToAmount(value)}
+							onValueChange={({ value }) => setAmountB(value)}
 						/>
 						{!toDai ? (
 							<span className="w-24 text-center">MINA</span>
@@ -198,21 +179,16 @@ const Liquidity = ({ accountState }) => {
 						)}
 					</div>
 					<div>
-						Your token balance : <Balance tokenAddress={token.address}></Balance>
+						Your token balance : <Balance token={token} isPool={false}></Balance>
 					</div>
 					<div>
-						Your liquidity balance : <Balance tokenAddress={token.poolAddress}></Balance>
+						Your liquidity balance : <Balance token={token} isPool={true}></Balance>
 					</div>
 					<div>
 						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
 					</div>
-					<button
-						onClick={addLiquidity}
-						className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
-					>
-						Add Liquidity
-					</button>
-					{loading && <p>Creating transaction ...</p>}
+					<ButtonStatus onClick={calculateLiquidity} text={"Calculate Liquidity"}></ButtonStatus>
+					<ButtonStatus onClick={addLiquidity} text={"Add Liquidity"}></ButtonStatus>
 				</div>
 			</div>
 		</>
