@@ -1,7 +1,8 @@
+import { dirname, join } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { Queue, QueueEvents, Worker } from "bullmq"
 import IORedis from "ioredis"
-import { dirname, join } from "path"
-import { fileURLToPath, pathToFileURL } from "url"
+import type { CreatePoolInputType } from "./graphql"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -12,13 +13,25 @@ const connection = new IORedis({ maxRetriesPerRequest: null })
 
 const concurrency = 3
 
-const createPool = new Worker("createPool", processorUrl, {
+const worker = new Worker("createPool", processorUrl, {
 	connection,
 	concurrency
 })
 
-const createPoolQueue = new Queue("createPool", { connection })
-const createPoolQueueEvents = new QueueEvents("createPool", { connection })
+export const createPoolQueue = new Queue<CreatePoolInputType, { something: "" }>("createPool", {
+	connection
+})
+export const createPoolQueueEvents = new QueueEvents("createPool", {
+	connection
+})
+
+export const getQueues = () => {
+	return {
+		createPoolQueue,
+		createPoolQueueEvents,
+		worker
+	}
+}
 
 export async function addJobs(data: any) {
 	console.log("addjobs", data)
@@ -26,6 +39,7 @@ export async function addJobs(data: any) {
 	if (data.onlyCompile) {
 		return "only compile"
 	}
+	job.id
 	const res = await job.waitUntilFinished(createPoolQueueEvents)
 
 	return res

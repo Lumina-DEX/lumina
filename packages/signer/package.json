@@ -19,14 +19,18 @@
 		"@libsql/client": "^0.15.9",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
+		"@pothos/core": "^4.7.1",
 		"arktype": "^2.0.4",
 		"bullmq": "^5.53.2",
 		"cors": "^2.8.5",
 		"dotenv": "^16.5.0",
 		"drizzle-orm": "beta",
 		"express": "^5.1.0",
+		"graphql-scalars": "^1.24.2",
+		"graphql-yoga": "^5.14.0",
 		"ioredis": "^5.6.1",
 		"o1js": "2.4.0",
+		"ohash": "^2.0.11",
 		"vitest": "^3.2.4"
 	},
 	"devDependencies": {

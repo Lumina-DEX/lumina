@@ -6,7 +6,7 @@ import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { relations } from "../drizzle/relations"
 import { pool, signerMerkle, poolKey as tPoolKey } from "../drizzle/schema"
-import { encryptedKeyToField } from "../src/workers/sandbox"
+import { encryptedKeyToField } from "../src/helpers"
 
 const Schema = v.object({
 	DB_FILE_NAME: v.string(),
@@ -98,6 +98,8 @@ describe("Signature", () => {
 					return alice
 				case bobPub:
 					return bob
+				default:
+					throw new Error(`Unknown public key: ${pubKey}`)
 			}
 		}
 	})
@@ -136,6 +138,7 @@ describe("Signature", () => {
 			const poolInsert = await db
 				.insert(pool)
 				.values({
+					jobId: "test-job-id",
 					publicKey: testPoolPub,
 					tokenA,
 					tokenB,

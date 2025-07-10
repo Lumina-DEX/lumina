@@ -44,9 +44,17 @@ export const pool = sqliteTable(
 		tokenB: text("token_b").notNull(),
 		publicKey: text("public_key").notNull(),
 		user: text("user").notNull(),
-		deployed: integer("deployed", { mode: "boolean" }).notNull().default(false)
+		jobId: text("job_id").notNull(),
+		status: text("status", {
+			enum: ["pending", "confirmed", "deployed"] as const
+		})
+			.notNull()
+			.default("pending")
 	},
-	(table) => [uniqueIndex("Pool_public_key_unique").on(table.publicKey)]
+	(table) => [
+		uniqueIndex("Pool_job_id_unique").on(table.jobId),
+		uniqueIndex("Pool_public_key_unique").on(table.publicKey)
+	]
 )
 
 // Table: PoolKey

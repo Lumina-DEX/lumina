@@ -12,9 +12,11 @@ This can't run on cloudflare workers because of o1js limitations:
 
 ## Installation
 
-This app use drizle as ORM and infisical as vault
+This app use drizzle as ORM and infisical as vault
 
-```
+> **Note:** Drizzle v2 relations are used : https://rqbv2.drizzle-orm-fe.pages.dev/docs/relations-v1-v2
+
+```bash
 pnpm i
 ```
 
@@ -25,8 +27,6 @@ Create the sqlite db and populate it
 ```bash
 bun db:reset && bun db:migrate && bun db:seed
 ```
-
-Key1 and Key2 will be logged in the console.
 
 ## Usage
 
