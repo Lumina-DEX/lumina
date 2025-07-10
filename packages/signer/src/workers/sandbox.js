@@ -4,6 +4,7 @@ import { MINA_ADDRESS } from "@lumina-dex/sdk"
 import { fetchAccount, Mina, Poseidon, PrivateKey, PublicKey, Signature } from "o1js"
 import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import {
+	compileContracts,
 	database,
 	fundNewAccount,
 	getEnv,
@@ -14,28 +15,31 @@ import {
 	getUniqueUserPairs
 } from "../helpers"
 
+let compiled = false
+
 /**
- * Sandbox worker to parrellize o1js proof
- * @param {import('bullmq').Job<{tokenA: string, tokenB: string, user: string, network: import('@lumina-dex/sdk').Networks, onlyCompile?: boolean}>} job
+ * Sandbox worker to parallelize o1js proof
+ * @param {import('bullmq').Job<{tokenA: string, tokenB: string, user: string, network: import('@lumina-dex/sdk').Networks}>} job
  * @returns {Promise<{ transaction: string, pool: string}>}
  */
 export default async function (job) {
 	try {
 		await job.log("Start processing job")
+		if (!compiled) await compileContracts()
+		console.log("Contracts compiled")
+		compiled = true
+
 		const id = job.id
 		console.log("job id", id)
 
-		const { tokenA, tokenB, user, network, onlyCompile } = job.data
+		const { tokenA, tokenB, user, network } = job.data
 
-		if (onlyCompile) {
-			return "Compiled"
-		}
 		const db = database()
 		const env = getEnv()
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
 
-		console.log("data", { tokenA, tokenB, user })
+		console.log("data", { tokenA, tokenB, user, network })
 		const newPoolPrivateKey = PrivateKey.random()
 		const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
 		console.debug("pool public Key", newPoolPublicKey.toBase58())
@@ -54,9 +58,10 @@ export default async function (job) {
 				.insert(pool)
 				.values({
 					publicKey: newPoolPublicKey.toBase58(),
-					tokenA: tokenA,
-					tokenB: tokenB,
-					user: user
+					tokenA,
+					tokenB,
+					user,
+					network
 				})
 				.returning({ insertedId: pool.id })
 

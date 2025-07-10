@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "fea30321-1111-4e16-8b49-ed106d60e45e",
+	"id": "9d6c94af-71a8-4955-962c-d7563eb9ab7e",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"Multisig": {
@@ -113,16 +113,34 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"deployed": {
-					"name": "deployed",
-					"type": "integer",
+				"job_id": {
+					"name": "job_id",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
-					"autoincrement": false,
-					"default": false
+					"autoincrement": false
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"network": {
+					"name": "network",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
 				}
 			},
 			"indexes": {
+				"Pool_job_id_unique": {
+					"name": "Pool_job_id_unique",
+					"columns": ["job_id"],
+					"isUnique": true
+				},
 				"Pool_public_key_unique": {
 					"name": "Pool_public_key_unique",
 					"columns": ["public_key"],

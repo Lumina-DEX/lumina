@@ -47,9 +47,10 @@ export const pool = sqliteTable(
 		jobId: text("job_id").notNull(),
 		status: text("status", {
 			enum: ["pending", "confirmed", "deployed"] as const
-		})
-			.notNull()
-			.default("pending")
+		}),
+		network: text("network", {
+			enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
+		}).notNull()
 	},
 	(table) => [
 		uniqueIndex("Pool_job_id_unique").on(table.jobId),

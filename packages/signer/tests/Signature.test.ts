@@ -139,6 +139,7 @@ describe("Signature", () => {
 				.insert(pool)
 				.values({
 					jobId: "test-job-id",
+					network: "zeko:testnet",
 					publicKey: testPoolPub,
 					tokenA,
 					tokenB,

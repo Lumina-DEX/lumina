@@ -11,9 +11,10 @@
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"strictPropertyInitialization": false,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"rootDir": ".",
+		"checkJs": true,
 		"allowJs": true,
 		"paths": {
 			"@/*": ["./src/*"]

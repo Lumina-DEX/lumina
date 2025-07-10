@@ -175,8 +175,8 @@ export function getNetwork(network: Networks) {
 }
 
 export const compileContracts = async () => {
+	console.log("Compiling contracts...")
 	setNumberOfWorkers(4)
-
 	console.time("compile")
 	//const cacheFiles = await fetchFromServerFiles();
 	const cache = Cache.FileSystem("./cache")

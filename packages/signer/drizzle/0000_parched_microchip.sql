@@ -15,9 +15,12 @@ CREATE TABLE `Pool` (
 	`token_b` text NOT NULL,
 	`public_key` text NOT NULL,
 	`user` text NOT NULL,
-	`deployed` integer DEFAULT false NOT NULL
+	`job_id` text NOT NULL,
+	`status` text,
+	`network` text NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `Pool_job_id_unique` ON `Pool` (`job_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `Pool_public_key_unique` ON `Pool` (`public_key`);--> statement-breakpoint
 CREATE TABLE `PoolKey` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,

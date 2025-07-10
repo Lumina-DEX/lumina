@@ -6,7 +6,7 @@ import { JSONObjectResolver } from "graphql-scalars"
 import { Repeater } from "graphql-yoga"
 import { hash } from "ohash"
 import { pool } from "../drizzle/schema"
-import type { Context } from "./dev-server"
+import type { Context } from "."
 
 type Builder = {
 	Context: Context

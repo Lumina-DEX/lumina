@@ -33,18 +33,6 @@ export const getQueues = () => {
 	}
 }
 
-export async function addJobs(data: any) {
-	console.log("addjobs", data)
-	const job = await createPoolQueue.add("createPool", data)
-	if (data.onlyCompile) {
-		return "only compile"
-	}
-	job.id
-	const res = await job.waitUntilFinished(createPoolQueueEvents)
-
-	return res
-}
-
 createPoolQueueEvents.on("waiting", ({ jobId }) => {
 	console.log(`A job with ID ${jobId} is waiting`)
 })
