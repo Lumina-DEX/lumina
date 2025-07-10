@@ -12,19 +12,20 @@ This can't run on cloudflare workers because of o1js limitations:
 
 ## Installation
 
-This app use drizle as ORM and infisical as vault
+This app use drizzle as ORM and infisical as vault
 
-```
+> **Note:** Drizzle v2 relations are used : https://rqbv2.drizzle-orm-fe.pages.dev/docs/relations-v1-v2
+
+```bash
 pnpm i
 ```
 
-Create an .env file base on .env.test (Signer1 and Signer2 is optionnal)
+Create an .env file base on .env.example
 
 Create the sqlite db and populate it
 
-```
-npx drizzle-kit push
-bun seed.ts
+```bash
+bun db:reset && bun db:migrate && bun db:seed
 ```
 
 ## Usage
