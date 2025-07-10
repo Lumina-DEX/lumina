@@ -1,10 +1,10 @@
-import express, { Request, Response } from "express"
-import dotenv from "dotenv"
 import cors from "cors"
+import dotenv from "dotenv"
+import { drizzle } from "drizzle-orm/libsql"
+import express, { type Request, type Response } from "express"
 import path from "path"
 import { fileURLToPath } from "url"
 import { addJobs } from "./queue.js"
-import { drizzle } from "drizzle-orm/libsql"
 
 // configures dotenv to work in your application
 dotenv.config()
@@ -25,7 +25,7 @@ const PORT = process.env.PORT
 
 // we preload contract
 const concurrency = process.env.CONCURRENCY
-const nbProcess = concurrency ? parseInt(concurrency) : 1
+const nbProcess = concurrency ? Number.parseInt(concurrency) : 1
 console.log("concurrency", concurrency)
 
 for (let index = 0; index < nbProcess; index++) {

@@ -3,9 +3,13 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "tsc && pnpm run copy-public",
-		"copy-public": "cpx \"src/public/**/*\" dist/src/public",
-		"start": "node dist/src/index.js",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"db:seed": "bun run scripts/seed.ts",
+		"db:reset": "bun run scripts/reset.ts",
+		"web": "bun ./index.html",
+		"start": "bun src/index.ts",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
 		"test": "vitest run --testTimeout=150000"
@@ -19,7 +23,7 @@
 		"bullmq": "^5.53.2",
 		"cors": "^2.8.5",
 		"dotenv": "^16.5.0",
-		"drizzle-orm": "1.0.0-beta.1-c0277c0",
+		"drizzle-orm": "beta",
 		"express": "^5.1.0",
 		"ioredis": "^5.6.1",
 		"o1js": "2.4.0",
@@ -29,8 +33,9 @@
 		"@types/dotenv": "^8.2.3",
 		"@types/express": "^5.0.2",
 		"cpx": "^1.5.0",
-		"drizzle-kit": "1.0.0-beta.1-c0277c0",
+		"drizzle-kit": "beta",
 		"tsx": "^4.19.4",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"valibot": "^1.0.0"
 	}
 }

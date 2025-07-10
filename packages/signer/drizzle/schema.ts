@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { sqliteTable, integer, text, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core"
+import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
 
 // Table: SignerMerkle
 export const signerMerkle = sqliteTable(
@@ -10,12 +10,12 @@ export const signerMerkle = sqliteTable(
 			.notNull()
 			.default(sql`(current_timestamp)`),
 		publicKey: text("public_key").notNull(),
-		right: text("right").notNull(),
+		permission: text("permission", {
+			enum: ["deploy", "all"] as const
+		}).notNull(),
 		active: integer("active", { mode: "boolean" }).notNull().default(true)
 	},
-	(table) => ({
-		publicKeyUnique: uniqueIndex("SignerMerkle_public_key_unique").on(table.publicKey)
-	})
+	(table) => [uniqueIndex("SignerMerkle_public_key_unique").on(table.publicKey)]
 )
 
 // Table: Multisig
@@ -46,9 +46,7 @@ export const pool = sqliteTable(
 		user: text("user").notNull(),
 		deployed: integer("deployed", { mode: "boolean" }).notNull().default(false)
 	},
-	(table) => ({
-		publicKeyUnique: uniqueIndex("Pool_public_key_unique").on(table.publicKey)
-	})
+	(table) => [uniqueIndex("Pool_public_key_unique").on(table.publicKey)]
 )
 
 // Table: PoolKey

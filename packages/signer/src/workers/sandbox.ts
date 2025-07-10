@@ -1,4 +1,9 @@
-import { Job } from "bullmq"
+import { InfisicalSDK } from "@infisical/sdk"
+import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { defaultCreationFee, defaultFee, MINA_ADDRESS, urls } from "@lumina-dex/sdk"
+import type { Job } from "bullmq"
+import { eq } from "drizzle-orm"
+import { drizzle } from "drizzle-orm/libsql"
 import {
 	AccountUpdate,
 	Bool,
@@ -6,27 +11,31 @@ import {
 	Encoding,
 	Encryption,
 	Field,
+	fetchAccount,
 	MerkleMap,
 	Mina,
 	Poseidon,
 	PrivateKey,
 	PublicKey,
 	Signature,
-	UInt64,
-	fetchAccount,
-	setNumberOfWorkers
+	setNumberOfWorkers,
+	UInt64
 } from "o1js"
-import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
-import dotenv from "dotenv"
-import { InfisicalSDK } from "@infisical/sdk"
-import { defaultCreationFee, defaultFee, MINA_ADDRESS, urls } from "@lumina-dex/sdk"
-import { drizzle } from "drizzle-orm/libsql"
-import { eq } from "drizzle-orm"
-import { signerMerkle, poolKey as tPoolKey, pool } from "../db/schema.js"
+import * as v from "valibot"
+import { pool, signerMerkle, poolKey as tPoolKey } from "../../drizzle/schema"
 
-dotenv.config()
+const Schema = v.object({
+	POOL_FACTORY_PUBLIC_KEY: v.string(),
+	DB_FILE_NAME: v.string(),
+	INFISICAL_ENVIRONMENT: v.string(),
+	INFISICAL_PROJECT_ID: v.string(),
+	INFISICAL_SECRET_NAME: v.string(),
+	INFISICAL_CLIENT_ID: v.string(),
+	INFISICAL_CLIENT_SECRET: v.string()
+})
+const env = v.parse(Schema, process.env)
 
-const db = drizzle(process.env.DB_FILE_NAME!)
+const db = drizzle(env.DB_FILE_NAME)
 
 type NewPoolKey = typeof tPoolKey.$inferInsert
 type NewSignerMerkle = typeof signerMerkle.$inferSelect
@@ -35,9 +44,6 @@ type NewSignerMerkle = typeof signerMerkle.$inferSelect
 let users: NewSignerMerkle[] = []
 
 setNumberOfWorkers(4)
-
-const Network = getNetwork("mina:devnet")
-Mina.setActiveInstance(Network)
 
 console.time("compile")
 //const cacheFiles = await fetchFromServerFiles();
@@ -56,7 +62,7 @@ export function getNetwork(network: string) {
 }
 
 /**
- * Sandbow worker to parrellize o1js proof
+ * Sandbox worker to parrellize o1js proof
  * @param job
  * @returns
  */
@@ -76,35 +82,41 @@ export default async function (job: Job) {
 		Mina.setActiveInstance(Network)
 
 		console.log("data", { tokenA, tokenB, user })
-		const poolKey = PrivateKey.random()
-		const poolPublic = poolKey.toPublicKey()
-		console.debug("pool public Key", poolPublic.toBase58())
+		const newPoolPrivateKey = PrivateKey.random()
+		const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
+		console.debug("pool public Key", newPoolPublicKey.toBase58())
 
 		const deployRight = SignatureRight.canDeployPool()
 
 		const merkle = await getMerkle()
 
-		const signer = await getSigner()
-		const signerPk = PrivateKey.fromBase58(signer)
-		const signerPublic = signerPk.toPublicKey()
+		const masterSigner = await getMasterSigner()
+		const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
+		const masterSignerPublicKey = masterSignerPrivateKey.toPublicKey()
 
-		let minaTx
-
-		await db.transaction(async (txOrm) => {
+		const minaTransaction = await db.transaction(async (txOrm) => {
 			// insert this new pool in database
 			const result = await txOrm
 				.insert(pool)
-				.values({ publicKey: poolPublic.toBase58(), tokenA: tokenA, tokenB: tokenB, user: user })
+				.values({
+					publicKey: newPoolPublicKey.toBase58(),
+					tokenA: tokenA,
+					tokenB: tokenB,
+					user: user
+				})
 				.returning({ insertedId: pool.id })
 
 			const poolId = result[0].insertedId
-			const listPair = getUniqueUserPairs(users, poolId, poolKey.toBase58())
+			const listPair = getUniqueUserPairs(users, poolId, newPoolPrivateKey.toBase58())
 			// insert the encrypted key of the pool in database
 			await txOrm.insert(tPoolKey).values(listPair)
 
-			const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
-			const witness = merkle.getWitness(Poseidon.hash(signerPublic.toFields()))
-			const factory = process.env.FACTORY
+			const signature = Signature.create(
+				masterSignerPrivateKey,
+				newPoolPrivateKey.toPublicKey().toFields()
+			)
+			const witness = merkle.getWitness(Poseidon.hash(masterSignerPublicKey.toFields()))
+			const factory = env.POOL_FACTORY_PUBLIC_KEY
 			const factoryKey = PublicKey.fromBase58(factory)
 			const zkFactory = new PoolFactory(factoryKey)
 
@@ -112,7 +124,7 @@ export default async function (job: Job) {
 			const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
 			console.debug({ isMinaTokenPool })
 			console.time("prove")
-			minaTx = await Mina.transaction(
+			const minaTx = await Mina.transaction(
 				{
 					sender: PublicKey.fromBase58(user),
 					fee: getFee(network)
@@ -122,9 +134,9 @@ export default async function (job: Job) {
 					if (isMinaTokenPool) {
 						const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 						await zkFactory.createPool(
-							poolPublic,
+							newPoolPublicKey,
 							PublicKey.fromBase58(token),
-							signerPublic,
+							masterSignerPublicKey,
 							signature,
 							witness,
 							deployRight
@@ -132,10 +144,10 @@ export default async function (job: Job) {
 					}
 					if (!isMinaTokenPool) {
 						await zkFactory.createPoolToken(
-							poolPublic,
+							newPoolPublicKey,
 							PublicKey.fromBase58(tokenA),
 							PublicKey.fromBase58(tokenB),
-							signerPublic,
+							masterSignerPublicKey,
 							signature,
 							witness,
 							deployRight
@@ -143,12 +155,16 @@ export default async function (job: Job) {
 					}
 				}
 			)
-			minaTx.sign([poolKey])
+			minaTx.sign([newPoolPrivateKey])
 			await minaTx.prove()
 			console.timeEnd("prove")
 			console.log("job end", id)
+			return minaTx
 		})
-		return { pool: poolKey.toPublicKey().toBase58(), transaction: minaTx.toJSON() }
+		return {
+			pool: newPoolPrivateKey.toPublicKey().toBase58(),
+			transaction: minaTransaction.toJSON()
+		}
 	} catch (error) {
 		console.error(error)
 		throw error
@@ -171,7 +187,7 @@ export async function getMerkle(): Promise<MerkleMap> {
 	users = []
 	data.forEach((x) => {
 		let right = allRight.hash()
-		switch (x.right) {
+		switch (x.permission) {
 			case "deploy":
 				right = deployRight.hash()
 				break
@@ -182,7 +198,7 @@ export async function getMerkle(): Promise<MerkleMap> {
 		const pubKey = PublicKey.fromBase58(x.publicKey)
 		merkle.set(Poseidon.hash(pubKey.toFields()), right)
 
-		if (x.right === "all") {
+		if (x.permission === "all") {
 			users.push(x)
 		}
 	})
@@ -229,16 +245,19 @@ export function encryptedKeyToField(encryptedKey: string): Field[] {
 	return encryptedKey.split(",").map((x) => Field.from(x))
 }
 
-async function getSigner(): Promise<string> {
+async function getMasterSigner(): Promise<string> {
 	const client = new InfisicalSDK()
 
 	// Authenticate with Infisical
-	await client.auth().accessToken(process.env.INFISICAL_TOKEN)
+	await client.auth().universalAuth.login({
+		clientId: env.INFISICAL_CLIENT_ID, // Infisical client ID
+		clientSecret: env.INFISICAL_CLIENT_SECRET // Infisical client secret
+	})
 
 	const singleSecret = await client.secrets().getSecret({
-		environment: process.env.INFISICAL_ENVIRONMENT, // stg, dev, prod, or custom environment slugs
-		projectId: process.env.INFISICAL_PROJECT_ID,
-		secretName: process.env.INFISICAL_SECRET_NAME
+		environment: env.INFISICAL_ENVIRONMENT, // stg, dev, prod, or custom environment slugs
+		projectId: env.INFISICAL_PROJECT_ID,
+		secretName: env.INFISICAL_SECRET_NAME
 	})
 
 	return singleSecret.secretValue
@@ -263,10 +282,7 @@ const fundNewAccount = async (network: string, feePayer: PublicKey, numberOfAcco
 }
 
 const getFee = (network: string) => {
-	try {
-		const fee = network ? defaultFee[network] : undefined
-		return fee
-	} catch (error) {
-		return undefined
-	}
+	const fee = defaultFee[network]
+	if (!fee) throw new Error(`No fee found for network: ${network}`)
+	return fee
 }

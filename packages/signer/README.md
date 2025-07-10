@@ -18,14 +18,15 @@ This app use drizle as ORM and infisical as vault
 pnpm i
 ```
 
-Create an .env file base on .env.test (Signer1 and Signer2 is optionnal)
+Create an .env file base on .env.example
 
 Create the sqlite db and populate it
 
+```bash
+bun db:reset && bun db:migrate && bun db:seed
 ```
-npx drizzle-kit push
-bun seed.ts
-```
+
+Key1 and Key2 will be logged in the console.
 
 ## Usage
 

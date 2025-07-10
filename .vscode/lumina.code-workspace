@@ -29,15 +29,16 @@
       {
         "path": "../packages/sdk-test-react",
       },
-      {
-        "path": "..",
-        "name": "#root"
-      },
+      // {
+      //   "path": "..",
+      //   "name": "#root"
+      // },
     ],
     "settings": {
       "typescript.tsdk": "node_modules/typescript/lib",
 		  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
-      "typescript.enablePromptUseWorkspaceTsdk": true
+      "typescript.enablePromptUseWorkspaceTsdk": true,
+      "oxc.enable": false
     },
     "extensions": {
       "recommendations": [
