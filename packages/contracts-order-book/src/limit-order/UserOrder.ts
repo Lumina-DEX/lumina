@@ -16,7 +16,6 @@ import {
   UInt32,
   UInt64
 } from "o1js"
-import { getBalance } from "o1js/dist/node/lib/mina/mina-instance"
 
 export class AddOrder extends Struct({
   sender: PublicKey,
