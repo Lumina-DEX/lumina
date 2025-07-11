@@ -30,10 +30,8 @@ const Liquidity = ({}) => {
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
 			// simple logging
-			console.log("Dex snapshot", snapshot)
 			let result = snapshot.context.dex.addLiquidity.calculated
 
-			console.log("liquidity calculated", result)
 			if (result) {
 				const from = result.tokenA.amountIn / 10 ** 9
 				const to = result.tokenB.amountIn / 10 ** 9
@@ -42,10 +40,10 @@ const Liquidity = ({}) => {
 				setToAmount(to.toFixed(2).toString())
 				setLiquidityMinted(liquidity)
 			}
-			//setToAmount(valTo.toString())
 		})
 		return subscription.unsubscribe
-	}, [Dex])
+	}, [])
+
 	const getLiquidityAmount = async () => {
 		Dex.send({
 			type: "ChangeAddLiquiditySettings",
