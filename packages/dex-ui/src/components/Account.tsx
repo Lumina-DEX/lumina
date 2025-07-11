@@ -11,32 +11,20 @@ export const minaTestnet: Networks = "mina:devnet"
 
 // @ts-ignore
 const Account = () => {
-	const [balance, setBalance] = useState(0)
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
 
-	async function timeout(seconds: number): Promise<void> {
-		return new Promise<void>((resolve) => {
-			setTimeout(() => {
-				resolve()
-			}, seconds * 1000)
-		})
-	}
+	const balance = useSelector(
+		Wallet,
+		(state) => state.context.balances[state.context.currentNetwork]?.MINA?.balance || 0
+	)
+
 	useEffect(() => {
 		if (walletState && walletState === "INIT") {
 			handleConnect()
 		}
 	}, [walletState])
-
-	useEffect(() => {
-		if (walletContext?.currentNetwork) {
-			try {
-				const bal = walletContext.balances[walletContext.currentNetwork][MINA_ADDRESS]
-				setBalance(bal.balance)
-			} catch (error) {}
-		}
-	}, [walletContext])
 
 	const switchNetwork = async (newNetwork: Networks) => {
 		Wallet.send({ type: "RequestNetworkChange", network: newNetwork })
