@@ -9,22 +9,20 @@ import { createContext } from "react"
 import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
 
 export const feeAmount = 10
-export const ZKFACTORY_ADDRESS = "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"
 
 const Wallet = typeof window !== "undefined" ? createWallet() : null
-const Dex =
-	typeof window !== "undefined" && Wallet
-		? createDex({
-				input: {
-					wallet: Wallet,
-					features: ["Swap", "DeployPool"],
-					frontendFee: {
-						destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
-						amount: feeAmount
-					}
+const Dex = Wallet
+	? createDex({
+			input: {
+				wallet: Wallet,
+				features: ["Swap", "DeployPool"],
+				frontendFee: {
+					destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
+					amount: feeAmount
 				}
-			})
-		: null
+			}
+		})
+	: null
 const Context: LC = { Dex, Wallet }
 export const LuminaContext = createContext(Context)
 

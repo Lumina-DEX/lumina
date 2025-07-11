@@ -1,5 +1,3 @@
-import { ZKFACTORY_ADDRESS } from "@/components/Layout"
-import { fetchAccount, fetchEvents, Field, Mina, PublicKey } from "o1js"
 import {
 	fetchAllPoolsFromPoolFactory,
 	fetchPoolList,
