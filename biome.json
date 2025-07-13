@@ -1,12 +1,19 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"root": true,
 	"linter": {
 		"rules": {
 			"correctness": {
-				"noUnusedImports": { "level": "warn", "fix": "safe" }
+				"noUnusedImports": {
+					"level": "warn",
+					"fix": "safe"
+				}
 			},
 			"style": {
-				"useConst": { "level": "warn", "fix": "safe" },
+				"useConst": {
+					"level": "warn",
+					"fix": "safe"
+				},
 				"noParameterAssign": "error",
 				"useAsConstAssertion": "error",
 				"useDefaultParameterLast": "error",
@@ -19,13 +26,5 @@
 				"noUselessElse": "error"
 			}
 		}
-	},
-	"overrides": [
-		{
-			"includes": ["**/packages/contracts/**", "**/packages/lumina-tokens/**"],
-			"linter": {
-				"enabled": false
-			}
-		}
-	]
+	}
 }

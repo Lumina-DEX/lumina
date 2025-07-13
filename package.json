@@ -17,7 +17,7 @@
 		"generate:docs": "cd packages/contracts && pnpm run generate:docs"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.0.0-beta.6",
+		"@biomejs/biome": "^2.1.1",
 		"@changesets/cli": "^2.27.10",
 		"@types/node": "^22.9.1",
 		"dprint": "^0.47.5",

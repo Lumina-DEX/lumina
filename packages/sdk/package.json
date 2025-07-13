@@ -71,7 +71,7 @@
     "xstate": "^5.18.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.1.1",
     "@cloudflare/workers-types": "^4.20241127.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
