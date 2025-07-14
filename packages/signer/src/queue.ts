@@ -9,7 +9,11 @@ const __dirname = dirname(__filename)
 const file = join(__dirname, "workers", "sandbox.js")
 const processorUrl = pathToFileURL(file)
 
-const connection = new IORedis({ maxRetriesPerRequest: null })
+const connection = new IORedis({
+	host: process.env.REDIS_HOST ?? "127.0.0.1",
+	port: Number(process.env.REDIS_PORT ?? 6379),
+	maxRetriesPerRequest: null
+})
 
 const concurrency = 3
 

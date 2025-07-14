@@ -1,0 +1,39 @@
+# Git
+.git
+.github
+.gitignore
+
+# Node
+node_modules
+
+# Docker
+.dockerignore
+Dockerfile
+
+# PNPM
+pnpm-lock.yaml
+
+# Biome
+biome.json
+
+# Dprint
+dprint.json
+
+# Lefthook
+lefthook.yml
+
+# Env
+.env
+.env.*
+
+# Other
+*.md
+LICENSE
+*.drawio
+*.png
+local.db
+drizzle/
+cache/
+tests/
+vitest.config.ts
+docker-compose.yml

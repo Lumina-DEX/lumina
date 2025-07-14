@@ -83,3 +83,36 @@ We should containerize this service and deploy it to a big Hetzner server
 (https://docs.docker.com/guides/deno/containerize/) In addition, we should also
 include a CI pipeline to automate the deployment process with Pulumi
 (https://timozander.de/blog/using-pulumi-with-hcloud/)
+
+## Docker
+
+How to run locally the service and redis with docker:
+
+Build the docker image from the root of the monorepo:
+
+```bash
+docker build -t luminadex-signer -f packages/signer/Dockerfile .
+```
+
+Create network and run redis and the signer service:
+
+```bash
+docker network create lumina-net
+
+docker run -d --name redis-server --network lumina-net -p 6379:6379 redis:8.0.2
+
+docker run --rm -it --network lumina-net -p 3000:3000 \
+  -e REDIS_HOST=redis-server \
+  -e REDIS_PORT=6379 \
+  luminadex-signer
+```
+
+Clean-up :
+
+```bash
+# Stop and remove the redis container
+docker stop redis-server && docker rm redis-server
+
+# Remove the network
+docker network rm lumina-net
+```
