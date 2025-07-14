@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Create Pool with Auro Wallet</title>
@@ -9,26 +10,31 @@
       padding: 2rem;
       background: #f0f0f0;
     }
+
     form {
       background: white;
       padding: 2rem;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       max-width: 600px;
       margin: auto;
     }
-    input, button {
+
+    input,
+    button {
       display: block;
       width: 100%;
       margin-bottom: 1rem;
       padding: 0.75rem;
       font-size: 1rem;
     }
-    select{
+
+    select {
       margin-bottom: 1rem;
       padding: 0.75rem;
       font-size: 1rem;
     }
+
     #connect {
       margin-bottom: 2rem;
       background: #007bff;
@@ -36,11 +42,13 @@
       border: none;
       cursor: pointer;
     }
+
     #connect:disabled {
       background: #888;
     }
   </style>
 </head>
+
 <body>
 
   <form id="createPoolForm">
@@ -51,7 +59,7 @@
     <input type="text" id="tokenA" name="tokenA" placeholder="Token A" required />
     <input type="text" id="tokenB" name="tokenB" placeholder="Token B" required />
     <input type="text" id="user" name="user" placeholder="User Public Key" readonly />
-     <label>
+    <label>
       Network:
       <select name="network" id="network" required>
         <option value="mina:devnet">mina:devnet</option>
@@ -63,7 +71,7 @@
 
     <button type="submit">Create Pool</button>
 
-     <div id="status" style="margin-top:20px; font-weight:bold;"></div>
+    <div id="status" style="margin-top:20px; font-weight:bold;"></div>
 
     <div id="result"></div>
   </form>
@@ -73,7 +81,7 @@
     const userField = document.getElementById('user');
     const resultBox = document.getElementById('result');
     const statusDiv = document.getElementById('status');
-    
+
     let userAddress = "";
 
     connectButton.addEventListener('click', async () => {
@@ -103,46 +111,131 @@
 
       const tokenA = document.getElementById('tokenA').value;
       const tokenB = document.getElementById('tokenB').value;
-        const network = document.getElementById('network').value;
+      const networkValue = document.getElementById('network').value;
+      const network = networkValue.replace(':', '_');
 
-      const payload = {   
-        tokenA: tokenA,
-        tokenB: tokenB,
-        user: userAddress,
-        network: network
+      const createPoolMutation = `
+        mutation CreatePool($input: CreatePoolInput!) {
+          createPool(input: $input) {
+            id
+          }
+        }
+      `;
+
+      const variables = {
+        input: {
+          tokenA: tokenA,
+          tokenB: tokenB,
+          user: userAddress,
+          network: network
+        }
       };
 
       try {
-         statusDiv.textContent = 'Loading...';
-        // Step 1: POST to backend
-        const response = await fetch('http://localhost:3000/create-pool', {
+        statusDiv.textContent = 'Requesting pool creation...';
+
+        const response = await fetch('http://localhost:3001/graphql', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ query: createPoolMutation, variables: variables })
         });
 
-        const poolResponse = await response.json();
-
-        console.log("poolResponse",poolResponse);
-
-        if (!poolResponse.result.transaction) {
-          throw new Error("Backend did not return a transaction.");
+        const res = await response.json();
+        if (res.errors) {
+          throw new Error(res.errors.map(e => e.message).join('\n'));
         }
 
-        // Step 2: Send transaction with Auro
-        const txResult = await window.mina.sendTransaction({
-          transaction: poolResponse.result.transaction
+        const jobId = res.data.createPool.id;
+        statusDiv.textContent = `Pool creation job started with ID: ${jobId}. Waiting for transaction details...`;
+
+        const subscriptionQuery = `
+          subscription PoolCreation($jobId: String!) {
+            poolCreation(jobId: $jobId) {
+              transactionJson
+            }
+          }
+        `;
+
+        const subscribePayload = {
+          query: subscriptionQuery,
+          variables: { jobId }
+        };
+
+        const responseStream = await fetch('http://localhost:3001/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
+          },
+          body: JSON.stringify(subscribePayload)
         });
 
-        statusDiv.textContent = 'Success';
+        if (!responseStream.body) {
+          throw new Error("Response body is null");
+        }
 
-        resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
+        const reader = responseStream.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const eventData = line.substring(5).trim();
+              const data = JSON.parse(eventData);
+
+              if (data.errors) {
+                throw new Error(data.errors.map(e => e.message).join('\n'));
+              }
+
+              const transaction = data.data.poolCreation.transactionJson;
+              if (!transaction) {
+                throw new Error("Subscription did not return a transaction.");
+              }
+
+              statusDiv.textContent = 'Please sign the transaction in your wallet.';
+
+              const txResult = await window.mina.sendTransaction({
+                transaction: transaction
+              });
+
+              statusDiv.textContent = 'Transaction sent! Confirming job...';
+              resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
+
+              const confirmJobMutation = `
+                mutation ConfirmJob($jobId: String!) {
+                  confirmJob(jobId: $jobId)
+                }
+              `;
+              await fetch('http://localhost:3001/graphql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: confirmJobMutation, variables: { jobId } })
+              });
+
+              statusDiv.textContent = 'Success! Pool creation confirmed.';
+              reader.cancel();
+              return;
+            }
+          }
+        }
       } catch (err) {
         resultBox.innerText = 'Error: ' + err.message;
-         statusDiv.textContent = 'Erreur : ' + err.message;
+        statusDiv.textContent = 'Erreur : ' + err.message;
       }
     });
   </script>
 
 </body>
+
 </html>

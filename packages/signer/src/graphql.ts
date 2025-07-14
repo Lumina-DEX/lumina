@@ -3,7 +3,7 @@ import SchemaBuilder from "@pothos/core"
 import { Job as bullmqJob } from "bullmq"
 import { eq } from "drizzle-orm"
 import { JSONObjectResolver } from "graphql-scalars"
-import { Repeater } from "graphql-yoga"
+import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { hash } from "ohash"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
@@ -78,8 +78,12 @@ builder.mutationField("createPool", (t) =>
 		args: { input: t.arg({ type: CreatePoolInput, required: true }) },
 		resolve: async (_, { input }, { queues: { createPoolQueue } }) => {
 			const jobId = hash(input)
-			const job = await createPoolQueue.add("createPool", input, { jobId })
-			console.log(`Job created with ID: ${job.id}, status: ${job.isActive} `)
+			const exists = await createPoolQueue.getJob(jobId)
+			console.log(`Checking if job with ID ${jobId} exists:`, exists ? "Yes" : "No")
+			if (!exists) {
+				const job = await createPoolQueue.add("createPool", input, { jobId, removeOnFail: true })
+				console.log(`Job created with ID: ${job.id}, status: ${job.isActive} `)
+			}
 			return { id: jobId }
 		}
 	})
@@ -90,7 +94,10 @@ builder.subscriptionField("poolCreation", (t) =>
 		type: JobResult,
 		description: "Subscribe to pool creation events",
 		args: { jobId: t.arg.string({ required: true }) },
-		subscribe: (_, args, { queues: { createPoolQueue, createPoolQueueEvents } }) => {
+		subscribe: async (_, args, { queues: { createPoolQueue, createPoolQueueEvents } }) => {
+			console.log(`Subscribing to pool creation events for job ID: ${args.jobId}`)
+			const job = await createPoolQueue.getJob(args.jobId)
+			if (!job) throw new Error(`Job with ID ${args.jobId} not found`)
 			return new Repeater<JobResult>(async (push, stop) => {
 				const listener = createPoolQueueEvents.on("completed", async ({ jobId }) => {
 					if (jobId !== args.jobId) return
@@ -115,6 +122,7 @@ builder.queryField("poolCreationJob", (t) =>
 		resolve: async (_, { jobId }, { queues: { createPoolQueue } }) => {
 			const job = await bullmqJob.fromId<null, JobResult>(createPoolQueue, jobId)
 			if (!job) throw new Error(`Job with ID ${jobId} not found`)
+			console.log(job.toJSON())
 			return job.returnvalue
 		}
 	})
@@ -140,4 +148,4 @@ builder.queryType()
 builder.mutationType()
 builder.subscriptionType()
 
-export const schema = builder.toSchema()
+export const schema: GraphQLSchemaWithContext<Context & YogaInitialContext> = builder.toSchema()

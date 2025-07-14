@@ -1,9 +1,12 @@
+import { App } from "uWebSockets.js"
 import { drizzle } from "drizzle-orm/libsql"
 import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { relations } from "../drizzle/relations"
 import { schema } from "./graphql"
 import { getQueues } from "./queue"
+
+import "dotenv/config"
 
 const Schema = v.object({
 	DB_FILE_NAME: v.string(),
@@ -37,27 +40,13 @@ export const yoga = createYoga<{ env: typeof env }>({
 		methods: ["*"],
 		exposedHeaders: ["*"]
 	}),
-	context: async ({ env }) => {
+	context: async () => {
 		return { env, db, queues } satisfies Context
 	}
 })
 
-const main = async () => {
-	const server = Bun.serve({
-		idleTimeout: 0, // Wait indefinitely for SSE
-		port: 3001,
-		fetch: async (request) => {
-			console.log("Received request:", request.method, request.url)
-			const response = await yoga(request, { env })
-			return response
-		}
+App()
+	.any("/*", yoga)
+	.listen("localhost", 3001, () => {
+		console.log("Server is running on http://localhost:3001")
 	})
-	console.info(
-		`Server is running on ${new URL(
-			yoga.graphqlEndpoint,
-			`http://${server.hostname}:${server.port}`
-		)}`
-	)
-}
-
-main()

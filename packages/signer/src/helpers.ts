@@ -139,11 +139,7 @@ export async function getMasterSigner(): Promise<string> {
 	return singleSecret.secretValue
 }
 
-export const fundNewAccount = async (
-	network: Networks,
-	feePayer: PublicKey,
-	numberOfAccounts = 1
-) => {
+export const fundNewAccount = (network: Networks, feePayer: PublicKey, numberOfAccounts = 1) => {
 	try {
 		const creationFee = defaultCreationFee[network]
 		const accountUpdate = AccountUpdate.createSigned(feePayer)
@@ -163,11 +159,11 @@ export const fundNewAccount = async (
 
 export const getFee = (network: Networks) => {
 	const fee = defaultFee[network]
-	if (!fee) throw new Error(`No fee found for network: ${network}`)
+	if (!fee) return 0
 	return fee
 }
 
-export function getNetwork(network: Networks) {
+export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 	return Mina.Network({
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
 		mina: urls[network]

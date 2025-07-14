@@ -1,0 +1,5 @@
+services:
+  redis:
+    image: redis:8.0.2
+    ports:
+      - "6379:6379" # Maps host port 6379 to container port 6379

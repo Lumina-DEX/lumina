@@ -16,10 +16,13 @@
 		"rootDir": ".",
 		"checkJs": true,
 		"allowJs": true,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"declarationMap": true,
 		"paths": {
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["./src", "**/*.ts", "package.json", "env.json", "src/worker.js"],
+	"include": ["./src", "**/*.ts", "package.json", "**/*.js", "./src/workers/sandbox.js"],
 	"exclude": ["node_modules", "dist"]
 }
