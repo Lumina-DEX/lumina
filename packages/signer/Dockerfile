@@ -65,7 +65,7 @@ USER bun
 
 # Expose the port the app will run on. Dokku will automatically
 # map this to the correct external port.
-EXPOSE 3000
+EXPOSE 3001
 WORKDIR /usr/src/app/packages/signer
 # Set the command to start the application.
 # This uses the 'start' script from package.json.
