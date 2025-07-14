@@ -91,14 +91,14 @@ export const defaultFee = {
 	"zeko:mainnet": undefined,
 	"mina:devnet": undefined,
 	"mina:mainnet": undefined
-}
+} as const
 
 export const defaultCreationFee = {
 	"zeko:testnet": 10 ** 8,
 	"zeko:mainnet": undefined,
 	"mina:devnet": undefined,
 	"mina:mainnet": undefined
-}
+} as const
 
 export const poolInstance = {
 	"mina:devnet": {
@@ -112,3 +112,6 @@ export const poolInstance = {
 		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
 	}
 } as const
+
+// TODO: Deploy pool-signer to production first
+export const poolCreationUrl = "https://localhost:3001/graphql"

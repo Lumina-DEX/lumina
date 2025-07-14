@@ -220,19 +220,22 @@ importers:
         version: 1.0.6
       '@gql.tada/vue-support':
         specifier: ^1.0.1
-        version: 1.0.1(typescript@5.7.2)
+        version: 1.0.1(typescript@5.8.3)
       '@lumina-dex/contracts':
         specifier: workspace:^
         version: link:../contracts
+      '@urql/core':
+        specifier: ^5.2.0
+        version: 5.2.0(graphql@16.11.0)
       '@urql/exchange-retry':
         specifier: ^1.3.0
-        version: 1.3.0(@urql/core@5.0.8(graphql@16.11.0))
+        version: 1.3.0(@urql/core@5.2.0(graphql@16.11.0))
       '@urql/vue':
         specifier: ^1.4.1
-        version: 1.4.2(@urql/core@5.0.8(graphql@16.11.0))(vue@3.5.13(typescript@5.7.2))
+        version: 1.4.2(@urql/core@5.2.0(graphql@16.11.0))(vue@3.5.13(typescript@5.8.3))
       '@xstate/react':
         specifier: ^4.1.3
-        version: 4.1.3(@types/react@18.3.12)(react@18.3.1)(xstate@5.19.0)
+        version: 4.1.3(react@18.3.1)(xstate@5.20.1)
       '@xstate/store':
         specifier: ^2.6.1
         version: 2.6.1(react@18.3.1)
@@ -247,25 +250,28 @@ importers:
         version: 0.8.2
       gql.tada:
         specifier: ^1.8.10
-        version: 1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.11.0)(typescript@5.7.2)
+        version: 1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.8.3))(graphql@16.11.0)(typescript@5.8.3)
       o1js:
         specifier: 2.4.0
         version: 2.4.0
       p-limit:
         specifier: ^6.2.0
         version: 6.2.0
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       typescript:
         specifier: ^5.6.3
-        version: 5.7.2
+        version: 5.8.3
       urql:
         specifier: ^4.1.0
-        version: 4.2.1(@urql/core@5.0.8(graphql@16.11.0))(react@18.3.1)
+        version: 4.2.1(@urql/core@5.2.0(graphql@16.11.0))(react@18.3.1)
       vue:
         specifier: ^3.5.11
-        version: 3.5.13(typescript@5.7.2)
+        version: 3.5.13(typescript@5.8.3)
       xstate:
-        specifier: ^5.18.2
-        version: 5.19.0
+        specifier: 5.20.1
+        version: 5.20.1
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.1.1
@@ -287,10 +293,10 @@ importers:
         version: 4.27.4
       unbuild:
         specifier: ^2.0.0
-        version: 2.0.0(typescript@5.7.2)
+        version: 2.0.0(typescript@5.8.3)
       vitepress:
         specifier: ^1.6.3
-        version: 1.6.3(@algolia/client-search@5.21.0)(@types/node@22.10.0)(axios@1.9.0)(change-case@5.4.4)(postcss@8.4.49)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.37.0)(typescript@5.7.2)
+        version: 1.6.3(@algolia/client-search@5.21.0)(@types/node@22.10.0)(axios@1.9.0)(change-case@5.4.4)(postcss@8.4.49)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.37.0)(typescript@5.8.3)
       vitepress-plugin-d2:
         specifier: ^1.0.4
         version: 1.0.4
@@ -3911,8 +3917,8 @@ packages:
     peerDependencies:
       vue: '>=2.7 || >=3'
 
-  '@urql/core@5.0.8':
-    resolution: {integrity: sha512-1GOnUw7/a9bzkcM0+U8U5MmxW2A7FE5YquuEmcJzTtW5tIs2EoS4F2ITpuKBjRBbyRjZgO860nWFPo1m4JImGA==}
+  '@urql/core@5.2.0':
+    resolution: {integrity: sha512-/n0ieD0mvvDnVAXEQgX/7qJiVcvYvNkOHeBvkwtylfjydar123caCXcl58PXFY11oU1oquJocVXHxLAbtv4x1A==}
 
   '@urql/exchange-retry@1.3.0':
     resolution: {integrity: sha512-FLt+d81gP4oiHah4hWFDApimc+/xABWMU1AMYsZ1PVB0L0YPtrMCjbOp9WMM7hBzy4gbTDrG24sio0dCfSh/HQ==}
@@ -6231,7 +6237,6 @@ packages:
 
   libsql@0.5.13:
     resolution: {integrity: sha512-5Bwoa/CqzgkTwySgqHA5TsaUDRrdLIbdM4egdPcaAnqO3aC+qAgS6BwdzuZwARA5digXwiskogZ8H7Yy4XfdOg==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
@@ -8655,8 +8660,8 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  wonka@6.3.4:
-    resolution: {integrity: sha512-CjpbqNtBGNAeyNS/9W6q3kSkKE52+FjIj7AkFlLr11s/VWGUu6a2CdYSdGxocIhIVjaW/zchesBQUKPVU69Cqg==}
+  wonka@6.3.5:
+    resolution: {integrity: sha512-SSil+ecw6B4/Dm7Pf2sAshKQ5hWFvfyGlfPbEd6A14dOH6VDjrmbY86u6nZvy9omGwwIPFR8V41+of1EezgoUw==}
 
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
@@ -8721,6 +8726,9 @@ packages:
 
   xstate@5.19.0:
     resolution: {integrity: sha512-Juh1MjeRaVWr1IRxXYvQMMRFMrei6vq6+AfP6Zk9D9YV0ZuvubN0aM6s2ITwUrq+uWtP1NTO8kOZmsM/IqeOiQ==}
+
+  xstate@5.20.1:
+    resolution: {integrity: sha512-i9ZpNnm/XhCOMUxae1suT8PjYNTStZWbhmuKt4xeTPaYG5TS0Fz0i+Ka5yxoNPpaHW3VW6JIowrwFgSTZONxig==}
 
   xxhash-wasm@1.1.0:
     resolution: {integrity: sha512-147y/6YNh+tlp6nd/2pWq38i9h6mz/EuQ6njIrmW8D1BS5nCqs0P6DG+m6zTGnNz5I+uhZ0SHxBs9BsPrwcKDA==}
@@ -8818,11 +8826,11 @@ snapshots:
     optionalDependencies:
       graphql: 16.11.0
 
-  '@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.7.2)':
+  '@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.8.3)':
     dependencies:
-      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.7.2)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.8.3)
       graphql: 16.11.0
-      typescript: 5.7.2
+      typescript: 5.8.3
 
   '@algolia/autocomplete-core@1.17.7(@algolia/client-search@5.21.0)(algoliasearch@5.21.0)(search-insights@2.17.3)':
     dependencies:
@@ -10668,26 +10676,26 @@ snapshots:
 
   '@fastify/busboy@3.1.1': {}
 
-  '@gql.tada/cli-utils@1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.7.2))(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.11.0)(typescript@5.7.2)':
+  '@gql.tada/cli-utils@1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.8.3))(@gql.tada/vue-support@1.0.1(typescript@5.8.3))(graphql@16.11.0)(typescript@5.8.3)':
     dependencies:
-      '@0no-co/graphqlsp': 1.12.16(graphql@16.11.0)(typescript@5.7.2)
-      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.7.2)
+      '@0no-co/graphqlsp': 1.12.16(graphql@16.11.0)(typescript@5.8.3)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.8.3)
       graphql: 16.11.0
-      typescript: 5.7.2
+      typescript: 5.8.3
     optionalDependencies:
-      '@gql.tada/vue-support': 1.0.1(typescript@5.7.2)
+      '@gql.tada/vue-support': 1.0.1(typescript@5.8.3)
 
-  '@gql.tada/internal@1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.7.2)':
+  '@gql.tada/internal@1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.8.3)':
     dependencies:
       '@0no-co/graphql.web': 1.0.11(graphql@16.11.0)
       graphql: 16.11.0
-      typescript: 5.7.2
+      typescript: 5.8.3
 
-  '@gql.tada/vue-support@1.0.1(typescript@5.7.2)':
+  '@gql.tada/vue-support@1.0.1(typescript@5.8.3)':
     dependencies:
       '@vue/compiler-dom': 3.5.13
-      '@vue/language-core': 2.0.29(typescript@5.7.2)
-      typescript: 5.7.2
+      '@vue/language-core': 2.0.29(typescript@5.8.3)
+      typescript: 5.8.3
 
   '@graphql-tools/executor@1.4.7(graphql@16.11.0)':
     dependencies:
@@ -12452,23 +12460,23 @@ snapshots:
       unhead: 1.11.18
       vue: 3.5.17(typescript@5.8.3)
 
-  '@urql/core@5.0.8(graphql@16.11.0)':
+  '@urql/core@5.2.0(graphql@16.11.0)':
     dependencies:
       '@0no-co/graphql.web': 1.1.2(graphql@16.11.0)
-      wonka: 6.3.4
+      wonka: 6.3.5
     transitivePeerDependencies:
       - graphql
 
-  '@urql/exchange-retry@1.3.0(@urql/core@5.0.8(graphql@16.11.0))':
+  '@urql/exchange-retry@1.3.0(@urql/core@5.2.0(graphql@16.11.0))':
     dependencies:
-      '@urql/core': 5.0.8(graphql@16.11.0)
-      wonka: 6.3.4
+      '@urql/core': 5.2.0(graphql@16.11.0)
+      wonka: 6.3.5
 
-  '@urql/vue@1.4.2(@urql/core@5.0.8(graphql@16.11.0))(vue@3.5.13(typescript@5.7.2))':
+  '@urql/vue@1.4.2(@urql/core@5.2.0(graphql@16.11.0))(vue@3.5.13(typescript@5.8.3))':
     dependencies:
-      '@urql/core': 5.0.8(graphql@16.11.0)
-      vue: 3.5.13(typescript@5.7.2)
-      wonka: 6.3.4
+      '@urql/core': 5.2.0(graphql@16.11.0)
+      vue: 3.5.13(typescript@5.8.3)
+      wonka: 6.3.5
 
   '@vercel/nft@0.27.10(rollup@4.27.4)':
     dependencies:
@@ -12510,10 +12518,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.2.1(vite@5.4.14(@types/node@22.10.0)(terser@5.37.0))(vue@3.5.13(typescript@5.7.2))':
+  '@vitejs/plugin-vue@5.2.1(vite@5.4.14(@types/node@22.10.0)(terser@5.37.0))(vue@3.5.13(typescript@5.8.3))':
     dependencies:
       vite: 5.4.14(@types/node@22.10.0)(terser@5.37.0)
-      vue: 3.5.13(typescript@5.7.2)
+      vue: 3.5.13(typescript@5.8.3)
 
   '@vitejs/plugin-vue@5.2.1(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(vue@3.5.17(typescript@5.8.3))':
     dependencies:
@@ -12845,7 +12853,7 @@ snapshots:
     dependencies:
       rfdc: 1.4.1
 
-  '@vue/language-core@2.0.29(typescript@5.7.2)':
+  '@vue/language-core@2.0.29(typescript@5.8.3)':
     dependencies:
       '@volar/language-core': 2.4.10
       '@vue/compiler-dom': 3.5.13
@@ -12856,7 +12864,7 @@ snapshots:
       muggle-string: 0.4.1
       path-browserify: 1.0.1
     optionalDependencies:
-      typescript: 5.7.2
+      typescript: 5.8.3
 
   '@vue/reactivity@3.5.13':
     dependencies:
@@ -12890,17 +12898,11 @@ snapshots:
       '@vue/shared': 3.5.17
       csstype: 3.1.3
 
-  '@vue/server-renderer@3.5.13(vue@3.5.13(typescript@5.7.2))':
+  '@vue/server-renderer@3.5.13(vue@3.5.13(typescript@5.8.3))':
     dependencies:
       '@vue/compiler-ssr': 3.5.13
       '@vue/shared': 3.5.13
-      vue: 3.5.13(typescript@5.7.2)
-
-  '@vue/server-renderer@3.5.17(vue@3.5.17(typescript@5.7.2))':
-    dependencies:
-      '@vue/compiler-ssr': 3.5.17
-      '@vue/shared': 3.5.17
-      vue: 3.5.17(typescript@5.7.2)
+      vue: 3.5.13(typescript@5.8.3)
 
   '@vue/server-renderer@3.5.17(vue@3.5.17(typescript@5.8.3))':
     dependencies:
@@ -12914,20 +12916,20 @@ snapshots:
 
   '@vue/shared@3.5.17': {}
 
-  '@vueuse/core@12.8.2(typescript@5.7.2)':
+  '@vueuse/core@12.8.2(typescript@5.8.3)':
     dependencies:
       '@types/web-bluetooth': 0.0.21
       '@vueuse/metadata': 12.8.2
-      '@vueuse/shared': 12.8.2(typescript@5.7.2)
-      vue: 3.5.17(typescript@5.7.2)
+      '@vueuse/shared': 12.8.2(typescript@5.8.3)
+      vue: 3.5.17(typescript@5.8.3)
     transitivePeerDependencies:
       - typescript
 
-  '@vueuse/integrations@12.8.2(axios@1.9.0)(change-case@5.4.4)(focus-trap@7.6.4)(typescript@5.7.2)':
+  '@vueuse/integrations@12.8.2(axios@1.9.0)(change-case@5.4.4)(focus-trap@7.6.4)(typescript@5.8.3)':
     dependencies:
-      '@vueuse/core': 12.8.2(typescript@5.7.2)
-      '@vueuse/shared': 12.8.2(typescript@5.7.2)
-      vue: 3.5.17(typescript@5.7.2)
+      '@vueuse/core': 12.8.2(typescript@5.8.3)
+      '@vueuse/shared': 12.8.2(typescript@5.8.3)
+      vue: 3.5.17(typescript@5.8.3)
     optionalDependencies:
       axios: 1.9.0
       change-case: 5.4.4
@@ -12937,9 +12939,9 @@ snapshots:
 
   '@vueuse/metadata@12.8.2': {}
 
-  '@vueuse/shared@12.8.2(typescript@5.7.2)':
+  '@vueuse/shared@12.8.2(typescript@5.8.3)':
     dependencies:
-      vue: 3.5.17(typescript@5.7.2)
+      vue: 3.5.17(typescript@5.8.3)
     transitivePeerDependencies:
       - typescript
 
@@ -12983,6 +12985,16 @@ snapshots:
       use-sync-external-store: 1.2.2(react@18.3.1)
     optionalDependencies:
       xstate: 5.19.0
+    transitivePeerDependencies:
+      - '@types/react'
+
+  '@xstate/react@4.1.3(react@18.3.1)(xstate@5.20.1)':
+    dependencies:
+      react: 18.3.1
+      use-isomorphic-layout-effect: 1.1.2(@types/react@18.3.12)(react@18.3.1)
+      use-sync-external-store: 1.2.2(react@18.3.1)
+    optionalDependencies:
+      xstate: 5.20.1
     transitivePeerDependencies:
       - '@types/react'
 
@@ -14484,13 +14496,13 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  gql.tada@1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.11.0)(typescript@5.7.2):
+  gql.tada@1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.8.3))(graphql@16.11.0)(typescript@5.8.3):
     dependencies:
       '@0no-co/graphql.web': 1.0.11(graphql@16.11.0)
-      '@0no-co/graphqlsp': 1.12.16(graphql@16.11.0)(typescript@5.7.2)
-      '@gql.tada/cli-utils': 1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.7.2))(@gql.tada/vue-support@1.0.1(typescript@5.7.2))(graphql@16.11.0)(typescript@5.7.2)
-      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.7.2)
-      typescript: 5.7.2
+      '@0no-co/graphqlsp': 1.12.16(graphql@16.11.0)(typescript@5.8.3)
+      '@gql.tada/cli-utils': 1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.11.0)(typescript@5.8.3))(@gql.tada/vue-support@1.0.1(typescript@5.8.3))(graphql@16.11.0)(typescript@5.8.3)
+      '@gql.tada/internal': 1.0.8(patch_hash=r6sdebyzpemqktlkckaf4ey7wm)(graphql@16.11.0)(typescript@5.8.3)
+      typescript: 5.8.3
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'
       - '@gql.tada/vue-support'
@@ -15412,7 +15424,7 @@ snapshots:
 
   mkdirp@3.0.1: {}
 
-  mkdist@1.6.0(typescript@5.7.2):
+  mkdist@1.6.0(typescript@5.8.3):
     dependencies:
       autoprefixer: 10.4.20(postcss@8.4.49)
       citty: 0.1.6
@@ -15428,7 +15440,7 @@ snapshots:
       semver: 7.6.3
       tinyglobby: 0.2.10
     optionalDependencies:
-      typescript: 5.7.2
+      typescript: 5.8.3
 
   mlly@1.7.3:
     dependencies:
@@ -16504,11 +16516,11 @@ snapshots:
     dependencies:
       glob: 10.4.5
 
-  rollup-plugin-dts@6.1.1(rollup@3.29.5)(typescript@5.7.2):
+  rollup-plugin-dts@6.1.1(rollup@3.29.5)(typescript@5.8.3):
     dependencies:
       magic-string: 0.30.14
       rollup: 3.29.5
-      typescript: 5.7.2
+      typescript: 5.8.3
     optionalDependencies:
       '@babel/code-frame': 7.26.2
 
@@ -17130,7 +17142,7 @@ snapshots:
 
   ultrahtml@1.5.3: {}
 
-  unbuild@2.0.0(typescript@5.7.2):
+  unbuild@2.0.0(typescript@5.8.3):
     dependencies:
       '@rollup/plugin-alias': 5.1.1(rollup@3.29.5)
       '@rollup/plugin-commonjs': 25.0.8(rollup@3.29.5)
@@ -17147,17 +17159,17 @@ snapshots:
       hookable: 5.5.3
       jiti: 1.21.6
       magic-string: 0.30.14
-      mkdist: 1.6.0(typescript@5.7.2)
+      mkdist: 1.6.0(typescript@5.8.3)
       mlly: 1.7.3
       pathe: 1.1.2
       pkg-types: 1.2.1
       pretty-bytes: 6.1.1
       rollup: 3.29.5
-      rollup-plugin-dts: 6.1.1(rollup@3.29.5)(typescript@5.7.2)
+      rollup-plugin-dts: 6.1.1(rollup@3.29.5)(typescript@5.8.3)
       scule: 1.3.0
       untyped: 1.5.1
     optionalDependencies:
-      typescript: 5.7.2
+      typescript: 5.8.3
     transitivePeerDependencies:
       - sass
       - supports-color
@@ -17437,11 +17449,11 @@ snapshots:
 
   urlpattern-polyfill@8.0.2: {}
 
-  urql@4.2.1(@urql/core@5.0.8(graphql@16.11.0))(react@18.3.1):
+  urql@4.2.1(@urql/core@5.2.0(graphql@16.11.0))(react@18.3.1):
     dependencies:
-      '@urql/core': 5.0.8(graphql@16.11.0)
+      '@urql/core': 5.2.0(graphql@16.11.0)
       react: 18.3.1
-      wonka: 6.3.4
+      wonka: 6.3.5
 
   use-isomorphic-layout-effect@1.1.2(@types/react@18.3.12)(react@18.3.1):
     dependencies:
@@ -17683,7 +17695,7 @@ snapshots:
       - '@75lb/nature'
       - supports-color
 
-  vitepress@1.6.3(@algolia/client-search@5.21.0)(@types/node@22.10.0)(axios@1.9.0)(change-case@5.4.4)(postcss@8.4.49)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.37.0)(typescript@5.7.2):
+  vitepress@1.6.3(@algolia/client-search@5.21.0)(@types/node@22.10.0)(axios@1.9.0)(change-case@5.4.4)(postcss@8.4.49)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.37.0)(typescript@5.8.3):
     dependencies:
       '@docsearch/css': 3.8.2
       '@docsearch/js': 3.8.2(@algolia/client-search@5.21.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)
@@ -17692,17 +17704,17 @@ snapshots:
       '@shikijs/transformers': 2.5.0
       '@shikijs/types': 2.5.0
       '@types/markdown-it': 14.1.2
-      '@vitejs/plugin-vue': 5.2.1(vite@5.4.14(@types/node@22.10.0)(terser@5.37.0))(vue@3.5.13(typescript@5.7.2))
+      '@vitejs/plugin-vue': 5.2.1(vite@5.4.14(@types/node@22.10.0)(terser@5.37.0))(vue@3.5.13(typescript@5.8.3))
       '@vue/devtools-api': 7.7.2
       '@vue/shared': 3.5.13
-      '@vueuse/core': 12.8.2(typescript@5.7.2)
-      '@vueuse/integrations': 12.8.2(axios@1.9.0)(change-case@5.4.4)(focus-trap@7.6.4)(typescript@5.7.2)
+      '@vueuse/core': 12.8.2(typescript@5.8.3)
+      '@vueuse/integrations': 12.8.2(axios@1.9.0)(change-case@5.4.4)(focus-trap@7.6.4)(typescript@5.8.3)
       focus-trap: 7.6.4
       mark.js: 8.11.1
       minisearch: 7.1.2
       shiki: 2.5.0
       vite: 5.4.14(@types/node@22.10.0)(terser@5.37.0)
-      vue: 3.5.13(typescript@5.7.2)
+      vue: 3.5.13(typescript@5.8.3)
     optionalDependencies:
       postcss: 8.4.49
     transitivePeerDependencies:
@@ -17879,25 +17891,15 @@ snapshots:
       '@vue/devtools-api': 6.6.4
       vue: 3.5.17(typescript@5.8.3)
 
-  vue@3.5.13(typescript@5.7.2):
+  vue@3.5.13(typescript@5.8.3):
     dependencies:
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-sfc': 3.5.13
       '@vue/runtime-dom': 3.5.13
-      '@vue/server-renderer': 3.5.13(vue@3.5.13(typescript@5.7.2))
+      '@vue/server-renderer': 3.5.13(vue@3.5.13(typescript@5.8.3))
       '@vue/shared': 3.5.13
     optionalDependencies:
-      typescript: 5.7.2
-
-  vue@3.5.17(typescript@5.7.2):
-    dependencies:
-      '@vue/compiler-dom': 3.5.17
-      '@vue/compiler-sfc': 3.5.17
-      '@vue/runtime-dom': 3.5.17
-      '@vue/server-renderer': 3.5.17(vue@3.5.17(typescript@5.7.2))
-      '@vue/shared': 3.5.17
-    optionalDependencies:
-      typescript: 5.7.2
+      typescript: 5.8.3
 
   vue@3.5.17(typescript@5.8.3):
     dependencies:
@@ -17933,7 +17935,7 @@ snapshots:
       siginfo: 2.0.0
       stackback: 0.0.2
 
-  wonka@6.3.4: {}
+  wonka@6.3.5: {}
 
   word-wrap@1.2.5: {}
 
@@ -18024,6 +18026,8 @@ snapshots:
   ws@8.18.0: {}
 
   xstate@5.19.0: {}
+
+  xstate@5.20.1: {}
 
   xxhash-wasm@1.1.0: {}
 

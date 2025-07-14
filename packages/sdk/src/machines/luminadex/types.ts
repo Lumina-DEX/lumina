@@ -1,4 +1,5 @@
 import type * as Comlink from "comlink"
+import type { ActorRefFrom } from "xstate"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
 import type { WalletEmit } from "../wallet/types"
@@ -57,6 +58,7 @@ interface DexContext {
 	} & SwapSettings
 	mint: Omit<MintToken, "user"> & { transactionResult: DexTransactionResult }
 	deployPool: PoolSettings & { transactionResult: DexTransactionResult }
+	createPool: PoolSettings & { pools: Record<string, ActorRefFrom<any>> }
 	claim: { transactionResult: DexTransactionResult }
 	deployToken: {
 		symbol: string
@@ -92,6 +94,8 @@ type DexEvent =
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
 	// Claim
 	| { type: "ClaimTokensFromFaucet" }
+	// Create Pool Remotely
+	| { type: "CreatePool"; settings: PoolSettings }
 
 interface FrontendFee {
 	destination: string
@@ -132,7 +136,7 @@ export interface LuminaDexMachineContext {
 	frontendFee: FrontendFee
 }
 
-type DexFeature = "Swap" | "DeployPool" | "DeployToken" | "Claim"
+type DexFeature = "Swap" | "ManualDeployPool" | "DeployToken" | "Claim"
 
 export type DexFeatures = DexFeature[]
 

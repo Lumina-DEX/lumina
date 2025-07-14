@@ -35,9 +35,10 @@ interface JobResult {
 const JobResult = builder.objectRef<JobResult>("JobResult").implement({
 	description: "A job result represented in JSON format",
 	fields: (t) => ({
-		pool: t.field({ type: "String", resolve: (r) => r.pool }),
+		pool: t.field({ type: "String", resolve: (r) => r.pool, nullable: false }),
 		transactionJson: t.field({
 			type: "JSONObject",
+			nullable: false,
 			resolve: (r) => r.transactionJson
 		})
 	})
@@ -82,7 +83,7 @@ builder.mutationField("createPool", (t) =>
 			console.log(`Checking if job with ID ${jobId} exists:`, exists ? "Yes" : "No")
 			if (!exists) {
 				const job = await createPoolQueue.add("createPool", input, { jobId, removeOnFail: true })
-				console.log(`Job created with ID: ${job.id}, status: ${job.isActive} `)
+				console.log(`Job created with ID: ${job.id}`)
 			}
 			return { id: jobId }
 		}

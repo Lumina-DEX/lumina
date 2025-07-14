@@ -11,12 +11,7 @@ import {
 	setup,
 	spawnChild
 } from "xstate"
-import {
-	chainFaucets,
-	luminaCdnOrigin,
-	luminadexFactories,
-	poolInstance
-} from "../../constants/index"
+import { chainFaucets, luminadexFactories, poolInstance } from "../../constants/index"
 import type {
 	AddLiquidity,
 	DeployPoolArgs,
@@ -36,6 +31,7 @@ import { createMeasure, getDebugConfig, prefixedLogger } from "../../helpers/deb
 import { sendTransaction } from "../../helpers/transfer"
 import { isBetween } from "../../helpers/validation"
 import { detectWalletChange } from "../wallet/actors"
+import { createPoolMachine } from "./actors/createPool"
 import type {
 	AddLiquiditySettings,
 	Can,
@@ -170,9 +166,8 @@ const setToLoadFromFeatures = (features: DexFeatures) => {
 	}
 	return toLoad
 }
-
-export const createLuminaDexMachine = () => {
-	return setup({
+export const createLuminaDexMachine = () =>
+	setup({
 		types: {
 			context: {} as LuminaDexMachineContext,
 			events: {} as LuminaDexMachineEvent,
@@ -191,6 +186,7 @@ export const createLuminaDexMachine = () => {
 		},
 		actors: {
 			detectWalletChange,
+			createPoolMachine: createPoolMachine as any, // TODO: TS7056 :/
 			loadContracts: fromPromise(
 				async ({ input }: { input: { worker: DexWorker; features: DexFeatures } }) => {
 					const { worker, features } = input
@@ -401,11 +397,30 @@ export const createLuminaDexMachine = () => {
 			)
 		},
 		actions: {
-			trackPoolDeployed: ({ context }) => {
-				fetch(`${luminaCdnOrigin}/api/${walletNetwork(context)}/pool`, {
-					method: "POST"
+			createPool: enqueueActions(({ context, enqueue }) => {
+				const tokenA = context.dex.createPool.tokenA
+				const tokenB = context.dex.createPool.tokenB
+				const network = walletNetwork(context)
+				const id = `createPool-${tokenA}-${tokenB}-${network}`
+				enqueue.assign(({ spawn }) => {
+					const created = spawn("createPoolMachine", {
+						id,
+						input: { wallet: context.wallet, tokenA, tokenB, user: walletUser(context), network }
+					})
+					return {
+						dex: {
+							...context.dex,
+							createPool: {
+								...context.dex.createPool,
+								pools: {
+									...context.dex.createPool.pools,
+									[id]: created
+								}
+							}
+						}
+					}
 				})
-			}
+			})
 		}
 	}).createMachine({
 		id: "luminaDex",
@@ -473,6 +488,7 @@ export const createLuminaDexMachine = () => {
 					claim: { transactionResult: null },
 					mint: { to: "", token: "", amount: 0, transactionResult: null },
 					deployPool: { tokenA: "", tokenB: "", transactionResult: null },
+					createPool: { tokenA: "", tokenB: "", pools: {} },
 					deployToken: {
 						symbol: "",
 						transactionResult: null,
@@ -676,6 +692,20 @@ export const createLuminaDexMachine = () => {
 							}
 						},
 						on: {
+							CreatePool: {
+								target: "CREATING_POOL",
+								description: "Create a pool using the API",
+								actions: {
+									type: "createPool",
+									params: ({ context, event }) => ({
+										wallet: context.wallet,
+										tokenA: event.settings.tokenA,
+										tokenB: event.settings.tokenB,
+										user: walletUser(context),
+										network: walletNetwork(context)
+									})
+								}
+							},
 							DeployPool: {
 								target: "DEPLOYING_POOL",
 								description: "Deploy a pool for a given token.",
@@ -819,25 +849,19 @@ export const createLuminaDexMachine = () => {
 									user: walletUser(context),
 									factory: luminaDexFactory(context),
 									signer,
-									user0
+									user0,
+									features: context.features
 								}
 							},
 							onDone: {
 								target: "DEX.READY",
 								actions: [
-									({ context }) => {
-										logger.info("Syncing pools with CDN...")
-										fetch(`${luminaCdnOrigin}/api/${walletNetwork(context)}/sync`, {
-											method: "POST"
-										})
-									},
 									assign(({ context, event }) => ({
 										dex: {
 											...context.dex,
 											deployPool: { ...context.dex.deployPool, transactionResult: event.output }
 										}
-									})),
-									{ type: "trackPoolDeployed" }
+									}))
 								]
 							},
 							onError: {
@@ -1122,4 +1146,3 @@ export const createLuminaDexMachine = () => {
 			}
 		}
 	})
-}
