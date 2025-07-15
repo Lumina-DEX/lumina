@@ -806,6 +806,7 @@ export const createLuminaDexMachine = () =>
 							}
 						}
 					},
+					CREATING_POOL: {},
 					DEPLOYING_TOKEN: {
 						invoke: {
 							src: "deployToken",
