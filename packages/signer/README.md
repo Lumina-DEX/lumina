@@ -1,14 +1,25 @@
-# Signer Service
+# Pool CreationService
 
-Signer service that can generate a proof given 2 tokens on a given network.
+Pool CreationService that can generate a proof server side.
 
-This is meant to be used by clients directly, and hopefully won't be needed
-anymore with the multisig.
+Tech stack :
 
-This can't run on cloudflare workers because of o1js limitations:
+- Typescript
+  - Bun
+  - pnpm
+- SQL:
+  - Drizzle ORM
+  - SQLite
+- Queues:
+  - BullMQ
+  - Redis
+- Graphql:
+  - Pothos
+  - Graphql Yoga
+- Secrets Management:
+  - Infisical
 
-- FinalizationRegistry can't be used
-- eval or new Function can't be used
+This is deployed on a Hetzner server using Dokku.
 
 ## Installation
 
@@ -22,60 +33,41 @@ pnpm i
 
 Create an .env file base on .env.example
 
-Create the sqlite db and populate it
+## Database
+
+### SQlite
+
+Create the sqlite db and populate it :
 
 ```bash
 bun db:reset && bun db:migrate && bun db:seed
 ```
 
-## Usage
+### Redis
 
-Use redis, expressJs and bullMQ
-
-Launch redis first in docker :
+To start redis, use docker or docker-compose
 
 ```bash
 docker run -p 6379:6379 -d redis:8.0.2
 ```
 
-Buil and run :
+or
 
 ```bash
-pnpm run build
-pnpm run start
+docker-compose up -d
 ```
 
-The server with listen on http://0.0.0.0:3000/.
+## Server
 
-Create pool post url :
+To start the graphql server in dev mode, run:
 
-http://localhost:3000/create-pool
-
-Create pool frontend url :
-
-http://localhost:3000/pool
-
-Example data :
-
-```
-{
-    "tokenA": "MINA",
-    "tokenB": "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
-    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
-}
+```bash
+bun run dev
 ```
 
-Curl example :
-
-```
-curl --location 'http://localhost:3000/create-pool' \
---header 'Content-Type: application/json' \
---data '{
-    "tokenA": "MINA",
-    "tokenB": "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
-    "user":"B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65"
-}'
-```
+Use the graphql playground at http://localhost:3001/graphql to test the API.
+Refer to index.html to see usage client side.
+The SDK includes a state machine that models the API usage.
 
 ## Deploy
 
@@ -84,9 +76,9 @@ We should containerize this service and deploy it to a big Hetzner server
 include a CI pipeline to automate the deployment process with Pulumi
 (https://timozander.de/blog/using-pulumi-with-hcloud/)
 
-## Docker
+### Docker
 
-How to run locally the service and redis with docker:
+To run locally the service and redis with docker:
 
 Build the docker image from the root of the monorepo:
 

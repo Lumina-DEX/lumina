@@ -14,7 +14,6 @@ function HomeComponent() {
 
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
-
 	const minaBalances = useSelector(Wallet, (state) => state.context.balances["mina:devnet"])
 
 	const [tokens, setTokens] = useState<LuminaToken[]>([])

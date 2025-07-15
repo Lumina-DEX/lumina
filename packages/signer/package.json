@@ -13,7 +13,7 @@
 		"redis:start": "docker compose up -d",
 		"start": "bun src/index.ts",
 		"web": "bun ./index.html",
-		"dev": "bun run --hot src/index.ts",
+		"dev": "bun run --watch src/index.ts",
 		"dev:uws": "tsx src/uws.ts",
 		"all": "concurrently 'bun run redis' 'bun run start' 'bun run web'",
 		"format": "dprint check",
