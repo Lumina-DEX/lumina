@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react"
 import { LuminaPool, LuminaToken, Networks, PublicKey, TokenId } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "./Layout"
+import { deriveTokenIdFromAddress } from "@/utils/addresses"
 
 // @ts-ignore
 const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
@@ -23,8 +24,7 @@ const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 
 	const getBalance = async () => {
 		if (token?.address) {
-			const tokenIdPool = TokenId.derive(PublicKey.fromBase58(token.address))
-			const tokenId = TokenId.toBase58(tokenIdPool)
+			const tokenId = deriveTokenIdFromAddress(token.address)
 			let data = {
 				address: token.address,
 				decimal: "decimals" in token ? 10 ** token.decimals : 10 ** 9,
@@ -47,8 +47,7 @@ const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 
 	useEffect(() => {
 		if (walletContext?.currentNetwork && token?.address) {
-			const tokenIdPool = TokenId.derive(PublicKey.fromBase58(token.address))
-			const tokenId = TokenId.toBase58(tokenIdPool)
+			const tokenId = deriveTokenIdFromAddress(token.address)
 			const tokenBalance = walletContext.balances[walletContext.currentNetwork][tokenId]
 			if (tokenBalance && tokenBalance.balance) {
 				setBalance(tokenBalance.balance.toFixed(2).toString())

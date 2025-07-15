@@ -18,8 +18,7 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 	const handleClose = () => setOpen(false)
 
 	useEffect(() => {
-		console.log("token", poolAddress)
-		console.log("accountState update")
+		console.log("poolAddress", poolAddress)
 		getPools().then()
 	}, [walletContext.currentNetwork])
 
@@ -30,9 +29,12 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 
 		let poolExist = pools.find((z) => z.address === poolAddress)
 		if (poolExist) {
-			setToken(poolExist)
+			console.log("poolExist", poolExist)
+			setPool(poolExist)
+			setToken(poolExist.tokens[1])
 			setCurrent(poolExist)
 		} else {
+			console.log("pool not found", pools[0])
 			// if this pool didn't exist for this network we select the first token
 			setPool(pools[0])
 			setToken(pools[0].tokens[1])

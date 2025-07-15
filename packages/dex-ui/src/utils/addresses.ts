@@ -4,7 +4,9 @@ import {
 	fetchTokenList,
 	LuminaPool,
 	LuminaToken,
-	Networks
+	Networks,
+	PublicKey,
+	TokenId
 } from "@lumina-dex/sdk"
 
 export const poolToka = "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY"
@@ -34,4 +36,9 @@ export class Addresses {
 		this.currentNetworkCDN = network
 		return Addresses.listFromCDN
 	}
+}
+
+export function deriveTokenIdFromAddress(address: string): string {
+	const tokenIdPool = TokenId.derive(PublicKey.fromBase58(address))
+	return TokenId.toBase58(tokenIdPool)
 }
