@@ -9,7 +9,6 @@ import { minaTestnet } from "./Account"
 
 const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 	const [cdnList, setCdnList] = useState<LuminaPool[]>([])
-	const [eventList, setEventList] = useState<LuminaPool[]>([])
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const [current, setCurrent] = useState<LuminaPool | undefined>()
@@ -29,31 +28,15 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 		const pools = await Addresses.getList(network)
 		setCdnList(pools)
 
-		const fetchEvent = await Addresses.getEventList(network)
-		console.log("fetch event", fetchEvent)
-		setEventList([])
-		if (fetchEvent?.length) {
-			setEventList(fetchEvent)
-		}
-
 		let poolExist = pools.find((z) => z.address === poolAddress)
-		console.log("pool exist", poolExist)
-		if (!poolExist && pools?.length) {
-			poolExist = fetchEvent?.find((z) => z.address === poolAddress)
-			console.log("pool exist 2", poolExist)
-			if (poolExist) {
-				setPool(poolExist)
-				setToken(poolExist.tokens[1])
-				setCurrent(poolExist)
-			} else {
-				// if this pool didn't exist for this network we select the first token
-				setPool(pools[0])
-				setToken(pools[0].tokens[1])
-				setCurrent(pools[0])
-			}
-		} else if (poolExist) {
+		if (poolExist) {
 			setToken(poolExist)
 			setCurrent(poolExist)
+		} else {
+			// if this pool didn't exist for this network we select the first token
+			setPool(pools[0])
+			setToken(pools[0].tokens[1])
+			setCurrent(pools[0])
 		}
 	}
 
@@ -99,8 +82,8 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 			>
 				<Box sx={style}>
 					<div className="flex flex-col">
-						{eventList &&
-							eventList.map((x) => (
+						{cdnList &&
+							cdnList.map((x) => (
 								<div
 									style={{ borderBottom: "1px solid black" }}
 									onClick={() => selectPool(x)}

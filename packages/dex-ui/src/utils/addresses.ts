@@ -22,8 +22,6 @@ export const tokenA: LuminaToken = {
 
 export class Addresses {
 	private static listFromCDN: LuminaPool[] = []
-	private static listFromEvent: LuminaPool[] = []
-	private static currentNetworkEvent = "mina:devnet"
 	private static currentNetworkCDN = "mina:devnet"
 
 	public static async getList(network: Networks) {
@@ -35,20 +33,5 @@ export class Addresses {
 		Addresses.listFromCDN = data
 		this.currentNetworkCDN = network
 		return Addresses.listFromCDN
-	}
-
-	public static async getEventList(network: Networks) {
-		if (Addresses.currentNetworkEvent === network && Addresses.listFromEvent.length) {
-			return Addresses.listFromEvent
-		}
-
-		const data = await fetchAllPoolsFromPoolFactory({
-			network
-		})
-		const newList = data
-		console.log("list from event", data)
-		Addresses.listFromEvent = Array.from(newList.pools.values())
-		this.currentNetworkEvent = network
-		return Addresses.listFromEvent
 	}
 }
