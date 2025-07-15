@@ -1,12 +1,21 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { and, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/libsql"
-import { Encoding, Encryption, initializeBindings, PrivateKey, PublicKey } from "o1js"
+import {
+	Encoding,
+	Encryption,
+	fetchAccount,
+	initializeBindings,
+	Mina,
+	PrivateKey,
+	PublicKey
+} from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { relations } from "../drizzle/relations"
 import { pool, signerMerkle, poolKey as tPoolKey } from "../drizzle/schema"
-import { encryptedKeyToField } from "../src/helpers"
+import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
+import { PoolFactory } from "@lumina-dex/contracts"
 
 const Schema = v.object({
 	DB_FILE_NAME: v.string(),
@@ -30,6 +39,24 @@ type PoolKey = {
 }
 
 describe("Signature", () => {
+	it("rebuild merkle", async () => {
+		const [merkleMap] = await getMerkle()
+
+		const root = merkleMap.getRoot()
+
+		const Network = getNetwork("mina:devnet")
+		Mina.setActiveInstance(Network)
+
+		const factory = process.env.POOL_FACTORY_PUBLIC_KEY
+		console.log("Factory Public Key:", factory)
+		const factoryKey = PublicKey.fromBase58(factory!)
+		await fetchAccount({ publicKey: factoryKey })
+		const zkFactory = new PoolFactory(factoryKey)
+		const factoryRoot = zkFactory.approvedSigner.getAndRequireEquals()
+
+		expect(root.value).toEqual(factoryRoot.value)
+	})
+
 	it("fetch secret", async () => {
 		const client = new InfisicalSDK()
 
