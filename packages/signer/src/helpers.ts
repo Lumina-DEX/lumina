@@ -14,7 +14,6 @@ import {
 	Mina,
 	Poseidon,
 	PublicKey,
-	setNumberOfWorkers,
 	UInt64
 } from "o1js"
 import * as v from "valibot"
@@ -172,9 +171,8 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 
 export const compileContracts = async () => {
 	console.log("Compiling contracts...")
-	setNumberOfWorkers(4)
+	// setNumberOfWorkers(4)
 	console.time("compile")
-	//const cacheFiles = await fetchFromServerFiles();
 	const cache = Cache.FileSystem("./cache")
 	console.log("compile pool factory")
 	await PoolFactory.compile({ cache })

@@ -51,7 +51,8 @@ export const createPoolAndTransaction = async ({
 				tokenB,
 				user,
 				network,
-				jobId
+				jobId,
+				status: "pending"
 			})
 			.returning({ insertedId: pool.id })
 		console.log("Inserted new pool into database", result)
@@ -116,7 +117,7 @@ export const createPoolAndTransaction = async ({
 		return minaTx.toJSON()
 	})
 	return {
-		pool: newPoolPrivateKey.toPublicKey().toBase58(),
-		transaction: minaTransaction
+		poolPublicKey: newPoolPublicKey.toBase58(),
+		transactionJson: minaTransaction
 	}
 }

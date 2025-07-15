@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/libsql"
-import { PrivateKey } from "o1js"
 import { relations } from "../drizzle/relations"
-import { pool, signerMerkle } from "../drizzle/schema"
+import { signerMerkle } from "../drizzle/schema"
 
 const db = drizzle("file:local.db", { relations }) //Hardcode so that it runs only in dev.
 
@@ -64,18 +63,18 @@ async function seed() {
 		}
 	}
 
-	await db
-		.insert(pool)
-		.values({
-			tokenA: "MINA",
-			tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
-			user: "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
-			publicKey: PrivateKey.random().toPublicKey().toBase58(),
-			jobId: "job-12345",
-			network: "mina:devnet",
-			status: "deployed"
-		})
-		.returning()
+	// await db
+	// 	.insert(pool)
+	// 	.values({
+	// 		tokenA: "MINA",
+	// 		tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+	// 		user: "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
+	// 		publicKey: PrivateKey.random().toPublicKey().toBase58(),
+	// 		jobId: "job-12345",
+	// 		network: "mina:devnet",
+	// 		status: "deployed"
+	// 	})
+	// 	.returning()
 
 	console.log("✅ Seed completed.")
 }

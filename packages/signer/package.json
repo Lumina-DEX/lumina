@@ -8,6 +8,8 @@
 		"db:studio": "drizzle-kit studio",
 		"db:seed": "bun run scripts/seed.ts",
 		"db:reset": "bun run scripts/reset.ts",
+		"db:flush": "bun db:reset && bun db:migrate && bun db:seed",
+		"schema:print": "bun run graphql/printSchema.ts",
 		"redis:start": "docker compose up -d",
 		"start": "bun src/index.ts",
 		"web": "bun ./index.html",

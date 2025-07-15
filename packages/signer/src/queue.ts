@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { Queue, QueueEvents, Worker } from "bullmq"
 import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
+import type { createPoolAndTransaction } from "./workers/logic"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -22,7 +23,10 @@ const worker = new Worker("createPool", processorUrl, {
 	concurrency
 })
 
-export const createPoolQueue = new Queue<CreatePoolInputType, { something: "" }>("createPool", {
+export const createPoolQueue = new Queue<
+	CreatePoolInputType,
+	Awaited<ReturnType<typeof createPoolAndTransaction>>
+>("createPool", {
 	connection
 })
 export const createPoolQueueEvents = new QueueEvents("createPool", {
@@ -46,7 +50,7 @@ createPoolQueueEvents.on("active", ({ jobId, prev }) => {
 })
 
 createPoolQueueEvents.on("completed", ({ jobId, returnvalue }) => {
-	console.log(`${jobId} has completed and returned ${returnvalue}`)
+	console.log(`${jobId} has completed and returned`, returnvalue.slice(0, 100))
 })
 
 createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {

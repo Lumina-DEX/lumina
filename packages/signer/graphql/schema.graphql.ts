@@ -18,13 +18,13 @@ type Job {
 
 """A job result represented in JSON format"""
 type JobResult {
-  pool: String!
+  poolPublicKey: String!
   transactionJson: JSONObject!
 }
 
 type Mutation {
-  """Confirm a job by ID"""
-  confirmJob(jobId: String!): String
+  """Confirm a job for a given pool"""
+  confirmJob(poolPublicKey: String!): String
 
   """Create a new pool"""
   createPool(input: CreatePoolInput!): Job

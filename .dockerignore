@@ -31,9 +31,5 @@ lefthook.yml
 LICENSE
 *.drawio
 *.png
-local.db
-drizzle/
 cache/
 tests/
-vitest.config.ts
-docker-compose.yml
