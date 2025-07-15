@@ -23,9 +23,7 @@ export const createMinaClient = (url: string) => {
 	return client
 }
 
-const sseClient = createSSEClient({
-	url: `${poolCreationUrl}/stream`
-})
+const sseClient = createSSEClient({ url: poolCreationUrl })
 
 export const createPoolSignerClient = () => {
 	const url = poolCreationUrl

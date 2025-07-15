@@ -69,14 +69,14 @@ builder.mutationField("createPool", (t) =>
 		description: "Create a new pool",
 		args: { input: t.arg({ type: CreatePoolInput, required: true }) },
 		resolve: async (_, { input }, { queues }) => {
-			const { createPoolQueue } = queues()
+			using q = queues()
 			const jobId = globalThis.crypto.randomUUID()
-			const job = await createPoolQueue.getJob(jobId)
+			const job = await q.createPoolQueue.getJob(jobId)
 			console.log(`Job ID: ${jobId}, Exists: ${!!job}`)
 			if (await job?.isCompleted()) return { id: jobId, status: "completed" }
 			if (job) return { id: jobId, status: "exists" }
 
-			await createPoolQueue.add("createPool", input, {
+			await q.createPoolQueue.add("createPool", input, {
 				jobId,
 				removeOnFail: true,
 				removeOnComplete: false
@@ -92,24 +92,24 @@ builder.subscriptionField("poolCreation", (t) =>
 		description: "Subscribe to pool creation events",
 		args: { jobId: t.arg.string({ required: true }) },
 		subscribe: async (_, args, { queues }) => {
-			const { createPoolQueue, createPoolQueueEvents } = queues()
 			console.log(`Subscribing to pool creation events for job ID: ${args.jobId}`)
-			const job = await createPoolQueue.getJob(args.jobId)
-			if (!job) throw new GraphQLError(`Job with ID ${args.jobId} not found`)
 			return new Repeater<JobResult>(async (push, stop) => {
+				using q = queues()
+				const job = await q.createPoolQueue.getJob(args.jobId)
+				if (!job) throw new GraphQLError(`Job with ID ${args.jobId} not found`)
 				if (await job.isCompleted()) {
 					push({ status: "already_completed", ...job.returnvalue })
 					return stop()
 				}
-				const completed = createPoolQueueEvents.on("completed", async ({ jobId }) => {
+				const completed = q.createPoolQueueEvents.on("completed", async ({ jobId }) => {
 					console.log(`Repeater completed for job ID: ${jobId}`)
 					if (jobId !== args.jobId) return
-					const job = await createPoolQueue.getJob(jobId)
+					const job = await q.createPoolQueue.getJob(jobId)
 					if (!job) return stop(new GraphQLError(`Job with ID ${jobId} not found`))
 					push({ status: "just_completed", ...job.returnvalue })
 					return stop()
 				})
-				const failed = createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
+				const failed = q.createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
 					if (jobId !== args.jobId) return
 					return stop(new GraphQLError(`Job ${jobId} failed: ${failedReason}`))
 				})
@@ -128,8 +128,8 @@ builder.queryField("poolCreationJob", (t) =>
 		description: "Get the pool creation job",
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { queues }) => {
-			const { createPoolQueue } = queues()
-			const job = await createPoolQueue.getJob(jobId)
+			using q = queues()
+			const job = await q.createPoolQueue.getJob(jobId)
 			if (!job) throw new GraphQLError(`Job with ID ${jobId} not found`)
 			const status = await job.getState()
 			return { status, ...job.returnvalue }
@@ -143,10 +143,10 @@ builder.mutationField("confirmJob", (t) =>
 		description: "Confirm a job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { db, queues }) => {
-			const { createPoolQueue } = queues()
+			using q = queues()
 			const data = await db.select().from(pool).where(eq(pool.jobId, jobId))
 			if (data.length === 0) throw new GraphQLError(`No pool found for job ID ${jobId}`)
-			const job = await createPoolQueue.getJob(jobId)
+			const job = await q.createPoolQueue.getJob(jobId)
 			if (job) await job.remove()
 			if (data[0].status === "confirmed") return `Job for pool ${jobId} is already confirmed`
 			await db.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))

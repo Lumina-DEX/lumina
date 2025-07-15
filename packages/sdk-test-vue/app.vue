@@ -1,12 +1,15 @@
 <script lang="ts" setup>
+/** biome-ignore-all lint/correctness/noUnusedVariables: <vue> */
 import {
+  type ActorRefFromLogic,
   canDoDexAction,
+  type CreatePoolMachine,
   dexMachine,
   fetchTokenList,
   type LuminaToken,
   walletMachine
 } from "@lumina-dex/sdk"
-import { useActor } from "@lumina-dex/sdk/vue"
+import { useActor, useSelector } from "@lumina-dex/sdk/vue"
 import type { Reactive } from "vue"
 
 const sdkVersion = useRuntimeConfig().public.sdkVersion
@@ -25,6 +28,7 @@ const Dex = useActor(dexMachine, {
 })
 
 const walletState = computed(() => Wallet.snapshot.value.value)
+const dexFullContext = computed(() => Dex.snapshot.value.context.dex)
 const dexStatus = computed(() => Dex.snapshot.value.value)
 const dexError = computed(() => ({
   dexError: Dex.snapshot.value.context.dex.error,
@@ -81,8 +85,23 @@ const deployTokenSettings = computed(() =>
 )
 
 const deployPoolForm = reactive({
-  tokenA: "",
-  tokenB: ""
+  tokenA: "MINA",
+  tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+  manual: false
+})
+
+const creatingPool = computed(() => {
+  const createPool = Dex.snapshot.value.context.dex.createPool
+  return Object.entries(createPool.pools).map(([poolId, p]) => {
+    const pool = p as ActorRefFromLogic<CreatePoolMachine>
+    return {
+      id: poolId,
+      pool: useSelector(
+        pool,
+        state => ({ status: state.value, context: state.context })
+      )
+    }
+  })
 })
 
 const deployTokenForm = reactive({ symbol: "" })
@@ -188,7 +207,7 @@ const handleClaimFromFaucet = () => {
 }
 
 const enableDeployPool = () => {
-  Dex.send({ type: "LoadFeatures", features: ["DeployPool"] })
+  Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool"] })
 }
 
 const enableDeployToken = () => {
@@ -226,7 +245,9 @@ const end = Wallet.actorRef.subscribe(state => {
 })
 
 const notEmpty = (obj: Reactive<unknown>) =>
-  Object.values(obj).every(a => typeof a === "string" ? a.length > 0 : true)
+  Object.values(obj).every(a =>
+    typeof a === "string" ? a.length > 0 : typeof a === "boolean"
+  )
 </script>
 
 <template>
@@ -234,6 +255,10 @@ const notEmpty = (obj: Reactive<unknown>) =>
     <h2>Lumina SDK Test v{{ sdkVersion }}</h2>
     <hr>
     {{ contractStatus }}
+    <hr>
+    {{ dexFullContext }}
+    <hr>
+    {{ creatingPool }}
     <hr>
     <div>
       <button @click="fetchTokenBalances">Fetch Balances</button>
@@ -347,8 +372,9 @@ const notEmpty = (obj: Reactive<unknown>) =>
     <div>
       <input v-model="deployPoolForm.tokenA" placeholder="Token A Address">
       <input v-model="deployPoolForm.tokenB" placeholder="Token B Address">
+      <input v-model="deployPoolForm.manual" type="checkbox" />
       <button
-        :disabled="!(canDo.deployPool && notEmpty(deployPoolForm))"
+        :disabled="!(notEmpty(deployPoolForm))"
         @click="handleDeployPool"
       >
         Deploy Pool

@@ -94,8 +94,6 @@ type DexEvent =
 	| { type: "MintToken"; settings: Omit<MintToken, "user"> }
 	// Claim
 	| { type: "ClaimTokensFromFaucet" }
-	// Create Pool Remotely
-	| { type: "CreatePool"; settings: PoolSettings }
 
 interface FrontendFee {
 	destination: string
@@ -174,6 +172,7 @@ export interface RemoveLiquiditySettings {
 export interface PoolSettings {
 	tokenA: string
 	tokenB: string
+	manual?: boolean
 }
 
 export interface User {

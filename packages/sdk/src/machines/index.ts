@@ -8,6 +8,7 @@ import {
 	type RequiredActorOptionsKeys
 } from "xstate"
 import { createClientOptions, createMinaClient } from "../graphql/clients"
+import type { createPoolMachine } from "./luminadex/actors/createPool"
 import { canDoDexAction, createLuminaDexMachine } from "./luminadex/machine"
 import { createWalletMachine } from "./wallet/machine"
 
@@ -62,3 +63,5 @@ export const createDex = (...[options]: MachineOptions<DexMachine>): DexActor =>
 }
 
 export type LuminaContext = { Wallet: WalletActor; Dex: DexActor }
+
+export type CreatePoolMachine = typeof createPoolMachine

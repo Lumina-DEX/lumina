@@ -9,7 +9,8 @@ import {
 	type ErrorActorEvent,
 	fromPromise,
 	setup,
-	spawnChild
+	spawnChild,
+	stopChild
 } from "xstate"
 import { chainFaucets, luminadexFactories, poolInstance } from "../../constants/index"
 import type {
@@ -397,16 +398,17 @@ export const createLuminaDexMachine = () =>
 			)
 		},
 		actions: {
-			createPool: enqueueActions(({ context, enqueue }) => {
-				const tokenA = context.dex.createPool.tokenA
-				const tokenB = context.dex.createPool.tokenB
+			createPool: enqueueActions(({ context, enqueue, event }) => {
+				assertEvent(event, "DeployPool")
+				const tokenA = event.settings.tokenA
+				const tokenB = event.settings.tokenB
 				const network = walletNetwork(context)
 				const id = `createPool-${tokenA}-${tokenB}-${network}`
+				const input = { wallet: context.wallet, tokenA, tokenB, user: walletUser(context), network }
 				enqueue.assign(({ spawn }) => {
-					const created = spawn("createPoolMachine", {
-						id,
-						input: { wallet: context.wallet, tokenA, tokenB, user: walletUser(context), network }
-					})
+					const machine = context.dex.createPool.pools[id]
+					if (machine) stopChild(id)
+					const created = spawn("createPoolMachine", { id, input })
 					return {
 						dex: {
 							...context.dex,
@@ -692,9 +694,10 @@ export const createLuminaDexMachine = () =>
 							}
 						},
 						on: {
-							CreatePool: {
-								target: "CREATING_POOL",
+							DeployPool: [{
+								target: "DEX.READY",
 								description: "Create a pool using the API",
+								guard: ({ event }) => event.settings.manual !== true,
 								actions: {
 									type: "createPool",
 									params: ({ context, event }) => ({
@@ -705,11 +708,11 @@ export const createLuminaDexMachine = () =>
 										network: walletNetwork(context)
 									})
 								}
-							},
-							DeployPool: {
+							}, {
 								target: "DEPLOYING_POOL",
-								description: "Deploy a pool for a given token.",
-								guard: ({ context }) => canStartDexAction(context).deployPool,
+								description: "Deploy a pool manually for a given token.",
+								guard: ({ event, context }) =>
+									event.settings.manual === true && canStartDexAction(context).deployPool,
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
@@ -720,7 +723,7 @@ export const createLuminaDexMachine = () =>
 										}
 									}
 								}))
-							},
+							}],
 							DeployToken: {
 								target: "DEPLOYING_TOKEN",
 								description: "Deploy a token.",

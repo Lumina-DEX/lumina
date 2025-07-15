@@ -33,14 +33,26 @@ export const createPoolQueueEvents = new QueueEvents("createPool", {
 	connection
 })
 
+//TODO: Figure out if singletons can be used in some cases.
 export const queues = () => {
 	const createPoolQueueEvents = new QueueEvents("createPool", {
+		connection
+	})
+	const createPoolQueue = new Queue<
+		CreatePoolInputType,
+		Awaited<ReturnType<typeof createPoolAndTransaction>>
+	>("createPool", {
 		connection
 	})
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,
-		worker
+		worker,
+		[Symbol.dispose]: () => {
+			console.log("Closing queues and worker")
+			createPoolQueue.close()
+			createPoolQueueEvents.close()
+		}
 	}
 }
 

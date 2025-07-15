@@ -60,7 +60,7 @@ export const createPoolAndTransaction = async ({
 		const listPair = getUniqueUserPairs(users, poolId, newPoolPrivateKey.toBase58())
 		// insert the encrypted key of the pool in database
 		await txOrm.insert(tPoolKey).values(listPair)
-		console.log("Inserted pool keys into database", listPair)
+		// console.log("Inserted pool keys into database", listPair)
 		const signature = Signature.create(
 			masterSignerPrivateKey,
 			newPoolPrivateKey.toPublicKey().toFields()

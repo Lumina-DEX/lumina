@@ -114,4 +114,4 @@ export const poolInstance = {
 } as const
 
 // TODO: Deploy pool-signer to production first
-export const poolCreationUrl = "https://localhost:3001/graphql"
+export const poolCreationUrl = "http://localhost:3001/graphql"
