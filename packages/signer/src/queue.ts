@@ -33,7 +33,10 @@ export const createPoolQueueEvents = new QueueEvents("createPool", {
 	connection
 })
 
-export const getQueues = () => {
+export const queues = () => {
+	const createPoolQueueEvents = new QueueEvents("createPool", {
+		connection
+	})
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,

@@ -68,7 +68,8 @@ builder.mutationField("createPool", (t) =>
 		type: Job,
 		description: "Create a new pool",
 		args: { input: t.arg({ type: CreatePoolInput, required: true }) },
-		resolve: async (_, { input }, { queues: { createPoolQueue } }) => {
+		resolve: async (_, { input }, { queues }) => {
+			const { createPoolQueue } = queues()
 			const jobId = globalThis.crypto.randomUUID()
 			const job = await createPoolQueue.getJob(jobId)
 			console.log(`Job ID: ${jobId}, Exists: ${!!job}`)
@@ -90,7 +91,8 @@ builder.subscriptionField("poolCreation", (t) =>
 		type: JobResult,
 		description: "Subscribe to pool creation events",
 		args: { jobId: t.arg.string({ required: true }) },
-		subscribe: async (_, args, { queues: { createPoolQueue, createPoolQueueEvents } }) => {
+		subscribe: async (_, args, { queues }) => {
+			const { createPoolQueue, createPoolQueueEvents } = queues()
 			console.log(`Subscribing to pool creation events for job ID: ${args.jobId}`)
 			const job = await createPoolQueue.getJob(args.jobId)
 			if (!job) throw new GraphQLError(`Job with ID ${args.jobId} not found`)
@@ -100,6 +102,7 @@ builder.subscriptionField("poolCreation", (t) =>
 					return stop()
 				}
 				const completed = createPoolQueueEvents.on("completed", async ({ jobId }) => {
+					console.log(`Repeater completed for job ID: ${jobId}`)
 					if (jobId !== args.jobId) return
 					const job = await createPoolQueue.getJob(jobId)
 					if (!job) return stop(new GraphQLError(`Job with ID ${jobId} not found`))
@@ -124,7 +127,8 @@ builder.queryField("poolCreationJob", (t) =>
 		type: JobResult,
 		description: "Get the pool creation job",
 		args: { jobId: t.arg.string({ required: true }) },
-		resolve: async (_, { jobId }, { queues: { createPoolQueue } }) => {
+		resolve: async (_, { jobId }, { queues }) => {
+			const { createPoolQueue } = queues()
 			const job = await createPoolQueue.getJob(jobId)
 			if (!job) throw new GraphQLError(`Job with ID ${jobId} not found`)
 			const status = await job.getState()
@@ -138,7 +142,8 @@ builder.mutationField("confirmJob", (t) =>
 		type: "String",
 		description: "Confirm a job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
-		resolve: async (_, { jobId }, { db, queues: { createPoolQueue } }) => {
+		resolve: async (_, { jobId }, { db, queues }) => {
+			const { createPoolQueue } = queues()
 			const data = await db.select().from(pool).where(eq(pool.jobId, jobId))
 			if (data.length === 0) throw new GraphQLError(`No pool found for job ID ${jobId}`)
 			const job = await createPoolQueue.getJob(jobId)

@@ -3,7 +3,7 @@ import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { relations } from "../drizzle/relations"
 import { schema } from "./graphql"
-import { getQueues } from "./queue"
+import { queues } from "./queue"
 
 const Schema = v.object({
 	DB_FILE_NAME: v.string(),
@@ -16,10 +16,9 @@ const Schema = v.object({
 const env = v.parse(Schema, process.env)
 
 const db = drizzle(env.DB_FILE_NAME, { relations })
-const queues = getQueues()
 
 export type Database = typeof db
-export type Queues = ReturnType<typeof getQueues>
+export type Queues = typeof queues
 export type Env = typeof env
 export type Context = {
 	db: Database
