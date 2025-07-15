@@ -38,7 +38,11 @@ export class Addresses {
 	}
 }
 
-export function deriveTokenIdFromAddress(address: string): string {
-	const tokenIdPool = TokenId.derive(PublicKey.fromBase58(address))
-	return TokenId.toBase58(tokenIdPool)
+export function toTokenId(address: string): string {
+	try {
+		const tokenIdPool = TokenId.derive(PublicKey.fromBase58(address))
+		return TokenId.toBase58(tokenIdPool)
+	} catch (error) {
+		return ""
+	}
 }

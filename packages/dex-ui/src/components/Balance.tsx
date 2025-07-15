@@ -4,14 +4,18 @@ import React, { useContext, useEffect, useMemo, useState } from "react"
 import { LuminaPool, LuminaToken, Networks, PublicKey, TokenId } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { LuminaContext } from "./Layout"
-import { deriveTokenIdFromAddress } from "@/utils/addresses"
+import { toTokenId } from "@/utils/addresses"
 
 // @ts-ignore
 const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
-	const [balance, setBalance] = useState("0.0")
+	const balance = useSelector(
+		Wallet,
+		(state) =>
+			state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
+	)
 
 	useEffect(() => {
 		getBalance()
@@ -24,7 +28,7 @@ const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 
 	const getBalance = async () => {
 		if (token?.address) {
-			const tokenId = deriveTokenIdFromAddress(token.address)
+			const tokenId = toTokenId(token.address)
 			let data = {
 				address: token.address,
 				decimal: "decimals" in token ? 10 ** token.decimals : 10 ** 9,
@@ -45,21 +49,9 @@ const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 		}
 	}
 
-	useEffect(() => {
-		if (walletContext?.currentNetwork && token?.address) {
-			const tokenId = deriveTokenIdFromAddress(token.address)
-			const tokenBalance = walletContext.balances[walletContext.currentNetwork][tokenId]
-			if (tokenBalance && tokenBalance.balance) {
-				setBalance(tokenBalance.balance.toFixed(2).toString())
-			} else {
-				setBalance("0.00")
-			}
-		}
-	}, [walletContext, token])
-
 	return (
 		<>
-			<span>{balance}</span>
+			<span>{balance.toFixed(2).toString()}</span>
 		</>
 	)
 }
