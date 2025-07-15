@@ -156,79 +156,66 @@
           }
         `;
 
-        const subscribePayload = {
-          query: subscriptionQuery,
-          variables: { jobId }
-        };
+        const url = new URL('http://localhost:3001/graphql/stream');
+        url.searchParams.append('query', subscriptionQuery);
+        url.searchParams.append('variables', JSON.stringify({ jobId }));
 
-        const responseStream = await fetch('http://localhost:3001/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'text/event-stream'
-          },
-          body: JSON.stringify(subscribePayload)
+        const source = new EventSource(url);
+
+        source.addEventListener('error', (e) => {
+          console.error(e);
+          statusDiv.textContent = 'Error with subscription.';
+          source.close();
         });
 
-        if (!responseStream.body) {
-          throw new Error("Response body is null");
-        }
+        source.addEventListener('complete', () => {
+          source.close();
+        });
 
-        const reader = responseStream.body.getReader();
-        const decoder = new TextDecoder();
+        source.addEventListener('next', async (event) => {
+          try {
+            const data = JSON.parse(event.data);
 
-        let buffer = '';
+            if (data.errors) {
+              throw new Error(data.errors.map(e => e.message).join('\n'));
+            }
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() ?? '';
-
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              const eventData = line.substring(5).trim();
-              const data = JSON.parse(eventData);
-
-              if (data.errors) {
-                throw new Error(data.errors.map(e => e.message).join('\n'));
-              }
-
-              const transaction = data.data.poolCreation.transactionJson;
-              if (!transaction) {
-                throw new Error("Subscription did not return a transaction.");
-              }
-
-              statusDiv.textContent = 'Please sign the transaction in your wallet.';
-
-              const txResult = await window.mina.sendTransaction({
-                transaction: transaction
-              });
-
-              statusDiv.textContent = 'Transaction sent! Confirming job...';
-              resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
-
-              const confirmJobMutation = `
-                mutation ConfirmJob($jobId: String!) {
-                  confirmJob(jobId: $jobId)
-                }
-              `;
-              await fetch('http://localhost:3001/graphql', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: confirmJobMutation, variables: { jobId } })
-              });
-
-              statusDiv.textContent = 'Success! Pool creation confirmed.';
-              reader.cancel();
+            const transaction = data.data.poolCreation.transactionJson;
+            if (!transaction) {
+              // This might just be a keep-alive, or an intermediate message.
+              // Only throw an error if we know we should have a transaction.
+              // For now, we just ignore it if there's no transaction.
               return;
             }
+
+            statusDiv.textContent = 'Please sign the transaction in your wallet.';
+
+            const txResult = await window.mina.sendTransaction({
+              transaction: transaction
+            });
+
+            statusDiv.textContent = 'Transaction sent! Confirming job...';
+            resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
+
+            const confirmJobMutation = `
+              mutation ConfirmJob($jobId: String!) {
+                confirmJob(jobId: $jobId)
+              }
+            `;
+            await fetch('http://localhost:3001/graphql', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: confirmJobMutation, variables: { jobId } })
+            });
+
+            statusDiv.textContent = 'Success! Pool creation confirmed.';
+            source.close();
+          } catch (err) {
+            resultBox.innerText = 'Error: ' + err.message;
+            statusDiv.textContent = 'Erreur : ' + err.message;
+            source.close();
           }
-        }
+        });
       } catch (err) {
         resultBox.innerText = 'Error: ' + err.message;
         statusDiv.textContent = 'Erreur : ' + err.message;

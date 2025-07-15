@@ -251,6 +251,9 @@ importers:
       gql.tada:
         specifier: ^1.8.10
         version: 1.8.10(@gql.tada/vue-support@1.0.1(typescript@5.8.3))(graphql@16.11.0)(typescript@5.8.3)
+      graphql-sse:
+        specifier: ^2.5.4
+        version: 2.5.4(graphql@16.11.0)
       o1js:
         specifier: 2.4.0
         version: 2.4.0
@@ -6116,6 +6119,12 @@ packages:
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
 
+  graphql-sse@2.5.4:
+    resolution: {integrity: sha512-8PIGHQPv1vokYboL8KsoBomvyJCUMJCAwSp5f+bR2qVoYtPo7CYowrYV7LFiXuiirX0cxVzgUBFNa5BaI4rZ2A==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      graphql: '>=0.11 <=16'
+
   graphql-yoga@5.14.0:
     resolution: {integrity: sha512-OrjeyoxFM7sIrGrqSegDcdxpXUNzXOlT5q2deyAbxtwhF7z0byBhN6X8ntqLbDWKyYR+ejsK9mq+uY0eV7zkWg==}
     engines: {node: '>=18.0.0'}
@@ -6675,6 +6684,7 @@ packages:
 
   libsql@0.5.13:
     resolution: {integrity: sha512-5Bwoa/CqzgkTwySgqHA5TsaUDRrdLIbdM4egdPcaAnqO3aC+qAgS6BwdzuZwARA5digXwiskogZ8H7Yy4XfdOg==}
+    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
@@ -15589,6 +15599,10 @@ snapshots:
     dependencies:
       graphql: 16.11.0
       tslib: 2.8.1
+
+  graphql-sse@2.5.4(graphql@16.11.0):
+    dependencies:
+      graphql: 16.11.0
 
   graphql-yoga@5.14.0(graphql@16.11.0):
     dependencies:

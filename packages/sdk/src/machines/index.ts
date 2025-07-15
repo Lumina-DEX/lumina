@@ -1,4 +1,4 @@
-import { Client, type ClientOptions, fetchExchange, Provider } from "urql"
+import { Provider } from "urql"
 import {
 	type ActorOptions,
 	type AnyStateMachine,
@@ -7,7 +7,7 @@ import {
 	type IsNotNever,
 	type RequiredActorOptionsKeys
 } from "xstate"
-import { getRetryExchange } from "../graphql/helpers"
+import { createClientOptions, createMinaClient } from "../graphql/clients"
 import { canDoDexAction, createLuminaDexMachine } from "./luminadex/machine"
 import { createWalletMachine } from "./wallet/machine"
 
@@ -20,23 +20,7 @@ type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<[
 /**
  * GraphQL client
  * ___________________________________________________________ */
-
-const clientCache = new Map<string, Client>()
-
-export const createClientOptions = (url: string) =>
-	({
-		url,
-		requestPolicy: "network-only",
-		exchanges: [getRetryExchange(), fetchExchange]
-	}) as ClientOptions
-
-export const createMinaClient = (url: string) => {
-	const cached = clientCache.get(url)
-	if (cached) return cached
-	const client = new Client(createClientOptions(url))
-	clientCache.set(url, client)
-	return client
-}
+export { createClientOptions, createMinaClient }
 
 export { Provider }
 

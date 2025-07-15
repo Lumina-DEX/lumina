@@ -2,6 +2,7 @@ import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
 import { Observable } from "rxjs"
 import { assign, fromObservable, fromPromise, setup } from "xstate"
+import { createPoolSignerClient } from "../../../graphql/clients"
 import {
 	ConfirmTransactionMutation,
 	CreatePoolMutation,
@@ -11,17 +12,15 @@ import { sendTransaction } from "../../../helpers/transfer"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
 
-const client = {} as Client // This is a placeholder. You'll need to import your actual urql client.
-
 // 1. Call GraphQL mutation to create a pool
 export const createPoolMutation = fromPromise(
 	async ({
 		input
 	}: {
-		input: { tokenA: string; tokenB: string; user: string; network: Networks }
+		input: { client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
 	}) => {
 		console.log("Creating pool with input:", input)
-		const result = await client.mutation(CreatePoolMutation, {
+		const result = await input.client.mutation(CreatePoolMutation, {
 			input: { ...input, network: input.network.replace(":", "_") as "mina_devnet" }
 		})
 		const jobId = result.data?.createPool?.id
@@ -33,34 +32,36 @@ export const createPoolMutation = fromPromise(
 )
 
 // 2. Subscribe to job status updates
-export const checkJobStatus = fromObservable(({ input }: { input: { jobId: string } }) => {
-	console.log("Subscribing to job status for:", input.jobId)
-	return new Observable<ResultOf<typeof PoolCreationSubscription>["poolCreation"]>((observer) => {
-		const { unsubscribe } = client
-			.subscription(PoolCreationSubscription, { jobId: input.jobId })
-			.subscribe((result) => {
-				if (result.error) {
-					observer.error(result.error)
-					return
-				}
-
-				if (result.data?.poolCreation) {
-					const status = result.data.poolCreation
-					if (!status) {
-						observer.error(new Error("Invalid job status"))
+export const checkJobStatus = fromObservable(
+	({ input }: { input: { client: Client; jobId: string } }) => {
+		console.log("Subscribing to job status for:", input.jobId)
+		return new Observable<ResultOf<typeof PoolCreationSubscription>["poolCreation"]>((observer) => {
+			const { unsubscribe } = input.client
+				.subscription(PoolCreationSubscription, { jobId: input.jobId })
+				.subscribe((result) => {
+					if (result.error) {
+						observer.error(result.error)
 						return
 					}
-					observer.next(status) // Forward the status update
-					observer.complete()
-				}
-			})
 
-		// On cleanup, unsubscribe from the urql subscription
-		return () => {
-			unsubscribe()
-		}
-	})
-})
+					if (result.data?.poolCreation) {
+						const status = result.data.poolCreation
+						if (!status) {
+							observer.error(new Error("Invalid job status"))
+							return
+						}
+						observer.next(status) // Forward the status update
+						observer.complete()
+					}
+				})
+
+			// On cleanup, unsubscribe from the urql subscription
+			return () => {
+				unsubscribe()
+			}
+		})
+	}
+)
 
 // 3. Sign o1js transaction
 export const signPoolTransaction = fromPromise(
@@ -73,11 +74,10 @@ export const signPoolTransaction = fromPromise(
 
 // 4. Send final GraphQL mutation
 export const confirmPoolCreation = fromPromise(
-	async ({ input }: { input: { jobId: string } }) => {
+	async ({ input }: { input: { client: Client; jobId: string } }) => {
 		console.log("Finalizing pool creation for job:", input.jobId)
-		const result = await client.mutation(ConfirmTransactionMutation, { jobId: input.jobId })
-		const message = result.data?.confirmJob
-		console.log("Transaction confirmed:", message || "No confirmation message")
+		const result = await input.client.mutation(ConfirmTransactionMutation, { jobId: input.jobId })
+		console.log("Transaction confirmed:", result.data?.confirmJob || "No confirmation message")
 		return { success: true }
 	}
 )
@@ -92,6 +92,7 @@ export const createPoolMachine = setup({
 			tokenA: string
 			tokenB: string
 			user: string
+			client: Client
 			network: Networks
 			wallet: WalletActorRef
 		},
@@ -114,6 +115,7 @@ export const createPoolMachine = setup({
 	initial: "CREATING",
 	context: ({ input }) => ({
 		...input,
+		client: createPoolSignerClient(),
 		transactionFromServer: "",
 		jobId: "",
 		hash: "",
@@ -124,6 +126,7 @@ export const createPoolMachine = setup({
 			invoke: {
 				src: "createPoolMutation",
 				input: ({ context }) => ({
+					client: context.client,
 					tokenA: context.tokenA,
 					tokenB: context.tokenB,
 					user: context.user,
@@ -139,7 +142,7 @@ export const createPoolMachine = setup({
 		WAITING_FOR_PROOF: {
 			invoke: {
 				src: "checkJobStatus",
-				input: ({ context }) => ({ jobId: context.jobId }),
+				input: ({ context }) => ({ client: context.client, jobId: context.jobId }),
 				onSnapshot: {
 					target: "SIGNING",
 					actions: assign({
@@ -170,7 +173,7 @@ export const createPoolMachine = setup({
 		CONFIRMING: {
 			invoke: {
 				src: "confirmPoolCreation",
-				input: ({ context }) => ({ jobId: context.jobId }),
+				input: ({ context }) => ({ client: context.client, jobId: context.jobId }),
 				onDone: "COMPLETED",
 				onError: "FAILED"
 			}
