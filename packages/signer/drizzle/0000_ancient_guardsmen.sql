@@ -16,7 +16,7 @@ CREATE TABLE `Pool` (
 	`public_key` text NOT NULL,
 	`user` text NOT NULL,
 	`job_id` text NOT NULL,
-	`status` text,
+	`status` text NOT NULL,
 	`network` text NOT NULL
 );
 --> statement-breakpoint

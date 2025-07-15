@@ -47,7 +47,7 @@ export const pool = sqliteTable(
 		jobId: text("job_id").notNull(),
 		status: text("status", {
 			enum: ["pending", "confirmed", "deployed"] as const
-		}),
+		}).notNull(),
 		network: text("network", {
 			enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
 		}).notNull()

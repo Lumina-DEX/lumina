@@ -6,28 +6,15 @@ import { pool, signerMerkle } from "../drizzle/schema"
 
 const db = drizzle("file:local.db", { relations }) //Hardcode so that it runs only in dev.
 
-// Key 1
-export const privateKey1 = PrivateKey.fromBase58(
-	"EKFKLzhYijGm4mNW7V4nyQ6YQiEcgoWcYzZKjvoqcunfLZNbzBDc"
-)
-const publicKey1 = privateKey1.toPublicKey()
-const publicKey1String = publicKey1.toBase58()
-// Key 2
-export const privateKey2 = PrivateKey.fromBase58(
-	"EKF1sPtg2TY2vJ3Hm3y9gcage5HRNajEDt1gY73Dz1jTaP4VtU51"
-)
-const publicKey2 = privateKey2.toPublicKey()
-const publicKey2String = publicKey2.toBase58()
-
 async function seed() {
 	const signers = [
 		{
-			publicKey: publicKey1String,
+			publicKey: "B62qjpbiYvHwbU5ARVbE5neMcuxfxg2zt8wHjkWVKHEiD1micG92CtJ",
 			permission: "deploy",
 			active: true
 		},
 		{
-			publicKey: publicKey2String,
+			publicKey: "B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6",
 			permission: "all",
 			active: true
 		},
@@ -84,7 +71,9 @@ async function seed() {
 			tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
 			user: "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
 			publicKey: PrivateKey.random().toPublicKey().toBase58(),
-			deployed: true
+			jobId: "job-12345",
+			network: "mina:devnet",
+			status: "deployed"
 		})
 		.returning()
 
