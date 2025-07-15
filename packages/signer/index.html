@@ -56,8 +56,9 @@
 
     <button type="button" id="connect">Connect Auro Wallet</button>
 
-    <input type="text" id="tokenA" name="tokenA" placeholder="Token A" required />
-    <input type="text" id="tokenB" name="tokenB" placeholder="Token B" required />
+    <input type="text" id="tokenA" name="tokenA" placeholder="Token A" required value="MINA" />
+    <input type="text" id="tokenB" name="tokenB" placeholder="Token B" required
+      value="B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW" />
     <input type="text" id="user" name="user" placeholder="User Public Key" readonly />
     <label>
       Network:
@@ -132,11 +133,12 @@
           poolCreation(jobId: $jobId) {
             transactionJson
             poolPublicKey
+            status
           }
         }
       `;
 
-      const url = new URL('http://localhost:3001/graphql/stream');
+      const url = new URL('http://localhost:3001/graphql');
       url.searchParams.append('query', subscriptionQuery);
       url.searchParams.append('variables', JSON.stringify({ jobId }));
 
@@ -160,7 +162,12 @@
             throw new Error(data.errors.map(e => e.message).join('\n'));
           }
 
-          const { transactionJson, poolPublicKey } = data.data.poolCreation;
+          const { transactionJson, poolPublicKey, status } = data.data.poolCreation;
+
+          if (status) {
+            statusDiv.textContent = status;
+          }
+
           if (!transactionJson || !poolPublicKey) {
             return;
           }
@@ -170,10 +177,12 @@
             transaction: transactionJson
           });
 
+          console.log('Mina Transaction sent:', txResult);
+
           statusDiv.textContent = 'Transaction sent! Confirming job...';
           resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
 
-          await confirmJob(poolPublicKey);
+          await confirmJob(jobId);
 
           statusDiv.textContent = 'Success! Pool creation confirmed.';
           source.close();
@@ -185,16 +194,16 @@
       });
     }
 
-    async function confirmJob(poolPublicKey) {
+    async function confirmJob(jobId) {
       const confirmJobMutation = `
-        mutation ConfirmJob($poolPublicKey: String!) {
-          confirmJob(poolPublicKey: $poolPublicKey)
+        mutation ConfirmJob($jobId: String!) {
+          confirmJob(jobId: $jobId)
         }
       `;
       await fetch('http://localhost:3001/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: confirmJobMutation, variables: { poolPublicKey } })
+        body: JSON.stringify({ query: confirmJobMutation, variables: { jobId } })
       });
     }
 

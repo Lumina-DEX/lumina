@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "dfa3f4f8-0f5f-4cac-aeb2-329e3ebaa473",
+	"id": "2258648e-6cfd-47db-b3e3-e3e9c91d4e22",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"Multisig": {
@@ -221,7 +221,7 @@
 					"tableTo": "Pool",
 					"columnsFrom": ["public_key"],
 					"columnsTo": ["id"],
-					"onDelete": "no action",
+					"onDelete": "cascade",
 					"onUpdate": "no action"
 				},
 				"PoolKey_signer_1_SignerMerkle_id_fk": {

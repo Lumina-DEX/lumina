@@ -1,18 +1,29 @@
 import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
 import { Observable } from "rxjs"
-import { assign, fromObservable, fromPromise, setup } from "xstate"
+import { assign, enqueueActions, fromObservable, fromPromise, setup } from "xstate"
 import { createPoolSignerClient } from "../../../graphql/clients"
 import {
 	ConfirmTransactionMutation,
 	CreatePoolMutation,
+	GetJobStatusQuery,
 	PoolCreationSubscription
 } from "../../../graphql/pool-signer"
 import { sendTransaction } from "../../../helpers/transfer"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
 
-// 1. Call GraphQL mutation to create a pool
+// 0. Fetch job status
+export const getJobStatus = fromPromise(
+	async ({ input }: { input: { client: Client; jobId: string } }) => {
+		console.log("Checking job status for:", input.jobId)
+		const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
+		if (result.error) throw new Error(result.error.message)
+		return result.data?.poolCreationJob
+	}
+)
+
+// 1. Create a pool creation job
 export const createPoolMutation = fromPromise(
 	async ({
 		input
@@ -45,12 +56,12 @@ export const checkJobStatus = fromObservable(
 					}
 
 					if (result.data?.poolCreation) {
-						const status = result.data.poolCreation
-						if (!status) {
-							observer.error(new Error("Invalid job status"))
+						const data = result.data.poolCreation
+						if (!data) {
+							observer.error(new Error("Error while processing data from subscription"))
 							return
 						}
-						observer.next(status) // Forward the status update
+						observer.next(data) // Forward the status update
 						observer.complete()
 					}
 				})
@@ -85,16 +96,22 @@ export const confirmPoolCreation = fromPromise(
 export const createPoolMachine = setup({
 	types: {
 		context: {} as {
-			transactionFromServer: string
-			jobId: string
-			hash: string
-			url: string
 			tokenA: string
 			tokenB: string
 			user: string
-			client: Client
 			network: Networks
 			wallet: WalletActorRef
+			client: Client
+			job: {
+				id: string
+				status: string
+				transactionJson: string
+				poolPublicKey: string
+			}
+			transaction: {
+				hash: string
+				url: string
+			}
 		},
 		input: {} as {
 			tokenA: string
@@ -108,20 +125,51 @@ export const createPoolMachine = setup({
 		createPoolMutation,
 		checkJobStatus,
 		signPoolTransaction,
-		confirmPoolCreation
+		confirmPoolCreation,
+		getJobStatus
 	}
 }).createMachine({
 	id: "createPoolFlow",
-	initial: "CREATING",
+	initial: "INIT",
 	context: ({ input }) => ({
 		...input,
 		client: createPoolSignerClient(),
-		transactionFromServer: "",
-		jobId: "",
-		hash: "",
-		url: ""
+		job: {
+			id: "",
+			status: "",
+			transactionJson: "",
+			poolPublicKey: ""
+		},
+		transaction: {
+			hash: "",
+			url: ""
+		}
 	}),
 	states: {
+		INIT: {
+			on: { create: { target: "CREATING" }, status: { target: "GET_STATUS" } },
+			entry: enqueueActions(({ context, enqueue }) => {
+				if (context.job.id.length === 0) enqueue.raise({ type: "create" })
+				else enqueue.raise({ type: "status" })
+			})
+		},
+		GET_STATUS: {
+			invoke: {
+				src: "getJobStatus",
+				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				onDone: [
+					{
+						target: "SIGNING",
+						guard: ({ event }) => event.output?.status === "confirmed",
+						actions: assign(({ context, event }) => ({
+							job: { ...context.job, ...event.output }
+						}))
+					},
+					{ target: "WAITING_FOR_PROOF" }
+				],
+				onError: { target: "FAILED" }
+			}
+		},
 		CREATING: {
 			invoke: {
 				src: "createPoolMutation",
@@ -134,50 +182,51 @@ export const createPoolMachine = setup({
 				}),
 				onDone: {
 					target: "WAITING_FOR_PROOF",
-					actions: assign({ jobId: ({ event }) => event.output.jobId })
+					actions: assign(({ context, event }) => ({
+						job: { ...context.job, id: event.output.jobId }
+					}))
 				},
-				onError: "FAILED"
+				onError: { target: "ERRORED" }
 			}
 		},
 		WAITING_FOR_PROOF: {
 			invoke: {
 				src: "checkJobStatus",
-				input: ({ context }) => ({ client: context.client, jobId: context.jobId }),
+				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
 				onSnapshot: {
 					target: "SIGNING",
-					actions: assign({
-						transactionFromServer: ({ event }) =>
-							JSON.stringify(event.snapshot?.context?.transactionJson)
-					})
+					actions: assign(({ context, event }) => ({
+						job: { ...context.job, ...event.snapshot?.context }
+					}))
 				},
-				onError: "FAILED"
+				onError: { target: "ERRORED" }
 			}
 		},
 		SIGNING: {
 			invoke: {
 				src: "signPoolTransaction",
 				input: ({ context }) => ({
-					transaction: context.transactionFromServer,
+					transaction: context.job.transactionJson,
 					wallet: context.wallet
 				}),
 				onDone: {
 					target: "CONFIRMING",
 					actions: assign(({ event }) => ({
-						hash: event.output.hash,
-						url: event.output.url
+						transaction: { hash: event.output.hash, url: event.output.url }
 					}))
 				},
-				onError: "FAILED"
+				onError: { target: "ERRORED" }
 			}
 		},
 		CONFIRMING: {
 			invoke: {
 				src: "confirmPoolCreation",
-				input: ({ context }) => ({ client: context.client, jobId: context.jobId }),
+				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
 				onDone: "COMPLETED",
-				onError: "FAILED"
+				onError: { target: "ERRORED" }
 			}
 		},
+		ERRORED: { target: "INIT" },
 		COMPLETED: { type: "final" },
 		FAILED: { type: "final" }
 	}

@@ -12,6 +12,5 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "always"
     }
-  },
-  "dprint.path": "./node_modules/.bin/dprint"
+  }
 }

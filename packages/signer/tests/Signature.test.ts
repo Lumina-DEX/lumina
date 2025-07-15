@@ -1,4 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
+import { PoolFactory } from "@lumina-dex/contracts"
 import { and, eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/libsql"
 import {
@@ -15,7 +16,6 @@ import { describe, expect, it } from "vitest"
 import { relations } from "../drizzle/relations"
 import { pool, signerMerkle, poolKey as tPoolKey } from "../drizzle/schema"
 import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
-import { PoolFactory } from "@lumina-dex/contracts"
 
 const Schema = v.object({
 	DB_FILE_NAME: v.string(),
@@ -160,7 +160,7 @@ describe("Signature", () => {
 		await db.transaction(async (tx) => {
 			try {
 				// Insert pool
-				const poolInsert = await db
+				const poolInsert = await tx
 					.insert(pool)
 					.values({
 						jobId: "test-job-id",
@@ -168,7 +168,8 @@ describe("Signature", () => {
 						publicKey: testPoolPub,
 						tokenA,
 						tokenB,
-						user
+						user,
+						status: "pending"
 					})
 					.returning({ insertedId: pool.id })
 				const insertedPoolId = poolInsert[0].insertedId
@@ -184,12 +185,12 @@ describe("Signature", () => {
 				const encrypted_key = encrypB.cipherText.join(",")
 
 				// Insert two test signers if not present
-				const [signerA] = await db
+				const [signerA] = await tx
 					.select()
 					.from(signerMerkle)
 					.where(eq(signerMerkle.publicKey, testPubA))
 					.limit(1)
-				const [signerB] = await db
+				const [signerB] = await tx
 					.select()
 					.from(signerMerkle)
 					.where(eq(signerMerkle.publicKey, testPubB))
@@ -197,14 +198,14 @@ describe("Signature", () => {
 				let signerAId = signerA?.id
 				let signerBId = signerB?.id
 				if (!signerAId) {
-					const res = await db
+					const res = await tx
 						.insert(signerMerkle)
 						.values({ publicKey: testPubA, permission: "all", active: true })
 						.returning({ insertedId: signerMerkle.id })
 					signerAId = res[0].insertedId
 				}
 				if (!signerBId) {
-					const res = await db
+					const res = await tx
 						.insert(signerMerkle)
 						.values({ publicKey: testPubB, permission: "all", active: true })
 						.returning({ insertedId: signerMerkle.id })
@@ -219,10 +220,10 @@ describe("Signature", () => {
 					generatedPublic2: encryptBPub,
 					encryptedKey: encrypted_key
 				}
-				await db.insert(tPoolKey).values(poolKeyRow).returning({ insertedId: tPoolKey.id })
+				await tx.insert(tPoolKey).values(poolKeyRow).returning({ insertedId: tPoolKey.id })
 
 				// Now fetch and test as before
-				const poolKeyData = await db
+				const poolKeyData = await tx
 					.select()
 					.from(tPoolKey)
 					.where(
@@ -235,7 +236,7 @@ describe("Signature", () => {
 					.limit(1)
 				const element: NewPoolKey = poolKeyData[0]
 
-				const poolPublicInfo = await db
+				const poolPublicInfo = await tx
 					.select()
 					.from(pool)
 					.where(eq(pool.id, element.poolId))

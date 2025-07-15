@@ -49,8 +49,8 @@ createPoolQueueEvents.on("active", ({ jobId, prev }) => {
 	console.log(`Job ${jobId} is now active; previous status was ${prev}`)
 })
 
-createPoolQueueEvents.on("completed", ({ jobId, returnvalue }) => {
-	console.log(`${jobId} has completed and returned`, returnvalue.slice(0, 100))
+createPoolQueueEvents.on("completed", ({ jobId }) => {
+	console.log(`${jobId} has completed and returned`)
 })
 
 createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {

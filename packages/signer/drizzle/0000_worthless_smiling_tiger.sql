@@ -31,7 +31,7 @@ CREATE TABLE `PoolKey` (
 	`encrypted_key` text NOT NULL,
 	`generated_public_1` text NOT NULL,
 	`generated_public_2` text NOT NULL,
-	FOREIGN KEY (`public_key`) REFERENCES `Pool`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`public_key`) REFERENCES `Pool`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`signer_1`) REFERENCES `SignerMerkle`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`signer_2`) REFERENCES `SignerMerkle`(`id`) ON UPDATE no action ON DELETE no action
 );

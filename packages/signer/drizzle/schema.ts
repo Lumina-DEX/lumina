@@ -66,7 +66,7 @@ export const poolKey = sqliteTable("PoolKey", {
 		.default(sql`(current_timestamp)`),
 	poolId: integer("public_key")
 		.notNull()
-		.references(() => pool.id),
+		.references(() => pool.id, { onDelete: "cascade" }),
 	signer1Id: integer("signer_1")
 		.notNull()
 		.references(() => signerMerkle.id),

@@ -6,11 +6,6 @@ input CreatePoolInput {
   user: String!
 }
 
-"""
-The 'JSONObject' scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-"""
-scalar JSONObject
-
 """A job representing a pool creation task"""
 type Job {
   id: String
@@ -19,12 +14,13 @@ type Job {
 """A job result represented in JSON format"""
 type JobResult {
   poolPublicKey: String!
-  transactionJson: JSONObject!
+  status: String!
+  transactionJson: String!
 }
 
 type Mutation {
-  """Confirm a job for a given pool"""
-  confirmJob(poolPublicKey: String!): String
+  """Confirm a job with a given jobId"""
+  confirmJob(jobId: String!): String
 
   """Create a new pool"""
   createPool(input: CreatePoolInput!): Job
@@ -38,7 +34,7 @@ enum Network {
 }
 
 type Query {
-  """Get the status of a pool creation job"""
+  """Get the pool creation job"""
   poolCreationJob(jobId: String!): JobResult
 }
 
