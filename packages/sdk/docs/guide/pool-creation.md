@@ -47,6 +47,11 @@ If everything goes well, the user will be prompted to sign the transaction with 
 
 The `dexMachine` keeps track of all `createPoolMachine` actors, which can be found in `dex.context.dex.createPool.pools`.
 
+::: info
+The id of each pool is constructed like this : `createPool-${network}-${user}-${tokenA}-${tokenB}`
+If you want to allow users to create multiple pools simultaneously, use this id to differentiate them.
+:::
+
 ::: warning
 Due to an underlying limitation, you will have to manually type the `createPoolMachine` actor when accessing it. Refer to the examples below for more details.
 :::

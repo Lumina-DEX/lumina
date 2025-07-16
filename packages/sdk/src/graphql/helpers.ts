@@ -13,9 +13,7 @@ type Scalars = { UInt64: string; PublicKey: string; TokenID: string }
 export const zeko = initGraphQLTada<{ introspection: zekoSchema; scalars: Scalars }>()
 export const mina = initGraphQLTada<{ introspection: minaSchema; scalars: Scalars }>()
 export const minaArchive = initGraphQLTada<{ introspection: minaArchiveSchema; scalars: Scalars }>()
-export const poolSigner = initGraphQLTada<
-	{ introspection: poolSignerSchema; scalars: { JSONObject: Record<string, unknown> } }
->()
+export const poolSigner = initGraphQLTada<{ introspection: poolSignerSchema }>()
 
 export const getRetryExchange = () =>
 	retryExchange({

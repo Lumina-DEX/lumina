@@ -403,8 +403,9 @@ export const createLuminaDexMachine = () =>
 				const tokenA = event.settings.tokenA
 				const tokenB = event.settings.tokenB
 				const network = walletNetwork(context)
-				const id = `createPool-${tokenA}-${tokenB}-${network}`
-				const input = { wallet: context.wallet, tokenA, tokenB, user: walletUser(context), network }
+				const user = walletUser(context)
+				const id = `createPool-${network}-${user}-${tokenA}-${tokenB}`
+				const input = { wallet: context.wallet, tokenA, tokenB, user, network }
 				enqueue.assign(({ spawn }) => {
 					const machine = context.dex.createPool.pools[id]
 					if (machine) stopChild(id)
