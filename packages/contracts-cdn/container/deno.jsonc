@@ -1,0 +1,14 @@
+{
+	"tasks": {
+		"dev": "deno run --allow-net --allow-sys --allow-read --allow-env --env-file=.env.test --watch src/main.ts",
+		"deploy": "deployctl deploy --project=lumina-tokens --env-file=.env",
+		"deploy:prod": "deployctl deploy --project=lumina-tokens --env-file=.env && deployctl deployments redeploy --last --prod"
+	},
+	"imports": {
+		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.18.0",
+		"graphql-request": "npm:graphql-request@7.1.2"
+	},
+	"fmt": {
+		"semiColons": false
+	}
+}

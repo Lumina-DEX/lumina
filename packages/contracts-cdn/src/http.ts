@@ -1,5 +1,5 @@
+import { getRandom } from "@cloudflare/containers"
 import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
-import type { Env } from "../worker-configuration"
 
 interface ServeAsset {
 	assetUrl: URL
@@ -48,10 +48,9 @@ export const sync = async ({
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
-	const request = new Request(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`, {
-		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
-	})
-	const response = await fetch(request)
+	const request = new Request(`${env.LUMINA_TOKEN_ENDPOINT_URL}/${network}`)
+	const container = await getRandom(env.FETCHTOKEN, 1)
+	const response = await container.fetch(request)
 	if (response.ok) {
 		const data = (await response.json()) as { tokens: LuminaToken[]; pools: LuminaPool[] }
 		const { tokens, pools } = data

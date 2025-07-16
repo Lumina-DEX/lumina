@@ -3,7 +3,6 @@ import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
 
-import type { Env } from "../worker-configuration"
 import { PoolSchema, TokenSchema } from "./helper"
 import {
 	auth,
@@ -193,3 +192,4 @@ export default {
 } satisfies ExportedHandler<Env>
 
 export { TokenList } from "./do"
+export { FetchToken } from "./token"
