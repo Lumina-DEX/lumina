@@ -108,3 +108,22 @@ docker stop redis-server && docker rm redis-server
 # Remove the network
 docker network rm lumina-net
 ```
+
+### Dokku
+
+```bash
+# Create the Dokku app
+dokku apps:create pool-signer
+# Install the Redis plugin
+dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
+# Create a Redis service for the app
+dokku redis:create bullmq-pool-signer
+# Link the Redis service to the app
+dokku redis:link bullmq-pool-signer pool-signer
+# Set the build context to the root of the monorepo
+dokku builder:set pool-signer build-dir .
+# Set the Dockerfile path
+dokku builder-dockerfile:set pool-signer dockerfile-path packages/signer/Dockerfile
+# Set the build attempt to use the Dockerfile
+dokku config:set pool-signer DOKKU_BUILD_ATTEMPT=dockerfile
+```

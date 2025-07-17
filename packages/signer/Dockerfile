@@ -40,7 +40,7 @@ COPY packages/signer/ ./packages/signer/
 
 # Copy o1js cache files. This is important for o1js to work correctly
 # without needing to regenerate them on every start.
-COPY packages/signer/cache ./packages/signer/cache
+# COPY packages/signer/cache ./packages/signer/cache
 
 # Although there is no explicit build step, we run bun install
 # to ensure all necessary setup for the signer package is complete.
