@@ -134,10 +134,11 @@ Create the sqlite db file and mount the storage :
 sudo mkdir -p /usr/src/app/packages/signer/data
 sudo touch /usr/src/app/packages/signer/data/db.sqlite
 dokku storage:mount pool-signer /var/lib/dokku/data/pool-signer-data:/usr/src/app/packages/signer/data
+sudo chmod 777 /var/lib/dokku/data/pool-signer-data
 ```
 
 Set the environment variables for the app:
 
 ```bash
-dokku config:set pool-signer DB_FILE_NAME=/usr/src/app/packages/signer/data/db.sqlite INFISICAL_ENVIRONMENT=your_infisical_environmentINFISICAL_PROJECT_ID=your_infisical_project_id INFISICAL_SECRET_NAME=your_infisical_secret_name INFISICAL_CLIENT_ID=your_infisical_client_id INFISICAL_CLIENT_SECRET=your_infisical_client_secret
+dokku config:set pool-signer DB_FILE_NAME=file:/usr/src/app/packages/signer/data/db.sqlite INFISICAL_ENVIRONMENT=your_infisical_environmentINFISICAL_PROJECT_ID=your_infisical_project_id INFISICAL_SECRET_NAME=your_infisical_secret_name INFISICAL_CLIENT_ID=your_infisical_client_id INFISICAL_CLIENT_SECRET=your_infisical_client_secret
 ```
