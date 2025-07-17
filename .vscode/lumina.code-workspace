@@ -13,8 +13,8 @@
         "name": "@service/cdn"
       },
       {
-        "path": "../packages/lumina-tokens",
-        "name": "@service/tokens"
+        "path": "../packages/contracts-cdn/container",
+        "name": "cdn@container/tokens"
       },
       {
         "path": "../packages/signer",

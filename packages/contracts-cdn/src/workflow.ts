@@ -1,6 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import { networks } from "@lumina-dex/sdk/constants"
-import type { Env } from "../worker-configuration"
 import { sync } from "./http"
 
 export class SyncBlockchain extends WorkflowEntrypoint<Env, Params> {

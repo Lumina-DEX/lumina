@@ -1,4 +1,4 @@
-import { FungibleToken, PoolFactory } from "@lumina-dex/contracts"
+import { PoolFactory } from "@lumina-dex/contracts"
 import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 } from "o1js"
 import pLimit from "p-limit"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
@@ -7,9 +7,9 @@ import { createMinaClient } from "../machines"
 import { prefixedLogger } from "./debug"
 
 import type { SupportedNetwork } from "../constants"
-
 export interface LuminaPool {
 	address: string
+	tokenId: string
 	tokens: [LuminaToken, LuminaToken]
 	chainId: SupportedNetwork
 	name: string
@@ -93,6 +93,7 @@ const getTokensAndPoolsFromPoolData = async (
 	// Concurrency limit
 	const limit = pLimit(10)
 
+	const toTokenId = (address: PublicKey) => TokenId.toBase58(TokenId.derive(address))
 	const toToken = async ({ tokenAddress, network }: {
 		tokenAddress: PublicKey
 		network: SupportedNetwork
@@ -110,11 +111,10 @@ const getTokensAndPoolsFromPoolData = async (
 		const token = await fetchAccount({ publicKey: tokenAddress })
 		if (token.error) throw token.error
 		const symbol = token?.account?.tokenSymbol ?? "UNKNOWN_TOKEN_SYMBOL"
-		const tokenId = TokenId.toBase58(new FungibleToken(tokenAddress).deriveTokenId())
 
 		return {
 			address: tokenAddress.toBase58(),
-			tokenId,
+			tokenId: toTokenId(tokenAddress),
 			chainId: network,
 			symbol,
 			decimals: 9
@@ -152,6 +152,7 @@ const getTokensAndPoolsFromPoolData = async (
 			pools.set(poolAddress.toBase58(), {
 				address: poolAddress.toBase58(),
 				tokens: [token0, token1],
+				tokenId: toTokenId(poolAddress),
 				chainId: network,
 				name: `LLP-${token0.symbol}_${token1.symbol}`
 			})

@@ -10,13 +10,14 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest"
 import type { PoolWithTokens, Token } from "../src/helper"
 import worker from "../src/index"
 
-const createRequest = (url: string, method = "GET") =>
-	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, {
-		method,
-		headers: { Authorization: `Bearer ${env.LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN}` }
-	})
+declare module "cloudflare:test" {
+	interface ProvidedEnv extends Env {}
+}
 
-const emptyData = { tokens: [], pools: [] }
+const createRequest = (url: string, method = "GET") =>
+	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`, { method })
+
+// const emptyData = { tokens: [], pools: [] }
 beforeAll(() => {
 	fetchMock.activate()
 	fetchMock.disableNetConnect()
@@ -57,6 +58,7 @@ describe("API", () => {
 			token0Address: "MINA",
 			token1Address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 			chainId: "mina:devnet",
+			tokenId: "pool_test_token_id",
 			name: "LLP-MINA_TOKA",
 			tokens: [
 				{
@@ -78,11 +80,11 @@ describe("API", () => {
 	})
 
 	it("can sync the blockchain state with a scheduled event", async () => {
-		fetchMock
-			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
-			.intercept({ path: () => true })
-			.reply(200, emptyData)
-			.times(4)
+		// fetchMock
+		// 	.get(env.LUMINA_TOKEN_ENDPOINT_URL)
+		// 	.intercept({ path: () => true })
+		// 	.reply(200, emptyData)
+		// 	.times(4)
 
 		const controller = createScheduledController()
 		const ctx = createExecutionContext()
@@ -92,11 +94,11 @@ describe("API", () => {
 
 	it("can sync the network state and be rate limited.", async () => {
 		const network = "mina:devnet"
-		fetchMock
-			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
-			.intercept({ path: `/${network}` })
-			.reply(200, emptyData)
-			.times(1)
+		// fetchMock
+		// 	.get(env.LUMINA_TOKEN_ENDPOINT_URL)
+		// 	.intercept({ path: `/${network}` })
+		// 	.reply(200, emptyData)
+		// 	.times(1)
 		const request = createRequest(`api/${network}/sync`, "POST")
 		const response = await SELF.fetch(request)
 
@@ -184,11 +186,11 @@ describe("API", () => {
 
 	it("can reset the network state", async () => {
 		const network = "mina:devnet"
-		fetchMock
-			.get(env.LUMINA_TOKEN_ENDPOINT_URL)
-			.intercept({ path: `/${network}` })
-			.reply(200, emptyData)
-			.times(1)
+		// fetchMock
+		// 	.get(env.LUMINA_TOKEN_ENDPOINT_URL)
+		// 	.intercept({ path: `/${network}` })
+		// 	.reply(200, emptyData)
+		// 	.times(1)
 
 		// Verify that we have initial seeded data
 		const request1 = createRequest("api/mina:devnet/tokens")

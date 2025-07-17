@@ -42,6 +42,7 @@ const testPool = {
 	address: "testPoolAddress",
 	token0Address: "tokenAddress",
 	token1Address: "tokenAddress2",
+	tokenId: "testPoolTokenId",
 	chainId: "zeko:testnet" as const,
 	name: "TEST_POOL"
 }
@@ -189,6 +190,7 @@ describe("Read and write to the DO database", () => {
 			token0Address: testToken0.address,
 			token1Address: testToken1.address,
 			chainId: "zeko:testnet" as const,
+			tokenId: "testPoolTokenId",
 			name: "TEST_POOL"
 		}
 
