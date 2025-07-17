@@ -25,6 +25,7 @@ export const pools = sqliteTable(
 		token0Address: text().notNull(),
 		token1Address: text().notNull(),
 		chainId: text({ enum: chainIds }).notNull(),
+		tokenId: text().notNull(),
 		name: text().notNull(),
 		timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
 	},

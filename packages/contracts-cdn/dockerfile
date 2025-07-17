@@ -45,9 +45,6 @@ RUN pnpm run build
 WORKDIR /usr/src/app/packages/sdk
 RUN pnpm run build
 
-WORKDIR /usr/src/app/packages/container
-# RUN bun build index.ts > index.js
-
 # Stage 4: Production image
 # This is the final image that will be deployed. It's a small, optimized
 # image containing only the necessary files to run the application.

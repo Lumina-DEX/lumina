@@ -58,6 +58,7 @@ describe("API", () => {
 			token0Address: "MINA",
 			token1Address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 			chainId: "mina:devnet",
+			tokenId: "pool_test_token_id",
 			name: "LLP-MINA_TOKA",
 			tokens: [
 				{

@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "ESNext",
-		"target": "ES2024",
+		"target": "esnext",
 		"strict": true,
 		"noUncheckedIndexedAccess": false,
 		"moduleResolution": "bundler"

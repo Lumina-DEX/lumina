@@ -62,6 +62,7 @@ export const PoolSchema = v.object({
 	address: v.string(),
 	token0Address: v.string(),
 	token1Address: v.string(),
+	tokenId: v.string(),
 	name: v.string(),
 	chainId: chainId
 })

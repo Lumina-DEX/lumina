@@ -41,7 +41,6 @@ export default {
 		console.log("Synced all networks")
 	},
 	async fetch(request, env, context): Promise<Response> {
-		console.log("Fetch event triggered", request.method, request.url)
 		//TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
