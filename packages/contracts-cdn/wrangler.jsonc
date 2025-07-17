@@ -11,8 +11,7 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
-		"DO_TOKENLIST_NAME": "db-prod-1",
-		"LUMINA_TOKEN_ENDPOINT_URL": "https://lumina-tokens.deno.dev"
+		"DO_TOKENLIST_NAME": "db-prod-v2"
 	},
 	// Workers Static Assets
 	"assets": {
@@ -46,10 +45,7 @@
 	},
 	// Durable Object migrations.
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
-	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": ["TokenList"] },
-		{ "tag": "v1", "new_sqlite_classes": ["FetchToken"] }
-	],
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList", "FetchToken"] }],
 	// We need rules so we can import migrations in the next steps
 	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 	// Schedule cron triggers:
