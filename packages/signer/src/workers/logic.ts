@@ -1,7 +1,18 @@
 import { PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import { MINA_ADDRESS } from "@lumina-dex/sdk"
 
-import { fetchAccount, Mina, Poseidon, PrivateKey, PublicKey, Signature } from "o1js"
+import {
+	Bool,
+	fetchAccount,
+	Mina,
+	Poseidon,
+	PrivateKey,
+	Provable,
+	PublicKey,
+	Signature,
+	TokenId,
+	UInt64
+} from "o1js"
 import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
@@ -69,9 +80,42 @@ export const createPoolAndTransaction = async ({
 		const factory = env.POOL_FACTORY_PUBLIC_KEY
 		const factoryKey = PublicKey.fromBase58(factory)
 		const zkFactory = new PoolFactory(factoryKey)
+		const factoryTokenId = TokenId.derive(factoryKey)
 
+		const tokenAPublicKey =
+			tokenA === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenA)
+		const tokenBPublicKey =
+			tokenB === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenB)
+
+		// For pool creation, we need to ensure that tokenA and tokenB are ordered
+		const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
+		const token0 = Provable.if(
+			tokenAPublicKey.isEmpty().or(tokenALower),
+			tokenAPublicKey,
+			tokenBPublicKey
+		)
+		const token1 = Provable.if(token0.equals(tokenBPublicKey), tokenAPublicKey, tokenBPublicKey)
+
+		await fetchAccount({ publicKey: user })
 		await fetchAccount({ publicKey: factoryKey })
-		const isMinaTokenPool = tokenA === MINA_ADDRESS || tokenB === MINA_ADDRESS
+
+		const isMinaTokenPool = token0.isEmpty().toBoolean()
+		if (isMinaTokenPool) {
+			const tokenAccount = await fetchAccount({ publicKey: token1, tokenId: factoryTokenId })
+			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+			if (balancePool.toBigInt() > 0n) {
+				throw new Error(`Token ${token1.toBase58()} had already a pool`)
+			}
+		} else {
+			const fields = token0.toFields().concat(token1.toFields())
+			const hash = Poseidon.hashToGroup(fields)
+			const pairPublickey = PublicKey.fromGroup(hash)
+			const tokenAccount = await fetchAccount({ publicKey: pairPublickey, tokenId: factoryTokenId })
+			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+			if (balancePool.toBigInt() > 0n) {
+				throw new Error(`Token ${token0.toBase58()} and ${token1.toBase58()} had already a pool`)
+			}
+		}
 		console.debug({ isMinaTokenPool })
 		console.time("prove")
 		const minaTx = await Mina.transaction(
@@ -87,7 +131,7 @@ export const createPoolAndTransaction = async ({
 					console.log("Creating Mina token pool ...", token)
 					await zkFactory.createPool(
 						newPoolPublicKey,
-						PublicKey.fromBase58(token),
+						token1,
 						masterSignerPublicKey,
 						signature,
 						witness,
@@ -99,8 +143,8 @@ export const createPoolAndTransaction = async ({
 					console.log("Creating non-Mina token pool ...")
 					await zkFactory.createPoolToken(
 						newPoolPublicKey,
-						PublicKey.fromBase58(tokenA),
-						PublicKey.fromBase58(tokenB),
+						token0,
+						token1,
 						masterSignerPublicKey,
 						signature,
 						witness,
