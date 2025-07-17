@@ -2,7 +2,6 @@ import type { Networks } from "@lumina-dex/sdk"
 import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
-
 import { PoolSchema, TokenSchema } from "./helper"
 import {
 	auth,
@@ -28,6 +27,13 @@ addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
 
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 
+import { Container } from "@cloudflare/containers"
+
+export class FetchToken extends Container<Env> {
+	defaultPort = 3000
+	sleepAfter = "5m"
+}
+
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
@@ -35,6 +41,7 @@ export default {
 		console.log("Synced all networks")
 	},
 	async fetch(request, env, context): Promise<Response> {
+		console.log("Fetch event triggered", request.method, request.url)
 		//TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
@@ -192,4 +199,3 @@ export default {
 } satisfies ExportedHandler<Env>
 
 export { TokenList } from "./do"
-export { FetchToken } from "./token"

@@ -1,5 +1,3 @@
-import type { Env } from "../worker-configuration"
-
 export default {
 	async fetch(request, env, context): Promise<Response> {
 		const url = new URL(request.url)

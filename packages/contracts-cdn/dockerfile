@@ -1,11 +1,65 @@
-# Build stage
-FROM denoland/deno:latest AS builder
-WORKDIR /app
-COPY container/. .
-RUN deno cache main.ts
+# Stage 1: Base image with Bun
+# Using the official Bun image for a lean and fast environment.
+FROM oven/bun:1 AS base
+WORKDIR /usr/src/app
 
-# Production stage
-FROM denoland/deno:latest
-WORKDIR /app
-COPY --from=builder /app .
-CMD ["deno", "run", "--allow-net", "main.ts"]
+# Stage 2: Install all dependencies
+# This stage is dedicated to installing dependencies for the entire monorepo.
+# It leverages Docker's layer caching. This layer only gets rebuilt when
+# package manager files change.
+FROM base AS builder
+WORKDIR /usr/src/app
+
+# Copy workspace configuration files
+COPY pnpm-workspace.yaml ./
+COPY tsconfig.json ./
+COPY package.json ./
+COPY patches ./patches/
+
+# Copy all package.json files from the monorepo packages
+# This is crucial for pnpm to understand the workspace structure and dependencies.
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY packages/contracts-cdn/container/package.json ./packages/container/
+
+# Copy the lockfile
+COPY pnpm-lock.yaml ./
+
+# Copy source code for dependencies
+COPY packages/contracts ./packages/contracts
+COPY packages/sdk ./packages/sdk
+COPY packages/contracts-cdn/container/ ./packages/container/
+
+# Install all dependencies using pnpm.
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN bun i -g pnpm
+RUN pnpm install
+
+# Although there is no explicit build step, we run bun install
+# to ensure all necessary setup for the signer package is complete.
+# We are targeting the signer package specifically.
+WORKDIR /usr/src/app/packages/contracts
+RUN pnpm run build
+
+WORKDIR /usr/src/app/packages/sdk
+RUN pnpm run build
+
+WORKDIR /usr/src/app/packages/container
+# RUN bun build index.ts > index.js
+
+# Stage 4: Production image
+# This is the final image that will be deployed. It's a small, optimized
+# image containing only the necessary files to run the application.
+FROM base AS production
+WORKDIR /usr/src/app
+
+# Copy built application and dependencies from the builder stage
+COPY --from=builder /usr/src/app/ .
+
+WORKDIR /usr/src/app/packages/container
+# Expose the port the app will run on.
+EXPOSE 3000
+# Set the command to start the application.
+# This uses the 'start' script from package.json.
+CMD ["bun", "run", "index.ts"]

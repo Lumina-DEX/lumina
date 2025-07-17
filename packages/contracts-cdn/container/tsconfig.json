@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"module": "ESNext",
+		"target": "ES2024",
+		"strict": true,
+		"noUncheckedIndexedAccess": false,
+		"moduleResolution": "bundler"
+	},
+	"exclude": [],
+	"include": ["index.ts"]
+}

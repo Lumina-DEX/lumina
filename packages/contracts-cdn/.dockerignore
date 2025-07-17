@@ -1,0 +1,37 @@
+# Git
+.git
+.github
+.gitignore
+
+# Node
+node_modules
+
+# Docker
+.dockerignore
+Dockerfile
+
+# PNPM
+pnpm-lock.yaml
+
+# Config files
+biome.json
+dprint.json
+lefthook.yml
+
+# Env
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# Other
+*.md
+*.png
+LICENSE
+cache
+tests
+test
+dist
+docs
+.wrangler
+.vscode

@@ -4,7 +4,6 @@ import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlit
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
 import * as schema from "../drizzle/schema"
-import type { Env } from "../worker-configuration"
 import {
 	type Exists,
 	type FindPoolBy,
