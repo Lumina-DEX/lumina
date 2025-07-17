@@ -67,6 +67,9 @@ USER bun
 # map this to the correct external port.
 EXPOSE 3001
 WORKDIR /usr/src/app/packages/signer
+
+# Migrate the database
+RUN bun run db:migrate
 # Set the command to start the application.
 # This uses the 'start' script from package.json.
 CMD ["bun", "run", "start"]
