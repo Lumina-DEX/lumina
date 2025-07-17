@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.19.0
+
+### Minor Changes
+
+- c88ed07: add tokenId to LuminaPool
+
 ## 0.18.0
 
 ### Minor Changes
