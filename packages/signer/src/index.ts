@@ -1,12 +1,11 @@
-import { drizzle } from "drizzle-orm/libsql"
 import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
-import { relations } from "../drizzle/relations"
+import { db } from "./db"
 import { schema } from "./graphql"
 import { queues } from "./queue"
 
 const Schema = v.object({
-	DB_FILE_NAME: v.string(),
+	DATABASE_URL: v.string(),
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
 	INFISICAL_SECRET_NAME: v.string(),
@@ -14,8 +13,6 @@ const Schema = v.object({
 	INFISICAL_CLIENT_SECRET: v.string()
 })
 const env = v.parse(Schema, process.env)
-
-const db = drizzle(env.DB_FILE_NAME, { relations })
 
 export type Database = typeof db
 export type Queues = typeof queues

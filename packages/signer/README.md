@@ -9,7 +9,7 @@ Tech stack :
   - pnpm
 - SQL:
   - Drizzle ORM
-  - SQLite
+  - PostgreSQL (Supabase)
 - Queues:
   - BullMQ
   - Redis
@@ -35,39 +35,84 @@ Create an .env file base on .env.example
 
 ## Database
 
-### SQlite
+### PostgreSQL (Local Development)
 
-Create the sqlite db and populate it :
-
-```bash
-bun db:reset && bun db:migrate && bun db:seed
-```
-
-### Redis
-
-To start redis, use docker or docker-compose
-
-```bash
-docker run -p 6379:6379 -d redis:8.0.2
-```
-
-or
+Start the PostgreSQL and Redis services using Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-## Server
+This will start:
 
-To start the graphql server in dev mode, run:
+- PostgreSQL on port 5432 (database: `signer`, user: `postgres`, password: `postgres`)
+- Redis on port 6379
+
+Create and migrate the database:
 
 ```bash
-bun run dev
+bun db:migrate && bun db:seed
 ```
 
-Use the graphql playground at http://localhost:3001/graphql to test the API.
+The application expects a `DATABASE_URL` environment variable. For local development, use:
+
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/signer"
+```
+
+### PostgreSQL (Production - Supabase)
+
+For production, use Supabase:
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your database URL from Project Settings > Database
+3. Set the `DATABASE_URL` environment variable to your Supabase connection string
+
+### Redis
+
+Redis is included in the docker-compose.yml file and will start automatically with `docker-compose up -d`.
+
+For standalone Redis, you can also run:
+
+```bash
+docker run -p 6379:6379 -d redis:8.0.2
+```
+
+## Server
+
+To start the development environment:
+
+1. **Start services** (PostgreSQL and Redis):
+   ```bash
+   bun run services:start
+   ```
+
+2. **Run migrations and seed** (first time only):
+   ```bash
+   bun run db:migrate && bun run db:seed
+   ```
+
+3. **Start the server** in development mode:
+   ```bash
+   bun run dev
+   ```
+
+Or run everything at once:
+
+```bash
+bun run all
+```
+
+Use the GraphQL playground at http://localhost:3001/graphql to test the API.
 Refer to index.html to see usage client side.
 The SDK includes a state machine that models the API usage.
+
+**Available scripts:**
+
+- `bun run services:start` - Start PostgreSQL and Redis containers
+- `bun run services:stop` - Stop all containers
+- `bun run dev` - Start server in watch mode
+- `bun run all` - Start services, server, and web interface
 
 ## Deploy
 
@@ -111,6 +156,9 @@ docker network rm lumina-net
 
 ### Dokku
 
+Here are the full instructions to deploy the app with Dokku.
+Note that once the CI is set, git operations will automaticall deploy the app.
+
 ```bash
 # Create the Dokku app
 dokku apps:create pool-signer
@@ -120,13 +168,48 @@ dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
 dokku redis:create bullmq-pool-signer
 # Link the Redis service to the app
 dokku redis:link bullmq-pool-signer pool-signer
-# Set the build context to the root of the monorepo
-dokku builder:set pool-signer build-dir .
 # Set the Dockerfile path
 dokku builder-dockerfile:set pool-signer dockerfile-path packages/signer/Dockerfile
 # Set the build attempt to use the Dockerfile
 dokku config:set pool-signer DOKKU_BUILD_ATTEMPT=dockerfile
 ```
+
+Set the environment variables for the app:
+
+```bash
+dokku config:set pool-signer \
+  DATABASE_URL=your_postgresql_database_url \
+  INFISICAL_ENVIRONMENT=your_infisical_environment \
+  INFISICAL_PROJECT_ID=your_infisical_project_id \
+  INFISICAL_SECRET_NAME=your_infisical_secret_name \
+  INFISICAL_CLIENT_ID=your_infisical_client_id \
+  INFISICAL_CLIENT_SECRET=your_infisical_client_secret
+```
+
+Configure the domain :
+
+```bash
+dokku domains:add pool-signer yourdomain.com
+```
+
+TODO :
+
+- [x] Switch to PostgreSQL + Supabase for simplified database management
+- [] Domain config
+- [] Firewall config
+- [] CI dokku
+
+## SQLite Backup (Legacy)
+
+The previous SQLite backup implementation has been moved to `scripts/sqlite/` directory for reference. This includes:
+
+- `scripts/sqlite/backup-db.sh` - Database backup script
+- `scripts/sqlite/cron-wrapper.sh` - Cron wrapper script
+- `scripts/sqlite/docker-entrypoint.sh` - Docker entrypoint with cron setup
+- `scripts/sqlite/Dockerfile.sqlite` - Dockerfile with backup dependencies
+- `scripts/sqlite/BACKUP.md` - Backup documentation
+
+Use these files if you need to revert to SQLite with automated backups.
 
 Create the sqlite db file and mount the storage :
 
@@ -135,10 +218,4 @@ sudo mkdir -p /usr/src/app/packages/signer/data
 sudo touch /usr/src/app/packages/signer/data/db.sqlite
 dokku storage:mount pool-signer /var/lib/dokku/data/pool-signer-data:/usr/src/app/packages/signer/data
 sudo chmod 777 /var/lib/dokku/data/pool-signer-data
-```
-
-Set the environment variables for the app:
-
-```bash
-dokku config:set pool-signer DB_FILE_NAME=file:/usr/src/app/packages/signer/data/db.sqlite INFISICAL_ENVIRONMENT=your_infisical_environmentINFISICAL_PROJECT_ID=your_infisical_project_id INFISICAL_SECRET_NAME=your_infisical_secret_name INFISICAL_CLIENT_ID=your_infisical_client_id INFISICAL_CLIENT_SECRET=your_infisical_client_secret
 ```

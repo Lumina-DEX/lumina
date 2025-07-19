@@ -2,7 +2,7 @@ import { InfisicalSDK } from "@infisical/sdk"
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { eq } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/libsql"
+import { drizzle } from "drizzle-orm/postgres-js"
 import {
 	AccountUpdate,
 	Bool,
@@ -23,7 +23,7 @@ import { signerMerkle, type poolKey as tPoolKey } from "../drizzle/schema"
 export const getEnv = () => {
 	const Schema = v.object({
 		POOL_FACTORY_PUBLIC_KEY: v.string(),
-		DB_FILE_NAME: v.string(),
+		DATABASE_URL: v.string(),
 		INFISICAL_ENVIRONMENT: v.string(),
 		INFISICAL_PROJECT_ID: v.string(),
 		INFISICAL_SECRET_NAME: v.string(),
@@ -35,7 +35,7 @@ export const getEnv = () => {
 }
 
 export const database = () => {
-	const db = drizzle(getEnv().DB_FILE_NAME, { relations })
+	const db = drizzle(getEnv().DATABASE_URL, { relations })
 	return db
 }
 

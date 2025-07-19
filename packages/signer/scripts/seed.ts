@@ -1,9 +1,6 @@
 import { eq } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/libsql"
-import { relations } from "../drizzle/relations"
 import { signerMerkle } from "../drizzle/schema"
-
-const db = drizzle("file:local.db", { relations }) //Hardcode so that it runs only in dev.
+import { db } from "../src/db"
 
 async function seed() {
 	const signers = [
@@ -54,29 +51,17 @@ async function seed() {
 			.select()
 			.from(signerMerkle)
 			.where(eq(signerMerkle.publicKey, entry.publicKey))
-			.get()
-		if (!existing) {
+			.limit(1)
+		if (existing.length === 0) {
 			await db.insert(signerMerkle).values(entry)
 			console.log(`Inserted: ${entry.publicKey}`)
 		} else {
 			console.log(`Skipped (already exists): ${entry.publicKey}`)
 		}
 	}
-
-	// await db
-	// 	.insert(pool)
-	// 	.values({
-	// 		tokenA: "MINA",
-	// 		tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
-	// 		user: "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
-	// 		publicKey: PrivateKey.random().toPublicKey().toBase58(),
-	// 		jobId: "job-12345",
-	// 		network: "mina:devnet",
-	// 		status: "deployed"
-	// 	})
-	// 	.returning()
-
 	console.log("✅ Seed completed.")
 }
 
-seed()
+seed().then(() => {
+	db.$client.end()
+})

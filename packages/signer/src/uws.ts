@@ -1,15 +1,15 @@
 import { App } from "uWebSockets.js"
-import { drizzle } from "drizzle-orm/libsql"
+import { drizzle } from "drizzle-orm/postgres-js"
 import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { relations } from "../drizzle/relations"
 import { schema } from "./graphql"
-import { getQueues } from "./queue"
+import { queues } from "./queue"
 
 import "dotenv/config"
 
 const Schema = v.object({
-	DB_FILE_NAME: v.string(),
+	DATABASE_URL: v.string(),
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
 	INFISICAL_SECRET_NAME: v.string(),
@@ -18,11 +18,10 @@ const Schema = v.object({
 })
 const env = v.parse(Schema, process.env)
 
-const db = drizzle(env.DB_FILE_NAME, { relations })
-const queues = getQueues()
+const db = drizzle(env.DATABASE_URL, { relations })
 
 export type Database = typeof db
-export type Queues = ReturnType<typeof getQueues>
+export type Queues = typeof queues
 export type Env = typeof env
 export type Context = {
 	db: Database

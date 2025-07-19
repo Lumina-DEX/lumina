@@ -1,29 +1,33 @@
 import { sql } from "drizzle-orm"
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core"
+import {
+	boolean,
+	integer,
+	pgTable,
+	serial,
+	text,
+	timestamp,
+	uniqueIndex
+} from "drizzle-orm/pg-core"
 
 // Table: SignerMerkle
-export const signerMerkle = sqliteTable(
+export const signerMerkle = pgTable(
 	"SignerMerkle",
 	{
-		id: integer("id").primaryKey({ autoIncrement: true }),
-		createdAt: integer("created_at", { mode: "timestamp" })
-			.notNull()
-			.default(sql`(current_timestamp)`),
+		id: serial("id").primaryKey(),
+		createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 		publicKey: text("public_key").notNull(),
 		permission: text("permission", {
 			enum: ["deploy", "all"] as const
 		}).notNull(),
-		active: integer("active", { mode: "boolean" }).notNull().default(true)
+		active: boolean("active").notNull().default(true)
 	},
 	(table) => [uniqueIndex("SignerMerkle_public_key_unique").on(table.publicKey)]
 )
 
 // Table: Multisig
-export const multisig = sqliteTable("Multisig", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.notNull()
-		.default(sql`(current_timestamp)`),
+export const multisig = pgTable("Multisig", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 	signerId: integer("signer")
 		.notNull()
 		.references(() => signerMerkle.id),
@@ -33,13 +37,11 @@ export const multisig = sqliteTable("Multisig", {
 })
 
 // Table: Pool
-export const pool = sqliteTable(
+export const pool = pgTable(
 	"Pool",
 	{
-		id: integer("id").primaryKey({ autoIncrement: true }),
-		createdAt: integer("created_at", { mode: "timestamp" })
-			.notNull()
-			.default(sql`(current_timestamp)`),
+		id: serial("id").primaryKey(),
+		createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 		tokenA: text("token_a").notNull(),
 		tokenB: text("token_b").notNull(),
 		publicKey: text("public_key").notNull(),
@@ -59,11 +61,9 @@ export const pool = sqliteTable(
 )
 
 // Table: PoolKey
-export const poolKey = sqliteTable("PoolKey", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.notNull()
-		.default(sql`(current_timestamp)`),
+export const poolKey = pgTable("PoolKey", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 	poolId: integer("public_key")
 		.notNull()
 		.references(() => pool.id, { onDelete: "cascade" }),

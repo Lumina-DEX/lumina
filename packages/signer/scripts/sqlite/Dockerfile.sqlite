@@ -3,7 +3,31 @@
 FROM oven/bun:1 AS base
 WORKDIR /usr/src/app
 
-# Stage 2: Install all dependencies
+# Stage 2: System dependencies and CLI tools
+# This stage installs system dependencies and CLI tools needed for production
+FROM base AS system-tools
+WORKDIR /usr/src/app
+
+# Install system dependencies and CLI tools
+USER root
+RUN apt-get update && apt-get install -y \
+    cron \
+    sqlite3 \
+    gzip \
+    curl \
+    wget \
+    unzip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install rclone for R2 uploads
+RUN curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip \
+    && unzip rclone-current-linux-amd64.zip \
+    && cp rclone-*-linux-amd64/rclone /usr/local/bin/ \
+    && chmod +x /usr/local/bin/rclone \
+    && rm -rf rclone-*
+
+# Stage 3: Install all dependencies
 # This stage is dedicated to installing dependencies for the entire monorepo.
 # It leverages Docker's layer caching. This layer only gets rebuilt when
 # package manager files change.
@@ -51,20 +75,23 @@ RUN pnpm run build
 WORKDIR /usr/src/app/packages/sdk
 RUN pnpm run build
 
-# Stage 3: Production image
+# Stage 4: Production image
 # This is the final image that will be deployed.
-FROM base AS production
+FROM system-tools AS production
 WORKDIR /usr/src/app
 
 # Copy built application and dependencies from the builder stage
 COPY --from=builder --chown=bun:bun /usr/src/app/ ./
 
-# Set the user to the non-root user
-USER bun
+# Copy scripts and make them executable
+COPY --chown=bun:bun packages/signer/scripts/backup-db.sh /usr/local/bin/backup-db.sh
+COPY packages/signer/scripts/docker-entrypoint.sh /docker-entrypoint.sh
+
+# COPY packages/signer/scripts/cron-wrapper.sh /usr/local/bin/cron-wrapper.sh 
+RUN chmod +x /usr/local/bin/backup-db.sh /docker-entrypoint.sh # /usr/local/bin/cron-wrapper.sh
 
 # Expose the port the app will run on.
 EXPOSE 3001
 WORKDIR /usr/src/app/packages/signer
 
-# Run database migrations and start the application
-CMD ["bun", "run", "start"]
+CMD ["/docker-entrypoint.sh"]

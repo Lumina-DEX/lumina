@@ -7,22 +7,20 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"db:seed": "bun run scripts/seed.ts",
-		"db:reset": "bun run scripts/reset.ts",
-		"db:flush": "bun db:reset && bun db:generate && bun db:migrate && bun db:seed",
 		"schema:print": "bun run graphql/printSchema.ts",
-		"redis:start": "docker compose up -d",
+		"services:start": "docker compose up -d",
+		"services:stop": "docker compose down",
 		"start": "bun src/index.ts",
 		"web": "bun ./index.html",
 		"dev": "bun run --watch src/index.ts",
 		"dev:uws": "tsx src/uws.ts",
-		"all": "concurrently 'bun run redis' 'bun run start' 'bun run web'",
+		"all": "concurrently 'bun run services:start' 'bun run start' 'bun run web'",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",
 		"test": "vitest run --testTimeout=150000"
 	},
 	"dependencies": {
 		"@infisical/sdk": "^4.0.2",
-		"@libsql/client": "^0.15.9",
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"@pothos/core": "^4.7.1",
@@ -31,6 +29,7 @@
 		"graphql-yoga": "^5.14.0",
 		"ioredis": "^5.6.1",
 		"o1js": "2.4.0",
+		"postgres": "^3.4.7",
 		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.52.0"
 	},
 	"devDependencies": {

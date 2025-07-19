@@ -110,7 +110,7 @@ importers:
         version: 0.0.23
       drizzle-orm:
         specifier: beta
-        version: 1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12))
+        version: 1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)
       rou3:
         specifier: ^0.5.1
         version: 0.5.1
@@ -360,7 +360,7 @@ importers:
         version: link:../sdk
       nuxt:
         specifier: ^3.15.1
-        version: 3.15.1(@biomejs/biome@2.1.2)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))(eslint@9.15.0(jiti@2.4.2))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.27.4)(terser@5.37.0)(tsx@4.19.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(yaml@2.6.1)
+        version: 3.15.1(@biomejs/biome@2.1.2)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))(eslint@9.15.0(jiti@2.4.2))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.27.4)(terser@5.37.0)(tsx@4.19.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(yaml@2.6.1)
       vue:
         specifier: latest
         version: 3.5.17(typescript@5.8.3)
@@ -380,9 +380,6 @@ importers:
       '@infisical/sdk':
         specifier: ^4.0.2
         version: 4.0.2
-      '@libsql/client':
-        specifier: ^0.15.9
-        version: 0.15.9
       '@lumina-dex/contracts':
         specifier: workspace:^
         version: link:../contracts
@@ -397,7 +394,7 @@ importers:
         version: 5.53.2
       drizzle-orm:
         specifier: beta
-        version: 1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12))
+        version: 1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)
       graphql-yoga:
         specifier: ^5.14.0
         version: 5.15.1(graphql@16.11.0)
@@ -407,6 +404,9 @@ importers:
       o1js:
         specifier: 2.4.0
         version: 2.4.0
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
       uWebSockets.js:
         specifier: github:uNetworking/uWebSockets.js#v20.52.0
         version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/cfc9a40d8132a34881813cec3d5f8e3a185b3ce3
@@ -6497,6 +6497,7 @@ packages:
 
   libsql@0.5.13:
     resolution: {integrity: sha512-5Bwoa/CqzgkTwySgqHA5TsaUDRrdLIbdM4egdPcaAnqO3aC+qAgS6BwdzuZwARA5digXwiskogZ8H7Yy4XfdOg==}
+    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lilconfig@2.1.0:
@@ -7493,6 +7494,10 @@ packages:
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
+
+  postgres@3.4.7:
+    resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
+    engines: {node: '>=12'}
 
   preact@10.26.4:
     resolution: {integrity: sha512-KJhO7LBFTjP71d83trW+Ilnjbo+ySsaAgCfXOXUlmGzJ4ygYPWmysm77yg4emwfmoz3b22yvH5IsVFHbhUaH5w==}
@@ -11407,10 +11412,12 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/core@0.15.9':
     dependencies:
       js-base64: 3.7.7
+    optional: true
 
   '@libsql/darwin-arm64@0.5.13':
     optional: true
@@ -11427,8 +11434,10 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
-  '@libsql/isomorphic-fetch@0.3.1': {}
+  '@libsql/isomorphic-fetch@0.3.1':
+    optional: true
 
   '@libsql/isomorphic-ws@0.1.5':
     dependencies:
@@ -11437,6 +11446,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/linux-arm-gnueabihf@0.5.13':
     optional: true
@@ -11593,7 +11603,8 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.12
 
-  '@neon-rs/load@0.0.4': {}
+  '@neon-rs/load@0.0.4':
+    optional: true
 
   '@netlify/functions@2.8.2':
     dependencies:
@@ -14090,14 +14101,15 @@ snapshots:
 
   data-uri-to-buffer@2.0.2: {}
 
-  data-uri-to-buffer@4.0.1: {}
+  data-uri-to-buffer@4.0.1:
+    optional: true
 
   date-fns@4.1.0: {}
 
-  db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)):
+  db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)):
     optionalDependencies:
       '@libsql/client': 0.15.9
-      drizzle-orm: 0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)
+      drizzle-orm: 0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)
 
   de-indent@1.0.2: {}
 
@@ -14154,7 +14166,8 @@ snapshots:
 
   detect-libc@1.0.3: {}
 
-  detect-libc@2.0.2: {}
+  detect-libc@2.0.2:
+    optional: true
 
   detect-libc@2.0.3: {}
 
@@ -14227,20 +14240,22 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1):
+  drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20241127.0
       '@libsql/client': 0.15.9
       '@types/react': 18.3.12
       bun-types: 1.2.18(@types/react@18.3.12)
+      postgres: 3.4.7
       react: 18.3.1
     optional: true
 
-  drizzle-orm@1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12)):
+  drizzle-orm@1.0.0-beta.1-c0277c0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20241127.0
       '@libsql/client': 0.15.9
       bun-types: 1.2.18(@types/react@18.3.12)
+      postgres: 3.4.7
 
   dset@3.1.4: {}
 
@@ -14722,7 +14737,7 @@ snapshots:
       enhanced-resolve: 5.18.0
       mlly: 1.7.4
       pathe: 1.1.2
-      ufo: 1.5.4
+      ufo: 1.6.1
 
   fast-deep-equal@3.1.3: {}
 
@@ -14774,6 +14789,7 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
+    optional: true
 
   fflate@0.8.2: {}
 
@@ -14829,6 +14845,7 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
+    optional: true
 
   fraction.js@4.3.7: {}
 
@@ -15366,7 +15383,8 @@ snapshots:
 
   jiti@2.4.2: {}
 
-  js-base64@3.7.7: {}
+  js-base64@3.7.7:
+    optional: true
 
   js-levenshtein@1.1.6: {}
 
@@ -15508,6 +15526,7 @@ snapshots:
       '@libsql/linux-x64-gnu': 0.5.13
       '@libsql/linux-x64-musl': 0.5.13
       '@libsql/win32-x64-msvc': 0.5.13
+    optional: true
 
   lilconfig@2.1.0: {}
 
@@ -15536,7 +15555,7 @@ snapshots:
       node-forge: 1.3.1
       pathe: 1.1.2
       std-env: 3.8.0
-      ufo: 1.5.4
+      ufo: 1.6.1
       untun: 0.1.3
       uqr: 0.1.2
 
@@ -16151,7 +16170,7 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nitropack@2.10.4(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))(typescript@5.8.3):
+  nitropack@2.10.4(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))(typescript@5.8.3):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.3.4
       '@netlify/functions': 2.8.2
@@ -16175,7 +16194,7 @@ snapshots:
       cookie-es: 1.2.2
       croner: 9.0.0
       crossws: 0.3.1
-      db0: 0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))
+      db0: 0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))
       defu: 6.1.4
       destr: 2.0.3
       dot-prop: 9.0.0
@@ -16218,7 +16237,7 @@ snapshots:
       unctx: 2.4.1
       unenv: 1.10.0
       unimport: 3.14.6(rollup@4.27.4)
-      unstorage: 1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)))(ioredis@5.6.1)
+      unstorage: 1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)))(ioredis@5.6.1)
       untyped: 1.5.2
       unwasm: 0.3.9
     transitivePeerDependencies:
@@ -16257,7 +16276,8 @@ snapshots:
 
   node-addon-api@7.1.1: {}
 
-  node-domexception@1.0.0: {}
+  node-domexception@1.0.0:
+    optional: true
 
   node-fetch-native@1.6.4: {}
 
@@ -16270,6 +16290,7 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
+    optional: true
 
   node-forge@1.3.1: {}
 
@@ -16304,7 +16325,7 @@ snapshots:
 
   nuxi@3.20.0: {}
 
-  nuxt@3.15.1(@biomejs/biome@2.1.2)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))(eslint@9.15.0(jiti@2.4.2))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.27.4)(terser@5.37.0)(tsx@4.19.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(yaml@2.6.1):
+  nuxt@3.15.1(@biomejs/biome@2.1.2)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))(eslint@9.15.0(jiti@2.4.2))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.27.4)(terser@5.37.0)(tsx@4.19.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(yaml@2.6.1):
     dependencies:
       '@nuxt/devalue': 2.0.2
       '@nuxt/devtools': 1.7.0(rollup@4.27.4)(vite@6.0.7(@types/node@22.10.0)(jiti@2.4.2)(terser@5.37.0)(tsx@4.19.4)(yaml@2.6.1))(vue@3.5.17(typescript@5.8.3))
@@ -16341,7 +16362,7 @@ snapshots:
       magic-string: 0.30.17
       mlly: 1.7.4
       nanotar: 0.1.1
-      nitropack: 2.10.4(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))(typescript@5.8.3)
+      nitropack: 2.10.4(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))(typescript@5.8.3)
       nuxi: 3.20.0
       nypm: 0.4.1
       ofetch: 1.4.1
@@ -16364,7 +16385,7 @@ snapshots:
       unimport: 3.14.6(rollup@4.27.4)
       unplugin: 2.1.2
       unplugin-vue-router: 0.10.9(rollup@4.27.4)(vue-router@4.5.1(vue@3.5.17(typescript@5.8.3)))(vue@3.5.17(typescript@5.8.3))
-      unstorage: 1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)))(ioredis@5.6.1)
+      unstorage: 1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)))(ioredis@5.6.1)
       untyped: 1.5.2
       vue: 3.5.17(typescript@5.8.3)
       vue-bundle-renderer: 2.1.1
@@ -16866,6 +16887,8 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  postgres@3.4.7: {}
+
   preact@10.26.4: {}
 
   prelude-ls@1.2.1: {}
@@ -16882,7 +16905,8 @@ snapshots:
 
   process@0.11.10: {}
 
-  promise-limit@2.7.0: {}
+  promise-limit@2.7.0:
+    optional: true
 
   prompts@2.4.2:
     dependencies:
@@ -17961,7 +17985,7 @@ snapshots:
       acorn: 8.14.0
       webpack-virtual-modules: 0.6.2
 
-  unstorage@1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1)))(ioredis@5.6.1):
+  unstorage@1.14.4(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1)))(ioredis@5.6.1):
     dependencies:
       anymatch: 3.1.3
       chokidar: 3.6.0
@@ -17972,7 +17996,7 @@ snapshots:
       ofetch: 1.4.1
       ufo: 1.5.4
     optionalDependencies:
-      db0: 0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(react@18.3.1))
+      db0: 0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@18.3.12)(bun-types@1.2.18(@types/react@18.3.12))(postgres@3.4.7)(react@18.3.1))
       ioredis: 5.6.1
 
   untun@0.1.3:
@@ -18515,7 +18539,8 @@ snapshots:
     optionalDependencies:
       typescript: 5.8.3
 
-  web-streams-polyfill@3.3.3: {}
+  web-streams-polyfill@3.3.3:
+    optional: true
 
   webidl-conversions@3.0.1: {}
 
