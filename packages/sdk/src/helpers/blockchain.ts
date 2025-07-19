@@ -1,12 +1,12 @@
 import { PoolFactory } from "@lumina-dex/contracts"
 import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 } from "o1js"
 import pLimit from "p-limit"
+import type { SupportedNetwork } from "../constants"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
 import { FetchZekoEvents } from "../graphql/zeko"
 import { createMinaClient } from "../machines"
 import { prefixedLogger } from "./debug"
 
-import type { SupportedNetwork } from "../constants"
 export interface LuminaPool {
 	address: string
 	tokenId: string

@@ -31,6 +31,12 @@
             "schema": "./src/graphql/mina-archive.graphql",
             "tadaOutputLocation": "./src/graphql/mina-archive-env.d.ts",
             "tadaTurboLocation": "./src/graphql/mina-archive-cache.d.ts"
+          },
+          {
+            "name": "pool-signer",
+            "schema": "./src/graphql/pool-signer.graphql",
+            "tadaOutputLocation": "./src/graphql/pool-signer-env.d.ts",
+            "tadaTurboLocation": "./src/graphql/pool-signer-cache.d.ts"
           }
         ]
       }

@@ -1,14 +1,6 @@
 schema {
   query: query
   mutation: mutation
-  subscription: subscription
-}
-
-type subscription {
-  """
-  Event that triggers when some of the state hashes are changed. Max once per minute.
-"""
-  stateHashesChanged: StateHashes!
 }
 
 input TransferClaimInput {
@@ -704,49 +696,6 @@ type ActionOutput {
   actionData: [ActionData!]!
 }
 
-type LuminaActivity {
-  totalSwaps: Int!
-  totalLiquidityPools: Int!
-}
-
-type TopZkapps {
-  zkapp: String!
-  count: Int!
-}
-
-type TransactionStatistics {
-  averageFee: Float!
-  averagePFS: Float!
-}
-
-type TransactionActivity {
-  totalDeposits: Int!
-  totalSignedCommands: Int!
-  totalZkappCommands: Int!
-  totalTransactions: Int!
-}
-
-type ZkappActivity {
-  totalZkapps: Int!
-  newZkapps30d: Int!
-  activeZkapps30d: Int!
-}
-
-type UserActivity {
-  totalAccounts: Int!
-  newAccounts30d: Int!
-  activeAccounts30d: Int!
-}
-
-type Analytics {
-  userActivity: UserActivity!
-  zkappActivity: ZkappActivity!
-  transactionActivity: TransactionActivity!
-  transactionStatistics: TransactionStatistics!
-  topZkapps: [TopZkapps!]!
-  luminaActivity: LuminaActivity!
-}
-
 type StateHashes {
   """Ledger hash of latest proved state"""
   provedLedgerHash: String!
@@ -764,6 +713,12 @@ scalar Fee
 type GenesisConstants {
   """The fee charged to create a new account"""
   accountCreationFee: Fee!
+
+  """Dummy value for Zeko"""
+  coinbase: Amount!
+
+  """Dummy value for Zeko"""
+  genesisTimestamp: String!
 }
 
 type MerklePathElement {
@@ -1046,8 +1001,16 @@ type Account {
   merklePath: [MerklePathElement!]
 }
 
+type ConsensusConfiguration {
+  epochDuration: Int!
+  k: Int!
+  slotsPerEpoch: Int!
+  slotDuration: Int!
+}
+
 type DaemonStatus {
   chainId: String!
+  consensusConfiguration: ConsensusConfiguration!
 }
 
 """Sync status of daemon"""
@@ -1109,7 +1072,17 @@ type query {
   The chain-agnostic identifier of the network this daemon is participating in
 """
   networkID: String!
-  analytics(luminaFactory: PublicKey!): Analytics!
+
+  """Current fee per weight unit"""
+  feePerWeightUnit(
+    """
+    Weight of the transaction, default value is 1, which is the weight of payment
+"""
+    weight: Int
+  ): Float!
+
+  """Get the size of the prover queue"""
+  proverQueueSize: Int!
   actions(input: ActionFilterOptionsInput!): [ActionOutput!]!
   events(input: EventFilterOptionsInput!): [EventOutput!]!
 }

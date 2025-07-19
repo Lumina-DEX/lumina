@@ -1,3 +1,12 @@
+import {
+	type Faucet,
+	type FungibleToken,
+	type FungibleTokenAdmin,
+	type Pool,
+	type PoolFactory,
+	type PoolTokenHolder,
+	SignatureRight
+} from "@lumina-dex/contracts"
 import { createStore } from "@xstate/store"
 import * as Comlink from "comlink"
 import {
@@ -13,16 +22,6 @@ import {
 	UInt64,
 	UInt8
 } from "o1js"
-
-import {
-	type Faucet,
-	type FungibleToken,
-	type FungibleTokenAdmin,
-	type Pool,
-	type PoolFactory,
-	type PoolTokenHolder,
-	SignatureRight
-} from "@lumina-dex/contracts"
 import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
 import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
@@ -201,7 +200,7 @@ const getFee = () => {
 		const network = workerState.getSnapshot().context.network
 		const fee = network ? defaultFee[network] : undefined
 		return fee
-	} catch (error) {
+	} catch {
 		return undefined
 	}
 }
@@ -222,7 +221,7 @@ const deployPoolInstance = async (
 	const poolKey = PrivateKey.random()
 	logger.debug({ poolKey })
 
-	const allRight = new SignatureRight(
+	const _allRight = new SignatureRight(
 		Bool(true),
 		Bool(true),
 		Bool(true),
