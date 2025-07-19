@@ -187,15 +187,18 @@ dokku config:set pool-signer \
 ```
 
 Configure the domain :
+(Make sure the DNS record in cloudflare points to the server IP)
 
 ```bash
-dokku domains:add pool-signer yourdomain.com
+dokku domains:add pool-signer pool-signer.luminadex.com
+dokku letsencrypt:enable pool-signer
+dokku ports:set pool-signer http:80:3001
 ```
 
 TODO :
 
 - [x] Switch to PostgreSQL + Supabase for simplified database management
-- [] Domain config
+- [x] Domain config
 - [] Firewall config
 - [] CI dokku
 

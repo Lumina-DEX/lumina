@@ -5,6 +5,6 @@ import { relations } from "../drizzle/relations"
 const connectionString =
 	process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer"
 
-// Disable prefetch as it is not supported for "Transaction" pool mode
-export const client = postgres(connectionString, { prepare: false })
+// /!\ Use prepare:false if using a transaction pool mode
+export const client = postgres(connectionString, { prepare: true })
 export const db = drizzle(client, { relations })
