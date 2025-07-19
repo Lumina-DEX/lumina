@@ -202,6 +202,12 @@ dokku letsencrypt:enable pool-signer
 dokku ports:set pool-signer http:80:3001
 ```
 
+To inspect the logs :
+
+```bash
+dokku logs pool-signer -t
+```
+
 TODO :
 
 - [x] Switch to PostgreSQL + Supabase for simplified database management

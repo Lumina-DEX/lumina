@@ -35,13 +35,6 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN bun i -g pnpm
 RUN pnpm install
 
-# Copy the source code for the signer package
-COPY packages/signer/ ./packages/signer/
-
-# Copy o1js cache files. This is important for o1js to work correctly
-# without needing to regenerate them on every start.
-# COPY packages/signer/cache ./packages/signer/cache
-
 # Although there is no explicit build step, we run bun install
 # to ensure all necessary setup for the signer package is complete.
 # We are targeting the signer package specifically.
@@ -50,6 +43,14 @@ RUN pnpm run build
 
 WORKDIR /usr/src/app/packages/sdk
 RUN pnpm run build
+
+# Copy the source code for the signer package
+COPY packages/signer/ ./packages/signer/
+
+# Copy o1js cache files. This is important for o1js to work correctly
+# without needing to regenerate them on every start.
+# COPY packages/signer/cache ./packages/signer/cache
+
 
 # Stage 3: Production image
 # This is the final image that will be deployed.

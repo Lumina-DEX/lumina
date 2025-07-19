@@ -39,8 +39,10 @@ export const queues = () => {
 		worker,
 		[Symbol.dispose]: () => {
 			console.log("Closing queues and worker")
-			createPoolQueue.close()
-			createPoolQueueEvents.close()
+			try {
+				createPoolQueue.close()
+				createPoolQueueEvents.close()
+			} catch {}
 		}
 	}
 }
