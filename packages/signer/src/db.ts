@@ -2,9 +2,19 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { relations } from "../drizzle/relations"
 
-const connectionString =
-	process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer"
+export const getDb = () => {
+	try {
+		// /!\ Use prepare:false if using a transaction pool mode
+		const client = postgres(
+			process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer",
+			{ prepare: true }
+		)
 
-// /!\ Use prepare:false if using a transaction pool mode
-export const client = postgres(connectionString, { prepare: true })
-export const db = drizzle(client, { relations })
+		const db = drizzle(client, { relations })
+
+		return { client, db }
+	} catch (error) {
+		console.error("Error connecting to the database:", error)
+		throw error
+	}
+}

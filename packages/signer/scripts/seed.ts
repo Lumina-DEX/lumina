@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm"
 import { signerMerkle } from "../drizzle/schema"
-import { db } from "../src/db"
+import { getDb } from "../src/db"
+
+const { db } = getDb()
 
 async function seed() {
 	const signers = [

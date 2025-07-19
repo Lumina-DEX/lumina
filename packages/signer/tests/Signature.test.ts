@@ -13,7 +13,7 @@ import {
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, poolKey as tPoolKey } from "../drizzle/schema"
-import { db } from "../src/db"
+import { getDb } from "../src/db"
 import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
 
 const Schema = v.object({
@@ -38,6 +38,7 @@ type PoolKey = {
 	generated_public_2: string
 }
 
+const { db } = getDb()
 describe("Signature", () => {
 	it("rebuild merkle", async () => {
 		const [merkleMap] = await getMerkle()

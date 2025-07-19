@@ -14,6 +14,9 @@ const connection = new IORedis({
 	host: process.env.REDIS_URL ?? "127.0.0.1",
 	port: Number(process.env.REDIS_PORT ?? 6379),
 	maxRetriesPerRequest: null
+}).on("error", (e) => {
+	console.error("Redis connection error:", e)
+	throw e
 })
 
 const concurrency = 3

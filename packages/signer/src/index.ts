@@ -1,6 +1,6 @@
 import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
-import { db } from "./db"
+import { getDb } from "./db"
 import { schema } from "./graphql"
 import { queues } from "./queue"
 
@@ -14,7 +14,7 @@ const Schema = v.object({
 })
 const env = v.parse(Schema, process.env)
 
-export type Database = typeof db
+export type Database = ReturnType<typeof getDb>["db"]
 export type Queues = typeof queues
 export type Env = typeof env
 export type Context = {
@@ -23,6 +23,7 @@ export type Context = {
 	env: Env
 }
 
+const { db } = getDb()
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
 	maskedErrors: false,
