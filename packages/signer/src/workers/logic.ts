@@ -2,7 +2,6 @@ import { PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import { MINA_ADDRESS } from "@lumina-dex/sdk"
 
 import {
-	Bool,
 	fetchAccount,
 	Mina,
 	Poseidon,
@@ -13,10 +12,10 @@ import {
 	TokenId,
 	UInt64
 } from "o1js"
+import { getDb } from "@/db"
 import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
-	database,
 	fundNewAccount,
 	getEnv,
 	getFee,
@@ -33,7 +32,7 @@ export const createPoolAndTransaction = async ({
 	network,
 	jobId
 }: CreatePoolInputType & { jobId: string }) => {
-	const db = database()
+	using db = getDb()
 	const env = getEnv()
 	const Network = getNetwork(network)
 	Mina.setActiveInstance(Network)
@@ -45,13 +44,13 @@ export const createPoolAndTransaction = async ({
 
 	const deployRight = SignatureRight.canDeployPool()
 
-	const [merkle, users] = await getMerkle()
+	const [merkle, users] = await getMerkle(db.drizzle)
 
 	const masterSigner = await getMasterSigner()
 	const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
 	const masterSignerPublicKey = masterSignerPrivateKey.toPublicKey()
 
-	const minaTransaction = await db.transaction(async (txOrm) => {
+	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
 		// insert this new pool in database
 		const result = await txOrm

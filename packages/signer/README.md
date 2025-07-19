@@ -212,6 +212,7 @@ TODO :
 
 - [x] Switch to PostgreSQL + Supabase for simplified database management
 - [x] Domain config
+- DB Clean-up script
 - [] Firewall config
 - [] CI dokku
 

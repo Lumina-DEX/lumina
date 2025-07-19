@@ -14,16 +14,15 @@ const Schema = v.object({
 })
 const env = v.parse(Schema, process.env)
 
-export type Database = ReturnType<typeof getDb>["db"]
+export type Database = typeof getDb
 export type Queues = typeof queues
 export type Env = typeof env
 export type Context = {
-	db: Database
+	database: Database
 	queues: Queues
 	env: Env
 }
 
-const { db } = getDb()
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
 	maskedErrors: false,
@@ -35,7 +34,7 @@ export const yoga = createYoga<{ env: typeof env }>({
 		exposedHeaders: ["*"]
 	}),
 	context: async ({ env }) => {
-		return { env, db, queues } satisfies Context
+		return { env, database: getDb, queues } satisfies Context
 	}
 })
 

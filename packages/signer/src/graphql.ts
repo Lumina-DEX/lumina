@@ -142,14 +142,15 @@ builder.mutationField("confirmJob", (t) =>
 		type: "String",
 		description: "Confirm a job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
-		resolve: async (_, { jobId }, { db, queues }) => {
+		resolve: async (_, { jobId }, { database, queues }) => {
 			using q = queues()
-			const data = await db.select().from(pool).where(eq(pool.jobId, jobId))
+			using db = database()
+			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
 			if (data.length === 0) throw new GraphQLError(`No pool found for job ID ${jobId}`)
 			const job = await q.createPoolQueue.getJob(jobId)
 			if (job) await job.remove()
 			if (data[0].status === "confirmed") return `Job for pool ${jobId} is already confirmed`
-			await db.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
+			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
 			return `Job for pool "${data[0].publicKey}" confirmed`
 		}
 	})

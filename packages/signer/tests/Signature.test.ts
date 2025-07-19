@@ -38,10 +38,10 @@ type PoolKey = {
 	generated_public_2: string
 }
 
-const { db } = getDb()
+const { drizzle: db } = getDb()
 describe("Signature", () => {
 	it("rebuild merkle", async () => {
-		const [merkleMap] = await getMerkle()
+		const [merkleMap] = await getMerkle(db)
 
 		const root = merkleMap.getRoot()
 

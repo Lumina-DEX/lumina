@@ -810,7 +810,6 @@ export const createLuminaDexMachine = () =>
 							}
 						}
 					},
-					CREATING_POOL: {},
 					DEPLOYING_TOKEN: {
 						invoke: {
 							src: "deployToken",
@@ -854,8 +853,7 @@ export const createLuminaDexMachine = () =>
 									user: walletUser(context),
 									factory: luminaDexFactory(context),
 									signer,
-									user0,
-									features: context.features
+									user0
 								}
 							},
 							onDone: {

@@ -45,6 +45,7 @@ WORKDIR /usr/src/app/packages/sdk
 RUN pnpm run build
 
 # Copy the source code for the signer package
+WORKDIR /usr/src/app
 COPY packages/signer/ ./packages/signer/
 
 # Copy o1js cache files. This is important for o1js to work correctly

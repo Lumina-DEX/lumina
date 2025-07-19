@@ -2,7 +2,6 @@ import { InfisicalSDK } from "@infisical/sdk"
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { eq } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/postgres-js"
 import {
 	AccountUpdate,
 	Bool,
@@ -17,8 +16,8 @@ import {
 	UInt64
 } from "o1js"
 import * as v from "valibot"
-import { relations } from "../drizzle/relations"
 import { signerMerkle, type poolKey as tPoolKey } from "../drizzle/schema"
+import type { getDb } from "./db"
 
 export const getEnv = () => {
 	const Schema = v.object({
@@ -34,20 +33,17 @@ export const getEnv = () => {
 	return env
 }
 
-export const database = () => {
-	const db = drizzle(getEnv().DATABASE_URL, { relations })
-	return db
-}
-
 type NewPoolKey = typeof tPoolKey.$inferInsert
 type NewSignerMerkle = typeof signerMerkle.$inferSelect
 
 // list of different approved user to sign
 
-export async function getMerkle(): Promise<[MerkleMap, NewSignerMerkle[]]> {
+export async function getMerkle(
+	database: ReturnType<typeof getDb>["drizzle"]
+): Promise<[MerkleMap, NewSignerMerkle[]]> {
 	let users: NewSignerMerkle[] = []
 
-	const data = await database().select().from(signerMerkle).where(eq(signerMerkle.active, true))
+	const data = await database.select().from(signerMerkle).where(eq(signerMerkle.active, true))
 
 	const allRight = new SignatureRight(
 		Bool(true),

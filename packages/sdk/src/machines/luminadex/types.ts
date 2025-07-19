@@ -3,6 +3,7 @@ import type { ActorRefFrom } from "xstate"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { WalletActorRef } from "../wallet/actors"
 import type { WalletEmit } from "../wallet/types"
+import type { createPoolMachine } from "./actors/createPool"
 
 export type DexWorker = Comlink.Remote<LuminaDexWorker>
 
@@ -58,7 +59,7 @@ interface DexContext {
 	} & SwapSettings
 	mint: Omit<MintToken, "user"> & { transactionResult: DexTransactionResult }
 	deployPool: PoolSettings & { transactionResult: DexTransactionResult }
-	createPool: PoolSettings & { pools: Record<string, ActorRefFrom<any>> }
+	createPool: PoolSettings & { pools: Record<string, ActorRefFrom<typeof createPoolMachine>> }
 	claim: { transactionResult: DexTransactionResult }
 	deployToken: {
 		symbol: string
