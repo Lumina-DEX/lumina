@@ -138,9 +138,16 @@ docker network create lumina-net
 
 docker run -d --name redis-server --network lumina-net -p 6379:6379 redis:8.0.2
 
-docker run --rm -it --network lumina-net -p 3000:3000 \
-  -e REDIS_HOST=redis-server \
-  -e REDIS_PORT=6379 \
+docker run -d --name postgres-server --network lumina-net -p 5432:5432 \
+  -e POSTGRES_DB=signer \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:17-alpine
+
+docker run --rm -it --network lumina-net -p 3000:3000\
+  -e REDIS_HOST=redis-server\
+  -e REDIS_PORT=6379\
+  -e DATABASE_URL=postgresql://postgres:postgres@postgres-server:5432/signer\
   luminadex-signer
 ```
 
