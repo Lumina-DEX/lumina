@@ -5,48 +5,34 @@ import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
 import type { createPoolAndTransaction } from "./workers/logic"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const file = join(__dirname, "workers", "sandbox.js")
-const processorUrl = pathToFileURL(file)
-
-const connection = new IORedis({
-	host: process.env.REDIS_URL ?? "127.0.0.1",
-	port: Number(process.env.REDIS_PORT ?? 6379),
+const connection = new IORedis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
 	maxRetriesPerRequest: null
 }).on("error", (e) => {
 	console.error("Redis connection error:", e)
 	throw e
 })
 
-const concurrency = 3
+const concurrency = 4
 
-const worker = new Worker("createPool", processorUrl, {
-	connection,
-	concurrency
-})
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const file = join(__dirname, "workers", "sandbox.js")
+const processorUrl = pathToFileURL(file)
+const worker = new Worker("createPool", processorUrl, { connection, concurrency })
 
 export const createPoolQueue = new Queue<
 	CreatePoolInputType,
 	Awaited<ReturnType<typeof createPoolAndTransaction>>
->("createPool", {
-	connection
-})
-export const createPoolQueueEvents = new QueueEvents("createPool", {
-	connection
-})
+>("createPool", { connection })
+export const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 
 //TODO: Figure out if singletons can be used in some cases.
 export const queues = () => {
-	const createPoolQueueEvents = new QueueEvents("createPool", {
-		connection
-	})
+	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 	const createPoolQueue = new Queue<
 		CreatePoolInputType,
 		Awaited<ReturnType<typeof createPoolAndTransaction>>
-	>("createPool", {
-		connection
-	})
+	>("createPool", { connection })
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,
