@@ -1,21 +1,30 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"root": true,
 	"linter": {
 		"rules": {
 			"correctness": {
-				"noUnusedImports": { "level": "warn", "fix": "safe" }
+				"noUnusedImports": {
+					"level": "warn",
+					"fix": "safe"
+				}
 			},
 			"style": {
-				"useConst": { "level": "warn", "fix": "safe" }
+				"useConst": {
+					"level": "warn",
+					"fix": "safe"
+				},
+				"noParameterAssign": "error",
+				"useAsConstAssertion": "error",
+				"useDefaultParameterLast": "error",
+				"useEnumInitializers": "error",
+				"useSelfClosingElements": "error",
+				"useSingleVarDeclarator": "error",
+				"noUnusedTemplateLiteral": "error",
+				"useNumberNamespace": "error",
+				"noInferrableTypes": "error",
+				"noUselessElse": "error"
 			}
 		}
-	},
-	"overrides": [
-		{
-			"include": ["packages/contracts/**", "packages/lumina-tokens/**"],
-			"linter": {
-				"enabled": false
-			}
-		}
-	]
+	}
 }

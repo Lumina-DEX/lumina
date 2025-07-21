@@ -1,6 +1,20 @@
 {
 	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "dprint.dprint",
+	"[javascript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll": "explicit",
+			"quickfix.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		}
+	},
 	"[typescript]": {
-		"editor.defaultFormatter": "dprint.dprint"
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll": "explicit",
+			"quickfix.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		}
 	}
 }

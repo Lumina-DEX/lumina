@@ -67,6 +67,7 @@ export default defineConfig({
 						{ text: "Wallet Connection", link: "/guide/wallet-connection" },
 						{ text: "Swapping Tokens", link: "/guide/swapping-tokens" },
 						{ text: "Managing Liquidity", link: "/guide/managing-liquidity" },
+						{ text: "Server-Side Pool Creation", link: "/guide/pool-creation" },
 						{ text: "Fetching Data", link: "/guide/fetching-data" }
 					]
 				}

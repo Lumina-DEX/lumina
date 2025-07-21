@@ -1,68 +1,69 @@
-import { drizzle } from "drizzle-orm/libsql"
-import { signerMerkle } from "./src/db/schema"
 import { eq } from "drizzle-orm"
+import { signerMerkle } from "../drizzle/schema"
+import { getDb } from "../src/db"
 
-const db = drizzle(process.env.DB_FILE_NAME!)
+const { db } = getDb()
 
 async function seed() {
-	const entries = [
+	const signers = [
 		{
 			publicKey: "B62qjpbiYvHwbU5ARVbE5neMcuxfxg2zt8wHjkWVKHEiD1micG92CtJ",
-			right: "deploy",
+			permission: "deploy",
 			active: true
 		},
 		{
 			publicKey: "B62qic5sGvm6QvFzJ92588YgkKxzqi2kFeYydnkM8VDAvY9arDgY6m6",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qkjzL662Z5QD16cB9j6Q5TH74y42ALsMhAiyrwWvWwWV1ypfcV65",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qpLxXFg4rmhce762uiJjNRnp5Bzc9PnCEAcraeaMkVWkPi7kgsWV",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qrgWEGhgXQ5PnpEaeJqs1MRx4Jiw2aqSTfyxAsEVDJzqNFm9PEQt",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qkfpRcsJjByghq8FNkzBh3wmzLYFWJP2qP9x8gJ48ekfd6MVXngy",
-			right: "all",
+			permission: "all",
 			active: true
 		},
 		{
 			publicKey: "B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ",
-			right: "all",
+			permission: "all",
 			active: true
 		}
-	]
+	] as const
 
-	for (const entry of entries) {
+	for (const entry of signers) {
 		const existing = await db
 			.select()
 			.from(signerMerkle)
 			.where(eq(signerMerkle.publicKey, entry.publicKey))
-			.get()
-		if (!existing) {
+			.limit(1)
+		if (existing.length === 0) {
 			await db.insert(signerMerkle).values(entry)
 			console.log(`Inserted: ${entry.publicKey}`)
 		} else {
 			console.log(`Skipped (already exists): ${entry.publicKey}`)
 		}
 	}
-
 	console.log("✅ Seed completed.")
 }
 
-seed().then()
+seed().then(() => {
+	db.$client.end()
+})

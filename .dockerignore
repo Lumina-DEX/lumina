@@ -8,7 +8,6 @@ node_modules
 
 # Docker
 .dockerignore
-Dockerfile# PNPM
 
 # Config files
 biome.json
