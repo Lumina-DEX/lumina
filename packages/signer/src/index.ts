@@ -25,7 +25,6 @@ export type Context = {
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
-	maskedErrors: false,
 	cors: (request) => ({
 		origin: request.headers.get("Origin") ?? "localhost:4000",
 		credentials: true,
@@ -44,8 +43,7 @@ const main = async () => {
 		port: 3001,
 		fetch: async (request) => {
 			console.log("Received request:", request.method, request.url)
-			const response = await yoga(request, { env })
-			return response
+			return yoga(request, { env })
 		}
 	})
 	console.info(

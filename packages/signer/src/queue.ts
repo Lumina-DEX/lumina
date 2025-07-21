@@ -20,19 +20,32 @@ const file = join(__dirname, "workers", "sandbox.js")
 const processorUrl = pathToFileURL(file)
 const worker = new Worker("createPool", processorUrl, { connection, concurrency })
 
-export const createPoolQueue = new Queue<
-	CreatePoolInputType,
-	Awaited<ReturnType<typeof createPoolAndTransaction>>
->("createPool", { connection })
-export const createPoolQueueEvents = new QueueEvents("createPool", { connection })
-
 //TODO: Figure out if singletons can be used in some cases.
 export const queues = () => {
-	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 	const createPoolQueue = new Queue<
 		CreatePoolInputType,
 		Awaited<ReturnType<typeof createPoolAndTransaction>>
 	>("createPool", { connection })
+
+	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
+
+	createPoolQueueEvents.on("waiting", ({ jobId }) => {
+		console.log(`A job with ID ${jobId} is waiting`)
+	})
+
+	createPoolQueueEvents.on("active", ({ jobId, prev }) => {
+		console.log(`Job ${jobId} is now active; previous status was ${prev}`)
+	})
+
+	createPoolQueueEvents.on("completed", ({ jobId }) => {
+		console.log(`${jobId} has completed and returned`)
+	})
+
+	createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
+		console.error("queue failed", failedReason)
+		console.log(`${jobId} has failed with reason ${failedReason}`)
+	})
+
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,
@@ -46,20 +59,3 @@ export const queues = () => {
 		}
 	}
 }
-
-createPoolQueueEvents.on("waiting", ({ jobId }) => {
-	console.log(`A job with ID ${jobId} is waiting`)
-})
-
-createPoolQueueEvents.on("active", ({ jobId, prev }) => {
-	console.log(`Job ${jobId} is now active; previous status was ${prev}`)
-})
-
-createPoolQueueEvents.on("completed", ({ jobId }) => {
-	console.log(`${jobId} has completed and returned`)
-})
-
-createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-	console.error("queue failed", failedReason)
-	console.log(`${jobId} has failed with reason ${failedReason}`)
-})

@@ -1,0 +1,26 @@
+name: Deploy Pool Signer to Dokku
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+    - "packages/signer/**"
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloning repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to dokku
+        uses: dokku/github-action@master
+        with:
+          branch: "main"
+          git_remote_url: "ssh://dokku@${{ secrets.DOKKU_SERVER_IP }}:22/pool-signer"
+          ssh_private_key: ${{ secrets.DOKKU_GHA_PRIVATE_KEY }}

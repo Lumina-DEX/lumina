@@ -18,7 +18,7 @@ interface Job {
 }
 const Job = builder.objectRef<Job>("Job").implement({
 	description: "A job representing a pool creation task",
-	fields: (t) => ({ id: t.exposeString("id") })
+	fields: (t) => ({ id: t.exposeString("id"), status: t.exposeString("status") })
 })
 
 interface JobResult {
@@ -75,7 +75,6 @@ builder.mutationField("createPool", (t) =>
 			console.log(`Job ID: ${jobId}, Exists: ${!!job}`)
 			if (await job?.isCompleted()) return { id: jobId, status: "completed" }
 			if (job) return { id: jobId, status: "exists" }
-
 			await q.createPoolQueue.add("createPool", input, {
 				jobId,
 				removeOnFail: true,
@@ -151,6 +150,7 @@ builder.mutationField("confirmJob", (t) =>
 			if (job) await job.remove()
 			if (data[0].status === "confirmed") return `Job for pool ${jobId} is already confirmed`
 			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
+			//TODO: Add logic to trigger a workflow to handle the confirmed job and update the CDN
 			return `Job for pool "${data[0].publicKey}" confirmed`
 		}
 	})

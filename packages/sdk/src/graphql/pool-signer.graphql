@@ -9,6 +9,7 @@ input CreatePoolInput {
 """A job representing a pool creation task"""
 type Job {
   id: String
+  status: String
 }
 
 """A job result represented in JSON format"""

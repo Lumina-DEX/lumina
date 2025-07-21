@@ -4,6 +4,7 @@ export const CreatePoolMutation = graphql(`
   mutation CreatePool($input: CreatePoolInput!) {
     createPool(input: $input) {
       id
+      status
     }
   }
 `)
