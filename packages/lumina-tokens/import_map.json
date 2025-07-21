@@ -1,8 +1,0 @@
-{
-	"imports": {
-		"@lumina-dex/sdk": "npm:@lumina-dex/sdk@0.18.0",
-		"@lumina-dex/sdk/": "npm:/@lumina-dex/sdk@0.18.0/",
-		"graphql-request": "npm:graphql-request@7.1.2",
-		"graphql-request/": "npm:/graphql-request@7.1.2/"
-	}
-}

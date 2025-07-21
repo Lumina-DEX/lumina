@@ -2,8 +2,6 @@ import type { Networks } from "@lumina-dex/sdk"
 import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
-
-import type { Env } from "../worker-configuration"
 import { PoolSchema, TokenSchema } from "./helper"
 import {
 	auth,
@@ -28,6 +26,13 @@ addRoute(router, "POST", "/api/:network/sync", { path: "sync" })
 addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
 
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
+
+import { Container } from "@cloudflare/containers"
+
+export class FetchToken extends Container<Env> {
+	defaultPort = 3000
+	sleepAfter = "5m"
+}
 
 export default {
 	async scheduled(event, env, context) {

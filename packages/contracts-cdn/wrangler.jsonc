@@ -11,8 +11,7 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
-		"DO_TOKENLIST_NAME": "db-prod-1",
-		"LUMINA_TOKEN_ENDPOINT_URL": "https://lumina-tokens.deno.dev"
+		"DO_TOKENLIST_NAME": "db-prod-v2"
 	},
 	// Workers Static Assets
 	"assets": {
@@ -25,16 +24,28 @@
 	"observability": {
 		"enabled": true
 	},
-
+	"containers": [
+		{
+			"max_instances": 10,
+			"name": "fetch-tokens",
+			"class_name": "FetchToken",
+			"image": "./Dockerfile.Container",
+			"image_build_context": "../..",
+			"instance_type": "standard"
+		}
+	],
 	//Bind a Durable Object. Durable objects are a scale-to-zero compute primitive based on the actor model.
 	//Durable Objects can live for as long as needed. Use these when you need a long-running "server", such as in realtime apps.
 	//Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#durable-objects
 	"durable_objects": {
-		"bindings": [{ "name": "TOKENLIST", "class_name": "TokenList" }]
+		"bindings": [
+			{ "name": "TOKENLIST", "class_name": "TokenList" },
+			{ "name": "FETCHTOKEN", "class_name": "FetchToken" }
+		]
 	},
 	// Durable Object migrations.
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList"] }],
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList", "FetchToken"] }],
 	// We need rules so we can import migrations in the next steps
 	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 	// Schedule cron triggers:

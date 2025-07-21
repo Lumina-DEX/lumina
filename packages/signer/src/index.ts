@@ -1,66 +1,57 @@
-import express, { Request, Response } from "express"
-import dotenv from "dotenv"
-import cors from "cors"
-import path from "path"
-import { fileURLToPath } from "url"
-import { addJobs } from "./queue.js"
-import { drizzle } from "drizzle-orm/libsql"
+import { createYoga } from "graphql-yoga"
+import * as v from "valibot"
+import { getDb } from "./db"
+import { schema } from "./graphql"
+import { queues } from "./queue"
 
-// configures dotenv to work in your application
-dotenv.config()
-const app = express()
+const Schema = v.object({
+	DATABASE_URL: v.string(),
+	INFISICAL_ENVIRONMENT: v.string(),
+	INFISICAL_PROJECT_ID: v.string(),
+	INFISICAL_SECRET_NAME: v.string(),
+	INFISICAL_CLIENT_ID: v.string(),
+	INFISICAL_CLIENT_SECRET: v.string()
+})
+const env = v.parse(Schema, process.env)
 
-var corsOptions = {
-	origin: "*",
-	optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+export type Database = typeof getDb
+export type Queues = typeof queues
+export type Env = typeof env
+export type Context = {
+	database: Database
+	queues: Queues
+	env: Env
 }
 
-app.use(cors(corsOptions))
-app.use(express.urlencoded({ extended: false }))
-app.use(express.json())
+export const yoga = createYoga<{ env: typeof env }>({
+	schema,
+	cors: (request) => ({
+		origin: request.headers.get("Origin") ?? "localhost:4000",
+		credentials: true,
+		allowedHeaders: [request.headers.get("Access-Control-Request-Headers") ?? "Content-Type"],
+		methods: ["*"],
+		exposedHeaders: ["*"]
+	}),
+	context: async ({ env }) => {
+		return { env, database: getDb, queues } satisfies Context
+	}
+})
 
-const db = drizzle(process.env.DB_FILE_NAME!)
-
-const PORT = process.env.PORT
-
-// we preload contract
-const concurrency = process.env.CONCURRENCY
-const nbProcess = concurrency ? parseInt(concurrency) : 1
-console.log("concurrency", concurrency)
-
-for (let index = 0; index < nbProcess; index++) {
-	await addJobs({ onlyCompile: true })
+const main = async () => {
+	const server = Bun.serve({
+		idleTimeout: 0, // Wait indefinitely for SSE
+		port: 3001,
+		fetch: async (request) => {
+			console.log("Received request:", request.method, request.url)
+			return yoga(request, { env })
+		}
+	})
+	console.info(
+		`Server is running on ${new URL(
+			yoga.graphqlEndpoint,
+			`http://${server.hostname}:${server.port}`
+		)}`
+	)
 }
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const fullPath = path.join(__dirname, "public")
-
-app.get("/", (request: Request, response: Response) => {
-	response.status(200).send("Hello World")
-})
-
-app.use("/pool", express.static(fullPath))
-
-app.post("/create-pool", async (request: Request, response: Response) => {
-	const formData = request.body
-
-	console.log("request data", formData)
-
-	console.time("total")
-	const start = Date.now()
-	const ret = await addJobs(formData)
-	const time = Date.now() - start
-	console.timeEnd("total")
-
-	response.status(200).send(JSON.stringify({ msg: "create pool", time: time, result: ret }))
-})
-
-app
-	.listen(PORT, () => {
-		console.log("Server running at PORT: ", PORT)
-	})
-	.on("error", (error) => {
-		// gracefully handle error
-		throw new Error(error.message)
-	})
+main()

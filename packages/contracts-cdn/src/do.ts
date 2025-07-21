@@ -4,7 +4,6 @@ import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlit
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
 import * as schema from "../drizzle/schema"
-import type { Env } from "../worker-configuration"
 import {
 	type Exists,
 	type FindPoolBy,
@@ -203,7 +202,8 @@ export class TokenList extends DurableObject {
 				token0Address: "MINA",
 				token1Address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 				chainId: "mina:devnet",
-				name: "LLP-MINA_TOKA"
+				name: "LLP-MINA_TOKA",
+				tokenId: "pool_test_token_id"
 			}
 		])
 	}

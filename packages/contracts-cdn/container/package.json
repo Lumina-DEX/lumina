@@ -1,0 +1,14 @@
+{
+	"name": "fetch-tokens",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"format": "dprint check",
+		"format:fix": "dprint fmt --verbose",
+		"start": "bun run index.ts"
+	},
+	"dependencies": {
+		"@lumina-dex/sdk": "workspace:^",
+		"graphql-request": "7.1.2"
+	}
+}
