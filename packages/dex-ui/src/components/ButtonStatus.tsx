@@ -10,6 +10,7 @@ const ButtonStatus = ({ onClick, text }) => {
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
+	const poolState = useSelector(Dex, (state) => state.context.dex.createPool)
 
 	useEffect(() => {
 		const load = typeof dexState.dexSystem === "string"
