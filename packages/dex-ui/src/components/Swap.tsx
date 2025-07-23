@@ -5,21 +5,21 @@ import { useSearchParams } from "next/navigation"
 import { PublicKey } from "o1js"
 // @ts-ignore
 import CurrencyFormat from "react-currency-format"
-import { poolToka, toka } from "@/utils/addresses"
+import { poolToka, toka, tokenA } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
 import { useSelector } from "@lumina-dex/sdk/react"
 import ButtonStatus from "./ButtonStatus"
 import { feeAmount, LuminaContext } from "./Layout"
-
-type Percent = number | string
+import { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 
 // @ts-ignore
 const Swap = ({}) => {
 	const [mina, setMina] = useState<any>()
 
-	const [pool, setPool] = useState(poolToka)
-	const [token, setToken] = useState({ address: toka, decimals: 9, poolAddress: poolToka })
+	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [pool, setPool] = useState<LuminaPool>()
+	const [token, setToken] = useState<LuminaToken>(tokenA)
 
 	const [loading, setLoading] = useState(false)
 
@@ -38,7 +38,6 @@ const Swap = ({}) => {
 	}
 
 	const { Wallet, Dex } = useContext(LuminaContext)
-	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
 
 	const [toDai, setToDai] = useState(true)
@@ -49,11 +48,9 @@ const Swap = ({}) => {
 
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
 
-	const [data, setData] = useState({ amountIn: 0, amountOut: 0, balanceOutMin: 0, balanceInMax: 0 })
-
 	useEffect(() => {
 		const delayDebounceFn = setTimeout(() => {
-			if (parseFloat(fromAmount)) {
+			if (parseFloat(fromAmount) && token && pool) {
 				handleCalculateSwap(fromAmount)
 			}
 		}, 500)
@@ -62,8 +59,6 @@ const Swap = ({}) => {
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
-			// simple logging
-			console.log("Dex", snapshot)
 			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
 			if (token) {
 				valTo = valTo / 10 ** token.decimals
@@ -76,20 +71,10 @@ const Swap = ({}) => {
 
 	// Action handlers
 	const handleCalculateSwap = (amount) => {
-		console.log("swap settings", {
-			pool: token.poolAddress,
-			from: {
-				address: toDai ? "MINA" : token.address,
-				amount: fromAmount
-			},
-			to: toDai ? token.address : "MINA",
-			slippagePercent: slippagePercent,
-			frontendFee: feeAmount
-		})
 		Dex.send({
 			type: "ChangeSwapSettings",
 			settings: {
-				pool: token.poolAddress,
+				pool: pool.address,
 				from: {
 					address: toDai ? "MINA" : token.address,
 					amount: amount
@@ -103,11 +88,10 @@ const Swap = ({}) => {
 	const swap = async () => {
 		try {
 			setLoading(true)
-			console.log("infos", { fromAmount, toAmount })
 			const res = Dex.send({ type: "Swap" })
 			console.log("res", res)
 		} catch (error) {
-			console.log("swap error", error)
+			console.error("swap error", error)
 		} finally {
 			setLoading(false)
 		}
@@ -138,7 +122,7 @@ const Swap = ({}) => {
 						{toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu pool={pool} setToken={updateToken} setPool={updatePool} />
+							<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
 						)}
 					</div>
 					<div>
@@ -161,12 +145,12 @@ const Swap = ({}) => {
 						{!toDai ? (
 							<span className="w-24 text-center">MINA</span>
 						) : (
-							<TokenMenu pool={pool} setToken={setToken} setPool={setPool} />
+							<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
 						)}
 					</div>
 					{token?.address ? (
 						<div>
-							Your token balance : <Balance token={token} isPool={false}></Balance>
+							Your token balance : <Balance token={token}></Balance>
 						</div>
 					) : (
 						<div></div>

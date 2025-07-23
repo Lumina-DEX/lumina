@@ -5,7 +5,6 @@ import TabButton from "@/components/TabButton"
 
 export default function Home() {
 	const [tab, setTab] = useState<any>("swap")
-	const accountState = { network: "", publicKeyBase58: "", balances: { mina: 0 } }
 
 	return (
 		<>
@@ -16,7 +15,7 @@ export default function Home() {
 				<div className="p-2">
 					{tab === "swap" && (
 						<div>
-							<Swap accountState={accountState}></Swap>
+							<Swap></Swap>
 						</div>
 					)}
 				</div>

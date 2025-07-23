@@ -9,6 +9,9 @@ import { poolToka } from "@/utils/addresses"
 import TokenMenu from "./TokenMenu"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
+import PoolCreationJob from "./PoolCreationJob"
 
 // @ts-ignore
 const Create = ({}) => {
@@ -16,6 +19,19 @@ const Create = ({}) => {
 	const [loading, setLoading] = useState(false)
 	const [tokenAddress, setTokenAddress] = useState("")
 	const { Wallet, Dex } = useContext(LuminaContext)
+	const createPoolActor = useSelector(Dex, (state) => state.context.dex.createPool)
+
+	console.log(createPoolActor)
+
+	const creatingPools = Object.entries(createPoolActor.pools)
+		.map(([poolId, p]) => {
+			const poolActor = p as ActorRefFromLogic<CreatePoolMachine>
+			return {
+				id: poolId,
+				actor: poolActor
+			}
+		})
+		.at(-1)
 
 	useEffect(() => {
 		if (window && (window as any).mina) {
@@ -54,6 +70,13 @@ const Create = ({}) => {
 						></input>
 					</div>
 					<ButtonStatus onClick={createPool} text={"Create Pool"}></ButtonStatus>
+					{creatingPools && (
+						<PoolCreationJob
+							key={creatingPools.id}
+							id={creatingPools.id}
+							actor={creatingPools.actor}
+						/>
+					)}
 				</div>
 			</div>
 		</>
