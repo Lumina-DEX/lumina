@@ -8,30 +8,25 @@ import { useSelector } from "@lumina-dex/sdk/react"
 import { createContext } from "react"
 import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
 
-let transactionFee = 0.1
-const ZKAPP_ADDRESS = "B62qjmz2oEe8ooqBmvj3a6fAbemfhk61rjxTYmUMP9A6LPdsBLmRAxK"
-const ZKTOKEN_ADDRESS = "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w"
-export const ZKFACTORY_ADDRESS = "B62qo8GFnNj3JeYq6iUUXeHq5bqJqPQmT5C2cTU7YoVc4mgiC8XEjHd"
-const ZKFAUCET_ADDRESS = "B62qnigaSA2ZdhmGuKfQikjYKxb6V71mLq3H8RZzvkH4htHBEtMRUAG"
-const WETH_ADDRESS = "B62qisgt5S7LwrBKEc8wvWNjW7SGTQjMZJTDL2N6FmZSVGrWiNkV21H"
-
-const Wallet = createWallet()
 export const feeAmount = 10
-const Dex = createDex({
-	input: {
-		wallet: Wallet,
-		frontendFee: {
-			destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
-			amount: feeAmount
-		}
-	}
-})
+
+const Wallet = typeof window !== "undefined" ? createWallet() : null
+const Dex = Wallet
+	? createDex({
+			input: {
+				wallet: Wallet,
+				features: ["Swap"],
+				frontendFee: {
+					destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
+					amount: feeAmount
+				}
+			}
+		})
+	: null
 const Context: LC = { Dex, Wallet }
 export const LuminaContext = createContext(Context)
 
 export default function Layout({ children }) {
-	const [isReady, setIsReady] = useState(false)
-
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const dexState = useSelector(Dex, (state) => state.value)
 
@@ -43,8 +38,8 @@ export default function Layout({ children }) {
 	// Do Setup
 
 	useEffect(() => {
-		if (dexState?.contractSystem === "CONTRACTS_READY") {
-			setIsReady(true)
+		if (dexState?.contractSystem === "IDLE") {
+			setDisplayText("")
 		}
 		setDisplayText(JSON.stringify(dexState))
 	}, [dexState])

@@ -1,11 +1,7 @@
 "use client"
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/router"
-import { useSearchParams } from "next/navigation"
-import { fetchAccount, PublicKey } from "o1js"
 // @ts-ignore
-import CurrencyFormat from "react-currency-format"
-import { connect, minaTestnet, requestAccounts, switchChain, zekoTestnet } from "@/lib/wallet"
 import Link from "next/link"
 
 // @ts-ignore
@@ -56,16 +52,6 @@ const Menu = () => {
 									Pool
 								</Link>
 							</li>
-							<li>
-								<Link className="" href="/faucet">
-									Faucet
-								</Link>
-							</li>
-							<li>
-								<Link className="" href="/token">
-									Token
-								</Link>
-							</li>
 						</ul>
 					</div>
 				</section>
@@ -79,16 +65,6 @@ const Menu = () => {
 					<li className={router.pathname == "/pool" ? "text-blue-500" : ""}>
 						<Link className="text-xl" href="/pool">
 							Pool
-						</Link>
-					</li>
-					<li className={router.pathname == "/faucet" ? "text-blue-500" : ""}>
-						<Link className="" href="/faucet">
-							Faucet
-						</Link>
-					</li>
-					<li className={router.pathname == "/token" ? "text-blue-500" : ""}>
-						<Link className="" href="/token">
-							Token
 						</Link>
 					</li>
 				</ul>
