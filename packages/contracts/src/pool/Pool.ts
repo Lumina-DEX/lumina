@@ -14,12 +14,15 @@ import {
   TokenContract,
   TokenId,
   Types,
+  UInt32,
   UInt64
 } from "o1js"
 
 import { PoolFactory, PoolFactoryBase, UpdateUserEvent, UpdateVerificationKeyEvent } from "../indexfactory.js"
 import { FungibleToken, mulDiv } from "../indexpool.js"
 
+import { currentSlot } from "o1js/dist/node/lib/mina/v1/mina-instance.js"
+import { getCurrentSlot } from "../utils/helper.js"
 import { checkToken, IPool } from "./IPoolState.js"
 
 /**
@@ -28,12 +31,14 @@ import { checkToken, IPool } from "./IPoolState.js"
 export class SwapEvent extends Struct({
   sender: PublicKey,
   amountIn: UInt64,
-  amountOut: UInt64
+  amountOut: UInt64,
+  currentSlot: UInt32
 }) {
   constructor(value: {
     sender: PublicKey
     amountIn: UInt64
     amountOut: UInt64
+    currentSlot: UInt32
   }) {
     super(value)
   }
@@ -61,13 +66,15 @@ export class AddLiquidityEvent extends Struct({
   sender: PublicKey,
   amountToken0In: UInt64,
   amountToken1In: UInt64,
-  amountLiquidityOut: UInt64
+  amountLiquidityOut: UInt64,
+  currentSlot: UInt32
 }) {
   constructor(value: {
     sender: PublicKey
     amountToken0In: UInt64
     amountToken1In: UInt64
     amountLiquidityOut: UInt64
+    currentSlot: UInt32
   }) {
     super(value)
   }
@@ -414,8 +421,9 @@ export class Pool extends TokenContract implements IPool {
     const protocol = this.protocol.getAndRequireEquals()
     const protocolReceiver = Provable.if(protocol.equals(PublicKey.empty()), this.address, protocol)
     await this.send({ to: protocolReceiver, amount: feeProtocol })
-
-    this.emitEvent("swap", new SwapEvent({ sender, amountIn: amountTokenIn, amountOut }))
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
+    this.emitEvent("swap", new SwapEvent({ sender, amountIn: amountTokenIn, amountOut, currentSlot }))
   }
 
   /**
@@ -588,14 +596,16 @@ export class Pool extends TokenContract implements IPool {
 
     this.internal.mint({ address: sender, amount: liquidityUser })
     this.internal.mint({ address: circulationUpdate, amount: liquidityAmount })
-
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
     this.emitEvent(
       "addLiquidity",
       new AddLiquidityEvent({
         sender,
         amountToken0In: amountToken0,
         amountToken1In: amountToken1,
-        amountLiquidityOut: liquidityUser
+        amountLiquidityOut: liquidityUser,
+        currentSlot
       })
     )
 

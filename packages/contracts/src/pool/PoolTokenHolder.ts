@@ -9,12 +9,14 @@ import {
   state,
   Struct,
   TokenId,
+  UInt32,
   UInt64
 } from "o1js"
 
 import { PoolFactory, PoolFactoryBase, UpdateVerificationKeyEvent } from "../indexfactory.js"
 import { FungibleToken, mulDiv, Pool, SwapEvent } from "../indexpool.js"
 
+import { getCurrentSlot } from "../utils/helper.js"
 import { checkToken, IPool } from "./IPoolState.js"
 
 /**
@@ -24,13 +26,15 @@ export class WithdrawLiquidityEvent extends Struct({
   sender: PublicKey,
   amountLiquidityIn: UInt64,
   amountToken0Out: UInt64,
-  amountToken1Out: UInt64
+  amountToken1Out: UInt64,
+  currentSlot: UInt32
 }) {
   constructor(value: {
     sender: PublicKey
     amountLiquidityIn: UInt64
     amountToken0Out: UInt64
     amountToken1Out: UInt64
+    currentSlot: UInt32
   }) {
     super(value)
   }
@@ -205,13 +209,16 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     const amountToken = this.withdraw(sender, liquidityAmount, amountTokenMin, reserveTokenMin, supplyMax)
     const pool = new Pool(this.address)
     const amountMina = await pool.withdrawLiquidity(sender, liquidityAmount, amountMinaMin, reserveMinaMin, supplyMax)
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
     this.emitEvent(
       "withdrawLiquidity",
       new WithdrawLiquidityEvent({
         sender,
         amountToken0Out: amountMina,
         amountToken1Out: amountToken,
-        amountLiquidityIn: liquidityAmount
+        amountLiquidityIn: liquidityAmount,
+        currentSlot
       })
     )
   }
@@ -255,6 +262,8 @@ export class PoolTokenHolder extends SmartContract implements IPool {
       reserveToken1Min,
       supplyMax
     )
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
     await fungibleToken1.approveAccountUpdate(poolTokenZ.self)
     this.emitEvent(
       "withdrawLiquidity",
@@ -262,7 +271,8 @@ export class PoolTokenHolder extends SmartContract implements IPool {
         sender,
         amountToken0Out: amountToken,
         amountToken1Out: amountToken1,
-        amountLiquidityIn: liquidityAmount
+        amountLiquidityIn: liquidityAmount,
+        currentSlot
       })
     )
   }
@@ -378,7 +388,8 @@ export class PoolTokenHolder extends SmartContract implements IPool {
       await tokenIn.approveAccountUpdate(otherPool)
       await tokenIn.transfer(sender, this.address, amountTokenIn)
     }
-
-    this.emitEvent("swap", new SwapEvent({ sender, amountIn: amountTokenIn, amountOut }))
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
+    this.emitEvent("swap", new SwapEvent({ sender, amountIn: amountTokenIn, amountOut, currentSlot }))
   }
 }
