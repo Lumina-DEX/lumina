@@ -1,5 +1,5 @@
 import { PoolFactory, SignatureRight } from "@lumina-dex/contracts"
-import { MINA_ADDRESS } from "@lumina-dex/sdk"
+import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
 
 import {
 	fetchAccount,
@@ -17,7 +17,6 @@ import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
 	fundNewAccount,
-	getEnv,
 	getFee,
 	getMasterSigner,
 	getMerkle,
@@ -33,7 +32,6 @@ export const createPoolAndTransaction = async ({
 	jobId
 }: CreatePoolInputType & { jobId: string }) => {
 	using db = getDb()
-	const env = getEnv()
 	const Network = getNetwork(network)
 	Mina.setActiveInstance(Network)
 
@@ -76,7 +74,7 @@ export const createPoolAndTransaction = async ({
 			newPoolPrivateKey.toPublicKey().toFields()
 		)
 		const witness = merkle.getWitness(Poseidon.hash(masterSignerPublicKey.toFields()))
-		const factory = env.POOL_FACTORY_PUBLIC_KEY
+		const factory = luminadexFactories[network]
 		const factoryKey = PublicKey.fromBase58(factory)
 		const zkFactory = new PoolFactory(factoryKey)
 		const factoryTokenId = TokenId.derive(factoryKey)

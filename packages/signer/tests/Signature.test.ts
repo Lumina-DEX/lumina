@@ -1,5 +1,6 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { PoolFactory } from "@lumina-dex/contracts"
+import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
 	Encoding,
@@ -18,7 +19,6 @@ import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
-	POOL_FACTORY_PUBLIC_KEY: v.string(),
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
 	INFISICAL_SECRET_NAME: v.string(),
@@ -45,10 +45,10 @@ describe("Signature", () => {
 
 		const root = merkleMap.getRoot()
 
-		const Network = getNetwork("mina:devnet")
+		const network = "mina:devnet" as const
+		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
-
-		const factoryKey = PublicKey.fromBase58(env.POOL_FACTORY_PUBLIC_KEY)
+		const factoryKey = PublicKey.fromBase58(luminadexFactories[network])
 		await fetchAccount({ publicKey: factoryKey })
 		const zkFactory = new PoolFactory(factoryKey)
 		const factoryRoot = zkFactory.approvedSigner.getAndRequireEquals()
