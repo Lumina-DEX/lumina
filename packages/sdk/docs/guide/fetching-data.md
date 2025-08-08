@@ -77,7 +77,8 @@ Wallet.subscribe(state => {
 		// Fetch native MINA balance
 		Wallet.send({
 			type: "FetchBalance",
-			networks: ["mina:devnet"]
+			network: "mina:devnet",
+			tokens: []
 		})
 	}
 })
@@ -86,13 +87,13 @@ Wallet.subscribe(state => {
 const fetchTokenBalance = (token) => {
 	Wallet.send({
 		type: "FetchBalance",
-		networks: ["mina:devnet"],
-		token: {
+		network: "mina:devnet",
+		tokens: [{
 			address: token.address,
 			decimal: 10 ** token.decimals,
 			tokenId: token.tokenId,
 			symbol: token.symbol
-		}
+		}]
 	})
 }
 ```
@@ -102,7 +103,7 @@ After fetching, the balances are available in the wallet's context:
 ```ts
 const walletState = Wallet.getSnapshot()
 const minaBalance = walletState.context.balances["mina:devnet"]["MINA"]
-const tokenBalance = walletState.context.balances["mina:devnet"][tokenSymbol]
+const tokenBalance = walletState.context.balances["mina:devnet"][tokenId]
 ```
 
 ## Advanced: Using GraphQL Directly
