@@ -114,7 +114,7 @@ export const createWalletMachine = (
 				const limit = pLimit(10)
 				const publicKey = input.address
 				const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
-				const tokens = input.tokens.map((token) => {
+				const tokens = input.tokens.filter((token) => token.symbol !== "MINA").map((token) => {
 					return {
 						symbol: token.symbol,
 						decimal: token.decimal,

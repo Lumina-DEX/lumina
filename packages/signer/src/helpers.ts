@@ -21,7 +21,6 @@ import type { getDb } from "./db"
 
 export const getEnv = () => {
 	const Schema = v.object({
-		POOL_FACTORY_PUBLIC_KEY: v.string(),
 		DATABASE_URL: v.string(),
 		INFISICAL_ENVIRONMENT: v.string(),
 		INFISICAL_PROJECT_ID: v.string(),
