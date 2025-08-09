@@ -1,4 +1,4 @@
-import { Bool, UInt64 } from "o1js"
+import { Bool, UInt32, UInt64 } from "o1js"
 
 import { mulDiv } from "../indexpool.js"
 
@@ -101,4 +101,25 @@ export function getAmountOutFromLiquidity(
   const amountBOut = Math.trunc(liquidity * balanceBMin / supplyMax) - 1
 
   return { amountAOut, amountBOut, balanceAMin, balanceBMin, supplyMax, liquidity }
+}
+
+export async function getCurrentSlot() {
+  const response = await fetch("https://api.minascan.io/node/devnet/v1/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query RuntimeConfig { runtimeConfig }
+      `,
+      variables: {}
+    })
+  })
+
+  const { data: { runtimeConfig } } = await response.json()
+
+  const currentTimestamp = Date.now() / 1000
+  const forkSlot = runtimeConfig.proof.fork.global_slot_since_genesis
+  const genesisTimestamp = Date.parse(runtimeConfig.genesis.genesis_state_timestamp) / 1000
+
+  return UInt32.from(Math.floor(forkSlot + ((currentTimestamp - genesisTimestamp) / 180)))
 }
