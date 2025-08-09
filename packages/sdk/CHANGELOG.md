@@ -1,5 +1,14 @@
 # @lumina-dex/sdk
 
+## 0.20.1
+
+### Patch Changes
+
+- 4de4f55: fixes:
+
+  - signer factories should come from sdk
+  - mina fetching balance
+
 ## 0.20.0
 
 ### Minor Changes
