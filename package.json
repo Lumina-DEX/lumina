@@ -34,6 +34,7 @@
 	},
 	"packageManager": "pnpm@9.14.2",
 	"pnpm": {
+		"onlyBuiltDependencies": ["lefthook"],
 		"patchedDependencies": {
 			"@gql.tada/internal": "patches/@gql.tada__internal.patch"
 		}

@@ -35,7 +35,7 @@
       },
     ],
     "settings": {
-      "typescript.tsdk": "node_modules/typescript/lib",
+      "typescript.tsdk": "./node_modules/typescript/lib",
 		  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
       "typescript.enablePromptUseWorkspaceTsdk": true,
       "oxc.enable": false

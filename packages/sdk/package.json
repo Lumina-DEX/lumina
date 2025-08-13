@@ -67,7 +67,6 @@
     "fflate": "^0.8.2",
     "gql.tada": "^1.8.10",
     "graphql-sse": "^2.5.4",
-    "o1js": "2.4.0",
     "p-limit": "^6.2.0",
     "rxjs": "^7.8.2",
     "urql": "^4.1.0",
@@ -80,6 +79,7 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
     "magic-string": "^0.30.14",
+    "o1js": "^2.4.0",
     "rollup": "^4.27.4",
     "unbuild": "^2.0.0",
     "vitepress": "^1.6.3",
@@ -88,6 +88,7 @@
     "wrangler": "^4.1.0"
   },
   "peerDependencies": {
+    "o1js": "^2.4.0",
     "typescript": "^5.6.3"
   }
 }
