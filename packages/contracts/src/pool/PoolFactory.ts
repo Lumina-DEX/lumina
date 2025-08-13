@@ -10,6 +10,7 @@ import {
   method,
   Permissions,
   Poseidon,
+  Provable,
   PublicKey,
   Signature,
   SmartContract,
@@ -23,6 +24,7 @@ import {
   VerificationKey
 } from "o1js"
 
+import { getCurrentSlot } from "../index.js"
 import {
   Multisig,
   MultisigInfo,
@@ -83,7 +85,8 @@ export class PoolCreationEvent extends Struct({
   signer: PublicKey,
   poolAddress: PublicKey,
   token0Address: PublicKey,
-  token1Address: PublicKey
+  token1Address: PublicKey,
+  currentSlot: UInt32
 }) {
   constructor(value: {
     sender: PublicKey
@@ -91,6 +94,7 @@ export class PoolCreationEvent extends Struct({
     poolAddress: PublicKey
     token0Address: PublicKey
     token1Address: PublicKey
+    currentSlot: UInt32
   }) {
     super(value)
   }
@@ -481,11 +485,19 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
     this.internal.mint({ address: tokenAccount, amount: UInt64.one })
 
     await poolAccount.approve(liquidityAccount)
-
+    const currentSlot = await Provable.witnessAsync(UInt32, async () => await getCurrentSlot())
+    this.network.globalSlotSinceGenesis.requireBetween(currentSlot, currentSlot.add(UInt32.from(100)))
     const sender = this.sender.getAndRequireSignature()
     this.emitEvent(
       "poolAdded",
-      new PoolCreationEvent({ sender, signer, poolAddress: newAccount, token0Address: token0, token1Address: token1 })
+      new PoolCreationEvent({
+        sender,
+        signer,
+        poolAddress: newAccount,
+        token0Address: token0,
+        token1Address: token1,
+        currentSlot
+      })
     )
   }
 
