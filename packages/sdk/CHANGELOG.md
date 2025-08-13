@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.21.0
+
+### Minor Changes
+
+- 0c23ff6: add o1js to peerDependencies
+
 ## 0.20.1
 
 ### Patch Changes
