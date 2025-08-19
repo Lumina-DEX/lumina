@@ -122,8 +122,8 @@ export const createPoolAndTransaction = async ({
 			},
 			async () => {
 				console.log("Funding new account ...")
-				fundNewAccount(network, PublicKey.fromBase58(user), 4)
 				if (isMinaTokenPool) {
+					fundNewAccount(network, PublicKey.fromBase58(user), 4)
 					const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 					console.log("Creating Mina token pool ...", token)
 					await zkFactory.createPool(
@@ -137,6 +137,7 @@ export const createPoolAndTransaction = async ({
 					console.log("Mina token pool created successfully")
 				}
 				if (!isMinaTokenPool) {
+					fundNewAccount(network, PublicKey.fromBase58(user), 5)
 					console.log("Creating non-Mina token pool ...")
 					await zkFactory.createPoolToken(
 						newPoolPublicKey,
