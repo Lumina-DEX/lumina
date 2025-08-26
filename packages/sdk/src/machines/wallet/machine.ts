@@ -237,7 +237,7 @@ export const createWalletMachine = (
 					onError: {
 						target: "INIT",
 						actions: () => {
-							logger.error("`connectWallet` actor failed, transitioning to INIT.")
+							logger.error("`connectWallet` actor failed, transitioning to `INIT`.")
 						}
 					}
 				}
@@ -278,7 +278,7 @@ export const createWalletMachine = (
 						target: "FETCHING_BALANCE",
 						reenter: true,
 						actions: () => {
-							logger.error("`fetchBalance` actor failed, re-entering `FETCHING_BALANCE` state.")
+							logger.error("`fetchBalance` actor failed, re-entering `FETCHING_BALANCE`.")
 						}
 					}
 				}
@@ -316,7 +316,7 @@ export const createWalletMachine = (
 					onError: {
 						target: "READY",
 						actions: () => {
-							logger.error("`changeNetwork` actor failed, transitioning to READY.")
+							logger.error("`changeNetwork` actor failed, transitioning to `READY`.")
 						}
 					}
 				}
