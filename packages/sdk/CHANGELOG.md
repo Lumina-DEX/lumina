@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.21.1
+
+### Patch Changes
+
+- 408ac7c: Add `onError` handlers to invoked actors and fix `RequestNetworkChange` bug that changed the network even when the user declined from the browser extension.
+
 ## 0.21.0
 
 ### Minor Changes
