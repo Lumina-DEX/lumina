@@ -2,7 +2,7 @@ import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
 import { Mina, PublicKey, TokenId } from "o1js"
 import pLimit from "p-limit"
 import type { Client } from "urql"
-import { assign, emit, enqueueActions, fromPromise, setup } from "xstate"
+import { assertEvent, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { prefixedLogger } from "../../helpers/debug"
@@ -233,6 +233,12 @@ export const createWalletMachine = (
 							// This will target the FETCHING_BALANCE state
 							enqueue.raise({ type: "SetAccount", account: event.output.accounts[0] })
 						})
+					},
+					onError: {
+						target: "INIT",
+						actions: () => {
+							logger.error("`connectWallet` actor failed, transitioning to `INIT`.")
+						}
 					}
 				}
 			},
@@ -267,6 +273,13 @@ export const createWalletMachine = (
 								}
 							})
 						})
+					},
+					onError: {
+						target: "FETCHING_BALANCE",
+						reenter: true,
+						actions: () => {
+							logger.error("`fetchBalance` actor failed, re-entering `FETCHING_BALANCE`.")
+						}
 					}
 				}
 			},
@@ -275,16 +288,12 @@ export const createWalletMachine = (
 					RequestNetworkChange: [
 						{
 							target: "SWITCHING_NETWORK",
-							guard: ({ context, event }) => context.currentNetwork !== event.network,
-							actions: assign({ currentNetwork: ({ event }) => event.network })
+							guard: ({ context, event }) => context.currentNetwork !== event.network
 						},
 						{
 							guard: ({ context, event }) => context.currentNetwork === event.network,
 							description: "If the network is already the same, emit directly.",
-							actions: emit(({ event }) => ({
-								type: "NetworkChanged",
-								network: event.network
-							}))
+							actions: emit(({ event }) => ({ type: "NetworkChanged", network: event.network }))
 						}
 					],
 					FetchBalance: { target: "FETCHING_BALANCE" }
@@ -293,20 +302,23 @@ export const createWalletMachine = (
 			SWITCHING_NETWORK: {
 				invoke: {
 					src: "changeNetwork",
-					input: ({ context }) => ({ switchTo: context.currentNetwork }),
-					onDone: [
-						{
-							target: "FETCHING_BALANCE",
-							actions: [
-								{
-									type: "setWalletNetwork",
-									params: ({ event }) => ({
-										network: event.output.currentNetwork
-									})
-								}
-							]
+					input: ({ event }) => {
+						assertEvent(event, "RequestNetworkChange")
+						return { switchTo: event.network }
+					},
+					onDone: {
+						target: "FETCHING_BALANCE",
+						actions: {
+							type: "setWalletNetwork",
+							params: ({ event }) => ({ network: event.output.currentNetwork })
 						}
-					]
+					},
+					onError: {
+						target: "READY",
+						actions: () => {
+							logger.error("`changeNetwork` actor failed, transitioning to `READY`.")
+						}
+					}
 				}
 			}
 		}
