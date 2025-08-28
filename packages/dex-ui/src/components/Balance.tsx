@@ -15,7 +15,6 @@ const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
 	)
 
 	const getBalance = useCallback(() => {
-		console.log("Getting balance", { token, cn: walletContext.currentNetwork, Wallet })
 		if (token?.address) {
 			const tokenId = toTokenId(token.address)
 			const data = {

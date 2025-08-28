@@ -35,7 +35,7 @@ const Withdraw = () => {
 		[Dex, pool.address]
 	)
 
-	const withdrawLiquidity = async () => {
+	const withdrawLiquidity = () => {
 		Dex.send({ type: "RemoveLiquidity" })
 	}
 
@@ -66,7 +66,7 @@ const Withdraw = () => {
 				setToMina(amountA)
 			}
 		})
-		return subscription.unsubscribe
+		return () => subscription.unsubscribe()
 	}, [Dex])
 
 	return (

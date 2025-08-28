@@ -1,22 +1,13 @@
 "use client"
-import { useContext, useState } from "react"
+import { useContext } from "react"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
 
 const Faucet = () => {
 	const { Dex } = useContext(LuminaContext)
 
-	const [loading, setLoading] = useState(false)
-
-	const claim = async () => {
-		try {
-			setLoading(true)
-			Dex.send({ type: "ClaimTokensFromFaucet" })
-		} catch (error) {
-			console.log("swap error", error)
-		} finally {
-			setLoading(false)
-		}
+	const claim = () => {
+		Dex.send({ type: "ClaimTokensFromFaucet" })
 	}
 
 	return (
@@ -27,7 +18,6 @@ const Faucet = () => {
 					<span>You can only claim TOKA once by network and address</span>
 				</div>
 				<ButtonStatus onClick={claim} text={"Claim"} />
-				{loading && <p>Creating transaction ...</p>}
 				<a
 					className="text-blue-500 underline"
 					href="https://faucet.minaprotocol.com/"

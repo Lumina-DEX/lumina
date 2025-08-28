@@ -11,8 +11,6 @@ const Create = () => {
 	const { Dex } = useContext(LuminaContext)
 	const createPoolActor = useSelector(Dex, (state) => state.context.dex.createPool)
 
-	console.log(createPoolActor)
-
 	const creatingPools = Object.entries(createPoolActor.pools)
 		.map(([poolId, p]) => {
 			const poolActor = p as ActorRefFromLogic<CreatePoolMachine>
@@ -21,11 +19,7 @@ const Create = () => {
 		.at(-1)
 
 	const createPool = async () => {
-		try {
-			Dex.send({ type: "DeployPool", settings: { tokenA: "MINA", tokenB: tokenAddress } })
-		} catch (error) {
-			console.log("swap error", error)
-		}
+		Dex.send({ type: "DeployPool", settings: { tokenA: "MINA", tokenB: tokenAddress } })
 	}
 
 	return (

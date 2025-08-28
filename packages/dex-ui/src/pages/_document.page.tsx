@@ -7,18 +7,13 @@ export default class MyDocument extends Document {
 			<Html>
 				<Head>
 					<meta name="theme-color" content="#311d72" />
-					<link
-						href="https://fonts.googleapis.com/css?family=Orbitron&display=swap"
-						rel="stylesheet"
-					/>
-					<link
-						href="https://fonts.googleapis.com/css?family=Cutive Mono&display=swap"
-						rel="stylesheet"
-					/>
-					<link
-						href="https://fonts.googleapis.com/css?family=Metrophobic&display=swap"
-						rel="stylesheet"
-					/>
+					{["Orbitron", "Cutive Mono", "Metrophobic"].map((font) => (
+						<link
+							key={font}
+							href={`https://fonts.googleapis.com/css?family=${font}&display=swap`}
+							rel="stylesheet"
+						/>
+					))}
 				</Head>
 				<body className="lightmode">
 					<Main />
