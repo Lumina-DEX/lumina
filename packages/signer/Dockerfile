@@ -33,7 +33,7 @@ COPY packages/sdk ./packages/sdk
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN bun i -g pnpm
-RUN pnpm install
+RUN pnpm install --loglevel=debug
 
 # Although there is no explicit build step, we run bun install
 # to ensure all necessary setup for the signer package is complete.

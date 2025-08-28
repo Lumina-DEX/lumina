@@ -25,5 +25,6 @@ jobs:
           branch: main
           ci_branch_name: main
           git_push_flags: "--force"
+          trace: true
           git_remote_url: "ssh://dokku@${{ secrets.DOKKU_SERVER_IP }}:22/pool-signer"
           ssh_private_key: ${{ secrets.DOKKU_GHA_PRIVATE_KEY }}
