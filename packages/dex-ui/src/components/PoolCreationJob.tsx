@@ -1,14 +1,10 @@
-import { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
+import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import Loading from "./Loading"
 
 const PoolCreationJob = ({
-	id,
 	actor
-}: {
-	id: string
-	actor: ActorRefFromLogic<CreatePoolMachine>
-}) => {
+}: { id: string; actor: ActorRefFromLogic<CreatePoolMachine> }) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context
@@ -24,7 +20,7 @@ const PoolCreationJob = ({
 				{poolState.status === "COMPLETED" && <span> Pool created successfully</span>}
 				{poolState.status !== "COMPLETED" &&
 					poolState.status !== "ERRORED" &&
-					poolState.status !== "FAILED" && <Loading></Loading>}
+					poolState.status !== "FAILED" && <Loading />}
 			</div>
 		</div>
 	)

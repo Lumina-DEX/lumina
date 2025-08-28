@@ -1,6 +1,5 @@
-// @ts-nocheck
+import { useEffect, useRef, useState } from "react"
 import styles from "@/styles/Home.module.css"
-import { useEffect, useState, useRef } from "react"
 
 export default function GradientBG({ children }) {
 	const canvasRef = useRef(null)
@@ -16,7 +15,7 @@ export default function GradientBG({ children }) {
 		this.dir = Math.random() > 0.5 ? -1 : 1
 
 		this.toString = function () {
-			return "hsla(" + this.h + ", " + this.s + "%, " + this.l + "%, " + this.a + ")"
+			return `hsla(${this.h}, ${this.s}%, ${this.l}%, ${this.a})`
 		}
 	}
 
@@ -102,6 +101,7 @@ export default function GradientBG({ children }) {
 		}
 	}
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <Color, Pixel>
 	useEffect(() => {
 		if (canvasRef.current) {
 			const canvas = canvasRef.current
@@ -134,11 +134,8 @@ export default function GradientBG({ children }) {
 		return () => {
 			window.cancelAnimationFrame(animationFrameId)
 		}
-	}, [paint, pixels, context])
+		// biome-ignore lint/correctness/useExhaustiveDependencies: <paint>
+	}, [paint, context])
 
-	return (
-		<>
-			<div className={styles.container}>{children}</div>
-		</>
-	)
+	return <div className={styles.container}>{children}</div>
 }

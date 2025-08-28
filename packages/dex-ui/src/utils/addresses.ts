@@ -1,10 +1,8 @@
 import {
-	fetchAllPoolsFromPoolFactory,
 	fetchPoolList,
-	fetchTokenList,
-	LuminaPool,
-	LuminaToken,
-	Networks,
+	type LuminaPool,
+	type LuminaToken,
+	type Networks,
 	PublicKey,
 	TokenId
 } from "@lumina-dex/sdk"
@@ -22,6 +20,7 @@ export const tokenA: LuminaToken = {
 
 //export const poolWeth = "B62qphnhqrRW6DFFR39onHNKnBcoB9Gqi3M8Emytg26nwZWUYXR1itw";
 
+// biome-ignore lint/complexity/noStaticOnlyClass: <Addresses>
 export class Addresses {
 	private static listFromCDN: LuminaPool[] = []
 	private static currentNetworkCDN = "mina:devnet"
@@ -33,7 +32,7 @@ export class Addresses {
 		const data = await fetchPoolList(network)
 		console.log("list from cdn", data)
 		Addresses.listFromCDN = data
-		this.currentNetworkCDN = network
+		Addresses.currentNetworkCDN = network
 		return Addresses.listFromCDN
 	}
 }
@@ -42,7 +41,7 @@ export function toTokenId(address: string): string {
 	try {
 		const tokenIdPool = TokenId.derive(PublicKey.fromBase58(address))
 		return TokenId.toBase58(tokenIdPool)
-	} catch (error) {
+	} catch {
 		return ""
 	}
 }

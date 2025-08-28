@@ -1,12 +1,10 @@
 "use client"
 
-import { Field, PublicKey } from "o1js"
-import { useContext, useEffect, useState } from "react"
-import styles from "../styles/Home.module.css"
-import Account from "@/components/Account"
+import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { createContext } from "react"
-import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
+import { createContext, useEffect, useState } from "react"
+import Account from "@/components/Account"
+import styles from "../styles/Home.module.css"
 
 export const feeAmount = 10
 
@@ -32,7 +30,7 @@ export default function Layout({ children }) {
 
 	const [displayText, setDisplayText] = useState("")
 	const [displayTextWallet, setDisplayTextWallet] = useState("")
-	const [transactionlink, setTransactionLink] = useState("")
+	const [transactionlink] = useState("")
 
 	// -------------------------------------------------------
 	// Do Setup
@@ -67,7 +65,7 @@ export default function Layout({ children }) {
 		</div>
 	)
 
-	let setup = (
+	const setup = (
 		<div
 			className={styles.start}
 			style={{ fontWeight: "bold", fontSize: "1.5rem", paddingBottom: "5rem" }}
@@ -76,9 +74,9 @@ export default function Layout({ children }) {
 		</div>
 	)
 
-	let mainContent = (
+	const mainContent = (
 		<div className="flex flex-col">
-			<Account></Account>
+			<Account />
 			<div className="flex flex-row w-screen p-5 items-center justify-center">{children}</div>
 		</div>
 	)

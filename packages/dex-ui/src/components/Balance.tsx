@@ -1,15 +1,12 @@
 "use client"
-import React, { useContext, useEffect, useMemo, useState } from "react"
-// @ts-ignore
-import { LuminaPool, LuminaToken, Networks, PublicKey, TokenId } from "@lumina-dex/sdk"
+import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { LuminaContext } from "./Layout"
+import { useCallback, useContext, useEffect } from "react"
 import { toTokenId } from "@/utils/addresses"
+import { LuminaContext } from "./Layout"
 
-// @ts-ignore
-const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
-	const { Wallet, Dex } = useContext(LuminaContext)
-	const walletState = useSelector(Wallet, (state) => state.value)
+const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
+	const { Wallet } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const balance = useSelector(
 		Wallet,
@@ -17,43 +14,34 @@ const Balance = ({ token, pool }: { token: LuminaToken | LuminaPool }) => {
 			state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
 	)
 
-	useEffect(() => {
-		getBalance()
-		const intervalID = setInterval(() => {
-			getBalance()
-		}, 10000)
-
-		return () => clearInterval(intervalID)
-	}, [token])
-
-	const getBalance = async () => {
+	const getBalance = useCallback(() => {
+		console.log("Getting balance", { token, cn: walletContext.currentNetwork, Wallet })
 		if (token?.address) {
 			const tokenId = toTokenId(token.address)
-			let data = {
+			const data = {
 				address: token.address,
 				decimal: "decimals" in token ? 10 ** token.decimals : 10 ** 9,
 				tokenId: tokenId,
 				symbol: "symbol" in token ? token.symbol : "LUM"
 			}
 
-			setTimeout(
-				() => {
-					Wallet.send({
-						type: "FetchBalance",
-						network: walletContext.currentNetwork,
-						tokens: [data]
-					})
-				},
-				"decimals" in token ? 100 : 2000
-			)
+			Wallet.send({
+				type: "FetchBalance",
+				network: walletContext.currentNetwork,
+				tokens: [data]
+			})
 		}
-	}
+	}, [token, walletContext.currentNetwork, Wallet])
 
-	return (
-		<>
-			<span>{balance.toFixed(2).toString()}</span>
-		</>
-	)
+	useEffect(() => {
+		getBalance()
+		const intervalID = setInterval(() => {
+			getBalance()
+		}, 10_000)
+
+		return () => clearInterval(intervalID)
+	}, [getBalance])
+	return <span>{balance.toFixed(2).toString()}</span>
 }
 
 export default Balance

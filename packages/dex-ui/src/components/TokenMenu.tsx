@@ -1,33 +1,36 @@
 "use client"
-import React, { useContext, useEffect, useMemo, useState } from "react"
-import { Addresses } from "@/utils/addresses"
-import { Box, Typography, Modal } from "@mui/material"
-import { LuminaContext } from "./Layout"
+import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { LuminaPool, Networks } from "@lumina-dex/sdk"
+import { Box, Modal } from "@mui/material"
+import { useCallback, useContext, useEffect, useState } from "react"
+import { Addresses } from "@/utils/addresses"
 import { minaTestnet } from "./Account"
+import { LuminaContext } from "./Layout"
 
-const TokenMenu = ({ poolAddress, setPool, setToken }) => {
+const TokenMenu = ({
+	poolAddress,
+	setPool,
+	setToken
+}: {
+	poolAddress: string
+	setPool: (pool: LuminaPool) => void
+	setToken: (token: LuminaToken) => void
+}) => {
 	const [cdnList, setCdnList] = useState<LuminaPool[]>([])
-	const { Wallet, Dex } = useContext(LuminaContext)
+	const { Wallet } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const [current, setCurrent] = useState<LuminaPool | undefined>()
 	const [open, setOpen] = useState(false)
-	const [indexed, setIndexed] = useState([])
 	const handleOpen = () => setOpen(true)
 	const handleClose = () => setOpen(false)
 
-	useEffect(() => {
+	const getPools = useCallback(async () => {
 		console.log("poolAddress", poolAddress)
-		getPools().then()
-	}, [walletContext.currentNetwork])
-
-	const getPools = async () => {
 		const network: Networks = walletContext.currentNetwork || minaTestnet
 		const pools = await Addresses.getList(network)
 		setCdnList(pools)
 
-		let poolExist = pools.find((z) => z.address === poolAddress)
+		const poolExist = pools.find((z) => z.address === poolAddress)
 		if (poolExist) {
 			console.log("poolExist", poolExist)
 			setPool(poolExist)
@@ -40,9 +43,9 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 			setToken(pools[0].tokens[1])
 			setCurrent(pools[0])
 		}
-	}
+	}, [walletContext.currentNetwork, poolAddress, setPool, setToken])
 
-	const selectPool = (pool: any) => {
+	const selectPool = (pool: LuminaPool) => {
 		console.log("pool", pool)
 		setPool(pool)
 		setToken(pool.tokens[1])
@@ -51,7 +54,7 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 	}
 
 	const style = {
-		position: "absolute" as "absolute",
+		position: "absolute" as const,
 		top: "50%",
 		left: "50%",
 		transform: "translate(-50%, -50%)",
@@ -65,15 +68,17 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 	}
 
 	const trimText = (text: string) => {
-		if (!text) {
-			return ""
-		}
-		return text.substring(0, 6) + "..." + text.substring(text.length - 6, text.length)
+		if (!text) return ""
+		return `${text.substring(0, 6)}...${text.substring(text.length - 6, text.length)}`
 	}
+
+	useEffect(() => {
+		getPools()
+	}, [getPools])
 
 	return (
 		<div>
-			<button onClick={handleOpen} className=" ml-3 p-1 bg-white">
+			<button type="button" onClick={handleOpen} className=" ml-3 p-1 bg-white">
 				{current?.tokens[1].symbol} &#x25BC;
 			</button>
 			<Modal
@@ -84,23 +89,23 @@ const TokenMenu = ({ poolAddress, setPool, setToken }) => {
 			>
 				<Box sx={style}>
 					<div className="flex flex-col">
-						{cdnList &&
-							cdnList.map((x) => (
-								<div
-									style={{ borderBottom: "1px solid black" }}
-									onClick={() => selectPool(x)}
-									className="flex flex-col bg-blue-100 p-3"
-									key={x.address}
-								>
-									<span title={x.tokens[1].symbol}>{x.tokens[1].symbol}</span>
-									<span className="text-sm" title={x.tokens[1].address}>
-										Address : {trimText(x.tokens[1].address)}
-									</span>
-									<span className="text-sm" title={x.address}>
-										Pool : {trimText(x.address)}
-									</span>
-								</div>
-							))}
+						{cdnList?.map((x) => (
+							<button
+								type="button"
+								style={{ borderBottom: "1px solid black" }}
+								onClick={() => selectPool(x)}
+								className="button-div flex flex-col bg-blue-100 p-3"
+								key={x.address}
+							>
+								<span title={x.tokens[1].symbol}>{x.tokens[1].symbol}</span>
+								<span className="text-sm" title={x.tokens[1].address}>
+									Address : {trimText(x.tokens[1].address)}
+								</span>
+								<span className="text-sm" title={x.address}>
+									Pool : {trimText(x.address)}
+								</span>
+							</button>
+						))}
 					</div>
 				</Box>
 			</Modal>
