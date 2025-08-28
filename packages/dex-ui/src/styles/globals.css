@@ -122,11 +122,11 @@ a:hover {
 }
 
 .font-metrophobic {
-  font-family: "Metrophobic" !important;
+  font-family: "Metrophobic", sans-serif !important;
 }
 
 .font-orbitron {
-  font-family: "Orbitron" !important;
+  font-family: "Orbitron", sans-serif !important;
 }
 
 a[target="_blank"]:hover {
@@ -196,4 +196,15 @@ a[target="_blank"]:hover {
   to {
     transform: rotate(359deg);
   }
+}
+
+.button-div {
+  appearance: none;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  outline: none;
+  display: block;
 }

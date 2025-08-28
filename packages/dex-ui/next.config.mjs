@@ -49,7 +49,7 @@ const nextConfig = {
 		return [
 			{
 				source: "/graphql/:path*",
-				destination: `https://devnet.minaprotocol.network/graphql/:path*`
+				destination: "https://devnet.minaprotocol.network/graphql/:path*"
 			}
 		]
 	}

@@ -1,7 +1,6 @@
 "use client"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect } from "react"
 
-// @ts-ignore
 const Loading = () => {
 	const [counter, setCounter] = React.useState(0)
 
@@ -10,13 +9,11 @@ const Loading = () => {
 	}, [counter])
 
 	return (
-		<>
-			<div className="spinner-content" title="Estimated time to create a transaction">
-				<div id="divSpinner" className="spinner loading">
-					<div className="loading-text">{counter ? counter : ""}</div>
-				</div>
+		<div className="spinner-content" title="Estimated time to create a transaction">
+			<div id="divSpinner" className="spinner loading">
+				<div className="loading-text">{counter ? counter : ""}</div>
 			</div>
-		</>
+		</div>
 	)
 }
 

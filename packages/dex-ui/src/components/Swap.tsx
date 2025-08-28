@@ -1,44 +1,27 @@
 "use client"
-import React, { useContext, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/router"
-import { useSearchParams } from "next/navigation"
-import { PublicKey } from "o1js"
-// @ts-ignore
+import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { useCallback, useContext, useEffect, useState } from "react"
 import CurrencyFormat from "react-currency-format"
-import { poolToka, toka, tokenA } from "@/utils/addresses"
-import TokenMenu from "./TokenMenu"
+import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
-import { useSelector } from "@lumina-dex/sdk/react"
 import ButtonStatus from "./ButtonStatus"
-import { feeAmount, LuminaContext } from "./Layout"
-import { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { LuminaContext } from "./Layout"
+import TokenMenu from "./TokenMenu"
 
-// @ts-ignore
-const Swap = ({}) => {
-	const [mina, setMina] = useState<any>()
-
-	const [poolAddress, setPoolAddress] = useState(poolToka)
+const Swap = () => {
+	const [poolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [token, setToken] = useState<LuminaToken>(tokenA)
 
-	const [loading, setLoading] = useState(false)
-
-	useEffect(() => {
-		if (window && (window as any).mina) {
-			setMina((window as any).mina)
-		}
-	}, [])
-
-	function updateToken(newToken) {
+	function updateToken(newToken: LuminaToken) {
 		setToken(newToken)
 	}
 
-	function updatePool(newPool) {
+	function updatePool(newPool: LuminaPool) {
 		setPool(newPool)
 	}
 
-	const { Wallet, Dex } = useContext(LuminaContext)
-	const walletState = useSelector(Wallet, (state) => state.value)
+	const { Dex } = useContext(LuminaContext)
 
 	const [toDai, setToDai] = useState(true)
 
@@ -48,14 +31,37 @@ const Swap = ({}) => {
 
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
 
+	// Action handlers
+	const handleCalculateSwap = useCallback(
+		(amount: string) => {
+			Dex.send({
+				type: "ChangeSwapSettings",
+				settings: {
+					pool: pool.address,
+					from: {
+						address: toDai ? "MINA" : token.address,
+						amount: amount
+					},
+					to: toDai ? token.address : "MINA",
+					slippagePercent: slippagePercent
+				}
+			})
+		},
+		[Dex, pool, toDai, token, slippagePercent]
+	)
+
+	const swap = () => {
+		Dex.send({ type: "Swap" })
+	}
+
 	useEffect(() => {
 		const delayDebounceFn = setTimeout(() => {
-			if (parseFloat(fromAmount) && token && pool) {
+			if (Number.parseFloat(fromAmount) && token && pool) {
 				handleCalculateSwap(fromAmount)
 			}
 		}, 500)
 		return () => clearTimeout(delayDebounceFn)
-	}, [fromAmount, toDai, slippagePercent, token, walletState])
+	}, [handleCalculateSwap, fromAmount, token, pool])
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
@@ -66,99 +72,70 @@ const Swap = ({}) => {
 
 			setToAmount(valTo.toString())
 		})
-		return subscription.unsubscribe
-	}, [Dex])
-
-	// Action handlers
-	const handleCalculateSwap = (amount) => {
-		Dex.send({
-			type: "ChangeSwapSettings",
-			settings: {
-				pool: pool.address,
-				from: {
-					address: toDai ? "MINA" : token.address,
-					amount: amount
-				},
-				to: toDai ? token.address : "MINA",
-				slippagePercent: slippagePercent
-			}
-		})
-	}
-
-	const swap = async () => {
-		try {
-			setLoading(true)
-			const res = Dex.send({ type: "Swap" })
-			console.log("res", res)
-		} catch (error) {
-			console.error("swap error", error)
-		} finally {
-			setLoading(false)
-		}
-	}
+		return () => subscription.unsubscribe()
+	}, [Dex, token])
 
 	return (
-		<>
-			<div className="flex flex-row justify-center w-full ">
-				<div className="flex flex-col p-5 gap-5  items-center">
-					<div className="text-xl">Swap</div>
-					<div>
-						<span>Slippage (%) : </span>
-						<input
-							type="number"
-							defaultValue={slippagePercent}
-							onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
-						></input>
-					</div>
-					<div className="flex flex-row w-full">
-						<CurrencyFormat
-							className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
-							thousandSeparator={true}
-							decimalScale={2}
-							placeholder="0.0"
-							value={fromAmount}
-							onValueChange={({ value }) => setFromAmount(value)}
-						/>
-						{toDai ? (
-							<span className="w-24 text-center">MINA</span>
-						) : (
-							<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
-						)}
-					</div>
-					<div>
-						<button
-							onClick={() => setToDai(!toDai)}
-							className="w-8 bg-cyan-500 text-lg text-white rounded"
-						>
-							&#8645;
-						</button>
-					</div>
-					<div className="flex flex-row w-full">
-						<CurrencyFormat
-							className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
-							thousandSeparator={true}
-							decimalScale={2}
-							placeholder="0.0"
-							value={toAmount}
-							onValueChange={({ value }) => setToAmount(value)}
-						/>
-						{!toDai ? (
-							<span className="w-24 text-center">MINA</span>
-						) : (
-							<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
-						)}
-					</div>
-					{token?.address ? (
-						<div>
-							Your token balance : <Balance token={token}></Balance>
-						</div>
-					) : (
-						<div></div>
-					)}
-					<ButtonStatus onClick={swap} text={"Swap"}></ButtonStatus>
+		<div className="flex flex-row justify-center w-full ">
+			<div className="flex flex-col p-5 gap-5  items-center">
+				<div className="text-xl">Swap</div>
+				<div>
+					<span>Slippage (%) : </span>
+					<input
+						type="number"
+						defaultValue={slippagePercent}
+						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
+					/>
 				</div>
+				<div className="flex flex-row w-full">
+					<CurrencyFormat
+						className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
+						thousandSeparator={true}
+						decimalScale={2}
+						placeholder="0.0"
+						value={fromAmount}
+						onValueChange={({ value }) => setFromAmount(value)}
+					/>
+					{toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
+					)}
+				</div>
+				<div>
+					<button
+						type="button"
+						onClick={() => setToDai(!toDai)}
+						className="w-8 bg-cyan-500 text-lg text-white rounded"
+					>
+						&#8645;
+					</button>
+				</div>
+				<div className="flex flex-row w-full">
+					<CurrencyFormat
+						className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
+						thousandSeparator={true}
+						decimalScale={2}
+						placeholder="0.0"
+						value={toAmount}
+						onValueChange={({ value }) => setToAmount(value)}
+					/>
+					{!toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
+					)}
+				</div>
+				{token?.address ? (
+					<div>
+						Your token balance : <Balance token={token} />
+					</div>
+				) : (
+					<div />
+				)}
+				<ButtonStatus onClick={swap} text={"Swap"} />
 			</div>
-		</>
+		</div>
 	)
 }
 

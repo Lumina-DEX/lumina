@@ -1,26 +1,20 @@
 "use client"
-import React, { useContext, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/router"
-import { useSearchParams } from "next/navigation"
-import { PublicKey, TokenId } from "o1js"
-// @ts-ignore
+import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { useContext, useEffect, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
-import TokenMenu from "./TokenMenu"
 import Balance from "./Balance"
-import { useActor, useSelector } from "@lumina-dex/sdk/react"
-import { dexMachine, LuminaPool, LuminaToken, walletMachine } from "@lumina-dex/sdk"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
+import TokenMenu from "./TokenMenu"
 
-// @ts-ignore
-const Liquidity = ({}) => {
+const Liquidity = () => {
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
 	const [token, setToken] = useState<LuminaToken>(tokenA)
 
-	const { Wallet, Dex } = useContext(LuminaContext)
+	const { Dex } = useContext(LuminaContext)
 
-	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [poolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
@@ -30,7 +24,7 @@ const Liquidity = ({}) => {
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
 			// simple logging
-			let result = snapshot.context.dex.addLiquidity.calculated
+			const result = snapshot.context.dex.addLiquidity.calculated
 
 			if (result) {
 				const from = result.tokenA.amountIn / 10 ** 9
@@ -42,7 +36,7 @@ const Liquidity = ({}) => {
 			}
 		})
 		return subscription.unsubscribe
-	}, [])
+	}, [Dex])
 
 	const getLiquidityAmount = async () => {
 		Dex.send({
@@ -86,7 +80,7 @@ const Liquidity = ({}) => {
 	}
 
 	function toFixedIfNecessary(value, dp) {
-		return +parseFloat(value).toFixed(dp)
+		return +Number.parseFloat(value).toFixed(dp)
 	}
 
 	const setAmountA = (value: string) => {
@@ -100,70 +94,69 @@ const Liquidity = ({}) => {
 	}
 
 	return (
-		<>
-			<div className="flex flex-row justify-center w-full ">
-				<div className="flex flex-col p-5 gap-5 items-center">
-					<div className="text-xl">Add liquidity</div>
-					<div>
-						<span>Slippage (%) : </span>
-						<input
-							type="number"
-							defaultValue={slippagePercent}
-							onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
-						></input>
-					</div>
-					<div className="flex flex-row w-full">
-						<CurrencyFormat
-							className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
-							thousandSeparator={true}
-							decimalScale={2}
-							placeholder="0.0"
-							value={fromAmount}
-							onValueChange={({ value }) => setAmountA(value)}
-						/>
-						{toDai ? (
-							<span className="w-24 text-center">MINA</span>
-						) : (
-							<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
-						)}
-					</div>
-					<div>
-						<button
-							onClick={() => setToDai(!toDai)}
-							className="w-8 bg-cyan-500 text-lg text-white rounded"
-						>
-							&#8645;
-						</button>
-					</div>
-					<div className="flex flex-row w-full">
-						<CurrencyFormat
-							className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
-							thousandSeparator={true}
-							decimalScale={2}
-							placeholder="0.0"
-							value={toAmount}
-							onValueChange={({ value }) => setAmountB(value)}
-						/>
-						{!toDai ? (
-							<span className="w-24 text-center">MINA</span>
-						) : (
-							<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
-						)}
-					</div>
-					<div>
-						Your token balance : <Balance token={token}></Balance>
-					</div>
-					<div>
-						Your liquidity balance : <Balance token={pool}></Balance>
-					</div>
-					<div>
-						<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
-					</div>
-					<ButtonStatus onClick={calculateLiquidity} text={"Calculate Liquidity"}></ButtonStatus>
-					<ButtonStatus onClick={addLiquidity} text={"Add Liquidity"}></ButtonStatus>
+		<div className="flex flex-row justify-center w-full ">
+			<div className="flex flex-col p-5 gap-5 items-center">
+				<div className="text-xl">Add liquidity</div>
+				<div>
+					<span>Slippage (%) : </span>
+					<input
+						type="number"
+						defaultValue={slippagePercent}
+						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
+					/>
 				</div>
+				<div className="flex flex-row w-full">
+					<CurrencyFormat
+						className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
+						thousandSeparator={true}
+						decimalScale={2}
+						placeholder="0.0"
+						value={fromAmount}
+						onValueChange={({ value }) => setAmountA(value)}
+					/>
+					{toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+					)}
+				</div>
+				<div>
+					<button
+						type="button"
+						onClick={() => setToDai(!toDai)}
+						className="w-8 bg-cyan-500 text-lg text-white rounded"
+					>
+						&#8645;
+					</button>
+				</div>
+				<div className="flex flex-row w-full">
+					<CurrencyFormat
+						className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
+						thousandSeparator={true}
+						decimalScale={2}
+						placeholder="0.0"
+						value={toAmount}
+						onValueChange={({ value }) => setAmountB(value)}
+					/>
+					{!toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+					)}
+				</div>
+				<div>
+					Your token balance : <Balance token={token} />
+				</div>
+				<div>
+					Your liquidity balance : <Balance token={pool} />
+				</div>
+				<div>
+					<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
+				</div>
+				<ButtonStatus onClick={calculateLiquidity} text={"Calculate Liquidity"} />
+				<ButtonStatus onClick={addLiquidity} text={"Add Liquidity"} />
 			</div>
-		</>
+		</div>
 	)
 }
 

@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/google-font-display */
-import Document, { Html, Head, Main, NextScript } from "next/document"
+// biome-ignore lint/suspicious/noDocumentImportInPage: <?>
+import Document, { Head, Html, Main, NextScript } from "next/document"
 
 export default class MyDocument extends Document {
 	render() {
@@ -7,9 +7,13 @@ export default class MyDocument extends Document {
 			<Html>
 				<Head>
 					<meta name="theme-color" content="#311d72" />
-					<link href="https://fonts.googleapis.com/css?family=Orbitron" rel="stylesheet" />
-					<link href="https://fonts.googleapis.com/css?family=Cutive Mono" rel="stylesheet" />
-					<link href="https://fonts.googleapis.com/css?family=Metrophobic" rel="stylesheet" />
+					{["Orbitron", "Cutive Mono", "Metrophobic"].map((font) => (
+						<link
+							key={font}
+							href={`https://fonts.googleapis.com/css?family=${font}&display=swap`}
+							rel="stylesheet"
+						/>
+					))}
 				</Head>
 				<body className="lightmode">
 					<Main />

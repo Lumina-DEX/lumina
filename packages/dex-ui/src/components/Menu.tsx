@@ -1,14 +1,12 @@
 "use client"
-import React, { useState } from "react"
-import { useRouter } from "next/router"
-// @ts-ignore
 import Link from "next/link"
+import { useRouter } from "next/router"
+import { useState } from "react"
 
-// @ts-ignore
 const Menu = () => {
 	const router = useRouter()
 	const [isNavOpen, setIsNavOpen] = useState(false)
-	const handleRouteChange = (url, { shallow }) => {
+	const handleRouteChange = () => {
 		setIsNavOpen(false)
 	}
 	router?.events?.on("routeChangeStart", handleRouteChange)
@@ -17,18 +15,25 @@ const Menu = () => {
 		<>
 			<nav>
 				<section className="MOBILE-MENU flex lg:hidden">
-					<div className="HAMBURGER-ICON space-y-2" onClick={() => setIsNavOpen((prev) => !prev)}>
-						<div className="block h-0.5 w-8 animate-pulse bg-gray-600"></div>
-						<div className="block h-0.5 w-8 animate-pulse bg-gray-600"></div>
-						<div className="block h-0.5 w-8 animate-pulse bg-gray-600"></div>
-					</div>
+					<button
+						type="button"
+						className="button-div HAMBURGER-ICON space-y-2"
+						onClick={() => setIsNavOpen((prev) => !prev)}
+					>
+						<div className="block h-0.5 w-8 animate-pulse bg-gray-600" />
+						<div className="block h-0.5 w-8 animate-pulse bg-gray-600" />
+						<div className="block h-0.5 w-8 animate-pulse bg-gray-600" />
+					</button>
 
 					<div className={isNavOpen ? "showMenuNav" : "hideMenuNav"}>
-						<div
-							className="CROSS-ICON absolute top-0 right-0 px-8 py-8"
+						<button
+							type="button"
+							className="button-div CROSS-ICON absolute top-0 right-0 px-8 py-8"
 							onClick={() => setIsNavOpen(false)}
 						>
 							<svg
+								role="img"
+								aria-label="cross"
 								className="h-8 w-8 text-gray-600"
 								viewBox="0 0 24 24"
 								fill="none"
@@ -40,7 +45,7 @@ const Menu = () => {
 								<line x1="18" y1="6" x2="6" y2="18" />
 								<line x1="6" y1="6" x2="18" y2="18" />
 							</svg>
-						</div>
+						</button>
 						<ul className="MENU-LINK-MOBILE-OPEN flex flex-col items-center justify-between min-h-[250px] text-xl text-black">
 							<li>
 								<Link className="text-xl" href="/">
@@ -57,12 +62,12 @@ const Menu = () => {
 				</section>
 
 				<ul className="DESKTOP-MENU hidden space-x-8 lg:flex flex-row gap-5 justify-between items-center text-xl text-black">
-					<li className={router.pathname == "/" ? "text-blue-500" : ""}>
+					<li className={router.pathname === "/" ? "text-blue-500" : ""}>
 						<Link className="text-xl" href="/">
 							Swap
 						</Link>
 					</li>
-					<li className={router.pathname == "/pool" ? "text-blue-500" : ""}>
+					<li className={router.pathname === "/pool" ? "text-blue-500" : ""}>
 						<Link className="text-xl" href="/pool">
 							Pool
 						</Link>
