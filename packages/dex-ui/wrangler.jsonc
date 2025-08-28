@@ -1,0 +1,12 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "beta-lumina-dex-ui",
+	"compatibility_date": "2025-03-25",
+	"compatibility_flags": ["nodejs_compat"],
+	"routes": [{ "pattern": "beta.luminadex.com", "custom_domain": true }],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	}
+}
