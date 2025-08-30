@@ -19,12 +19,19 @@ jobs:
           fetch-depth: 0
           
 
-      - name: Push to dokku
-        uses: dokku/github-action@master
-        with:
-          branch: main
-          ci_branch_name: main
-          git_push_flags: "--force"
-          trace: true
-          git_remote_url: "ssh://dokku@${{ secrets.DOKKU_SERVER_IP }}:22/pool-signer"
-          ssh_private_key: ${{ secrets.DOKKU_GHA_PRIVATE_KEY }}
+      - name: Configure SSH Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DOKKU_GHA_PRIVATE_KEY }}
+          DOKKU_SERVER_IP: ${{ secrets.DOKKU_SERVER_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/dokku_deploy_key
+          chmod 600 ~/.ssh/dokku_deploy_key
+          ssh-keyscan -p 22 $DOKKU_SERVER_IP >> ~/.ssh/known_hosts
+
+      - name: Trigger the push to Dokku
+        env:
+          GIT_SSH_COMMAND: "ssh -i ~/.ssh/dokku_deploy_key -o StrictHostKeyChecking=no"
+        run: |
+          git remote add dokku ssh://dokku@${{ secrets.DOKKU_SERVER_IP }}:22/pool-signer
+          git push dokku main --force
