@@ -23,6 +23,8 @@ export type Context = {
 	env: Env
 }
 
+const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
 	cors: (request) => ({
@@ -34,7 +36,14 @@ export const yoga = createYoga<{ env: typeof env }>({
 	}),
 	context: async ({ env }) => {
 		return { env, database: getDb, queues } satisfies Context
-	}
+	},
+	plugins: [
+		{
+			onResponse({ response }) {
+				response.headers.set("Revision", commitHash)
+			}
+		}
+	]
 })
 
 const main = async () => {
