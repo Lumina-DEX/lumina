@@ -83,14 +83,14 @@ const Dex = createDex({
 You can load the following features:
 
 - `Swap`: For token swapping functionality
-- `DeployPool`: For deploying liquidity pools
 - `DeployToken`: For deploying new tokens
 - `Claim`: For claiming tokens from the Faucet
+- `ManualDeployPool`: For deploying liquidity pools client side
 
 If you want to load additional features after the SDK has been initialized, you can use `LoadFeatures` :
 
 ```ts
-Dex.send({ type: "LoadFeatures", features: ["DeployPool"] })
+Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool"] })
 ```
 
 ## Framework Integration

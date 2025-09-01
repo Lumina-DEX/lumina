@@ -235,7 +235,7 @@ Loads additional features or capabilities of the wallet.
 ```ts
 Wallet.send({
 	type: "LoadFeatures",
-	features: ["Swap", "DeployPool", "DeployToken", "Claim"]
+	features: ["Swap", "ManualDeployPool", "DeployToken", "Claim"]
 })
 ```
 

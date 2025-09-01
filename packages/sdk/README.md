@@ -166,7 +166,7 @@ By default, the SDK initializes with the `Swap` feature. You can specify which f
 const Dex = createDex({
 	input: {
 		wallet: Wallet,
-		features: ["Swap", "DeployPool"], // Load specific features
+		features: ["Swap", "ManualDeployPool"], // Load specific features
 		frontendFee: {
 			destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
 			amount: 1
@@ -178,7 +178,7 @@ const Dex = createDex({
 You can load additional features dynamically after initialization:
 
 ```ts
-Dex.send({ type: "LoadFeatures", features: ["DeployPool", "Claim"] })
+Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool", "Claim"] })
 ```
 
 ## Debugging
