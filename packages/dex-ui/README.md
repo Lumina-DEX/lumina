@@ -12,6 +12,13 @@ Business Source License 1.1
 
 Licensor: Lumina Labs
 
+## Launch UI
+
+```
+cd packages/dex-ui
+pnpm run dev
+```
+
 ## Test
 
 ```
