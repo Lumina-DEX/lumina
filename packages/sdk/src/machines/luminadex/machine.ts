@@ -154,7 +154,7 @@ const setToLoadFromFeatures = (features: DexFeatures) => {
 		toLoad.add("Pool")
 		toLoad.add("PoolTokenHolder")
 	}
-	if (features.includes("DeployPool")) {
+	if (features.includes("ManualDeployPool")) {
 		toLoad.add("PoolFactory")
 	}
 	if (features.includes("DeployToken")) {
