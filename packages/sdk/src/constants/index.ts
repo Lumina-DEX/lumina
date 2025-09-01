@@ -87,7 +87,7 @@ export const luminaCdnOrigin = "https://cdn.luminadex.com"
 export const contractsVersion = `${version}`
 
 export const defaultFee = {
-	"zeko:testnet": 5 * 10 ** 8,
+	"zeko:testnet": undefined,
 	"zeko:mainnet": undefined,
 	"mina:devnet": undefined,
 	"mina:mainnet": undefined
