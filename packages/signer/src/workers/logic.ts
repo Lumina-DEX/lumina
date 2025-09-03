@@ -13,7 +13,7 @@ import {
 	UInt64
 } from "o1js"
 import { getDb } from "@/db"
-import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
+import { dbNetworks, pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
 	fundNewAccount,
@@ -23,6 +23,7 @@ import {
 	getNetwork,
 	getUniqueUserPairs
 } from "../helpers"
+import { eq } from "drizzle-orm"
 
 export const createPoolAndTransaction = async ({
 	tokenA,
@@ -42,7 +43,7 @@ export const createPoolAndTransaction = async ({
 
 	const deployRight = SignatureRight.canDeployPool()
 
-	const [merkle, users] = await getMerkle(db.drizzle)
+	const [merkle, users] = await getMerkle(db.drizzle, network)
 
 	const masterSigner = await getMasterSigner()
 	const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
@@ -50,6 +51,11 @@ export const createPoolAndTransaction = async ({
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
+		// get network id from database
+		const networkIds = await txOrm.select().from(dbNetworks).where(eq(dbNetworks.network, network))
+
+		const networkId = networkIds[0].id
+
 		// insert this new pool in database
 		const result = await txOrm
 			.insert(pool)
@@ -58,7 +64,7 @@ export const createPoolAndTransaction = async ({
 				tokenA,
 				tokenB,
 				user,
-				network,
+				networkId,
 				jobId,
 				status: "pending"
 			})

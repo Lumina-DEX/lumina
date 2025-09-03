@@ -7,7 +7,7 @@ let compiled = false
 /**
  * Sandbox worker to parallelize o1js proof
  * @param {import('bullmq').Job<{tokenA: string, tokenB: string, user: string, network: import('@lumina-dex/sdk').Networks}>} job
- * @returns {Promise<{ transaction: string, pool: string}>}
+ * @returns {Promise<{ transactionJson: string, poolPublicKey: string}>}
  */
 export default async function (job) {
 	try {
@@ -16,6 +16,9 @@ export default async function (job) {
 		console.log("Contracts compiled")
 		compiled = true
 		console.log("job id", job.id)
+		if (!job.id) {
+			throw "No job id"
+		}
 		const result = await createPoolAndTransaction({ ...job.data, jobId: job.id })
 		console.log("job end", job.id)
 		return result

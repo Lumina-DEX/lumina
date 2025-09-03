@@ -20,6 +20,17 @@ export const signerMerkle = pgTable(
 	(table) => [uniqueIndex("SignerMerkle_public_key_unique").on(table.publicKey)]
 )
 
+// Table: Networks
+export const dbNetworks = pgTable("Networks", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+	network: text("network", {
+		enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
+	})
+		.notNull()
+		.unique()
+})
+
 // Table: Multisig
 export const multisig = pgTable("Multisig", {
 	id: serial("id").primaryKey(),
@@ -29,18 +40,10 @@ export const multisig = pgTable("Multisig", {
 		.references(() => signerMerkle.id),
 	signature: text("signature").notNull(),
 	data: text("data").notNull(),
-	deadline: integer("deadline").notNull()
-})
-
-// Table: Networks
-export const networks = pgTable("Networks", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-	network: text("network", {
-		enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
-	})
+	networkId: integer("network_id")
 		.notNull()
-		.unique()
+		.references(() => dbNetworks.id),
+	deadline: integer("deadline").notNull()
 })
 
 // Table: Pool
@@ -59,7 +62,7 @@ export const pool = pgTable(
 		}).notNull(),
 		networkId: integer("network_id")
 			.notNull()
-			.references(() => networks.id) // 🔗 relation vers la nouvelle table
+			.references(() => dbNetworks.id)
 	},
 	(table) => [
 		uniqueIndex("Pool_job_id_unique").on(table.jobId),
@@ -67,13 +70,24 @@ export const pool = pgTable(
 	]
 )
 
+// Table: Factory, factory contract deployed on mainnet
+export const factory = pgTable("Factory", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+
+	publicKey: text("public_key").notNull(),
+	user: text("user").notNull(),
+	networkId: integer("network_id")
+		.notNull()
+		.references(() => dbNetworks.id) // 🔗 relation vers la nouvelle table
+})
+
 // Table: PoolKey
 export const poolKey = pgTable("PoolKey", {
 	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-	poolId: integer("public_key")
-		.notNull()
-		.references(() => pool.id, { onDelete: "cascade" }),
+	poolId: integer("public_key").references(() => pool.id, { onDelete: "cascade" }),
+	factoryId: integer("factory_id").references(() => factory.id, { onDelete: "cascade" }),
 	signer1Id: integer("signer_1")
 		.notNull()
 		.references(() => signerMerkle.id),
@@ -98,7 +112,7 @@ export const signerMerkleNetworks = pgTable("SignerMerkleNetworks", {
 	// Relation vers Networks
 	networkId: integer("network_id")
 		.notNull()
-		.references(() => networks.id, { onDelete: "cascade" }),
+		.references(() => dbNetworks.id, { onDelete: "cascade" }),
 
 	// Permission spécifique à ce réseau
 	permission: text("permission", {

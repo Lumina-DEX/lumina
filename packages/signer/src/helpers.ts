@@ -1,7 +1,7 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
-import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
-import { eq } from "drizzle-orm"
+import { defaultCreationFee, defaultFee, networks, type Networks, urls } from "@lumina-dex/sdk"
+import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
 	Bool,
@@ -16,7 +16,12 @@ import {
 	UInt64
 } from "o1js"
 import * as v from "valibot"
-import { signerMerkle, type poolKey as tPoolKey } from "../drizzle/schema"
+import {
+	signerMerkle,
+	signerMerkleNetworks,
+	type poolKey as tPoolKey,
+	dbNetworks
+} from "../drizzle/schema"
 import type { getDb } from "./db"
 
 export const getEnv = () => {
@@ -33,16 +38,32 @@ export const getEnv = () => {
 }
 
 type NewPoolKey = typeof tPoolKey.$inferInsert
-type NewSignerMerkle = typeof signerMerkle.$inferSelect
+type NewSignerMerkle = {
+	id: number
+	publicKey: string
+	createdAt: Date
+	permission: string
+}
 
 // list of different approved user to sign
 
 export async function getMerkle(
-	database: ReturnType<typeof getDb>["drizzle"]
+	database: ReturnType<typeof getDb>["drizzle"],
+	network: Networks
 ): Promise<[MerkleMap, NewSignerMerkle[]]> {
 	let users: NewSignerMerkle[] = []
 
-	const data = await database.select().from(signerMerkle).where(eq(signerMerkle.active, true))
+	const data = await database
+		.select({
+			id: signerMerkle.id,
+			publicKey: signerMerkle.publicKey,
+			createdAt: signerMerkle.createdAt,
+			permission: signerMerkleNetworks.permission
+		})
+		.from(signerMerkle)
+		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
+		.innerJoin(dbNetworks, eq(signerMerkleNetworks.networkId, dbNetworks))
+		.where(and(eq(dbNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
 	const allRight = new SignatureRight(
 		Bool(true),

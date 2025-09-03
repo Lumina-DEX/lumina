@@ -13,7 +13,13 @@ import {
 } from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
-import { pool, signerMerkle, poolKey as tPoolKey } from "../drizzle/schema"
+import {
+	dbNetworks,
+	pool,
+	signerMerkle,
+	signerMerkleNetworks,
+	poolKey as tPoolKey
+} from "../drizzle/schema"
 import { getDb } from "../src/db"
 import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
 
@@ -41,11 +47,12 @@ type PoolKey = {
 const { drizzle: db } = getDb()
 describe("Signature", () => {
 	it("rebuild merkle", async () => {
-		const [merkleMap] = await getMerkle(db)
+		const network = "mina:devnet" as const
+
+		const [merkleMap] = await getMerkle(db, network)
 
 		const root = merkleMap.getRoot()
 
-		const network = "mina:devnet" as const
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
 		const factoryKey = PublicKey.fromBase58(luminadexFactories[network])
@@ -133,8 +140,13 @@ describe("Signature", () => {
 	it("decrypt from db", async () => {
 		await initializeBindings()
 
-		// Get active signers from DB
-		const data = await db.select().from(signerMerkle).where(eq(signerMerkle.active, true))
+		const network = "zeko:testnet" as const
+
+		const networkIds = await db.select().from(dbNetworks).where(eq(dbNetworks.network, network))
+
+		const networkId = networkIds[0].id
+
+		const [merkleMap, data] = await getMerkle(db, network)
 
 		// Pick two signers with permission 'all' for the test
 		const testSigners = data.filter((x) => x.permission === "all").slice(0, 2)
@@ -163,7 +175,7 @@ describe("Signature", () => {
 						.insert(pool)
 						.values({
 							jobId: "test-job-id",
-							network: "zeko:testnet",
+							networkId,
 							publicKey: testPoolPub,
 							tokenA,
 							tokenB,
@@ -199,16 +211,31 @@ describe("Signature", () => {
 					if (!signerAId) {
 						const res = await tx
 							.insert(signerMerkle)
-							.values({ publicKey: testPubA, permission: "all", active: true })
+							.values({ publicKey: testPubA })
 							.returning({ insertedId: signerMerkle.id })
+
 						signerAId = res[0].insertedId
+
+						await db.insert(signerMerkleNetworks).values({
+							signerId: signerAId,
+							networkId: networkId,
+							permission: "all",
+							active: true
+						})
 					}
 					if (!signerBId) {
 						const res = await tx
 							.insert(signerMerkle)
-							.values({ publicKey: testPubB, permission: "all", active: true })
+							.values({ publicKey: testPubB })
 							.returning({ insertedId: signerMerkle.id })
 						signerBId = res[0].insertedId
+
+						await db.insert(signerMerkleNetworks).values({
+							signerId: signerBId,
+							networkId: networkId,
+							permission: "all",
+							active: true
+						})
 					}
 
 					const poolKeyRow = {
@@ -238,7 +265,7 @@ describe("Signature", () => {
 					const poolPublicInfo = await tx
 						.select()
 						.from(pool)
-						.where(eq(pool.id, element.poolId))
+						.where(eq(pool.id, element.poolId!))
 						.limit(1)
 					const poolPublicKey = poolPublicInfo[0].publicKey
 
