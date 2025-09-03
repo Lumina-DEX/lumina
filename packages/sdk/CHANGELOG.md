@@ -1,5 +1,15 @@
 # @lumina-dex/sdk
 
+## 0.22.0
+
+### Minor Changes
+
+- 4d6bd85: Remove zeko static fees
+
+### Patch Changes
+
+- 9b4dc58: fix `ManualPoolDeploy` in the SDK.
+
 ## 0.21.1
 
 ### Patch Changes
