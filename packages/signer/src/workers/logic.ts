@@ -1,8 +1,9 @@
-import { PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { MultisigInfo, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
 
 import {
 	fetchAccount,
+	Field,
 	Mina,
 	Poseidon,
 	PrivateKey,
@@ -10,11 +11,18 @@ import {
 	PublicKey,
 	Signature,
 	TokenId,
+	UInt32,
 	UInt64
 } from "o1js"
 import { getDb } from "@/db"
-import { dbNetworks, pool, poolKey as tPoolKey } from "../../drizzle/schema"
-import type { CreatePoolInputType } from "../graphql"
+import {
+	dbNetworks,
+	pool,
+	poolKey as tPoolKey,
+	factory as dbFactory,
+	factory
+} from "../../drizzle/schema"
+import type { CreatePoolInputType, CreatePoolFactoryInputType } from "../graphql"
 import {
 	fundNewAccount,
 	getFee,
@@ -155,6 +163,96 @@ export const createPoolAndTransaction = async ({
 						deployRight
 					)
 				}
+			}
+		)
+		console.log("Signing ... ")
+		minaTx.sign([newPoolPrivateKey])
+		console.log("Proving ...")
+		await minaTx.prove()
+		console.timeEnd("prove")
+		return minaTx.toJSON()
+	})
+	return {
+		poolPublicKey: newPoolPublicKey.toBase58(),
+		transactionJson: minaTransaction
+	}
+}
+
+export const createPoolFactoryAndTransaction = async ({
+	user,
+	symbol,
+	src,
+	protocol,
+	delegator,
+	network,
+	jobId
+}: CreatePoolFactoryInputType & { jobId: string }) => {
+	using db = getDb()
+	const Network = getNetwork(network)
+	Mina.setActiveInstance(Network)
+
+	console.log("data", {
+		user,
+		symbol,
+		src,
+		protocol,
+		delegator,
+		network,
+		jobId
+	})
+	const newPoolPrivateKey = PrivateKey.random()
+	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
+	console.debug("pool factory public Key", newPoolPublicKey.toBase58())
+
+	const deployRight = SignatureRight.canDeployPool()
+
+	const [merkle, users] = await getMerkle(db.drizzle, network)
+
+	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
+		console.log("Starting db transaction")
+		// get network id from database
+		const networkIds = await txOrm.select().from(dbNetworks).where(eq(dbNetworks.network, network))
+
+		const networkId = networkIds[0].id
+
+		// insert this new pool in database
+		const result = await txOrm
+			.insert(dbFactory)
+			.values({
+				publicKey: newPoolPublicKey.toBase58(),
+				user,
+				networkId
+			})
+			.returning({ insertedId: pool.id })
+		console.log("Inserted new pool into database", result)
+		const poolId = result[0].insertedId
+		const listPair = getUniqueUserPairs(users, poolId, newPoolPrivateKey.toBase58())
+		// insert the encrypted key of the pool in database
+		await txOrm.insert(tPoolKey).values(listPair)
+		console.time("prove")
+
+		const zkFactory = new PoolFactory(newPoolPublicKey)
+		const minaTx = await Mina.transaction(
+			{
+				sender: PublicKey.fromBase58(user),
+				fee: getFee(network)
+			},
+			async () => {
+				console.log("Funding new account ...")
+				fundNewAccount(network, PublicKey.fromBase58(user), 1)
+				await zkFactory.deploy({
+					symbol: symbol,
+					src: src,
+					delegator: PublicKey.fromBase58(delegator),
+					protocol: PublicKey.fromBase58(protocol),
+					approvedSigner: merkle.getRoot(),
+					signatures: [],
+					multisigInfo: new MultisigInfo({
+						approvedUpgrader: Field.empty(),
+						deadlineSlot: UInt32.zero,
+						messageHash: Field.empty()
+					})
+				})
 			}
 		)
 		console.log("Signing ... ")

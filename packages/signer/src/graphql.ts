@@ -53,6 +53,15 @@ export type CreatePoolInputType = {
 	network: Networks
 }
 
+export type CreatePoolFactoryInputType = {
+	user: string
+	symbol: string
+	src: string
+	protocol: string
+	delegator: string
+	network: Networks
+}
+
 const CreatePoolInput = builder.inputRef<CreatePoolInputType>("CreatePoolInput").implement({
 	description: "Input type for creating a new pool",
 	fields: (t) => ({
