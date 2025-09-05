@@ -86,7 +86,7 @@ export const factory = pgTable("Factory", {
 export const poolKey = pgTable("PoolKey", {
 	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-	poolId: integer("public_key").references(() => pool.id, { onDelete: "cascade" }),
+	poolId: integer("pool_id").references(() => pool.id, { onDelete: "cascade" }),
 	factoryId: integer("factory_id").references(() => factory.id, { onDelete: "cascade" }),
 	signer1Id: integer("signer_1")
 		.notNull()
