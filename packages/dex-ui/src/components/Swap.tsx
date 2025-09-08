@@ -9,7 +9,7 @@ import { LuminaContext } from "./Layout"
 import TokenMenu from "./TokenMenu"
 
 const Swap = () => {
-	const [poolAddress] = useState(poolToka)
+	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [token, setToken] = useState<LuminaToken>(tokenA)
 
@@ -19,6 +19,7 @@ const Swap = () => {
 
 	function updatePool(newPool: LuminaPool) {
 		setPool(newPool)
+		setPoolAddress(newPool.address)
 	}
 
 	const { Dex } = useContext(LuminaContext)
