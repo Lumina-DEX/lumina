@@ -1,11 +1,11 @@
 "use client"
-import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
-import { useSelector } from "@lumina-dex/sdk/react"
-import { Box, Modal } from "@mui/material"
-import { useCallback, useContext, useEffect, useState } from "react"
+import React, { useContext, useEffect, useMemo, useState } from "react"
 import { Addresses } from "@/utils/addresses"
-import { minaTestnet } from "./Account"
+import { Box, Modal } from "@mui/material"
 import { LuminaContext } from "./Layout"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
+import { minaTestnet } from "./Account"
 
 const TokenMenu = ({
 	poolAddress,
@@ -24,8 +24,12 @@ const TokenMenu = ({
 	const handleOpen = () => setOpen(true)
 	const handleClose = () => setOpen(false)
 
-	const getPools = useCallback(async () => {
+	useEffect(() => {
 		console.log("poolAddress", poolAddress)
+		getPools().then()
+	}, [walletContext.currentNetwork])
+
+	const getPools = async () => {
 		const network: Networks = walletContext.currentNetwork || minaTestnet
 		const pools = await Addresses.getList(network)
 		setCdnList(pools)
@@ -43,7 +47,7 @@ const TokenMenu = ({
 			setToken(pools[0].tokens[1])
 			setCurrent(pools[0])
 		}
-	}, [walletContext.currentNetwork, poolAddress, setPool, setToken])
+	}
 
 	const selectPool = (pool: LuminaPool) => {
 		console.log("pool", pool)
@@ -72,13 +76,9 @@ const TokenMenu = ({
 		return `${text.substring(0, 6)}...${text.substring(text.length - 6, text.length)}`
 	}
 
-	useEffect(() => {
-		getPools()
-	}, [getPools])
-
 	return (
 		<div>
-			<button type="button" onClick={handleOpen} className=" ml-3 p-1 bg-white">
+			<button onClick={handleOpen} className=" ml-3 p-1 bg-white">
 				{current?.tokens[1].symbol} &#x25BC;
 			</button>
 			<Modal
@@ -90,11 +90,10 @@ const TokenMenu = ({
 				<Box sx={style}>
 					<div className="flex flex-col">
 						{cdnList?.map((x) => (
-							<button
-								type="button"
+							<div
 								style={{ borderBottom: "1px solid black" }}
 								onClick={() => selectPool(x)}
-								className="button-div flex flex-col bg-blue-100 p-3"
+								className="flex flex-col bg-blue-100 p-3"
 								key={x.address}
 							>
 								<span title={x.tokens[1].symbol}>{x.tokens[1].symbol}</span>
@@ -104,7 +103,7 @@ const TokenMenu = ({
 								<span className="text-sm" title={x.address}>
 									Pool : {trimText(x.address)}
 								</span>
-							</button>
+							</div>
 						))}
 					</div>
 				</Box>
