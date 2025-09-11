@@ -14,12 +14,17 @@ const Liquidity = () => {
 
 	const { Dex } = useContext(LuminaContext)
 
-	const [poolAddress] = useState(poolToka)
+	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
+
+	function updatePool(newPool: LuminaPool) {
+		setPool(newPool)
+		setPoolAddress(newPool.address)
+	}
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
@@ -117,7 +122,7 @@ const Liquidity = () => {
 					{toDai ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
-						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
 					)}
 				</div>
 				<div>
@@ -141,7 +146,7 @@ const Liquidity = () => {
 					{!toDai ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
-						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
 					)}
 				</div>
 				<div>

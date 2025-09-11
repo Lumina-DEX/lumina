@@ -1,11 +1,11 @@
 "use client"
-import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
-import { useSelector } from "@lumina-dex/sdk/react"
-import { Box, Modal } from "@mui/material"
 import { useCallback, useContext, useEffect, useState } from "react"
 import { Addresses } from "@/utils/addresses"
-import { minaTestnet } from "./Account"
+import { Box, Modal } from "@mui/material"
 import { LuminaContext } from "./Layout"
+import { useSelector } from "@lumina-dex/sdk/react"
+import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
+import { minaTestnet } from "./Account"
 
 const TokenMenu = ({
 	poolAddress,
@@ -21,32 +21,33 @@ const TokenMenu = ({
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const [current, setCurrent] = useState<LuminaPool | undefined>()
 	const [open, setOpen] = useState(false)
+
 	const handleOpen = () => setOpen(true)
 	const handleClose = () => setOpen(false)
 
 	const getPools = useCallback(async () => {
-		console.log("poolAddress", poolAddress)
 		const network: Networks = walletContext.currentNetwork || minaTestnet
 		const pools = await Addresses.getList(network)
 		setCdnList(pools)
 
 		const poolExist = pools.find((z) => z.address === poolAddress)
 		if (poolExist) {
-			console.log("poolExist", poolExist)
 			setPool(poolExist)
 			setToken(poolExist.tokens[1])
 			setCurrent(poolExist)
-		} else {
-			console.log("pool not found", pools[0])
-			// if this pool didn't exist for this network we select the first token
+		} else if (pools.length > 0) {
+			// si le pool n’existe pas sur ce network, on prend le premier
 			setPool(pools[0])
 			setToken(pools[0].tokens[1])
 			setCurrent(pools[0])
 		}
 	}, [walletContext.currentNetwork, poolAddress, setPool, setToken])
 
+	useEffect(() => {
+		getPools()
+	}, [getPools])
+
 	const selectPool = (pool: LuminaPool) => {
-		console.log("pool", pool)
 		setPool(pool)
 		setToken(pool.tokens[1])
 		setCurrent(pool)
@@ -69,16 +70,12 @@ const TokenMenu = ({
 
 	const trimText = (text: string) => {
 		if (!text) return ""
-		return `${text.substring(0, 6)}...${text.substring(text.length - 6, text.length)}`
+		return `${text.substring(0, 6)}...${text.substring(text.length - 6)}`
 	}
-
-	useEffect(() => {
-		getPools()
-	}, [getPools])
 
 	return (
 		<div>
-			<button type="button" onClick={handleOpen} className=" ml-3 p-1 bg-white">
+			<button type="button" onClick={handleOpen} className="ml-3 p-1 bg-white">
 				{current?.tokens[1].symbol} &#x25BC;
 			</button>
 			<Modal
@@ -92,10 +89,10 @@ const TokenMenu = ({
 						{cdnList?.map((x) => (
 							<button
 								type="button"
-								style={{ borderBottom: "1px solid black" }}
-								onClick={() => selectPool(x)}
-								className="button-div flex flex-col bg-blue-100 p-3"
 								key={x.address}
+								onClick={() => selectPool(x)}
+								className="flex flex-col bg-blue-100 p-3 text-left"
+								style={{ borderBottom: "1px solid black" }}
 							>
 								<span title={x.tokens[1].symbol}>{x.tokens[1].symbol}</span>
 								<span className="text-sm" title={x.tokens[1].address}>
