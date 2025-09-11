@@ -44,7 +44,7 @@ import {
   PoolFactory,
   PoolTokenHolder
 } from "../index.js"
-import { MultisigInfo, SignatureInfo, SignatureRight, UpdateSignerData } from "../pool/Multisig.js"
+import { allRight, deployPoolRight, Multisig, MultisigInfo, SignatureInfo, UpdateSignerData } from "../pool/Multisig.js"
 
 const prompt = async (message: string) => {
   const rl = readline.createInterface({
@@ -124,8 +124,8 @@ console.log("zkFaucet", zkFaucetAddress.toBase58())
 console.log("pool ETH/Mina", zkEthAddress.toBase58())
 console.log("approved signer", signerAddress.toBase58())
 
-const allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-const deployRight = SignatureRight.canDeployPool()
+const allRightHash = Poseidon.hash(allRight.toFields())
+const deployRight = Poseidon.hash(deployPoolRight.toFields())
 
 const ownerKey = PrivateKey.fromBase58(process.env.OWNER!)
 const signer1Key = PrivateKey.fromBase58(process.env.SIGNER1!)
@@ -142,14 +142,14 @@ const externalSigner3 = PublicKey.fromBase58("B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZ
 const approvedSignerPublic = approvedSigner.toPublicKey()
 
 const merkle = new MerkleMap()
-merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
-merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
-merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+merkle.set(Poseidon.hash(ownerPublic.toFields()), allRightHash)
+merkle.set(Poseidon.hash(signer1Public.toFields()), allRightHash)
+merkle.set(Poseidon.hash(signer2Public.toFields()), allRightHash)
+merkle.set(Poseidon.hash(signer3Public.toFields()), allRightHash)
+merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), Poseidon.hash(deployPoolRight.toFields()))
+merkle.set(Poseidon.hash(externalSigner1.toFields()), allRightHash)
+merkle.set(Poseidon.hash(externalSigner2.toFields()), allRightHash)
+merkle.set(Poseidon.hash(externalSigner3.toFields()), allRightHash)
 
 // compile the contract to create prover keys
 console.log("compile the contract...")
@@ -398,8 +398,7 @@ async function deployFactory() {
           delegator: delegatorKey.toPublicKey(),
           protocol: protocolKey.toPublicKey(),
           approvedSigner: root,
-          signatures: array,
-          multisigInfo: multi
+          multisig: new Multisig({ info: multi, signatures: array })
         })
       }
     )
