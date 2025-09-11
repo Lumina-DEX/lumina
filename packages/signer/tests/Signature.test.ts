@@ -53,6 +53,8 @@ describe("Signature", () => {
 
 		const root = merkleMap.getRoot()
 
+		console.log("root", root.toBigInt())
+
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
 		const factoryKey = PublicKey.fromBase58(luminadexFactories[network])
