@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight, FungibleToken, PoolFactory } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, networks, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -65,25 +65,18 @@ export async function getMerkle(
 		.innerJoin(dbNetworks, eq(signerMerkleNetworks.networkId, dbNetworks.id))
 		.where(and(eq(dbNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
-	const allRight = new SignatureRight(
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true)
-	)
-	const deployRight = SignatureRight.canDeployPool()
+	const allRightHash = Poseidon.hash(allRight.toFields())
+	const deployRightHash = Poseidon.hash(deployPoolRight.toFields())
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
-		let right = allRight.hash()
+		let right = allRightHash
 		switch (x.permission) {
 			case "deploy":
-				right = deployRight.hash()
+				right = deployRightHash
 				break
 			default:
-				right = allRight.hash()
+				right = allRightHash
 				break
 		}
 		const pubKey = PublicKey.fromBase58(x.publicKey)

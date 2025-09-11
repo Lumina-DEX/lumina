@@ -1,4 +1,4 @@
-import { MultisigInfo, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { deployPoolRight, Multisig, MultisigInfo, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
 
 import {
@@ -48,8 +48,6 @@ export const createPoolAndTransaction = async ({
 	const newPoolPrivateKey = PrivateKey.random()
 	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
 	console.debug("pool public Key", newPoolPublicKey.toBase58())
-
-	const deployRight = SignatureRight.canDeployPool()
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
@@ -146,7 +144,7 @@ export const createPoolAndTransaction = async ({
 						masterSignerPublicKey,
 						signature,
 						witness,
-						deployRight
+						deployPoolRight
 					)
 					console.log("Mina token pool created successfully")
 				}
@@ -160,7 +158,7 @@ export const createPoolAndTransaction = async ({
 						masterSignerPublicKey,
 						signature,
 						witness,
-						deployRight
+						deployPoolRight
 					)
 				}
 			}
@@ -204,8 +202,6 @@ export const createPoolFactoryAndTransaction = async ({
 	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
 	console.debug("pool factory public Key", newPoolPublicKey.toBase58())
 
-	const deployRight = SignatureRight.canDeployPool()
-
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
@@ -231,6 +227,12 @@ export const createPoolFactoryAndTransaction = async ({
 		await txOrm.insert(tPoolKey).values(listPair)
 		console.time("prove")
 
+		const multi = new MultisigInfo({
+			approvedUpgrader: Field.empty(),
+			messageHash: Field.empty(),
+			deadlineSlot: UInt32.zero
+		})
+
 		const zkFactory = new PoolFactory(newPoolPublicKey)
 		const minaTx = await Mina.transaction(
 			{
@@ -246,11 +248,9 @@ export const createPoolFactoryAndTransaction = async ({
 					delegator: PublicKey.fromBase58(delegator),
 					protocol: PublicKey.fromBase58(protocol),
 					approvedSigner: merkle.getRoot(),
-					signatures: [],
-					multisigInfo: new MultisigInfo({
-						approvedUpgrader: Field.empty(),
-						deadlineSlot: UInt32.zero,
-						messageHash: Field.empty()
+					multisig: new Multisig({
+						info: multi,
+						signatures: []
 					})
 				})
 			}

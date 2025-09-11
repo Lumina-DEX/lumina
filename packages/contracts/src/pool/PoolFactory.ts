@@ -1,3 +1,4 @@
+import { FungibleToken } from "mina-fungible-token"
 import {
   AccountUpdate,
   AccountUpdateForest,
@@ -21,7 +22,7 @@ import {
   UInt64,
   VerificationKey
 } from "o1js"
-import { FungibleToken } from "../indexpool.js"
+
 import {
   deployPoolRight,
   hasRight,
