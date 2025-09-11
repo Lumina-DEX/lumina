@@ -3,16 +3,19 @@ import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  allRight,
+  deployPoolRight,
   FungibleToken,
   FungibleTokenAdmin,
   mulDiv,
+  Multisig,
   MultisigInfo,
   Pool,
   PoolFactory,
   PoolTokenHolder,
   SignatureInfo,
-  SignatureRight,
-  UpdateSignerData
+  UpdateSignerData,
+  updateSignerRight
 } from "../dist"
 import { getAmountLiquidityOutUint } from "../src"
 
@@ -34,9 +37,6 @@ describe("Pool Factory Token", () => {
     deployerPublic: PublicKey,
     bobPublic: PublicKey,
     alicePublic: PublicKey,
-    allRight: SignatureRight,
-    signerRight: SignatureRight,
-    deployRight: SignatureRight,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: PoolFactory,
@@ -106,11 +106,11 @@ describe("Pool Factory Token", () => {
     zkTokenAdminAddress = zkTokenAdminPrivateKey.toPublicKey()
     zkTokenAdmin = new FungibleTokenAdmin(zkTokenAdminAddress)
 
-    const keyTokenX = PrivateKey.random()
-    const keyTokenY = PrivateKey.random()
+    let keyTokenX = PrivateKey.random()
+    let keyTokenY = PrivateKey.random()
 
     // order token to create pool
-    const xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
+    let xIsLower = keyTokenX.toPublicKey().x.lessThan(keyTokenY.toPublicKey().x)
 
     zkTokenPrivateKey0 = xIsLower.toBoolean() ? keyTokenX : keyTokenY
     zkTokenAddress0 = zkTokenPrivateKey0.toPublicKey()
@@ -123,14 +123,14 @@ describe("Pool Factory Token", () => {
     tokenHolder = new PoolTokenHolder(zkPoolAddress, zkToken0.deriveTokenId())
 
     merkle = new MerkleMap()
-    allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-    deployRight = SignatureRight.canDeployPool()
-    signerRight = SignatureRight.canUpdateSigner()
-    merkle.set(Poseidon.hash(bobPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(alicePublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(senderPublic.toFields()), signerRight.hash())
-    merkle.set(Poseidon.hash(dylanPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(deployerPublic.toFields()), deployRight.hash())
+    const allRightHash = Poseidon.hash(allRight.toFields())
+
+    merkle = new MerkleMap()
+    merkle.set(Poseidon.hash(bobPublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(alicePublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(senderPublic.toFields()), Poseidon.hash(updateSignerRight.toFields()))
+    merkle.set(Poseidon.hash(deployerPublic.toFields()), Poseidon.hash(deployPoolRight.toFields()))
+    merkle.set(Poseidon.hash(dylanPublic.toFields()), allRightHash)
 
     const root = merkle.getRoot()
 
@@ -142,7 +142,6 @@ describe("Pool Factory Token", () => {
 
     const signBob = Signature.create(bobKey, info.toFields())
     const signAlice = Signature.create(aliceKey, info.toFields())
-    const signDylan = Signature.create(dylanAccount.key, info.toFields())
 
     const multi = new MultisigInfo({
       approvedUpgrader: root,
@@ -161,13 +160,7 @@ describe("Pool Factory Token", () => {
       signature: signAlice,
       right: allRight
     })
-    const infoDylan = new SignatureInfo({
-      user: dylanPublic,
-      witness: merkle.getWitness(Poseidon.hash(dylanPublic.toFields())),
-      signature: signDylan,
-      right: allRight
-    })
-    const array = [infoBob, infoAlice, infoDylan]
+    const array = [infoBob, infoAlice]
 
     const txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
@@ -177,8 +170,7 @@ describe("Pool Factory Token", () => {
         protocol: aliceAccount,
         delegator: dylanAccount,
         approvedSigner: root,
-        signatures: array,
-        multisigInfo: multi
+        multisig: new Multisig({ info: multi, signatures: array })
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -243,9 +235,9 @@ describe("Pool Factory Token", () => {
   })
 
   it("add first liquidity", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
     })
@@ -287,8 +279,8 @@ describe("Pool Factory Token", () => {
   })
 
   it("Transfer liquidity", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
@@ -318,8 +310,8 @@ describe("Pool Factory Token", () => {
   it("withdraw liquidity", async () => {
     const minaUser = Mina.getBalance(senderAccount)
     console.log("mina before", minaUser.toBigInt())
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
@@ -360,8 +352,8 @@ describe("Pool Factory Token", () => {
   })
 
   it("add second liquidity", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
@@ -376,8 +368,8 @@ describe("Pool Factory Token", () => {
     console.log("liquidity user", liquidityUser.toString())
     expect(liquidityUser.value).toEqual(expected)
 
-    const amtMina = UInt64.from(1 * 10 ** 9)
-    const amtToken2 = UInt64.from(5 * 10 ** 9)
+    let amtMina = UInt64.from(1 * 10 ** 9)
+    let amtToken2 = UInt64.from(5 * 10 ** 9)
     txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 1)
       await zkPool.supplyLiquidityToken(amtMina, amtToken2, amt, amtToken, totalLiquidity)
@@ -393,8 +385,8 @@ describe("Pool Factory Token", () => {
   })
 
   it("add second liquidity slippage", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
     let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
@@ -409,7 +401,7 @@ describe("Pool Factory Token", () => {
     console.log("liquidity user", liquidityUser.toString())
     expect(liquidityUser.value).toEqual(expected)
 
-    const amtToken0 = UInt64.from(1 * 10 ** 9)
+    let amtToken0 = UInt64.from(1 * 10 ** 9)
     const reserve = await getReserves(zkPoolAddress)
     const out = getAmountLiquidityOutUint(
       amtToken0,
@@ -449,9 +441,9 @@ describe("Pool Factory Token", () => {
   }
 
   it("swap from token", async () => {
-    const amt = UInt64.from(10 * 10 ** 9)
-    const amtToken = UInt64.from(50 * 10 ** 9)
-    const txn = await Mina.transaction(senderAccount, async () => {
+    let amt = UInt64.from(10 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
     })
@@ -460,7 +452,7 @@ describe("Pool Factory Token", () => {
 
     const reserveIn = Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
     const reserveOut = Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
-    const amountIn = UInt64.from(1.3 * 10 ** 9)
+    let amountIn = UInt64.from(1.3 * 10 ** 9)
 
     console.log("current bal in", reserveIn.toBigInt())
 
@@ -476,16 +468,11 @@ describe("Pool Factory Token", () => {
 
     const userMinaBalBefore = Mina.getBalance(senderAccount)
 
+    const protocol = await zkApp.getProtocol()
+
     const txn2 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
-      await tokenHolder.swapFromTokenToToken(
-        senderAccount,
-        UInt64.from(5),
-        amountIn,
-        UInt64.from(1),
-        balanceMax,
-        balanceMin
-      )
+      await tokenHolder.swapFromTokenToToken(protocol, UInt64.from(5), amountIn, UInt64.from(1), balanceMax, balanceMin)
       await zkToken0.approveAccountUpdate(tokenHolder.self)
     })
     console.log("swap from token", txn2.toPretty())
