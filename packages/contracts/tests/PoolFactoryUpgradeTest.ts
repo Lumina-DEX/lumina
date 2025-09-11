@@ -1,4 +1,5 @@
 import { Field, method, VerificationKey } from "o1js"
+
 import { PoolFactory } from "../dist"
 
 export const contractData =

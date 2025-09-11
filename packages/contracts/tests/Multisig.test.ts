@@ -20,7 +20,6 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   allRight,
-  deployPoolRight,
   Multisig,
   MultisigInfo,
   MultisigSigner,
@@ -36,6 +35,7 @@ import {
   UpdateSignerData,
   updateSignerRight
 } from "../dist"
+
 import { PoolFactoryUpgradeTest } from "./PoolFactoryUpgradeTest"
 import { PoolHolderUpgradeTest } from "./PoolHolderUpgradeTest"
 import { PoolUpgradeTest } from "./PoolUpgradeTest"
@@ -257,8 +257,8 @@ describe("Pool data", () => {
     await deployPool()
     await mintToken(senderPublic)
 
-    let amt = UInt64.from(10 * 10 ** 9)
-    let amtToken = UInt64.from(50 * 10 ** 9)
+    const amt = UInt64.from(10 * 10 ** 9)
+    const amtToken = UInt64.from(50 * 10 ** 9)
     const txn4 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
       await zkPool.supplyFirstLiquidities(amt, amtToken)

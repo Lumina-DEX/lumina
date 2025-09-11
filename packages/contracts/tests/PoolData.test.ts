@@ -293,22 +293,22 @@ describe("Pool data", () => {
   })
 
   it("update protocol", async () => {
-    let protocol = await zkApp.protocol.fetch()
+    const protocol = await zkApp.protocol.fetch()
     expect(protocol?.toBase58()).toEqual(aliceAccount.toBase58())
 
     const proof = await getProofAccount(aliceAccount, deployerAccount, false)
-    let txn = await Mina.transaction(senderAccount, async () => {
+    const txn = await Mina.transaction(senderAccount, async () => {
       await zkApp.setNewProtocol(proof, deployerAccount)
     })
     await txn.prove()
     await txn.sign([senderKey, bobKey]).send()
 
-    let protocolNew = await zkApp.protocol.fetch()
+    const protocolNew = await zkApp.protocol.fetch()
     expect(protocolNew?.toBase58()).toEqual(deployerAccount.toBase58())
   })
 
   it("set delegator", async () => {
-    let delegator = await zkApp.delegator.fetch()
+    const delegator = await zkApp.delegator.fetch()
     let poolAccount = zkPool.account?.delegate?.get()
     expect(delegator?.toBase58()).toEqual(dylanAccount.toBase58())
     expect(poolAccount?.toBase58()).toEqual(zkPoolAddress.toBase58())
