@@ -62,8 +62,7 @@ export async function getMerkle(
 		})
 		.from(signerMerkle)
 		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
-		.innerJoin(dbNetworks, eq(signerMerkleNetworks.networkId, dbNetworks.id))
-		.where(and(eq(dbNetworks.network, network), eq(signerMerkleNetworks.active, true)))
+		.where(and(eq(signerMerkleNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
 	const allRightHash = Poseidon.hash(allRight.toFields())
 	const deployRightHash = Poseidon.hash(deployPoolRight.toFields())

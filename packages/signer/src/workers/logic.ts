@@ -57,10 +57,6 @@ export const createPoolAndTransaction = async ({
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
-		// get network id from database
-		const networkIds = await txOrm.select().from(dbNetworks).where(eq(dbNetworks.network, network))
-
-		const networkId = networkIds[0].id
 
 		// insert this new pool in database
 		const result = await txOrm
@@ -70,7 +66,7 @@ export const createPoolAndTransaction = async ({
 				tokenA,
 				tokenB,
 				user,
-				networkId,
+				network,
 				jobId,
 				status: "pending"
 			})
@@ -206,10 +202,6 @@ export const createPoolFactoryAndTransaction = async ({
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
-		// get network id from database
-		const networkIds = await txOrm.select().from(dbNetworks).where(eq(dbNetworks.network, network))
-
-		const networkId = networkIds[0].id
 
 		// insert this new pool in database
 		const result = await txOrm
@@ -217,7 +209,7 @@ export const createPoolFactoryAndTransaction = async ({
 			.values({
 				publicKey: newPoolPublicKey.toBase58(),
 				user,
-				networkId
+				network
 			})
 			.returning({ insertedId: pool.id })
 		console.log("Inserted new pool into database", result)

@@ -144,10 +144,6 @@ describe("Signature", () => {
 
 		const network = "zeko:testnet" as const
 
-		const networkIds = await db.select().from(dbNetworks).where(eq(dbNetworks.network, network))
-
-		const networkId = networkIds[0].id
-
 		const [merkleMap, data] = await getMerkle(db, network)
 
 		// Pick two signers with permission 'all' for the test
@@ -177,7 +173,7 @@ describe("Signature", () => {
 						.insert(pool)
 						.values({
 							jobId: "test-job-id",
-							networkId,
+							network,
 							publicKey: testPoolPub,
 							tokenA,
 							tokenB,
@@ -220,7 +216,7 @@ describe("Signature", () => {
 
 						await db.insert(signerMerkleNetworks).values({
 							signerId: signerAId,
-							networkId: networkId,
+							network,
 							permission: "all",
 							active: true
 						})
@@ -234,7 +230,7 @@ describe("Signature", () => {
 
 						await db.insert(signerMerkleNetworks).values({
 							signerId: signerBId,
-							networkId: networkId,
+							network,
 							permission: "all",
 							active: true
 						})

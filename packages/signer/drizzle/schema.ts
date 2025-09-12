@@ -22,13 +22,10 @@ export const signerMerkle = pgTable(
 
 // Table: Networks
 export const dbNetworks = pgTable("Networks", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 	network: text("network", {
 		enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
-	})
-		.notNull()
-		.unique()
+	}).primaryKey(),
+	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
 })
 
 // Table: Multisig
@@ -40,9 +37,9 @@ export const multisig = pgTable("Multisig", {
 		.references(() => signerMerkle.id),
 	signature: text("signature").notNull(),
 	data: text("data").notNull(),
-	networkId: integer("network_id")
+	network: text("network")
 		.notNull()
-		.references(() => dbNetworks.id),
+		.references(() => dbNetworks.network),
 	deadline: integer("deadline").notNull()
 })
 
@@ -60,9 +57,9 @@ export const pool = pgTable(
 		status: text("status", {
 			enum: ["pending", "confirmed", "deployed"] as const
 		}).notNull(),
-		networkId: integer("network_id")
+		network: text("network")
 			.notNull()
-			.references(() => dbNetworks.id)
+			.references(() => dbNetworks.network)
 	},
 	(table) => [
 		uniqueIndex("Pool_job_id_unique").on(table.jobId),
@@ -77,9 +74,9 @@ export const factory = pgTable("Factory", {
 
 	publicKey: text("public_key").notNull(),
 	user: text("user").notNull(),
-	networkId: integer("network_id")
+	network: text("network")
 		.notNull()
-		.references(() => dbNetworks.id) // 🔗 relation vers la nouvelle table
+		.references(() => dbNetworks.network)
 })
 
 // Table: PoolKey
@@ -104,17 +101,14 @@ export const signerMerkleNetworks = pgTable("SignerMerkleNetworks", {
 	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 
-	// Relation vers SignerMerkle
 	signerId: integer("signer_id")
 		.notNull()
 		.references(() => signerMerkle.id, { onDelete: "cascade" }),
 
-	// Relation vers Networks
-	networkId: integer("network_id")
+	network: text("network")
 		.notNull()
-		.references(() => dbNetworks.id, { onDelete: "cascade" }),
+		.references(() => dbNetworks.network),
 
-	// Permission spécifique à ce réseau
 	permission: text("permission", {
 		enum: ["deploy", "all"] as const
 	}).notNull(),
