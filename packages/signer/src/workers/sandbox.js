@@ -17,7 +17,7 @@ export default async function (job) {
 		compiled = true
 		console.log("job id", job.id)
 		if (!job.id) {
-			throw "No job id"
+			throw new Error("No job id")
 		}
 		const result = await createPoolAndTransaction({ ...job.data, jobId: job.id })
 		console.log("job end", job.id)
