@@ -96,7 +96,7 @@ export const poolKey = pgTable("PoolKey", {
 	generatedPublic2: text("generated_public_2").notNull()
 })
 
-// Table: SignerMerkleNetworks (relation N-N between SignerMerkle and Networks)
+// Table: SignerMerkleNetworks
 export const signerMerkleNetworks = pgTable("SignerMerkleNetworks", {
 	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
