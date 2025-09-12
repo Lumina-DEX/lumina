@@ -22,7 +22,7 @@ import {
 	factory as dbFactory,
 	factory
 } from "../../drizzle/schema"
-import type { CreatePoolInputType, CreatePoolFactoryInputType } from "../graphql"
+import type { CreatePoolInputType } from "../graphql"
 import {
 	fundNewAccount,
 	getFee,
