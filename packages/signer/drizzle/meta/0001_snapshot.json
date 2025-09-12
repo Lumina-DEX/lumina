@@ -1,101 +1,9 @@
 {
-	"id": "abddfce3-81a8-4f68-967c-8d77eac58ca1",
+	"id": "262e5e09-fc0f-4d68-98ca-4eef456924c2",
 	"prevId": "093d11a4-30d2-4e26-aac0-8f656558d0f4",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
-		"public.Networks": {
-			"name": "Networks",
-			"schema": "",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "serial",
-					"primaryKey": true,
-					"notNull": true
-				},
-				"created_at": {
-					"name": "created_at",
-					"type": "timestamp",
-					"primaryKey": false,
-					"notNull": true,
-					"default": "CURRENT_TIMESTAMP"
-				},
-				"network": {
-					"name": "network",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true
-				}
-			},
-			"indexes": {},
-			"foreignKeys": {},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {
-				"Networks_network_unique": {
-					"name": "Networks_network_unique",
-					"nullsNotDistinct": false,
-					"columns": ["network"]
-				}
-			},
-			"policies": {},
-			"checkConstraints": {},
-			"isRLSEnabled": false
-		},
-		"public.Factory": {
-			"name": "Factory",
-			"schema": "",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "serial",
-					"primaryKey": true,
-					"notNull": true
-				},
-				"created_at": {
-					"name": "created_at",
-					"type": "timestamp",
-					"primaryKey": false,
-					"notNull": true,
-					"default": "CURRENT_TIMESTAMP"
-				},
-				"public_key": {
-					"name": "public_key",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"user": {
-					"name": "user",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"network_id": {
-					"name": "network_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true
-				}
-			},
-			"indexes": {},
-			"foreignKeys": {
-				"Factory_network_id_Networks_id_fk": {
-					"name": "Factory_network_id_Networks_id_fk",
-					"tableFrom": "Factory",
-					"tableTo": "Networks",
-					"columnsFrom": ["network_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				}
-			},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
-			"policies": {},
-			"checkConstraints": {},
-			"isRLSEnabled": false
-		},
 		"public.Multisig": {
 			"name": "Multisig",
 			"schema": "",
@@ -131,12 +39,6 @@
 					"primaryKey": false,
 					"notNull": true
 				},
-				"network_id": {
-					"name": "network_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true
-				},
 				"deadline": {
 					"name": "deadline",
 					"type": "integer",
@@ -149,20 +51,11 @@
 				"Multisig_signer_SignerMerkle_id_fk": {
 					"name": "Multisig_signer_SignerMerkle_id_fk",
 					"tableFrom": "Multisig",
-					"tableTo": "SignerMerkle",
 					"columnsFrom": ["signer"],
+					"tableTo": "SignerMerkle",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"Multisig_network_id_Networks_id_fk": {
-					"name": "Multisig_network_id_Networks_id_fk",
-					"tableFrom": "Multisig",
-					"tableTo": "Networks",
-					"columnsFrom": ["network_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -224,9 +117,9 @@
 					"primaryKey": false,
 					"notNull": true
 				},
-				"network_id": {
-					"name": "network_id",
-					"type": "integer",
+				"network": {
+					"name": "network",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				}
@@ -243,9 +136,9 @@
 						}
 					],
 					"isUnique": true,
-					"concurrently": false,
+					"with": {},
 					"method": "btree",
-					"with": {}
+					"concurrently": false
 				},
 				"Pool_public_key_unique": {
 					"name": "Pool_public_key_unique",
@@ -258,22 +151,12 @@
 						}
 					],
 					"isUnique": true,
-					"concurrently": false,
+					"with": {},
 					"method": "btree",
-					"with": {}
+					"concurrently": false
 				}
 			},
-			"foreignKeys": {
-				"Pool_network_id_Networks_id_fk": {
-					"name": "Pool_network_id_Networks_id_fk",
-					"tableFrom": "Pool",
-					"tableTo": "Networks",
-					"columnsFrom": ["network_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				}
-			},
+			"foreignKeys": {},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
@@ -297,17 +180,11 @@
 					"notNull": true,
 					"default": "CURRENT_TIMESTAMP"
 				},
-				"pool_id": {
-					"name": "pool_id",
+				"public_key": {
+					"name": "public_key",
 					"type": "integer",
 					"primaryKey": false,
-					"notNull": false
-				},
-				"factory_id": {
-					"name": "factory_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false
+					"notNull": true
 				},
 				"signer_1": {
 					"name": "signer_1",
@@ -342,41 +219,32 @@
 			},
 			"indexes": {},
 			"foreignKeys": {
-				"PoolKey_pool_id_Pool_id_fk": {
-					"name": "PoolKey_pool_id_Pool_id_fk",
+				"PoolKey_public_key_Pool_id_fk": {
+					"name": "PoolKey_public_key_Pool_id_fk",
 					"tableFrom": "PoolKey",
+					"columnsFrom": ["public_key"],
 					"tableTo": "Pool",
-					"columnsFrom": ["pool_id"],
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
-				},
-				"PoolKey_factory_id_Factory_id_fk": {
-					"name": "PoolKey_factory_id_Factory_id_fk",
-					"tableFrom": "PoolKey",
-					"tableTo": "Factory",
-					"columnsFrom": ["factory_id"],
-					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				},
 				"PoolKey_signer_1_SignerMerkle_id_fk": {
 					"name": "PoolKey_signer_1_SignerMerkle_id_fk",
 					"tableFrom": "PoolKey",
-					"tableTo": "SignerMerkle",
 					"columnsFrom": ["signer_1"],
+					"tableTo": "SignerMerkle",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				},
 				"PoolKey_signer_2_SignerMerkle_id_fk": {
 					"name": "PoolKey_signer_2_SignerMerkle_id_fk",
 					"tableFrom": "PoolKey",
-					"tableTo": "SignerMerkle",
 					"columnsFrom": ["signer_2"],
+					"tableTo": "SignerMerkle",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -407,60 +275,6 @@
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true
-				}
-			},
-			"indexes": {
-				"SignerMerkle_public_key_unique": {
-					"name": "SignerMerkle_public_key_unique",
-					"columns": [
-						{
-							"expression": "public_key",
-							"isExpression": false,
-							"asc": true,
-							"nulls": "last"
-						}
-					],
-					"isUnique": true,
-					"concurrently": false,
-					"method": "btree",
-					"with": {}
-				}
-			},
-			"foreignKeys": {},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
-			"policies": {},
-			"checkConstraints": {},
-			"isRLSEnabled": false
-		},
-		"public.SignerMerkleNetworks": {
-			"name": "SignerMerkleNetworks",
-			"schema": "",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "serial",
-					"primaryKey": true,
-					"notNull": true
-				},
-				"created_at": {
-					"name": "created_at",
-					"type": "timestamp",
-					"primaryKey": false,
-					"notNull": true,
-					"default": "CURRENT_TIMESTAMP"
-				},
-				"signer_id": {
-					"name": "signer_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"network_id": {
-					"name": "network_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true
 				},
 				"permission": {
 					"name": "permission",
@@ -476,27 +290,24 @@
 					"default": true
 				}
 			},
-			"indexes": {},
-			"foreignKeys": {
-				"SignerMerkleNetworks_signer_id_SignerMerkle_id_fk": {
-					"name": "SignerMerkleNetworks_signer_id_SignerMerkle_id_fk",
-					"tableFrom": "SignerMerkleNetworks",
-					"tableTo": "SignerMerkle",
-					"columnsFrom": ["signer_id"],
-					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
-				},
-				"SignerMerkleNetworks_network_id_Networks_id_fk": {
-					"name": "SignerMerkleNetworks_network_id_Networks_id_fk",
-					"tableFrom": "SignerMerkleNetworks",
-					"tableTo": "Networks",
-					"columnsFrom": ["network_id"],
-					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+			"indexes": {
+				"SignerMerkle_public_key_unique": {
+					"name": "SignerMerkle_public_key_unique",
+					"columns": [
+						{
+							"expression": "public_key",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"with": {},
+					"method": "btree",
+					"concurrently": false
 				}
 			},
+			"foreignKeys": {},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
@@ -506,10 +317,10 @@
 	},
 	"enums": {},
 	"schemas": {},
+	"views": {},
 	"sequences": {},
 	"roles": {},
 	"policies": {},
-	"views": {},
 	"_meta": {
 		"columns": {},
 		"schemas": {},

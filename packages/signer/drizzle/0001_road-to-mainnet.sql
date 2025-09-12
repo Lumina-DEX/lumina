@@ -1,3 +1,4 @@
+-- Custom SQL migration file, put your code below! --
 CREATE TABLE "Networks" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
