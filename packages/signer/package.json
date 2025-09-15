@@ -14,6 +14,7 @@
 		"web": "bun ./index.html",
 		"dev": "bun run --watch src/index.ts",
 		"dev:uws": "tsx src/uws.ts",
+		"build": "bun x tsc",
 		"all": "concurrently 'bun run services:start' 'bun run start' 'bun run web'",
 		"format": "dprint check",
 		"format:fix": "dprint fmt --verbose",

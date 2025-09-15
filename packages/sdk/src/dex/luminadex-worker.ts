@@ -1,11 +1,12 @@
 import {
+	allRight,
+	deployPoolRight,
 	type Faucet,
 	type FungibleToken,
 	type FungibleTokenAdmin,
 	type Pool,
 	type PoolFactory,
-	type PoolTokenHolder,
-	SignatureRight
+	type PoolTokenHolder
 } from "@lumina-dex/contracts"
 import { createStore } from "@xstate/store"
 import * as Comlink from "comlink"
@@ -221,15 +222,8 @@ const deployPoolInstance = async (
 	const poolKey = PrivateKey.random()
 	logger.debug({ poolKey })
 
-	const _allRight = new SignatureRight(
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true)
-	)
-	const deployRight = SignatureRight.canDeployPool()
+	const _allRight = Poseidon.hash(allRight.toFields())
+	const deployRight = Poseidon.hash(deployPoolRight.toFields())
 
 	const merkle = getMerkle()
 	// TODO: temporary solution for testnet
@@ -688,24 +682,18 @@ export function getMerkle(): MerkleMap {
 		"B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ"
 	)
 
-	const allRight = new SignatureRight(
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true)
-	)
-	const deployRight = SignatureRight.canDeployPool()
+	const _allRight = Poseidon.hash(allRight.toFields())
+	const deployRight = Poseidon.hash(deployPoolRight.toFields())
+
 	const merkle = new MerkleMap()
-	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
-	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(ownerPublic.toFields()), _allRight)
+	merkle.set(Poseidon.hash(signer1Public.toFields()), _allRight)
+	merkle.set(Poseidon.hash(signer2Public.toFields()), _allRight)
+	merkle.set(Poseidon.hash(signer3Public.toFields()), _allRight)
+	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight)
+	merkle.set(Poseidon.hash(externalSigner1.toFields()), _allRight)
+	merkle.set(Poseidon.hash(externalSigner2.toFields()), _allRight)
+	merkle.set(Poseidon.hash(externalSigner3.toFields()), _allRight)
 
 	return merkle
 }

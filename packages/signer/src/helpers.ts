@@ -1,10 +1,9 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { FungibleToken, PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight, FungibleToken, PoolFactory } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
-	Bool,
 	Cache,
 	Encoding,
 	Encryption,
@@ -16,7 +15,7 @@ import {
 	UInt64
 } from "o1js"
 import * as v from "valibot"
-import { signerMerkle, type poolKey as tPoolKey } from "../drizzle/schema"
+import { signerMerkle, signerMerkleNetworks, type poolKey as tPoolKey } from "../drizzle/schema"
 import type { getDb } from "./db"
 
 export const getEnv = () => {
@@ -33,42 +32,39 @@ export const getEnv = () => {
 }
 
 type NewPoolKey = typeof tPoolKey.$inferInsert
-type NewSignerMerkle = typeof signerMerkle.$inferSelect
+type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
+	permission: number
+}
 
 // list of different approved user to sign
 
 export async function getMerkle(
-	database: ReturnType<typeof getDb>["drizzle"]
+	database: ReturnType<typeof getDb>["drizzle"],
+	network: Networks
 ): Promise<[MerkleMap, NewSignerMerkle[]]> {
 	let users: NewSignerMerkle[] = []
 
-	const data = await database.select().from(signerMerkle).where(eq(signerMerkle.active, true))
+	const data = await database
+		.select({
+			id: signerMerkle.id,
+			publicKey: signerMerkle.publicKey,
+			createdAt: signerMerkle.createdAt,
+			permission: signerMerkleNetworks.permission
+		})
+		.from(signerMerkle)
+		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
+		.where(and(eq(signerMerkleNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
-	const allRight = new SignatureRight(
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true),
-		Bool(true)
-	)
-	const deployRight = SignatureRight.canDeployPool()
+	const allRightHash = Poseidon.hash(allRight.toFields())
+	const deployRightHash = Poseidon.hash(deployPoolRight.toFields())
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
-		let right = allRight.hash()
-		switch (x.permission) {
-			case "deploy":
-				right = deployRight.hash()
-				break
-			default:
-				right = allRight.hash()
-				break
-		}
+		const rightHash = Poseidon.hash(Field(x.permission).toFields())
 		const pubKey = PublicKey.fromBase58(x.publicKey)
-		merkle.set(Poseidon.hash(pubKey.toFields()), right)
+		merkle.set(Poseidon.hash(pubKey.toFields()), rightHash)
 
-		if (x.permission === "all") {
+		if (x.permission === Number(allRight)) {
 			users.push(x)
 		}
 	})
@@ -170,7 +166,8 @@ export const compileContracts = async () => {
 	console.time("compile")
 	const cache = Cache.FileSystem("./cache")
 	console.log("compile pool factory")
-	await PoolFactory.compile({ cache })
+	const vk = await PoolFactory.compile({ cache })
+	console.log("factory vk hash", vk.verificationKey.hash.toBigInt())
 	console.log("compile pool fungible token")
 	await FungibleToken.compile({ cache })
 	console.timeEnd("compile")

@@ -1,7 +1,9 @@
 /** biome-ignore-all lint/style/noUnusedTemplateLiteral: SQL */
 
 import readline from "node:readline" // Import the readline module
-import { client } from "@/db"
+import { getDb } from "@/db"
+
+const client = getDb().client
 
 const rl = readline.createInterface({
 	input: process.stdin,
