@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { PoolFactory } from "@lumina-dex/contracts"
+import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -147,7 +147,7 @@ describe("Signature", () => {
 		const [merkleMap, data] = await getMerkle(db, network)
 
 		// Pick two signers with permission 'all' for the test
-		const testSigners = data.filter((x) => x.permission === "all").slice(0, 2)
+		const testSigners = data.filter((x) => x.permission === Number(allRight)).slice(0, 2)
 		if (testSigners.length < 2)
 			throw new Error("Need at least 2 active signers with 'all' permission in DB")
 
@@ -217,7 +217,7 @@ describe("Signature", () => {
 						await db.insert(signerMerkleNetworks).values({
 							signerId: signerAId,
 							network,
-							permission: "all",
+							permission: Number(allRight),
 							active: true
 						})
 					}
@@ -231,7 +231,7 @@ describe("Signature", () => {
 						await db.insert(signerMerkleNetworks).values({
 							signerId: signerBId,
 							network,
-							permission: "all",
+							permission: Number(allRight),
 							active: true
 						})
 					}

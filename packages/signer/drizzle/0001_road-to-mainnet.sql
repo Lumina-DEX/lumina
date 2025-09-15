@@ -26,14 +26,22 @@ CREATE TABLE "SignerMerkleNetworks" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"signer_id" integer NOT NULL,
 	"network" text NOT NULL,
-	"permission" text NOT NULL,
+	"permission" integer NOT NULL,
 	"active" boolean DEFAULT true NOT NULL
 );
 
 
--- 2. Insérer les entrées correspondantes
+-- 2. Insert permission in new table
 INSERT INTO "SignerMerkleNetworks" ("signer_id", "network", "permission", "active")
-SELECT s.id, n.network, s.permission, true
+SELECT 
+    s.id, 
+    n.network, 
+    CASE 
+        WHEN s.permission = 'all' THEN 31
+        WHEN s.permission = 'deploy' THEN 1
+        ELSE 0 
+    END,
+    true
 FROM "SignerMerkle" s
 JOIN "Networks" n
   ON n.network IN ('mina:devnet', 'zeko:testnet')

@@ -33,7 +33,7 @@ export const getEnv = () => {
 }
 
 type NewPoolKey = typeof tPoolKey.$inferInsert
-type NewSignerMerkle = typeof signerMerkle.$inferSelect & { permission: string }
+type NewSignerMerkle = typeof signerMerkle.$inferSelect & { permission: number }
 
 // list of different approved user to sign
 
@@ -59,19 +59,11 @@ export async function getMerkle(
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
-		let right = allRightHash
-		switch (x.permission) {
-			case "deploy":
-				right = deployRightHash
-				break
-			default:
-				right = allRightHash
-				break
-		}
+		let rightHash = Poseidon.hash(Field(x.permission).toFields())
 		const pubKey = PublicKey.fromBase58(x.publicKey)
-		merkle.set(Poseidon.hash(pubKey.toFields()), right)
+		merkle.set(Poseidon.hash(pubKey.toFields()), rightHash)
 
-		if (x.permission === "all") {
+		if (x.permission === Number(allRight)) {
 			users.push(x)
 		}
 	})

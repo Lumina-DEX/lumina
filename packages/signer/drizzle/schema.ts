@@ -109,9 +109,7 @@ export const signerMerkleNetworks = pgTable("SignerMerkleNetworks", {
 		.notNull()
 		.references(() => dbNetworks.network),
 
-	permission: text("permission", {
-		enum: ["deploy", "all"] as const
-	}).notNull(),
+	permission: integer("permission").notNull(),
 
 	active: boolean("active").notNull().default(true)
 })
