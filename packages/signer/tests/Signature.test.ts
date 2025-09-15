@@ -13,13 +13,7 @@ import {
 } from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
-import {
-	dbNetworks,
-	pool,
-	signerMerkle,
-	signerMerkleNetworks,
-	poolKey as tPoolKey
-} from "../drizzle/schema"
+import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
 import { getDb } from "../src/db"
 import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
 

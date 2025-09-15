@@ -1,9 +1,7 @@
-import { deployPoolRight, Multisig, MultisigInfo, PoolFactory } from "@lumina-dex/contracts"
+import { deployPoolRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
-
 import {
 	fetchAccount,
-	Field,
 	Mina,
 	Poseidon,
 	PrivateKey,
@@ -11,17 +9,10 @@ import {
 	PublicKey,
 	Signature,
 	TokenId,
-	UInt32,
 	UInt64
 } from "o1js"
 import { getDb } from "@/db"
-import {
-	dbNetworks,
-	pool,
-	poolKey as tPoolKey,
-	factory as dbFactory,
-	factory
-} from "../../drizzle/schema"
+import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
 	fundNewAccount,
@@ -31,7 +22,6 @@ import {
 	getNetwork,
 	getUniqueUserPairs
 } from "../helpers"
-import { eq } from "drizzle-orm"
 
 export const createPoolAndTransaction = async ({
 	tokenA,
@@ -106,7 +96,10 @@ export const createPoolAndTransaction = async ({
 
 		const isMinaTokenPool = token0.isEmpty().toBoolean()
 		if (isMinaTokenPool) {
-			const tokenAccount = await fetchAccount({ publicKey: token1, tokenId: factoryTokenId })
+			const tokenAccount = await fetchAccount({
+				publicKey: token1,
+				tokenId: factoryTokenId
+			})
 			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
 			if (balancePool.toBigInt() > 0n) {
 				throw new Error(`Token ${token1.toBase58()} had already a pool`)
@@ -115,7 +108,10 @@ export const createPoolAndTransaction = async ({
 			const fields = token0.toFields().concat(token1.toFields())
 			const hash = Poseidon.hashToGroup(fields)
 			const pairPublickey = PublicKey.fromGroup(hash)
-			const tokenAccount = await fetchAccount({ publicKey: pairPublickey, tokenId: factoryTokenId })
+			const tokenAccount = await fetchAccount({
+				publicKey: pairPublickey,
+				tokenId: factoryTokenId
+			})
 			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
 			if (balancePool.toBigInt() > 0n) {
 				throw new Error(`Token ${token0.toBase58()} and ${token1.toBase58()} had already a pool`)

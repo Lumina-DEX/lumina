@@ -1,10 +1,9 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { allRight, deployPoolRight, FungibleToken, PoolFactory } from "@lumina-dex/contracts"
-import { defaultCreationFee, defaultFee, networks, type Networks, urls } from "@lumina-dex/sdk"
+import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
-	Bool,
 	Cache,
 	Encoding,
 	Encryption,
@@ -33,7 +32,9 @@ export const getEnv = () => {
 }
 
 type NewPoolKey = typeof tPoolKey.$inferInsert
-type NewSignerMerkle = typeof signerMerkle.$inferSelect & { permission: number }
+type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
+	permission: number
+}
 
 // list of different approved user to sign
 
@@ -59,7 +60,7 @@ export async function getMerkle(
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
-		let rightHash = Poseidon.hash(Field(x.permission).toFields())
+		const rightHash = Poseidon.hash(Field(x.permission).toFields())
 		const pubKey = PublicKey.fromBase58(x.publicKey)
 		merkle.set(Poseidon.hash(pubKey.toFields()), rightHash)
 

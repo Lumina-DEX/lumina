@@ -1,4 +1,3 @@
-import { pool } from "../../drizzle/schema"
 import { compileContracts } from "../helpers"
 import { createPoolAndTransaction } from "./logic"
 
@@ -19,7 +18,10 @@ export default async function (job) {
 		if (!job.id) {
 			throw new Error("No job id")
 		}
-		const result = await createPoolAndTransaction({ ...job.data, jobId: job.id })
+		const result = await createPoolAndTransaction({
+			...job.data,
+			jobId: job.id
+		})
 		console.log("job end", job.id)
 		return result
 	} catch (error) {

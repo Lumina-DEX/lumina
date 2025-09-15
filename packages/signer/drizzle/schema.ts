@@ -21,7 +21,7 @@ export const signerMerkle = pgTable(
 )
 
 // Table: Networks
-export const dbNetworks = pgTable("Networks", {
+export const dbNetworks = pgTable("Network", {
 	network: text("network", {
 		enum: ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
 	}).primaryKey(),
@@ -97,7 +97,7 @@ export const poolKey = pgTable("PoolKey", {
 })
 
 // Table: SignerMerkleNetworks
-export const signerMerkleNetworks = pgTable("SignerMerkleNetworks", {
+export const signerMerkleNetworks = pgTable("SignerMerkleNetwork", {
 	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 
