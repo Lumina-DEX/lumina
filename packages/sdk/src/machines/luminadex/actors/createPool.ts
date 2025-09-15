@@ -60,7 +60,7 @@ export const checkJobStatus = fromObservable(
 				.subscribe((result) => {
 					logger.info("Received subscription result:", result)
 					if (result.error) {
-						observer.error(result.error)
+						observer.error(result.error.message)
 						return
 					}
 
@@ -126,6 +126,7 @@ export const createPoolMachine = setup({
 				hash: string
 				url: string
 			}
+			error?: unknown
 		},
 		input: {} as {
 			tokenA: string
@@ -157,7 +158,8 @@ export const createPoolMachine = setup({
 		transaction: {
 			hash: "",
 			url: ""
-		}
+		},
+		error: undefined
 	}),
 	states: {
 		INIT: {
@@ -200,7 +202,12 @@ export const createPoolMachine = setup({
 						job: { ...context.job, id: event.output.jobId }
 					}))
 				},
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "ERRORED",
+					actions: assign(({ event }) => ({
+						error: event.error
+					}))
+				}
 			}
 		},
 		WAITING_FOR_PROOF: {
@@ -213,7 +220,12 @@ export const createPoolMachine = setup({
 					}))
 				},
 				onDone: { target: "SIGNING" },
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "ERRORED",
+					actions: assign(({ event }) => ({
+						error: event.error
+					}))
+				}
 			}
 		},
 		SIGNING: {

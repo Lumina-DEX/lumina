@@ -1,6 +1,7 @@
 import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import Loading from "./Loading"
+import { useEffect } from "react"
 
 const PoolCreationJob = ({
 	actor
@@ -15,7 +16,9 @@ const PoolCreationJob = ({
 			<div className="flex flex-col items-center">
 				<h5>Status : {poolState.status}</h5>
 				{(poolState.status === "ERRORED" || poolState.status === "FAILED") && (
-					<span>Check that the token is deployed and that no pool already exists for it</span>
+					<span className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+						{poolState.context.error?.toString()}
+					</span>
 				)}
 				{poolState.status === "COMPLETED" && <span> Pool created successfully</span>}
 				{poolState.status !== "COMPLETED" &&
