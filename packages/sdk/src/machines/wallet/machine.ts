@@ -62,7 +62,7 @@ export const createWalletMachine = (
 			 */
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
 				if (!window.mina) {
-					sendBack({ type: "NoMinaWalletDetected" })
+					sendBack({ type: "WalletExtensionNotDetected" })
 					return () => {
 						logger.error("listenToWalletChange : No Mina wallet detected")
 					}
@@ -203,7 +203,7 @@ export const createWalletMachine = (
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },
 		on: {
-			NoMinaWalletDetected: {
+			WalletExtensionNotDetected: {
 				target: ".UNSUPPORTED",
 				actions: emit({ type: "NoMinaWalletDetected" })
 			},

@@ -56,7 +56,7 @@ export type WalletEvent =
 	| { type: "Disconnect" }
 	| { type: "SetAccount"; account: string }
 	| { type: "FetchBalance"; network: Networks; tokens: CustomToken[] }
-	| { type: "NoMinaWalletDetected" }
+	| { type: "WalletExtensionNotDetected" }
 
 export type WalletEmit =
 	| { type: "NetworkChanged"; network: Networks }
