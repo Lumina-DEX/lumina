@@ -1,5 +1,7 @@
 packages:
   - packages/**
-  - packages/contracts-cdn/container/**
+  - apps/**
 onlyBuiltDependencies:
   - lefthook
+patchedDependencies:
+  "@gql.tada/internal": "patches/@gql.tada__internal.patch"

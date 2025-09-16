@@ -28,8 +28,9 @@
 		"wrangler": "4.22.0"
 	},
 	"dependencies": {
-		"@cloudflare/containers": "^0.0.23",
+		"@cloudflare/containers": "^0.0.28",
 		"drizzle-orm": "beta",
+		"graphql-request": "7.1.2",
 		"rou3": "^0.5.1",
 		"valibot": "^1.0.0"
 	}

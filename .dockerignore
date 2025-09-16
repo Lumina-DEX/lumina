@@ -1,33 +1,36 @@
-# Git
-.git
-.github
-.gitignore
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+cache
+dist
+.vitepress/cache
 
-# Node
+# Node dependencies
 node_modules
 
-# Docker
-.dockerignore
+# Logs
+logs
+*.log
 
-# Config files
-biome.json
-dprint.json
-lefthook.yml
+# Misc
+.DS_Store
+.fleet
+.idea
 
-# Env
+# Local env files
 .env
 .env.*
-.dev.vars
-.dev.vars.*
+!.env.example
 
-# Other
-*.md
-*.png
-LICENSE
-cache
-tests
-test
-dist
-docs
 .wrangler
-.vscode
+
+# Moon
+.moon/cache
+.git
+
+.next
+.open-next
+public

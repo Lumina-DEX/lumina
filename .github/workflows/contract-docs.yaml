@@ -22,15 +22,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: ./.github/workflows/actions/install
+      - uses: "moonrepo/setup-toolchain@v0"
+        with:
+          auto-install: true
+          auto-setup: true
 
-      - name: Build Contracts
-        run: bun run build
-        working-directory: packages/contracts
-
-      - name: Build docs
-        run: bun run generate:docs
-        working-directory: packages/contracts
+      - run: moon contracts:docs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -39,7 +36,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: packages/contracts/docs
-    
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

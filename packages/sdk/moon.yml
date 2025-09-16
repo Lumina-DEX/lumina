@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: library
+
+dependsOn:
+- contracts
+
+fileGroups:
+  sources:
+    - src/**/*
+    - scripts/**/*
+    - package.json
+    - tsconfig.json
+    
+tasks:
+  build:
+    command: unbuild
+    deps: [^:build]
+    inputs: 
+      - "@group(sources)"
+    outputs:
+      - dist/
+  lint:
+    command: "biome lint"
+    args: ["src/"]
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: "biome lint"
+    args: [--write, "src/"]
+    inputs:
+      - "@group(sources)"
+  schema-get-zeko:
+    command: gql-tada generate schema 'https://testnet.zeko.io/graphql' --output @out(0)
+    outputs:
+      - "src/graphql/zeko.graphql"
+  schema-get-mina:
+    command: gql-tada generate schema 'https://api.minascan.io/node/devnet/v1/graphql' --output @out(0)
+    outputs:
+      - "src/graphql/mina.graphql"
+  schema-get-mina-archive:
+    command: gql-tada generate schema 'https://api.minascan.io/archive/devnet/v1/graphql' --output @out(0)
+    outputs:
+      - "src/graphql/mina-archive.graphql"
+  schema-get-pool-signer:
+    command: gql-tada generate schema '../signer/graphql/schema.graphql' --output @out(0)
+    outputs:
+      - "src/graphql/pool-signer.graphql"
+  schema-get:
+    deps:
+      - "schema-get-zeko"
+      - "schema-get-mina"
+      - "schema-get-mina-archive"
+      - "schema-get-pool-signer"
+  docs-dev:
+    command: vitepress dev docs
+    preset: "server"
+  docs-build:
+    command: vitepress build docs
+    inputs:
+      - docs/**/*
+    outputs:
+      - docs/.vitepress/dist/
+  docs-preview:
+    command: vitepress preview docs
+    deps: [docs-build]
+    preset: "server"
+  docs-deploy:
+    command: wrangler deploy
+    deps: [build]
+  docs-deploy-preview:
+    command: wrangler versions upload
+    deps: [build]

@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-import { Queue, QueueEvents, Worker } from "bullmq"
+import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
 import type { createPoolAndTransaction } from "./workers/logic"
@@ -18,7 +18,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const file = join(__dirname, "workers", "sandbox.js")
 const processorUrl = pathToFileURL(file)
-const worker = new Worker("createPool", processorUrl, { connection, concurrency })
+const worker = new BullMqWorker("createPool", processorUrl, {
+	connection,
+	concurrency
+})
 
 //TODO: Figure out if singletons can be used in some cases.
 export const queues = () => {

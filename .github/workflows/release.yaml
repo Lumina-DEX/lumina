@@ -27,15 +27,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/workflows/actions/install
+      - uses: "moonrepo/setup-toolchain@v0"
+        with:
+          auto-install: true
+          auto-setup: true
 
       - name: Create Release PR and publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          title: 'release: update packages'
-          version: bun run version
-          publish: bun run publish:all
+          title: "release: update packages"
+          version: moon run version
+          publish: moon run publish
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

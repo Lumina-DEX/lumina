@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: application
+
+dependsOn:
+- sdk
+
+fileGroups:
+  sources:
+    - app.vue
+    - modules/**/*
+    - server/**/*
+    - public/**/*
+    - nuxt.config.ts
+    - package.json
+    - tsconfig.json
+
+tasks:
+  build:
+    command: nuxt build
+    deps: [^:build]
+    env: 
+      NITRO_PRESET: cloudflare-pages-static
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - "dist/"
+  preview:
+   command: wrangler pages dev dist/
+   preset: "server"
+   deps: [build]
+  dev:
+   command: nuxt dev
+   deps: [^:build]
+   preset: "server"
+  prepare:
+    command: nuxt prepare
+    outputs:
+      - .nuxt/
+  deploy:
+    command: wrangler pages deploy dist/
+    deps: [build]

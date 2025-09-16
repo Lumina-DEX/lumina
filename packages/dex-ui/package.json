@@ -2,18 +2,6 @@
 	"name": "@lumina-dex/dex-ui",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"dev": "next dev",
-		"build": "next build --no-lint",
-		"start": "next start",
-		"lint": "bunx @biomejs/biome lint src/",
-		"tsc": "tsc --noEmit",
-		"ts-watch": "tsc --noEmit --incremental --watch",
-		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-		"deploy:pr": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
-	},
 	"dependencies": {
 		"@emotion/react": "^11.13.3",
 		"@emotion/styled": "^11.13.0",

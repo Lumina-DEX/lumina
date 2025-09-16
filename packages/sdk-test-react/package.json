@@ -2,14 +2,6 @@
 	"name": "sdk-test-react",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"typecheck": "tsc --noEmit",
-		"dev": "vite --port=3003",
-		"build": "vite build",
-		"deploy:cf": "wrangler pages deploy dist/",
-		"serve": "vite preview",
-		"start": "vite"
-	},
 	"devDependencies": {
 		"@tanstack/router-plugin": "^1.97.0",
 		"@types/react": "^18.3.3",

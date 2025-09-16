@@ -27,23 +27,6 @@
       "import": "./dist/index.js"
     }
   },
-  "scripts": {
-    "generate:docs": "pnpx typedoc src/indexpool.ts --out ./docs",
-    "build:tsc": "tsc --project tsc.tsconfig.json",
-    "build": "rollup -c rollup.config.mjs",
-    "format": "dprint check --verbose",
-    "format:fix": "dprint fmt --verbose",
-    "lint": "eslint src/* tests/*",
-    "lint:fix": "eslint src/* tests/* --fix",
-    "test": "vitest run --testTimeout=150000",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "test:factory": "vitest run Factory --testTimeout=150000",
-    "test:faucet": "vitest run Faucet --testTimeout=150000",
-    "test:data": "vitest run PoolData --testTimeout=150000",
-    "test:token": "vitest run PoolToken --testTimeout=150000",
-    "test:multisig": "vitest run Multisig --testTimeout=150000"
-  },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.1",
     "@vitest/coverage-v8": "2.1.6",
