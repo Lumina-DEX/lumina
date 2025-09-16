@@ -61,6 +61,12 @@ export const createWalletMachine = (
 			 * Invoked on initialization to listen to Mina wallet changes.
 			 */
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
+				if (!window.mina) {
+					sendBack({ type: "NoMinaWalletDetected" })
+					return () => {
+						logger.error("listenToWalletChange : No Mina wallet detected")
+					}
+				}
 				window.mina.on("chainChanged", ({ networkID }: ChainInfoArgs) => {
 					logger.info("User manually changed network", networkID)
 					sendBack({ type: "WalletExtensionChangedNetwork", network: toNetwork(networkID) })
@@ -197,6 +203,10 @@ export const createWalletMachine = (
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },
 		on: {
+			NoMinaWalletDetected: {
+				target: ".UNSUPPORTED",
+				actions: emit({ type: "NoMinaWalletDetected" })
+			},
 			WalletExtensionChangedNetwork: {
 				target: ".FETCHING_BALANCE",
 				description:
@@ -320,6 +330,7 @@ export const createWalletMachine = (
 						}
 					}
 				}
-			}
+			},
+			UNSUPPORTED: { type: "final" }
 		}
 	})

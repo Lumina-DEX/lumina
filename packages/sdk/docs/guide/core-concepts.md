@@ -48,6 +48,7 @@ CONNECTING.class: node
 FETCHING_BALANCE.class: node
 READY.class: node
 SWITCHING_NETWORK.class: node
+UNSUPPORTED.class: node
 
 INIT -> CONNECTING: Connect { class: anim }
 CONNECTING -> FETCHING_BALANCE: SetAccount { class: anim }
@@ -55,6 +56,7 @@ FETCHING_BALANCE -> READY: success { class: anim }
 READY -> SWITCHING_NETWORK: RequestNetworkChange { class: anim }
 READY -> FETCHING_BALANCE: FetchBalance { class: anim }
 SWITCHING_NETWORK -> FETCHING_BALANCE: setWalletNetwork { class: anim }
+INIT -> UNSUPPORTED: NoMinaWalletDetected { class: anim }
 ```
 
 ### DEX Machine
@@ -97,15 +99,31 @@ style: {
 Calculating {
 
   READY: Ready {
+    shape: step
+  }
+  SUCCESS: Ready {
+    shape: step
+  }
+  DONE: Ready {
     shape: circle
   }
 
-  Ready -> CALCULATING_SWAP_AMOUNT
-  Ready -> CALCULATING_ADD_LIQUIDITY_AMOUNT
-  Ready -> CALCULATING_REMOVE_LIQUIDITY_AMOUNT
-  CALCULATING_SWAP_AMOUNT -> SWAPPING 
-  CALCULATING_ADD_LIQUIDITY_AMOUNT -> ADDING_LIQUIDITY
-  CALCULATING_REMOVE_LIQUIDITY_AMOUNT -> REMOVING_LIQUIDITY
+
+  Ready -> CALCULATING_SWAP_AMOUNT: ChangeSwapSettings
+  Ready -> CALCULATING_ADD_LIQUIDITY_AMOUNT: ChangeAddLiquiditySettings
+  Ready -> CALCULATING_REMOVE_LIQUIDITY_AMOUNT: ChangeRemoveLiquiditySettings
+
+  CALCULATING_SWAP_AMOUNT -> SUCCESS: Done 
+  CALCULATING_ADD_LIQUIDITY_AMOUNT -> SUCCESS: Done
+  CALCULATING_REMOVE_LIQUIDITY_AMOUNT -> SUCCESS: Done
+
+  SUCCESS -> SWAPPING: Swap
+  SUCCESS -> ADDING_LIQUIDITY: AddLiquidity
+  SUCCESS -> REMOVING_LIQUIDITY: RemoveLiquidity
+
+  SWAPPING -> DONE: Done
+  ADDING_LIQUIDITY -> DONE: Done
+  REMOVING_LIQUIDITY -> DONE: Done
 }
 ```
 
@@ -119,15 +137,29 @@ style: {
   
 Operations {
   READY: Ready {
+    shape: step
+  }
+  UNSUPPORTED: Unsupported {
+    shape: diamond
+  }
+  SUCCESS: Ready{
     shape: circle
   }
 
-  Ready -> DEPLOYING_TOKEN
-  Ready -> DEPLOYING_POOL
-  Ready -> CLAIMING_FROM_FAUCET
-  Ready -> MINTING
+  Ready -> DEPLOYING_TOKEN: DeployToken
+  Ready -> DEPLOYING_POOL: DeployPool
+  Ready -> CLAIMING_FROM_FAUCET: ClaimTokensFromFaucet
+  Ready -> MINTING: MintToken
+  Ready -> UNSUPPORTED: NoMinaWalletDetected
+
+  DEPLOYING_TOKEN -> SUCCESS: Done
+  DEPLOYING_POOL -> SUCCESS: Done
+  CLAIMING_FROM_FAUCET -> SUCCESS: Done
+  MINTING -> SUCCESS: Done
 }
 ```
+
+> Both machines expose an `UNSUPPORTED` state when no Mina wallet provider is available in the browser. Use this to drive UI that recommends installing Auro Wallet.
 
 ## Network Types
 

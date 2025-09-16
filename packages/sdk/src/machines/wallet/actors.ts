@@ -16,6 +16,11 @@ export const detectWalletChange = fromCallback<
 	{ wallet: WalletActorRef },
 	WalletEmit
 >(({ sendBack, input: { wallet } }) => {
+	logger.info("Setting up wallet change listener actor")
+	if (wallet.getSnapshot().matches("UNSUPPORTED")) {
+		sendBack({ type: "NoMinaWalletDetected" })
+	}
+
 	const nc = wallet.on("NetworkChanged", (emitted) => {
 		logger.info("NetworkChanged received by actor", emitted)
 		sendBack({ type: "NetworkChanged", network: emitted.network })

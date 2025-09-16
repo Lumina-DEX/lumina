@@ -509,6 +509,7 @@ export const createLuminaDexMachine = () =>
 			input: ({ context }) => ({ wallet: context.wallet })
 		}),
 		on: {
+			NoMinaWalletDetected: { target: ".dexSystem.UNSUPPORTED" },
 			NetworkChanged: {
 				actions: enqueueActions(({ context, event }) => {
 					context.contract.worker.minaInstance(event.network)
@@ -1144,7 +1145,8 @@ export const createLuminaDexMachine = () =>
 								actions: assign(setDexError("Calculating Remove Liquidity Amount"))
 							}
 						}
-					}
+					},
+					UNSUPPORTED: { type: "final" }
 				}
 			}
 		}
