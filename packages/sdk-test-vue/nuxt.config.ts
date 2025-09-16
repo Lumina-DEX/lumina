@@ -1,11 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 const minify = false
-const webWorkerHeaders = {
-  "Cross-Origin-Opener-Policy": "same-origin",
+const headers = {
   "Cross-Origin-Resource-Policy": "same-site",
-  "Cross-Origin-Embedder-Policy": "require-corp"
-}
+  "Cross-Origin-Embedder-Policy": "require-corp",
+  "Cross-Origin-Opener-Policy": "same-origin"
+} as const
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -15,14 +15,12 @@ export default defineNuxtConfig({
   nitro: { static: true },
   ssr: false,
   routeRules: {
-    "/**": { headers: webWorkerHeaders }
+    "/**": { headers }
   },
   hooks: {
     "vite:serverCreated": (server) => {
-      server.middlewares.use((_req, res, next) => {
-        res.setHeader("Cross-Origin-Opener-Policy", "same-origin")
-        res.setHeader("Cross-Origin-Resource-Policy", "same-site")
-        res.setHeader("Cross-Origin-Embedder-Policy", "require-corp")
+      server.middlewares.use((_request, response, next) => {
+        response.setHeaders(new Headers(headers))
         next()
       })
     }
@@ -30,7 +28,7 @@ export default defineNuxtConfig({
   devServer: { port: 3100 },
   vite: {
     build: { minify },
-    server: { headers: webWorkerHeaders },
+    server: { headers },
     optimizeDeps: {
       include: ["@lumina-dex/sdk > react"],
       exclude: ["@lumina-dex/sdk"]

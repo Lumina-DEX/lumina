@@ -49,6 +49,7 @@ The DEX machine is a parallel state machine with two regions:
 - `DEX`: Main DEX state
   - `READY`: Ready for operations
   - `ERROR`: An error occurred
+- `UNSUPPORTED`: No compatible Mina wallet detected. This is a final state.
 - `CALCULATING_SWAP_AMOUNT`: Calculating swap outputs
 - `SWAPPING`: Executing a swap transaction
 - `CALCULATING_ADD_LIQUIDITY_AMOUNT`: Calculating liquidity addition
@@ -68,12 +69,19 @@ console.log("Contract system state:", state.value.contractSystem)
 console.log("DEX system state:", state.value.dexSystem)
 
 // Check specific states
-if (state.matches({ contractSystem: "CONTRACTS_READY" })) {
+if (Dex.getSnapshot().state.matches({ contractSystem: "CONTRACTS_READY" })) {
 	console.log("Contracts are ready")
 }
 
-if (state.matches({ dexSystem: "DEX.READY" })) {
+if (Dex.getSnapshot().state.matches({ dexSystem: "DEX.READY" })) {
 	console.log("DEX is ready for operations")
+}
+
+// Handle unsupported environment for DEX operations
+if (Dex.getSnapshot().state.matches({ dexSystem: "UNSUPPORTED" })) {
+	console.log(
+		"DEX unsupported: No Mina wallet detected. Ask user to install/enable wallet."
+	)
 }
 ```
 

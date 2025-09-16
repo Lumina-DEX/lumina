@@ -24,6 +24,7 @@ The wallet machine can be in one of these states:
 - `FETCHING_BALANCE`: Fetching account balances
 - `READY`: Connected and ready for operations
 - `SWITCHING_NETWORK`: Changing to a different network
+- `UNSUPPORTED`: No Mina wallet provider detected in the browser (e.g., no Auro Wallet). This is a final state.
 
 You can check the current state using:
 
@@ -32,8 +33,13 @@ const state = Wallet.getSnapshot()
 console.log("Current state:", state.value)
 
 // Check if in a specific state
-if (state.matches("READY")) {
+if (Wallet.getSnapshot().state.matches("READY")) {
 	console.log("Wallet is ready")
+}
+
+// Handle unsupported environments (no wallet extension installed)
+if (Wallet.getSnapshot().state.matches("UNSUPPORTED")) {
+	console.log("No Mina wallet detected. Prompt user to install Auro Wallet.")
 }
 ```
 
@@ -83,7 +89,7 @@ Wallet.send({
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	token: [{
+	tokens: [{
 		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9,
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
@@ -95,7 +101,7 @@ Wallet.send({
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	token: [{
+	tokens: [{
 		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9,
 		symbol: "LLP-USDC_MINA"
@@ -109,6 +115,7 @@ These events are handled internally and shouldn't be sent manually:
 
 - `WalletExtensionChangedNetwork`: Triggered when the user changes networks in their wallet
 - `SetAccount`: Sets the current account (triggered by `Connect` or wallet extension)
+- `NoMinaWalletDetected`: Triggered on initialization when no Mina provider is available in the browser. The machine transitions to `UNSUPPORTED` and emits this event for subscribers.
 
 ## Context
 
@@ -149,6 +156,7 @@ The wallet machine emits these events (which you can listen for):
 
 - `NetworkChanged`: When the network has been changed
 - `AccountChanged`: When the account has been changed
+- `NoMinaWalletDetected`: Emitted when no Mina wallet provider is detected and the machine transitions to `UNSUPPORTED`.
 
 ```ts
 Wallet.subscribe((state) => {
