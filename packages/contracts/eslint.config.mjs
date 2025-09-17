@@ -1,6 +1,6 @@
-import { builtinModules } from "module"
-import path from "path"
-import { fileURLToPath } from "url"
+import { builtinModules } from "node:module"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import { FlatCompat } from "@eslint/eslintrc"
 import jsLint from "@eslint/js"

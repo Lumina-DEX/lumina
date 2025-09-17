@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "packages/signer/**"
+      - ".github/workflows/pool-signer-test.yaml"
 permissions:
   contents: write
   pull-requests: write
@@ -31,16 +32,17 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/signer
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - uses: "moonrepo/setup-toolchain@v0"
-
+      - run: moon signer:db-migrate && moon signer:db-seed
       - run: moon signer:test-integration
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/signer
           INFISICAL_ENVIRONMENT: dev
           INFISICAL_PROJECT_ID: 1cae9006-c83d-415d-b207-c966c9d1df48
           INFISICAL_SECRET_NAME: POOL_SIGNER_PRIVATE_KEY

@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "packages/contracts-cdn/**"
+      - ".github/workflows/cdn-preview.yaml"
 permissions:
   contents: write
   pull-requests: write
@@ -38,10 +39,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           # Optional: Enable this if you want to have GitHub Deployments triggered
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          command: versions upload
-          workingDirectory: packages/contracts-cdn
-          wranglerVersion: "4"
-          packageManager: pnpm
+          command: moon contracts-cdn:deploy-preview
 
       - name: Comment on PR
         uses: actions/github-script@v7
