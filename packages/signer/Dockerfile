@@ -55,6 +55,7 @@ WORKDIR /app
 
 # Copy application from the build stage
 COPY --from=builder --chown=bun:bun /app/ .
+RUN moon setup
 
 ENV NODE_ENV=production
 EXPOSE 3001
