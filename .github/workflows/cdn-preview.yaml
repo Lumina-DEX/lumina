@@ -67,7 +67,7 @@ jobs:
 
               #### 🔍 Build Output
 
-              <details><summary>Output</summary>${output}</details>
+              <details><summary>Output</summary><pre>${output}</pre></details>
 
               > Deployed by Cloudflare Wrangler Action`
 
