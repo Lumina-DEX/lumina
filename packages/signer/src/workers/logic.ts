@@ -1,6 +1,5 @@
-import { PoolFactory, SignatureRight } from "@lumina-dex/contracts"
+import { deployPoolRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
-
 import {
 	fetchAccount,
 	Mina,
@@ -40,9 +39,7 @@ export const createPoolAndTransaction = async ({
 	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
 	console.debug("pool public Key", newPoolPublicKey.toBase58())
 
-	const deployRight = SignatureRight.canDeployPool()
-
-	const [merkle, users] = await getMerkle(db.drizzle)
+	const [merkle, users] = await getMerkle(db.drizzle, network)
 
 	const masterSigner = await getMasterSigner()
 	const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
@@ -50,6 +47,7 @@ export const createPoolAndTransaction = async ({
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
+
 		// insert this new pool in database
 		const result = await txOrm
 			.insert(pool)
@@ -98,7 +96,10 @@ export const createPoolAndTransaction = async ({
 
 		const isMinaTokenPool = token0.isEmpty().toBoolean()
 		if (isMinaTokenPool) {
-			const tokenAccount = await fetchAccount({ publicKey: token1, tokenId: factoryTokenId })
+			const tokenAccount = await fetchAccount({
+				publicKey: token1,
+				tokenId: factoryTokenId
+			})
 			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
 			if (balancePool.toBigInt() > 0n) {
 				throw new Error(`Token ${token1.toBase58()} had already a pool`)
@@ -107,7 +108,10 @@ export const createPoolAndTransaction = async ({
 			const fields = token0.toFields().concat(token1.toFields())
 			const hash = Poseidon.hashToGroup(fields)
 			const pairPublickey = PublicKey.fromGroup(hash)
-			const tokenAccount = await fetchAccount({ publicKey: pairPublickey, tokenId: factoryTokenId })
+			const tokenAccount = await fetchAccount({
+				publicKey: pairPublickey,
+				tokenId: factoryTokenId
+			})
 			const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
 			if (balancePool.toBigInt() > 0n) {
 				throw new Error(`Token ${token0.toBase58()} and ${token1.toBase58()} had already a pool`)
@@ -132,7 +136,7 @@ export const createPoolAndTransaction = async ({
 						masterSignerPublicKey,
 						signature,
 						witness,
-						deployRight
+						deployPoolRight
 					)
 					console.log("Mina token pool created successfully")
 				}
@@ -146,7 +150,7 @@ export const createPoolAndTransaction = async ({
 						masterSignerPublicKey,
 						signature,
 						witness,
-						deployRight
+						deployPoolRight
 					)
 				}
 			}

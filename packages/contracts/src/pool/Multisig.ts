@@ -1,94 +1,19 @@
-import { Bool, Field, MerkleMapWitness, Poseidon, Provable, PublicKey, Signature, Struct, UInt32 } from "o1js"
+import { Bool, Field, Gadgets, MerkleMapWitness, Poseidon, Provable, PublicKey, Signature, Struct, UInt32 } from "o1js"
 
-/**
- * Signature right to update pool information
- */
-export class SignatureRight extends Struct({
-  deployPool: Bool,
-  uppdatePool: Bool,
-  updateSigner: Bool,
-  updateProtocol: Bool,
-  updateDelegator: Bool,
-  updateFactory: Bool
-}) {
-  constructor(
-    deployPool: Bool,
-    uppdatePool: Bool,
-    updateSigner: Bool,
-    updateProtocol: Bool,
-    updateDelegator: Bool,
-    updateFactory: Bool
-  ) {
-    super({
-      deployPool,
-      uppdatePool,
-      updateSigner,
-      updateProtocol,
-      updateDelegator,
-      updateFactory
-    })
-  }
+export const updateSigner = "UpdateSigner"
+export const updateFactory = "UpdateFactory"
+export const updateDelegator = "UpdateDelegator"
+export const updateProtocol = "UpdateProtocol"
 
-  toFields(): Field[] {
-    return this.deployPool.toFields().concat(
-      this.uppdatePool.toFields().concat(
-        this.updateSigner.toFields().concat(
-          this.updateProtocol.toFields().concat(
-            this.updateDelegator.toFields().concat(
-              this.updateFactory.toFields()
-            )
-          )
-        )
-      )
-    )
-  }
+export const deployPoolRight = Field(1)
+export const updateSignerRight = Field(2)
+export const updateProtocolRight = Field(4)
+export const updateDelegatorRight = Field(8)
+export const updateFactoryRight = Field(16)
+export const allRight = Field(31) // 1+2+4+8+16
 
-  static canUpdatePool(): SignatureRight {
-    return new SignatureRight(Bool(false), Bool(true), Bool(false), Bool(false), Bool(false), Bool(false))
-  }
-
-  static canUpdateDelegator(): SignatureRight {
-    return new SignatureRight(Bool(false), Bool(false), Bool(false), Bool(false), Bool(true), Bool(false))
-  }
-
-  static canUpdateProtocol(): SignatureRight {
-    return new SignatureRight(Bool(false), Bool(false), Bool(false), Bool(true), Bool(false), Bool(false))
-  }
-
-  static canUpdateSigner(): SignatureRight {
-    return new SignatureRight(Bool(false), Bool(false), Bool(true), Bool(false), Bool(false), Bool(false))
-  }
-
-  static canUpdateFactory(): SignatureRight {
-    return new SignatureRight(Bool(false), Bool(false), Bool(false), Bool(false), Bool(false), Bool(true))
-  }
-
-  static canDeployPool(): SignatureRight {
-    return new SignatureRight(Bool(true), Bool(false), Bool(false), Bool(false), Bool(false), Bool(false))
-  }
-
-  /**
-   * Check if the user right match the necessary right
-   * @param right user right
-   */
-  hasRight(right: SignatureRight) {
-    const newRight = new SignatureRight(
-      right.deployPool.and(this.deployPool),
-      right.uppdatePool.and(this.uppdatePool),
-      right.updateSigner.and(this.updateSigner),
-      right.updateProtocol.and(this.updateProtocol),
-      right.updateDelegator.and(this.updateDelegator),
-      right.updateFactory.and(this.updateFactory)
-    )
-    return newRight.hash().equals(right.hash())
-  }
-
-  /**
-   * hash store in the signer merkle map
-   */
-  hash(): Field {
-    return Poseidon.hash(this.toFields())
-  }
+export function hasRight(userRight: Field, right: Field): Bool {
+  return Gadgets.and(userRight, right, 32).equals(right)
 }
 
 /**
@@ -116,54 +41,11 @@ export class UpdateFactoryInfo extends Struct({
    * @returns array of field of all parameters
    */
   toFields(): Field[] {
-    return this.newVkHash.toFields().concat(
-      this.deadlineSlot.toFields()
-    )
+    return UpdateFactoryInfo.toFields(this)
   }
 
   hash(): Field {
-    return Poseidon.hash(this.toFields())
-  }
-}
-
-/**
- * Information needed to update the pool verification key
- */
-export class UpgradeInfo extends Struct({
-  // contract to upgrade
-  contractAddress: PublicKey,
-  // subaccount to upgrade
-  tokenId: Field,
-  // new verification key hash to submit
-  newVkHash: Field,
-  // deadline to use this signature
-  deadlineSlot: UInt32
-}) {
-  constructor(value: {
-    contractAddress: PublicKey
-    tokenId: Field
-    newVkHash: Field
-    deadlineSlot: UInt32
-  }) {
-    super(value)
-  }
-
-  /**
-   * Data use to create the signature
-   * @returns array of field of all parameters
-   */
-  toFields(): Field[] {
-    return this.contractAddress.toFields().concat(
-      this.tokenId.toFields().concat(
-        this.newVkHash.toFields().concat(
-          this.deadlineSlot.toFields()
-        )
-      )
-    )
-  }
-
-  hash(): Field {
-    return Poseidon.hash(this.toFields())
+    return Poseidon.hashWithPrefix(updateFactory, this.toFields())
   }
 }
 
@@ -175,12 +57,15 @@ export class UpdateAccountInfo extends Struct({
   oldUser: PublicKey,
   // new account address
   newUser: PublicKey,
+  // signature right to use
+  right: Field,
   // deadline to use this signature
   deadlineSlot: UInt32
 }) {
   constructor(value: {
     oldUser: PublicKey
     newUser: PublicKey
+    right: Field
     deadlineSlot: UInt32
   }) {
     super(value)
@@ -191,15 +76,19 @@ export class UpdateAccountInfo extends Struct({
    * @returns array of field of all parameters
    */
   toFields(): Field[] {
-    return this.oldUser.toFields().concat(
-      this.newUser.toFields().concat(
-        this.deadlineSlot.toFields()
-      )
-    )
+    return UpdateAccountInfo.toFields(this)
   }
 
   hash(): Field {
-    return Poseidon.hash(this.toFields())
+    let prefix = ""
+    if (hasRight(this.right, updateDelegatorRight).toBoolean()) {
+      prefix = updateDelegator
+    } else if (hasRight(this.right, updateProtocolRight).toBoolean()) {
+      prefix = updateProtocol
+    } else {
+      throw new Error("Invalid right to update account")
+    }
+    return Poseidon.hashWithPrefix(prefix, this.toFields())
   }
 }
 
@@ -227,15 +116,11 @@ export class UpdateSignerData extends Struct({
    * @returns array of field of all parameters
    */
   toFields(): Field[] {
-    return this.oldRoot.toFields().concat(
-      this.newRoot.toFields().concat(
-        this.deadlineSlot.toFields()
-      )
-    )
+    return UpdateSignerData.toFields(this)
   }
 
   hash(): Field {
-    return Poseidon.hash(this.toFields())
+    return Poseidon.hashWithPrefix(updateSigner, this.toFields())
   }
 }
 export class MultisigInfo extends Struct({
@@ -259,7 +144,7 @@ export class MultisigInfo extends Struct({
    * @returns array of field of all parameters
    */
   toFields(): Field[] {
-    return this.messageHash.toFields()
+    return MultisigInfo.toFields(this)
   }
 }
 
@@ -274,13 +159,13 @@ export class SignatureInfo extends Struct({
   // signature created by this user
   signature: Signature,
   // right
-  right: SignatureRight
+  right: Field
 }) {
   constructor(value: {
     user: PublicKey
     witness: MerkleMapWitness
     signature: Signature
-    right: SignatureRight
+    right: Field
   }) {
     super(value)
   }
@@ -293,7 +178,7 @@ export class SignatureInfo extends Struct({
    */
   validate(merkle: Field, data: Field[]): Bool {
     const hashUser = Poseidon.hash(this.user.toFields())
-    const value = this.right.hash()
+    const value = Poseidon.hash(this.right.toFields())
     const [root, key] = this.witness.computeRootAndKey(value)
     root.assertEquals(merkle, "Invalid signer")
     key.assertEquals(hashUser, "Invalid key")
@@ -312,18 +197,22 @@ export class Multisig extends Struct({
     info: MultisigInfo
     signatures: SignatureInfo[]
   }) {
+    if (value.signatures.length !== 2) {
+      throw new Error("Need 2 signatures")
+    }
     super(value)
   }
 
   /**
-   * Check if the signature match the current user and data subbit
+   * Check if the signature match the current user and data submit
    * @param data needed to verify the signature
    */
   verifyUpdateFactory(updateInfo: UpdateFactoryInfo) {
-    const right = SignatureRight.canUpdateFactory()
+    const right = updateFactoryRight
     verifySignature(
       this.signatures,
       updateInfo.deadlineSlot,
+      updateFactory,
       this.info,
       this.info.approvedUpgrader,
       updateInfo.toFields(),
@@ -332,14 +221,15 @@ export class Multisig extends Struct({
   }
 
   /**
-   * Check if the signature match the current user and data subbit
+   * Check if the signature match the current user and data submit
    * @param data needed to verify the signature
    */
   verifyUpdateDelegator(updateInfo: UpdateAccountInfo) {
-    const right = SignatureRight.canUpdateDelegator()
+    const right = updateDelegatorRight
     verifySignature(
       this.signatures,
       updateInfo.deadlineSlot,
+      updateDelegator,
       this.info,
       this.info.approvedUpgrader,
       updateInfo.toFields(),
@@ -348,14 +238,15 @@ export class Multisig extends Struct({
   }
 
   /**
-   * Check if the signature match the current user and data subbit
+   * Check if the signature match the current user and data submit
    * @param data needed to verify the signature
    */
   verifyUpdateProtocol(updateInfo: UpdateAccountInfo) {
-    const right = SignatureRight.canUpdateProtocol()
+    const right = updateProtocolRight
     verifySignature(
       this.signatures,
       updateInfo.deadlineSlot,
+      updateProtocol,
       this.info,
       this.info.approvedUpgrader,
       updateInfo.toFields(),
@@ -377,19 +268,27 @@ export class MultisigSigner extends Struct({
     signatures: SignatureInfo[]
     newSignatures: SignatureInfo[]
   }) {
+    if (value.signatures.length !== 2) {
+      throw new Error("Need 2 signatures")
+    }
+    if (value.newSignatures.length !== 2) {
+      throw new Error("Need 2 new signatures")
+    }
     super(value)
   }
 
   /**
-   * Check if the signature match the current user and data subbit
+   * Check if the signature match the current user and data submit
    * @param data needed to verify the signature
    */
   verifyUpdateSigner(upgradeInfo: UpdateSignerData) {
-    const right = SignatureRight.canUpdateSigner()
+    const right = updateSignerRight
+    upgradeInfo.oldRoot.equals(this.info.approvedUpgrader).assertTrue("Merkle root doesn't match")
     upgradeInfo.oldRoot.equals(upgradeInfo.newRoot).assertFalse("Can't reuse same merkle")
     verifySignature(
       this.signatures,
       upgradeInfo.deadlineSlot,
+      updateSigner,
       this.info,
       this.info.approvedUpgrader,
       upgradeInfo.toFields(),
@@ -398,6 +297,7 @@ export class MultisigSigner extends Struct({
     verifySignature(
       this.newSignatures,
       upgradeInfo.deadlineSlot,
+      updateSigner,
       this.info,
       upgradeInfo.newRoot,
       upgradeInfo.toFields(),
@@ -412,20 +312,21 @@ export class MultisigSigner extends Struct({
 export function verifySignature(
   signatures: SignatureInfo[],
   deadlineSlot: UInt32,
+  prefix: string,
   info: MultisigInfo,
   root: Field,
   data: Field[],
-  right: SignatureRight
+  right: Field
 ) {
   info.deadlineSlot.equals(deadlineSlot).assertTrue("Deadline doesn't match")
   // check the signature come from 2 different users
   signatures[0].user.equals(signatures[1].user).assertFalse("Can't include same signer")
 
-  const hash = Poseidon.hash(data)
+  const hash = Poseidon.hashWithPrefix(prefix, data)
   for (let index = 0; index < signatures.length; index++) {
     const element = signatures[index]
     // check if he can upgrade a pool
-    element.right.hasRight(right).assertTrue("User doesn't have the right for this operation")
+    hasRight(element.right, right).assertTrue("User doesn't have the right for this operation")
     // verfify the signature validity for all users
     const valid = element.validate(root, data)
     // hash valid

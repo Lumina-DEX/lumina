@@ -18,7 +18,9 @@ import {
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  allRight,
   claimerNumber,
+  deployPoolRight,
   Farm,
   FarmingEvent,
   FarmMerkleWitness,
@@ -28,12 +30,12 @@ import {
   FungibleToken,
   FungibleTokenAdmin,
   minTimeUnlockFarmReward,
+  Multisig,
   MultisigInfo,
   Pool,
   PoolFactory,
   PoolTokenHolder,
   SignatureInfo,
-  SignatureRight,
   UpdateSignerData
 } from "../dist"
 
@@ -55,8 +57,6 @@ describe("Farming pool token", () => {
     dylanPublic: PublicKey,
     senderPublic: PublicKey,
     deployerPublic: PublicKey,
-    allRight: SignatureRight,
-    deployRight: SignatureRight,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: PoolFactory,
@@ -123,9 +123,6 @@ describe("Farming pool token", () => {
     dylanPublic = dylanAccount.key.toPublicKey()
     deployerPublic = deployerKey.toPublicKey()
 
-    allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-    deployRight = SignatureRight.canDeployPool()
-
     zkAppPrivateKey = PrivateKey.random()
     zkAppAddress = zkAppPrivateKey.toPublicKey()
     zkApp = new PoolFactory(zkAppAddress)
@@ -163,11 +160,13 @@ describe("Farming pool token", () => {
 
     tokenHolder = new PoolTokenHolder(zkPoolAddress, zkToken0.deriveTokenId())
 
+    const allRightHash = Poseidon.hash(allRight.toFields())
+
     merkle = new MerkleMap()
-    merkle.set(Poseidon.hash(bobPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(alicePublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(senderPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(deployerPublic.toFields()), deployRight.hash())
+    merkle.set(Poseidon.hash(bobPublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(alicePublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(senderPublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(deployerPublic.toFields()), Poseidon.hash(deployPoolRight.toFields()))
 
     const root = merkle.getRoot()
 
@@ -179,7 +178,6 @@ describe("Farming pool token", () => {
 
     const signBob = Signature.create(bobKey, info.toFields())
     const signAlice = Signature.create(aliceKey, info.toFields())
-    const signDylan = Signature.create(senderAccount.key, info.toFields())
 
     const multi = new MultisigInfo({
       approvedUpgrader: root,
@@ -198,13 +196,7 @@ describe("Farming pool token", () => {
       signature: signAlice,
       right: allRight
     })
-    const infoDylan = new SignatureInfo({
-      user: senderPublic,
-      witness: merkle.getWitness(Poseidon.hash(senderPublic.toFields())),
-      signature: signDylan,
-      right: allRight
-    })
-    const array = [infoBob, infoAlice, infoDylan]
+    const array = [infoBob, infoAlice]
 
     const txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
@@ -214,8 +206,7 @@ describe("Farming pool token", () => {
         protocol: aliceAccount,
         delegator: dylanAccount,
         approvedSigner: root,
-        signatures: array,
-        multisigInfo: multi
+        multisig: new Multisig({ info: multi, signatures: array })
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount

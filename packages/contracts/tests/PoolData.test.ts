@@ -4,6 +4,8 @@ import { AccountUpdate, Bool, Cache, Mina, PrivateKey, UInt8 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  allRight,
+  deployPoolRight,
   mulDiv,
   Multisig,
   MultisigInfo,
@@ -11,12 +13,12 @@ import {
   PoolFactory,
   PoolTokenHolder,
   SignatureInfo,
-  SignatureRight,
   UpdateAccountInfo,
-  UpdateSignerData
+  updateDelegatorRight,
+  updateProtocolRight,
+  UpdateSignerData,
+  updateSignerRight
 } from "../dist"
-
-import { PoolUpgradeTest } from "./PoolUpgradeTest"
 
 const proofsEnabled = false
 
@@ -44,9 +46,6 @@ describe("Pool data", () => {
     deployerPublic: PublicKey,
     bobPublic: PublicKey,
     alicePublic: PublicKey,
-    allRight: SignatureRight,
-    signerRight: SignatureRight,
-    deployRight: SignatureRight,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
     zkApp: PoolFactory,
@@ -134,14 +133,14 @@ describe("Pool data", () => {
     tokenHolder = new PoolTokenHolder(zkPoolAddress, zkToken.deriveTokenId())
 
     merkle = new MerkleMap()
-    allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-    deployRight = SignatureRight.canDeployPool()
-    signerRight = SignatureRight.canUpdateSigner()
-    merkle.set(Poseidon.hash(bobPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(alicePublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(senderPublic.toFields()), signerRight.hash())
-    merkle.set(Poseidon.hash(dylanPublic.toFields()), allRight.hash())
-    merkle.set(Poseidon.hash(deployerPublic.toFields()), deployRight.hash())
+    const allRightHash = Poseidon.hash(allRight.toFields())
+
+    merkle = new MerkleMap()
+    merkle.set(Poseidon.hash(bobPublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(alicePublic.toFields()), allRightHash)
+    merkle.set(Poseidon.hash(senderPublic.toFields()), Poseidon.hash(updateSignerRight.toFields()))
+    merkle.set(Poseidon.hash(deployerPublic.toFields()), Poseidon.hash(deployPoolRight.toFields()))
+    merkle.set(Poseidon.hash(dylanPublic.toFields()), allRightHash)
     const root = merkle.getRoot()
 
     const today = new Date()
@@ -174,13 +173,7 @@ describe("Pool data", () => {
       signature: signAlice,
       right: allRight
     })
-    const infoDylan = new SignatureInfo({
-      user: dylanPublic,
-      witness: merkle.getWitness(Poseidon.hash(dylanPublic.toFields())),
-      signature: signFromBase58,
-      right: allRight
-    })
-    const array = [infoBob, infoAlice, infoDylan]
+    const array = [infoBob, infoAlice]
 
     const txn = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
@@ -190,8 +183,7 @@ describe("Pool data", () => {
         protocol: aliceAccount,
         delegator: dylanAccount,
         approvedSigner: root,
-        signatures: array,
-        multisigInfo: multi
+        multisig: new Multisig({ info: multi, signatures: array })
       })
       await zkTokenAdmin.deploy({
         adminPublicKey: deployerAccount
@@ -232,7 +224,7 @@ describe("Pool data", () => {
     const witness = merkle.getWitness(Poseidon.hash(deployerPublic.toFields()))
     const txn3 = await Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(zkPoolAddress, zkTokenAddress, deployerAccount, signature, witness, deployRight)
+      await zkApp.createPool(zkPoolAddress, zkTokenAddress, deployerAccount, signature, witness, deployPoolRight)
     })
 
     // console.log("Pool creation au", txn3.transaction.accountUpdates.length);
@@ -246,7 +238,12 @@ describe("Pool data", () => {
     today.setDate(today.getDate() + 1)
     const tomorrow = today.getTime()
     const time = getSlotFromTimestamp(tomorrow)
-    const info = new UpdateAccountInfo({ oldUser, newUser, deadlineSlot: UInt32.from(time) })
+    const info = new UpdateAccountInfo({
+      oldUser,
+      newUser,
+      right: delegator ? updateDelegatorRight : updateProtocolRight,
+      deadlineSlot: UInt32.from(time)
+    })
 
     const signBob = Signature.create(bobKey, info.toFields())
     const signAlice = Signature.create(aliceKey, info.toFields())
@@ -272,18 +269,6 @@ describe("Pool data", () => {
 
     return new Multisig({ info: multi, signatures: array })
   }
-
-  it("update pool factory", async () => {
-    const txn1 = await Mina.transaction(deployerAccount, async () => {
-      // await zkApp.updateVerificationKey(compileKey);
-    })
-    await txn1.prove()
-    await txn1.sign([deployerKey, bobKey]).send()
-
-    const poolDatav2 = new PoolUpgradeTest(zkAppAddress)
-    const version = await poolDatav2.version()
-    expect(version?.toBigInt()).toEqual(33n)
-  })
 
   it("math test", async () => {
     const result = 150n * 12000n / 300n
@@ -418,13 +403,13 @@ describe("Pool data", () => {
 
     await expect(Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(newPoolAddress, zkToken2Address, senderAccount, signature, witness, signerRight)
+      await zkApp.createPool(newPoolAddress, zkToken2Address, senderAccount, signature, witness, updateSignerRight)
     })).rejects.toThrow()
 
     // empty account failed too
     await expect(Mina.transaction(deployerAccount, async () => {
       AccountUpdate.fundNewAccount(deployerAccount, 4)
-      await zkApp.createPool(newPoolAddress, zkToken2Address, PublicKey.empty(), signature, witness, signerRight)
+      await zkApp.createPool(newPoolAddress, zkToken2Address, PublicKey.empty(), signature, witness, updateSignerRight)
     })).rejects.toThrow()
 
     /*merkle.setLeaf(2n, Poseidon.hash(senderAccount.toFields()));
