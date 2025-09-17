@@ -26,27 +26,15 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        # The command to run is passed as an input
+        set -o pipefail
         COMMAND_TO_RUN="${{ inputs.command }}"
-
         echo "Running deployment command: $COMMAND_TO_RUN"
-
-        # Define a temporary file to store the output
         OUTPUT_FILE=$(mktemp)
 
-        # Run the command and pipe its output to `tee`, which writes to both the console and our temp file
-        # The `set -o pipefail` command ensures that the action fails if the initial command fails,
-        # even if `tee` succeeds.
-        set -o pipefail
         $COMMAND_TO_RUN 2>&1 | tee "$OUTPUT_FILE"
-
-        # After the command is complete, read the full output from the file
         COMMAND_OUTPUT=$(cat "$OUTPUT_FILE")
+        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | grep -Eo 'https?://[-a-zA-Z0-9_.~!*()''%?&=#$+,/]+' | head -n 1 | sed 's/\.$//')
 
-        # Find the first URL using the regex from the wrangler-action source
-        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | grep -Eo 'https?:\/\/[a-zA-Z0-9-./]+' | head -n 1)
-
-        # Write outputs to the $GITHUB_OUTPUT file
         echo "command-output<<EOF" >> $GITHUB_OUTPUT
         echo "$COMMAND_OUTPUT" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
@@ -59,5 +47,4 @@ runs:
           echo "No deployment URL found."
         fi
 
-        # Clean up the temporary file
         rm "$OUTPUT_FILE"
