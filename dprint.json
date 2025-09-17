@@ -9,10 +9,21 @@
 		"printWidth": 120,
 		"useTabs": false
 	},
-	"excludes": ["**/node_modules"],
+	"yaml": {
+		"quotes": "forceDouble",
+		"formatComments": true,
+		"trailingComma": false
+	},
+	"excludes": [
+		"**/node_modules",
+		"**/worker-configuration.d.ts",
+		"pnpm-workspace.yaml",
+		"pnpm-lock.yaml"
+	],
 	"plugins": [
 		"https://plugins.dprint.dev/markdown-0.17.8.wasm",
 		"https://plugins.dprint.dev/biome-0.6.0.wasm",
-		"https://plugins.dprint.dev/g-plane/pretty_graphql-v0.2.0.wasm"
+		"https://plugins.dprint.dev/g-plane/pretty_graphql-v0.2.0.wasm",
+		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.5.1.wasm"
 	]
 }

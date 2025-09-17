@@ -176,3 +176,6 @@ dist
 
 TODO.md
 CLAUDE.md
+# moon
+.moon/cache
+.moon/docker

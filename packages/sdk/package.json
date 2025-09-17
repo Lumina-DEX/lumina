@@ -11,25 +11,6 @@
     "url": "git+https://github.com/Lumina-DEX/lumina.git",
     "directory": "packages/sdk"
   },
-  "scripts": {
-    "lint": "bunx @biomejs/biome lint src/",
-    "lint:fix": "bunx @biomejs/biome lint --write src/",
-    "format": "dprint check",
-    "format:fix": "dprint fmt --verbose",
-    "build": "unbuild",
-    "test": "echo 'test succesful'",
-    "schema:zeko:get": "gql-tada generate schema 'https://devnet.zeko.io/graphql' --output './src/graphql/zeko.graphql'",
-    "schema:mina:get": "gql-tada generate schema 'https://api.minascan.io/node/devnet/v1/graphql' --output './src/graphql/mina.graphql'",
-    "schema:mina:archive:get": "gql-tada generate schema 'https://api.minascan.io/archive/devnet/v1/graphql' --output './src/graphql/mina-archive.graphql'",
-    "schema:pool-signer:get": "gql-tada generate schema '../signer/graphql/schema.graphql' --output ./src/graphql/pool-signer.graphql",
-    "schema:get": "bun run schema:zeko:get && bun run schema:mina:get && bun run schema:mina:archive:get && bun run schema:poolsigner:get",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload",
-    "swap": "bunx --env-file=.env scripts/swap.ts"
-  },
   "files": [
     "dist"
   ],

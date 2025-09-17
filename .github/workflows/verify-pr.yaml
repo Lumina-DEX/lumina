@@ -10,7 +10,8 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
-      - uses: ytanikin/PRConventionalCommits@1.1.0
+      - name: ✅ Validate PR title (Conventional Commits)
+        uses: ytanikin/PRConventionalCommits@1.1.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert", "release"]'
           add_label: true
@@ -20,7 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-      - uses: prince-chrismc/label-merge-conflicts-action@v3
+      - name: 🏷️ Label merge conflicts
+        uses: prince-chrismc/label-merge-conflicts-action@v3
         with:
           conflict_label_name: "conflicts"
           github_token: ${{ github.token }}

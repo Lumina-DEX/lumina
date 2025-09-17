@@ -39,6 +39,7 @@
 	},
 	"exclude": ["test"],
 	"include": [
+		"container/**/*.ts",
 		"worker-configuration.d.ts",
 		"drizzle.config.ts",
 		"vitest.config.mts",
