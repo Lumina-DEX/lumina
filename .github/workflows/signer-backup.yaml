@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
+
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -16,49 +17,24 @@ jobs:
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
 
     steps:
-      - name: Create dump directory and filenames
+      - uses: actions/checkout@v2
+      - name: Run pg-dump
+        uses: tj-actions/pg-dump@v3
+        with:
+          database_url: ${{ env.SUPABASE_DB_URL }}
+          path: "backup.tar"
+          postgresql_version: "17"
+          options: "-O -F t" 
+
+      - name: Rename dump with timestamp
         run: |
-          mkdir -p ./dump
           TS=$(date +%Y%m%d_%H%M)
-          echo "DUMP_FILE=backup_$TS.dump" >> $GITHUB_ENV
-          echo "SQL_FILE=backup_$TS.sql" >> $GITHUB_ENV
-          echo "ARCHIVE_FILE=backup_$TS.tar.gz" >> $GITHUB_ENV
-
-      - name: Run pg_dump using PostgreSQL 17 Docker image
-        run: |
-          docker run --rm \
-            -e PGPASSWORD="$(echo $SUPABASE_DB_URL | sed -E 's/^.*:\/\/[^:]+:([^@]+)@.*$/\1/')" \
-            -v ${{ github.workspace }}/dump:/dump \
-            postgres:17 \
-            bash -c "
-              pg_dump \
-                -h $(echo $SUPABASE_DB_URL | sed -E 's/^.*@([^:]+):.*\/.*$/\1/') \
-                -U $(echo $SUPABASE_DB_URL | sed -E 's/^.*:\/\/([^:]+):.*@.*$/\1/') \
-                -p 5432 \
-                -F c \
-                -f /dump/${{ env.DUMP_FILE }} \
-                $(echo $SUPABASE_DB_URL | sed -E 's/^.*\/([^?]+)(\?.*)?$/\1/') && \
-              pg_dump \
-                -h $(echo $SUPABASE_DB_URL | sed -E 's/^.*@([^:]+):.*\/.*$/\1/') \
-                -U $(echo $SUPABASE_DB_URL | sed -E 's/^.*:\/\/([^:]+):.*@.*$/\1/') \
-                -p 5432 \
-                -F p \
-                -f /dump/${{ env.SQL_FILE }} \
-                $(echo $SUPABASE_DB_URL | sed -E 's/^.*\/([^?]+)(\?.*)?$/\1/')
-            "
-
-      - name: Create compressed archive
-        run: |
-          tar -czf dump/${{ env.ARCHIVE_FILE }} -C dump ${{ env.DUMP_FILE }} ${{ env.SQL_FILE }}
-          ls -lh dump/
+          NEW_FILE="backup_$TS.tar"
+          mv backup.tar $NEW_FILE
+          echo "ARCHIVE_FILE=$NEW_FILE" >> $GITHUB_ENV
+          ls -lh .
 
       - name: Upload archive to Cloudflare R2
         run: |
-          aws s3 cp dump/${{ env.ARCHIVE_FILE }} s3://$R2_BUCKET/${{ env.ARCHIVE_FILE }} \
+          aws s3 cp ${{ env.ARCHIVE_FILE }} s3://$R2_BUCKET/${{ env.ARCHIVE_FILE }} \
             --endpoint-url https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-
-
