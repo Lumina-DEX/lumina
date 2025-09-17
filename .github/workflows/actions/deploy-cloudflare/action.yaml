@@ -1,0 +1,63 @@
+name: "Cloudflare Deploy Action"
+description: "Runs a deploy command and grabs the first URL from the output as the deployment URL."
+author: "Hebilicious"
+
+inputs:
+  command:
+    description: "The custom command to run for deployment"
+    required: true
+  working-directory:
+    description: "The working directory to execute the command from."
+    required: false
+    default: "."
+
+outputs:
+  deployment-url:
+    description: "The URL of the deployed Cloudflare Worker or Pages site."
+    value: ${{ steps.deploy-step.outputs.deployment-url }}
+  command-output:
+    description: "The full standard output of the deployment command."
+    value: ${{ steps.deploy-step.outputs.command-output }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: deploy-step
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # The command to run is passed as an input
+        COMMAND_TO_RUN="${{ inputs.command }}"
+
+        echo "Running deployment command: $COMMAND_TO_RUN"
+
+        # Define a temporary file to store the output
+        OUTPUT_FILE=$(mktemp)
+
+        # Run the command and pipe its output to `tee`, which writes to both the console and our temp file
+        # The `set -o pipefail` command ensures that the action fails if the initial command fails,
+        # even if `tee` succeeds.
+        set -o pipefail
+        $COMMAND_TO_RUN 2>&1 | tee "$OUTPUT_FILE"
+
+        # After the command is complete, read the full output from the file
+        COMMAND_OUTPUT=$(cat "$OUTPUT_FILE")
+
+        # Find the first URL using the regex from the wrangler-action source
+        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | grep -Eo 'https?:\/\/[a-zA-Z0-9-./]+' | head -n 1)
+
+        # Write outputs to the $GITHUB_OUTPUT file
+        echo "command-output<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMAND_OUTPUT" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+        if [ -n "$DEPLOYMENT_URL" ]; then
+          echo "deployment-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Found deployment URL: $DEPLOYMENT_URL"
+        else
+          echo "deployment-url=" >> $GITHUB_OUTPUT
+          echo "No deployment URL found."
+        fi
+
+        # Clean up the temporary file
+        rm "$OUTPUT_FILE"
