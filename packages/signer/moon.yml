@@ -41,7 +41,7 @@ tasks:
   web:
     command: bun ./index.html
     preset: "server"
-  test:
+  test-integration:
     command: vitest run --testTimeout=150000
     deps: ["^:build"]
     inputs:
@@ -72,5 +72,6 @@ tasks:
   services-reset:
     script: docker compose down -v && docker compose up -d
   all:
-    script: moon run services-start && moon run start && moon run web
+    command: noop
+    deps: [services-start, start, web]
     preset: "server"

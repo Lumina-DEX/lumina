@@ -2,6 +2,9 @@
 	"name": "@lumina-dex/dex-ui",
 	"private": true,
 	"type": "module",
+	"scripts": {
+		"build": "next build --no-lint"
+	},
 	"dependencies": {
 		"@emotion/react": "^11.13.3",
 		"@emotion/styled": "^11.13.0",

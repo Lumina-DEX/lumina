@@ -44,34 +44,40 @@ tasks:
       - "@group(sources)"
       - "@group(test)"
   lint-fix:
-    extends: lint
-    args: --fix
-  test: 
-    command: vitest run --testTimeout=150000
+    command: eslint src/* tests/* --fix
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  base-test: 
+    command: vitest
+    args: [run, --testTimeout=150000]
+    deps: [build]
     inputs:
       - "@group(sources)"
       - "@group(test)"
   test-watch:
-    command: vitest watch
+    extends: base-test
+    args: watch
     preset: "watcher"
-    inputs:
-      - "@group(sources)"
-      - "@group(test)"
+    options:
+      mergeArgs: replace
+  test: 
+    extends: base-test
   test-coverage:
-    extends: test
+    extends: base-test
     args: --coverage
   test-factory:
-    extends: test
+    extends: base-test
     args: Factory
   test-faucet:
-    extends: test
+    extends: base-test
     args: Faucet
   test-data:
-    extends: test
+    extends: base-test
     args: PoolData
   test-token:
-    extends: test
+    extends: base-test
     args: PoolToken
   test-multisig:
-    extends: test
+    extends: base-test
     args: MultiSig

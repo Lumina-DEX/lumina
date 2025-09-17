@@ -53,7 +53,7 @@ RUN moon signer:build
 FROM base AS production
 WORKDIR /app
 
-# Copy server from the build stage
+# Copy application from the build stage
 COPY --from=builder --chown=bun:bun /app/ .
 
 ENV NODE_ENV=production

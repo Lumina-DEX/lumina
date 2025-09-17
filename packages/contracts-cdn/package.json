@@ -2,20 +2,6 @@
 	"name": "luminadex-contracts-cdn",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"lint": "bunx @biomejs/biome lint src/",
-		"lint:fix": "bunx @biomejs/biome lint --write src/",
-		"format": "dprint check",
-		"format:fix": "dprint fmt --verbose",
-		"compile:benchmark": "bun scripts/compile-benchmark.ts",
-		"deploy": "wrangler deploy",
-		"deploy:preview": "wrangler versions upload",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "echo 'Test are disabled due to a vitest + container bug' && exit 0",
-		"db:gen": "drizzle-kit generate",
-		"cf-typegen": "wrangler types"
-	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "0.8.55",
 		"@lumina-dex/contracts": "workspace:^",

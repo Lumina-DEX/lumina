@@ -32,7 +32,7 @@ tasks:
     script: echo 'Tests are disabled due to a vitest + container bug' && exit 0
   db-generate:
     description: Generate migrations files after a schema change.
-    command: "drizzle-kit generate"
+    command: drizzle-kit generate
   type-cf:
     command: wrangler types
     inputs:
@@ -40,15 +40,13 @@ tasks:
     outputs:
       - worker-configuration.d.ts
   lint:
-    command: "biome lint"
-    args: ["src/"]
+    command: biome lint src/
     inputs:
       - "@group(sources)"
       - "@group(tests)"
       - "@group(container)"
   lint-fix:
-    command: "biome lint"
-    args: [--write, "src/"]
+    command: biome lint --write src/
     inputs:
       - "@group(sources)"
       - "@group(tests)"

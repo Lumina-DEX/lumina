@@ -3,11 +3,6 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"version": "bun run scripts/version.ts",
-		"publish:all": "pnpm run build && changeset tag && pnpm publish -r --no-git-checks --access public",
-		"generate:docs": "cd packages/contracts && pnpm run generate:docs"
-	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.1",
 		"@changesets/cli": "^2.27.10",

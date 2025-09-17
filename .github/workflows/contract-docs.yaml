@@ -23,9 +23,6 @@ jobs:
         uses: actions/checkout@v4
 
       - uses: "moonrepo/setup-toolchain@v0"
-        with:
-          auto-install: true
-          auto-setup: true
 
       - run: moon contracts:docs
 

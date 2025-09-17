@@ -10,7 +10,7 @@ fileGroups:
     - src/**/*
     - public/**/*
     - "*.d.ts"
-    - tailwind.config.mjs
+    - tailwind.config.js
     - postcss.config.mjs
     - next.config.mjs
     - open-next.config.ts
@@ -19,6 +19,7 @@ fileGroups:
 
 tasks:
   build:
+    description: This needs a build script in package.json.
     command: opennextjs-cloudflare build
     deps: [^:build]
     inputs:
@@ -33,6 +34,7 @@ tasks:
       - worker-configuration.d.ts
   typecheck:
     command: tsc --noEmit
+    deps: [^:build]
     inputs:
       - "@group(sources)"
   typewatch:
@@ -43,12 +45,12 @@ tasks:
     command: biome lint src/
     inputs:
       - "@group(sources)"
+  lint-fix:
+    command: biome lint --write src/
+    inputs:
+      - "@group(sources)"
   dev:
     command: next dev
-    deps: [^:build]
-    preset: "server"
-  start:
-    command: next start
     deps: [^:build]
     preset: "server"
   preview:

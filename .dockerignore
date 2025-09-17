@@ -33,4 +33,4 @@ logs
 
 .next
 .open-next
-public
+packages/contracts-cdn/public

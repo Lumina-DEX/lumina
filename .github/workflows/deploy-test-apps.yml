@@ -24,7 +24,6 @@ jobs:
           auto-setup: true
 
       - name: Deploy Test Vue website
-        working-directory: packages/sdk-test-vue
         run: moon sdk-test-vue:deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

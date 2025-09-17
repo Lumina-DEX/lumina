@@ -21,13 +21,11 @@ tasks:
     outputs:
       - dist/
   lint:
-    command: "biome lint"
-    args: ["src/"]
+    command: biome lint src/
     inputs:
       - "@group(sources)"
   lint-fix:
-    command: "biome lint"
-    args: [--write, "src/"]
+    command: biome lint --write src/
     inputs:
       - "@group(sources)"
   schema-get-zeko:
@@ -47,6 +45,7 @@ tasks:
     outputs:
       - "src/graphql/pool-signer.graphql"
   schema-get:
+    command: noop
     deps:
       - "schema-get-zeko"
       - "schema-get-mina"

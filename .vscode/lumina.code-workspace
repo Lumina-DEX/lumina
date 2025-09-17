@@ -39,7 +39,8 @@
     "extensions": {
       "recommendations": [
         "dprint.dprint",
-        "biomejs.biome"
+        "biomejs.biome",
+        "moonrepo.moon-console"
       ]
     },
   }
