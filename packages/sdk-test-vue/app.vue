@@ -234,7 +234,9 @@ const fetchTokenBalances = async () => {
 }
 
 onMounted(() => {
-  Wallet.send({ type: "Connect" })
+  if (Wallet.snapshot.value.matches("INIT")) {
+    Wallet.send({ type: "Connect" })
+  }
 })
 
 const end = Wallet.actorRef.subscribe(state => {

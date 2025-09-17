@@ -11,6 +11,7 @@ The `walletMachine` is a state machine that manages the entire lifecycle of wall
 - **FETCHING_BALANCE**: Fetching wallet balances
 - **READY**: Wallet is connected and ready to use
 - **SWITCHING_NETWORK**: Changing blockchain networks
+- **UNSUPPORTED**: No Mina wallet provider detected.
 
 ## Basic Connection Flow
 
@@ -40,6 +41,13 @@ Wallet.subscribe(state => {
 		console.log("Account:", state.context.account)
 		console.log("Network:", state.context.currentNetwork)
 		console.log("Balances:", state.context.balances)
+	}
+
+	if (state.matches("UNSUPPORTED")) {
+		// Show UI that guides the user to install Auro Wallet
+		console.log(
+			"No Mina wallet detected. Please install Auro Wallet: https://www.aurowallet.com/"
+		)
 	}
 })
 
@@ -89,7 +97,7 @@ Wallet.send({
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	token: [{
+	tokens: [{
 		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 		decimal: 1e9,
 		symbol: "LLP-USDC_MINA"
