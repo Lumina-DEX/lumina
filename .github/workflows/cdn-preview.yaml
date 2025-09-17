@@ -21,34 +21,39 @@ jobs:
     outputs:
       url: ${{ steps.cloudflare.outputs.deployment-url }} # TODO: Use this for e2e tests.
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: "moonrepo/setup-toolchain@v0"
+      - name: 🛠️ Setup Moon toolchain
+        uses: "moonrepo/setup-toolchain@v0"
 
-      - run: moon contracts-cdn:test
+      - name: 🧪 Run contracts-cdn tests
+        run: moon contracts-cdn:test
 
-      - run: moon contracts-cdn:build-cache
+      - name: 🗂️ Build contracts-cdn cache
+        run: moon contracts-cdn:build-cache
 
-      - name: Deploy to Cloudflare Workers Static Assets
+      - name: 🚀 Deploy to Cloudflare Workers Static Assets
         id: cloudflare
         uses: ./.github/workflows/actions/deploy-cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
-          command: moon contracts-cdn:deploy-preview
+          task: contracts-cdn:deploy-preview
 
-      - name: Comment on PR
+      - name: 💬 Comment on PR
         uses: actions/github-script@v7
         id: deploy-preview-url
+        env:
+          COMMAND_OUTPUT: ${{ steps.cloudflare.outputs.command-output }}
         with:
           result-encoding: string
           script: |
             const url = "${{ steps.cloudflare.outputs.deployment-url }}"
-            const rawOutput = `${{ steps.cloudflare.outputs.command-output }}`
-            const output = rawOutput.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\\/g, '\\\\')
+            const output = process.env.COMMAND_OUTPUT
 
             const environment = "preview"
             const deployTitle = "🛸 LuminaDex CDN Deploy Preview is live 🏌️‍♀️"

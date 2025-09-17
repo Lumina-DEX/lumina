@@ -14,28 +14,30 @@ jobs:
   deploy-test-apps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: 📥 Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
 
-      - uses: "moonrepo/setup-toolchain@v0"
+      - name: 🛠️ Setup Moon toolchain
+        uses: "moonrepo/setup-toolchain@v0"
         with:
           auto-install: true
           auto-setup: true
 
-      - name: Deploy Test Vue website
+      - name: 🚀 Deploy Test Vue website
         run: moon sdk-test-vue:deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy Test React website
+      - name: 🚀 Deploy Test React website
         run: moon sdk-test-react:deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Comment on commit
+      - name: 💬 Comment on commit
         uses: actions/github-script@v7
         with:
           script: |

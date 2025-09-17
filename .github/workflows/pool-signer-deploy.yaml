@@ -13,12 +13,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Cloning repo
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure SSH Key
+      - name: 🔐 Configure SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DOKKU_GHA_PRIVATE_KEY }}
           DOKKU_SERVER_IP: ${{ secrets.DOKKU_SERVER_IP }}
@@ -28,7 +28,7 @@ jobs:
           chmod 600 ~/.ssh/dokku_deploy_key
           ssh-keyscan -p 22 $DOKKU_SERVER_IP >> ~/.ssh/known_hosts
 
-      - name: Trigger the push to Dokku
+      - name: 🚚 Push to Dokku
         env:
           GIT_SSH_COMMAND: "ssh -i ~/.ssh/dokku_deploy_key -o StrictHostKeyChecking=no"
         run: |
