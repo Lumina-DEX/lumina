@@ -56,11 +56,24 @@ If you want to allow users to create multiple pools simultaneously, use this id 
 Due to an underlying limitation, you will have to manually type the `createPoolMachine` actor when accessing it. Refer to the examples below for more details.
 :::
 
+## Pool Existence Validation
+
+The `createPoolMachine` includes built-in validation to check if a pool already exists before initiating the creation process. This prevents unnecessary server-side computations and provides immediate feedback to users.
+
+The validation process:
+
+1. Checks the blockchain to see if a pool for the specified token pair already exists
+2. If a pool exists, the machine transitions to `POOL_ALREADY_EXISTS` state immediately
+3. If no pool exists, the creation process continues normally
+4. In case of validation errors, the process continues to avoid blocking users
+
 ## `createPoolMachine` States
 
 The `createPoolMachine` has several states that represent the progress of the pool creation:
 
 - `INIT`: The initial state.
+- `CHECKING_POOL_EXISTS`: Validates that the pool doesn't already exist on-chain.
+- `POOL_ALREADY_EXISTS`: Final state reached when a pool already exists for the token pair.
 - `GET_STATUS`: Fetching the status of an existing job.
 - `CREATING`: A new pool creation job is being created on the server.
 - `WAITING_FOR_PROOF`: The server is generating the zk-proof for the pool creation. This is the longest step.
@@ -71,6 +84,20 @@ The `createPoolMachine` has several states that represent the progress of the po
 - `FAILED`: A non-recoverable error occurred.
 
 By monitoring these states, you can provide detailed feedback to your users about the pool creation process.
+
+## Error Handling
+
+The `createPoolMachine` context includes an `error` field that contains details about any errors that occur during the pool creation process:
+
+```typescript
+type CreatePoolContext = {
+	// ... other fields
+	error?: unknown // Contains error details when something goes wrong
+	poolCheck?: {
+		exists: boolean // Result of the pool existence check
+	}
+}
+```
 
 ## Framework Examples
 
@@ -104,6 +131,8 @@ const creatingPools = computed(() => {
       state: useSelector(poolActor, (state) => ({
         status: state.value,
         context: state.context,
+        error: state.context.error, // Access error information
+        poolExists: state.context.poolCheck?.exists, // Check if pool already exists
       })),
     };
   });
@@ -116,7 +145,15 @@ const creatingPools = computed(() => {
     <div v-if="creatingPools.length === 0">No pool creation in progress.</div>
     <div v-for="pool in creatingPools" :key="pool.id">
       <h3>Job ID: {{ pool.id }}</h3>
-      <pre>{{ pool.state }}</pre>
+      <p><strong>Status:</strong> {{ pool.state.status }}</p>
+      <p v-if="pool.state.poolExists"><strong>Pool Already Exists!</strong></p>
+      <div v-if="pool.state.error" class="error">
+        <strong>Error:</strong> {{ pool.state.error }}
+      </div>
+      <details>
+        <summary>Full Context</summary>
+        <pre>{{ pool.state }}</pre>
+      </details>
     </div>
   </div>
 </template>
@@ -177,7 +214,9 @@ const PoolCreationJob = ({
 }) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
-		context: state.context
+		context: state.context,
+		error: state.context.error,
+		poolExists: state.context.poolCheck?.exists
 	}))
 
 	return (
@@ -185,6 +224,19 @@ const PoolCreationJob = ({
 			<h3>Job ID: {id}</h3>
 			<pre>{JSON.stringify(poolState, null, 2)}</pre>
 		</div>
-	)
 }
 ```
+
+## State Transitions
+
+The typical flow for pool creation is:
+
+1. `INIT` → `CHECKING_POOL_EXISTS`
+2. `CHECKING_POOL_EXISTS` → `POOL_ALREADY_EXISTS` (if pool exists)
+3. `CHECKING_POOL_EXISTS` → `CREATING` (if pool doesn't exist)
+4. `CREATING` → `WAITING_FOR_PROOF`
+5. `WAITING_FOR_PROOF` → `SIGNING`
+6. `SIGNING` → `CONFIRMING`
+7. `CONFIRMING` → `COMPLETED`
+
+Error transitions can occur from any state to `ERRORED` or `FAILED` depending on the type of error encountered.
