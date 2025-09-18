@@ -9,6 +9,7 @@
 		"drizzle-kit": "beta",
 		"fflate": "^0.8.2",
 		"o1js": "2.4.0",
+		"tsdown": "^0.15.2",
 		"typescript": "^5.5.2",
 		"vitest": "2.0.5",
 		"wrangler": "4.22.0"
@@ -19,5 +20,6 @@
 		"graphql-request": "7.1.2",
 		"rou3": "^0.5.1",
 		"valibot": "^1.0.0"
-	}
+	},
+	"packageManager": "pnpm@10.16.1"
 }

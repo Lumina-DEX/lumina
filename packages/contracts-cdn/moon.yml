@@ -51,6 +51,14 @@ tasks:
       - "@group(sources)"
       - "@group(tests)"
       - "@group(container)"
+  container-build:
+    command: tsdown
+    deps: ["^:build"]
+    inputs:
+      - container/
+      - tsdown.config.ts
+    outputs:
+      - output/
   container-start:
     command: bun run container/index.ts
     deps: ["^:build"]
