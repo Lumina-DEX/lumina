@@ -20,7 +20,7 @@
 pre-commit:
   parallel: true
   jobs:
-    - run: pnpm run format:all:fix {staged_files}
+    - run: dprint fmt --allow-no-files {staged_files}
       stage_fixed: true
 #
 #     - name: rubocop

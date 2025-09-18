@@ -28,7 +28,7 @@ export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset
 	//Here we can control the cache headers precisely.
 	if (response.ok) {
 		for (const [n, v] of Object.entries(headers)) response.headers.append(n, v)
-		response.headers.append("Cache-Control", "s-maxage=10")
+		response.headers.append("Cache-Control", "public, max-age=31536000, immutable")
 		context.waitUntil(cache.put(cacheKey, response.clone()))
 	}
 	return response
@@ -50,7 +50,8 @@ export const sync = async ({
 
 	const url = `http://localhost/${network}`
 	console.log(`Syncing tokens from ${url} for network ${network}`)
-	const container = await getRandom(env.FETCHTOKEN, 5)
+	// TODO: Fix when autoscaling is released https://developers.cloudflare.com/containers/scaling-and-routing/#autoscaling-and-routing-unreleased
+	const container = await getRandom(env.FETCHTOKEN, 1)
 	const response = await container.fetch(url, { method: "GET" })
 	console.log(`Response from ${url}:`, response.status, response.statusText)
 	if (response.ok) {

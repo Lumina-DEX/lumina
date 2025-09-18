@@ -3,7 +3,8 @@
 		"module": "ESNext",
 		"target": "esnext",
 		"strict": true,
-		"noUncheckedIndexedAccess": false
+		"noUncheckedIndexedAccess": false,
+		"moduleResolution": "bundler"
 	},
 	"exclude": ["node_modules"]
 }

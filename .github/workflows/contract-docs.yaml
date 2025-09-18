@@ -19,27 +19,23 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - uses: ./.github/workflows/actions/install
+      - name: 🛠️ Setup Moon toolchain
+        uses: "moonrepo/setup-toolchain@v0"
 
-      - name: Build Contracts
-        run: bun run build
-        working-directory: packages/contracts
+      - name: 📝 Build contract docs
+        run: moon contracts:docs
 
-      - name: Build docs
-        run: bun run generate:docs
-        working-directory: packages/contracts
-
-      - name: Setup Pages
+      - name: 🧩 Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: 📦 Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: packages/contracts/docs
-    
-      - name: Deploy to GitHub Pages
+
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -3,13 +3,6 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "nuxt build",
-		"build:cf": "NITRO_PRESET=cloudflare-pages-static nuxt build",
-		"preview:cf": "wrangler pages dev dist/",
-		"deploy:cf": "wrangler pages deploy dist",
-		"dev": "nuxt dev",
-		"generate": "nuxt generate",
-		"preview": "nuxt preview",
 		"postinstall": "nuxt prepare"
 	},
 	"dependencies": {

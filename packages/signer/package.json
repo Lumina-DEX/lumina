@@ -1,25 +1,7 @@
 {
-	"name": "luminadex-signer",
+	"name": "@lumina-dex/signer",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio",
-		"db:seed": "bun run scripts/seed.ts",
-		"schema:print": "bun run graphql/printSchema.ts",
-		"services:start": "docker compose up -d",
-		"services:stop": "docker compose down",
-		"start": "bun src/index.ts",
-		"web": "bun ./index.html",
-		"dev": "bun run --watch src/index.ts",
-		"dev:uws": "tsx src/uws.ts",
-		"build": "bun x tsc",
-		"all": "concurrently 'bun run services:start' 'bun run start' 'bun run web'",
-		"format": "dprint check",
-		"format:fix": "dprint fmt --verbose",
-		"test": "vitest run --testTimeout=150000"
-	},
 	"dependencies": {
 		"@infisical/sdk": "^4.0.2",
 		"@lumina-dex/contracts": "workspace:^",

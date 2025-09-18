@@ -4,6 +4,6 @@
     "module": "es2022",
     "noEmit": true
   },
-  "include": ["./src", "./tests"],
+  "include": ["./src", "./tests", "eslint.config.mjs"],
   "exclude": ["./build/**/*"]
 }

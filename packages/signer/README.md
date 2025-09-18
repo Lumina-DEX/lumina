@@ -51,7 +51,7 @@ This will start:
 Create and migrate the database:
 
 ```bash
-bun db:migrate && bun db:seed
+moon signer:db-migrate && moon signer:db-seed
 ```
 
 The application expects a `DATABASE_URL` environment variable. For local development, use:
@@ -84,23 +84,23 @@ To start the development environment:
 
 1. **Start services** (PostgreSQL and Redis):
    ```bash
-   bun run services:start
+   moon signer:services-start
    ```
 
 2. **Run migrations and seed** (first time only):
    ```bash
-   bun run db:migrate && bun run db:seed
+   moon signer:db-migrate && moon signer:db-seed
    ```
 
 3. **Start the server** in development mode:
    ```bash
-   bun run dev
+   moon signer-dev
    ```
 
 Or run everything at once:
 
 ```bash
-bun run all
+moon signer:all
 ```
 
 Use the GraphQL playground at http://localhost:3001/graphql to test the API.
@@ -109,10 +109,10 @@ The SDK includes a state machine that models the API usage.
 
 **Available scripts:**
 
-- `bun run services:start` - Start PostgreSQL and Redis containers
-- `bun run services:stop` - Stop all containers
-- `bun run dev` - Start server in watch mode
-- `bun run all` - Start services, server, and web interface
+- `moon signer:services-start` - Start PostgreSQL and Redis containers
+- `moon signer:services-stop` - Stop all containers
+- `moon signer:dev` - Start server in watch mode
+- `moon signer:all` - Start services, server, and web interface
 
 ## Deploy
 

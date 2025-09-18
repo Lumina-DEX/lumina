@@ -14,7 +14,7 @@ try {
 	if (changedFiles.includes("packages/contracts/package.json")) {
 		console.log("Changes detected in packages/contracts/package.json")
 		console.log("Running cache:create...")
-		await $`bun run cache:create`
+		await $`moon contracts-cdn:build-cache`
 	} else {
 		console.log("No changes detected in packages/contracts/package.json, skipping cache:create")
 	}
@@ -25,4 +25,4 @@ try {
 
 // Run format:all:fix
 console.log("Running format:all:fix...")
-await $`bun run format:all:fix`
+await $`moon run format-all`

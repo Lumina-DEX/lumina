@@ -23,6 +23,14 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["./src", "**/*.ts", "package.json", "**/*.js", "./src/workers/sandbox.js"],
+	"include": [
+		"./src",
+		"./scripts",
+		"**/*.ts",
+		"package.json",
+		"**/*.js",
+		"./src/workers/sandbox.js",
+		"tsdown.config.ts"
+	],
 	"exclude": ["node_modules", "dist"]
 }
