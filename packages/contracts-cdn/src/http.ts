@@ -28,7 +28,7 @@ export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset
 	//Here we can control the cache headers precisely.
 	if (response.ok) {
 		for (const [n, v] of Object.entries(headers)) response.headers.append(n, v)
-		response.headers.append("Cache-Control", "public, max-age=31536000, immutable")
+		response.headers.set("Cache-Control", "public, max-age=31536000, immutable")
 		context.waitUntil(cache.put(cacheKey, response.clone()))
 	}
 	return response
