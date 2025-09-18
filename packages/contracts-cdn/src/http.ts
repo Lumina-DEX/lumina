@@ -70,7 +70,7 @@ export const updateTokensAndPools = async ({
 // Fetch all tokens from the blockchain from block latest block fetched to most recent.
 // Attempty to insert all the tokens in the database with onConflictDoNothing
 // Save the latest block fetched in the do storage.
-// TODO: We are using an external call because there's no way to use o1js with workerd.
+// TODO: We are using a Container because there's no way to use o1js with workerd.
 // We would need to get rid of eval, new Function and FinalizationRegistry to be able
 // to do so.
 export const sync = async ({ env, context, network }: SyncInput) => {

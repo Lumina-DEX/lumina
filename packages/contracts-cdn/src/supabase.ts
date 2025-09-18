@@ -39,23 +39,15 @@ export const cleanPendingPools = async ({ env }: { env: Env }) => {
 	const tokenList = env.TOKENLIST.get(id)
 
 	//TODO: Use p-limit to do this in batches.
-
-	for (const pool of pendingPools) {
-		const exist = await tokenList.poolExists({
-			network: pool.network as Networks,
-			address: pool.public_key
-		})
+	for (const { id, network, public_key: address } of pendingPools) {
+		const exist = await tokenList.poolExists({ network: network as Networks, address })
 		if (exist) {
-			console.log(
-				`Pool ${pool.public_key} exists on network ${pool.network}, updating status to deployed`
-			)
-			await supabase.from("Pool").update({ status: "deployed" }).eq("id", pool.id)
+			console.log(`Pool ${address} exists on network ${network}, updating status to deployed`)
+			await supabase.from("Pool").update({ status: "deployed" }).eq("id", id)
 		}
 		if (!exist) {
-			console.log(
-				`Pool ${pool.public_key} does not exist on network ${pool.network}, deleting from database`
-			)
-			await supabase.from("Pool").delete().eq("id", pool.id)
+			console.log(`Pool ${address} does not exist on network ${network}, deleting from database`)
+			await supabase.from("Pool").delete().eq("id", id)
 		}
 	}
 }
