@@ -13,9 +13,86 @@ import { createMeasure, prefixedLogger } from "../../../helpers/debug"
 import { sendTransaction } from "../../../helpers/transfer"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
+// Required imports for pool existence check
+import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
+import { luminadexFactories, MINA_ADDRESS } from "../../../constants"
 
 const logger = prefixedLogger("[POOL CREATION API]")
 const measure = createMeasure(logger)
+
+// Function to check if a pool already exists
+export const checkPoolExists = fromPromise(
+	async ({ input }: { input: { tokenA: string; tokenB: string; network: Networks } }) => {
+		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
+
+		try {
+			const factory = luminadexFactories[input.network]
+			const factoryKey = PublicKey.fromBase58(factory)
+			const factoryTokenId = TokenId.derive(factoryKey)
+
+			const tokenAPublicKey = input.tokenA === MINA_ADDRESS
+				? PublicKey.empty()
+				: PublicKey.fromBase58(input.tokenA)
+			const tokenBPublicKey = input.tokenB === MINA_ADDRESS
+				? PublicKey.empty()
+				: PublicKey.fromBase58(input.tokenB)
+
+			// Order tokens as in the signer
+			const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
+			const token0 = Provable.if(
+				tokenAPublicKey.isEmpty().or(tokenALower),
+				tokenAPublicKey,
+				tokenBPublicKey
+			)
+			const token1 = Provable.if(token0.equals(tokenBPublicKey), tokenAPublicKey, tokenBPublicKey)
+
+			const isMinaTokenPool = token0.isEmpty().toBoolean()
+
+			if (isMinaTokenPool) {
+				// Check for MINA-Token pool
+				const tokenAccount = await fetchAccount({
+					publicKey: token1,
+					tokenId: factoryTokenId
+				})
+				const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+				const poolExists = balancePool.toBigInt() > 0n
+
+				if (poolExists) {
+					logger.info("Pool already exists for MINA-Token pair:", token1.toBase58())
+					return { exists: true }
+				}
+			} else {
+				// Check for Token-Token pool
+				const fields = token0.toFields().concat(token1.toFields())
+				const hash = Poseidon.hashToGroup(fields)
+				const pairPublickey = PublicKey.fromGroup(hash)
+				const tokenAccount = await fetchAccount({
+					publicKey: pairPublickey,
+					tokenId: factoryTokenId
+				})
+				const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+				const poolExists = balancePool.toBigInt() > 0n
+
+				if (poolExists) {
+					logger.info(
+						"Pool already exists for Token-Token pair:",
+						token0.toBase58(),
+						token1.toBase58()
+					)
+					return { exists: true }
+				}
+			}
+
+			logger.success("Pool does not exist, can proceed with creation")
+			return { exists: false }
+		} catch (error) {
+			logger.error("Error checking pool existence:", error)
+			// In case of verification error, let the process continue
+			// rather than blocking completely
+			throw error
+		}
+	}
+)
 
 // 0. Fetch job status
 export const getJobStatus = fromPromise(
@@ -126,6 +203,9 @@ export const createPoolMachine = setup({
 				hash: string
 				url: string
 			}
+			poolCheck?: {
+				exists: boolean
+			}
 			error?: unknown
 		},
 		input: {} as {
@@ -137,6 +217,7 @@ export const createPoolMachine = setup({
 		}
 	},
 	actors: {
+		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
 		signPoolTransaction,
@@ -163,12 +244,63 @@ export const createPoolMachine = setup({
 	}),
 	states: {
 		INIT: {
-			on: { create: { target: "CREATING" }, status: { target: "GET_STATUS" } },
+			on: {
+				create: { target: "CHECKING_POOL_EXISTS" },
+				status: { target: "GET_STATUS" }
+			},
 			entry: enqueueActions(({ context, enqueue }) => {
 				if (context.job.id.length === 0) enqueue.raise({ type: "create" })
 				else enqueue.raise({ type: "status" })
 			})
 		},
+
+		// New state to check pool existence
+		CHECKING_POOL_EXISTS: {
+			invoke: {
+				src: "checkPoolExists",
+				input: ({ context }) => ({
+					tokenA: context.tokenA,
+					tokenB: context.tokenB,
+					network: context.network
+				}),
+				onDone: [
+					{
+						// If pool already exists, go to specific error state
+						target: "POOL_ALREADY_EXISTS",
+						guard: ({ event }) => event.output?.exists === true,
+						actions: assign(({ event }) => ({
+							poolCheck: event.output,
+							error: new Error("Pool already exists for the specified token pair")
+						}))
+					},
+					{
+						// If pool doesn't exist, continue with creation
+						target: "CREATING",
+						actions: assign(({ event }) => ({
+							poolCheck: event.output
+						}))
+					}
+				],
+				onError: {
+					// In case of verification error, continue anyway
+					// (better to try creating than blocking completely)
+					target: "CREATING",
+					actions: assign(({ event }) => ({
+						poolCheck: { exists: false },
+						error: event.error
+					}))
+				}
+			}
+		},
+
+		// New final state for pools that already exist
+		POOL_ALREADY_EXISTS: {
+			type: "final",
+			entry: ({ context }) => {
+				logger.error("Pool creation aborted: Pool already exists", context.poolCheck)
+			}
+		},
+
 		GET_STATUS: {
 			invoke: {
 				src: "getJobStatus",

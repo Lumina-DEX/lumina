@@ -15,7 +15,9 @@ const PoolCreationJob = ({
 		<div className="flex flex-row justify-center w-96">
 			<div className="flex flex-col items-center">
 				<h5>Status : {poolState.status}</h5>
-				{(poolState.status === "ERRORED" || poolState.status === "FAILED") && (
+				{(poolState.status === "ERRORED" ||
+					poolState.status === "FAILED" ||
+					poolState.status === "POOL_ALREADY_EXISTS") && (
 					<span className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
 						{poolState.context.error?.toString()}
 					</span>
@@ -23,6 +25,7 @@ const PoolCreationJob = ({
 				{poolState.status === "COMPLETED" && <span> Pool created successfully</span>}
 				{poolState.status !== "COMPLETED" &&
 					poolState.status !== "ERRORED" &&
+					poolState.status !== "POOL_ALREADY_EXISTS" &&
 					poolState.status !== "FAILED" && <Loading />}
 			</div>
 		</div>
