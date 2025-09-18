@@ -1,0 +1,40 @@
+name: Supabase Backup R2
+
+on:
+  schedule:
+    - cron: '0 */1 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run pg-dump
+        uses: tj-actions/pg-dump@v3
+        with:
+          database_url: ${{ env.SUPABASE_DB_URL }}
+          path: "backup.tar"
+          postgresql_version: "17"
+          options: "-O -F t" 
+
+      - name: Rename dump with timestamp
+        run: |
+          TS=$(date +%Y%m%d_%H%M)
+          NEW_FILE="backup_$TS.tar"
+          mv backup.tar $NEW_FILE
+          echo "ARCHIVE_FILE=$NEW_FILE" >> $GITHUB_ENV
+          ls -lh .
+
+      - name: Upload archive to Cloudflare R2
+        run: |
+          aws s3 cp ${{ env.ARCHIVE_FILE }} s3://$R2_BUCKET/${{ env.ARCHIVE_FILE }} \
+            --endpoint-url https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
