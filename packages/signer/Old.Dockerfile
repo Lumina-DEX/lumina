@@ -44,9 +44,9 @@ RUN pnpm fetch
 
 COPY packages/contracts/ ./packages/contracts/
 COPY packages/sdk/ ./packages/sdk/
-COPY packages/contracts-cdn/ ./packages/contracts-cdn/
+COPY packages/signer/ ./packages/signer/
 
-RUN moon contracts-cdn:container-build
+RUN moon signer:build
 
 # Stage 3: Production image
 # This is the final image that will be deployed.
@@ -54,7 +54,9 @@ FROM base AS production
 WORKDIR /app
 
 # Copy application from the build stage
-COPY --from=builder --chown=bun:bun /app/packages/contracts-cdn/output/index.js index.js
+COPY --from=builder --chown=bun:bun /app/ .
+WORKDIR /app/packages/signer
+
 ENV NODE_ENV=production
-EXPOSE 3000
-CMD ["bun", "run", "index.js"]      
+EXPOSE 3001
+CMD ["bun", "run", "src/index.ts"]
