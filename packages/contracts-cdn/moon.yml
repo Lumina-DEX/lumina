@@ -30,6 +30,10 @@ tasks:
   test:
     description: "TODO: https://github.com/cloudflare/workers-sdk/issues/10408"
     script: echo 'Tests are disabled due to a vitest + container bug' && exit 0
+  pooldb-typegen:
+    command: pnpx supabase gen types typescript --project-id dqofogasktmvjqcjaeyk > @out(0) --debug
+    outputs:
+      - src/pooldb.types.ts
   db-generate:
     description: Generate migrations files after a schema change.
     command: drizzle-kit generate

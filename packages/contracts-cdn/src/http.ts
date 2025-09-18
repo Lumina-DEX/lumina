@@ -34,20 +34,46 @@ export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset
 	return response
 }
 
+export type TokensAndPools = { tokens: LuminaToken[]; pools: LuminaPool[] }
+export type SyncInput = { env: Env; network: Networks; context: ExecutionContext }
+export const updateTokensAndPools = async ({
+	env,
+	tokens,
+	pools,
+	network,
+	context
+}: TokensAndPools & SyncInput) => {
+	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
+	const tokenList = env.TOKENLIST.get(id)
+
+	//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
+	await tokenList.reset({ network })
+	const result = await tokenList.insertToken(tokens)
+	const poolResult = await tokenList.insertPool(
+		pools.map((pool) => ({
+			...pool,
+			token0Address: pool.tokens[0].address,
+			token1Address: pool.tokens[1].address
+		}))
+	)
+	// Only bust the cache if something changed.
+	if (result.length > 0 || poolResult.length > 0) {
+		const tKey = tokenCacheKey(network)
+		const pKey = poolCacheKey(network)
+		context.waitUntil(caches.default.delete(tKey))
+		context.waitUntil(caches.default.delete(pKey))
+		return { tokens, pools, network, cacheBusted: { token: tKey, pool: pKey } }
+	}
+	return { tokens, pools, network, cacheBusted: false }
+}
+
 // Fetch all tokens from the blockchain from block latest block fetched to most recent.
 // Attempty to insert all the tokens in the database with onConflictDoNothing
 // Save the latest block fetched in the do storage.
 // TODO: We are using an external call because there's no way to use o1js with workerd.
 // We would need to get rid of eval, new Function and FinalizationRegistry to be able
 // to do so.
-export const sync = async ({
-	env,
-	context,
-	network
-}: { env: Env; network: Networks; context: ExecutionContext }) => {
-	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
-	const tokenList = env.TOKENLIST.get(id)
-
+export const sync = async ({ env, context, network }: SyncInput) => {
 	const url = `http://localhost/${network}`
 	console.log(`Syncing tokens from ${url} for network ${network}`)
 	// TODO: Fix when autoscaling is released https://developers.cloudflare.com/containers/scaling-and-routing/#autoscaling-and-routing-unreleased
@@ -55,28 +81,11 @@ export const sync = async ({
 	const response = await container.fetch(url, { method: "GET" })
 	console.log(`Response from ${url}:`, response.status, response.statusText)
 	if (response.ok) {
-		const data = (await response.json()) as { tokens: LuminaToken[]; pools: LuminaPool[] }
+		const data = (await response.json()) as TokensAndPools
 		const { tokens, pools } = data
 		if (tokens.length === 0) return
-		//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
-		await tokenList.reset({ network })
-		const result = await tokenList.insertToken(tokens)
-		const poolResult = await tokenList.insertPool(
-			pools.map((pool) => ({
-				...pool,
-				token0Address: pool.tokens[0].address,
-				token1Address: pool.tokens[1].address
-			}))
-		)
-		// Only bust the cache if something changed.
-		if (result.length > 0 || poolResult.length > 0) {
-			const tKey = tokenCacheKey(network)
-			const pKey = poolCacheKey(network)
-			context.waitUntil(caches.default.delete(tKey))
-			context.waitUntil(caches.default.delete(pKey))
-			return { tokens, pools, network, cacheBusted: { token: tKey, pool: pKey } }
-		}
-		return { tokens, pools, network, cacheBusted: false }
+		const updatedData = await updateTokensAndPools({ env, tokens, pools, network, context })
+		return updatedData
 	}
 	return []
 }

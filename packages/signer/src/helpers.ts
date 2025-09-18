@@ -23,7 +23,6 @@ export const getEnv = () => {
 		DATABASE_URL: v.string(),
 		INFISICAL_ENVIRONMENT: v.string(),
 		INFISICAL_PROJECT_ID: v.string(),
-		INFISICAL_SECRET_NAME: v.string(),
 		INFISICAL_CLIENT_ID: v.string(),
 		INFISICAL_CLIENT_SECRET: v.string()
 	})
@@ -111,7 +110,7 @@ export function encryptedKeyToField(encryptedKey: string): Field[] {
 	return encryptedKey.split(",").map((x) => Field.from(x))
 }
 
-export async function getMasterSigner(): Promise<string> {
+export const getInfisicalSecret = async (secretName: string): Promise<string> => {
 	const client = new InfisicalSDK()
 	const env = getEnv()
 	// Authenticate with Infisical
@@ -119,14 +118,18 @@ export async function getMasterSigner(): Promise<string> {
 		clientId: env.INFISICAL_CLIENT_ID, // Infisical client ID
 		clientSecret: env.INFISICAL_CLIENT_SECRET // Infisical client secret
 	})
-
 	const singleSecret = await client.secrets().getSecret({
 		environment: env.INFISICAL_ENVIRONMENT, // stg, dev, prod, or custom environment slugs
 		projectId: env.INFISICAL_PROJECT_ID,
-		secretName: env.INFISICAL_SECRET_NAME
+		secretName
 	})
 
 	return singleSecret.secretValue
+}
+
+export async function getMasterSigner(): Promise<string> {
+	const secret = await getInfisicalSecret("POOL_SIGNER_PRIVATE_KEY")
+	return secret
 }
 
 export const fundNewAccount = (network: Networks, feePayer: PublicKey, numberOfAccounts = 1) => {

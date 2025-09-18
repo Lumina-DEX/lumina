@@ -16,6 +16,7 @@
 	},
 	"dependencies": {
 		"@cloudflare/containers": "^0.0.28",
+		"@supabase/supabase-js": "^2.57.4",
 		"drizzle-orm": "beta",
 		"graphql-request": "7.1.2",
 		"rou3": "^0.5.1",

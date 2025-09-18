@@ -1,4 +1,3 @@
-import { InfisicalSDK } from "@infisical/sdk"
 import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
@@ -15,13 +14,12 @@ import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
 import { getDb } from "../src/db"
-import { encryptedKeyToField, getMerkle, getNetwork } from "../src/helpers"
+import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
-	INFISICAL_SECRET_NAME: v.string(),
 	INFISICAL_CLIENT_ID: v.string(),
 	INFISICAL_CLIENT_SECRET: v.string()
 })
@@ -61,21 +59,8 @@ describe("Signature", () => {
 	})
 
 	it("fetch secret", async () => {
-		const client = new InfisicalSDK()
-
-		// Authenticate with Infisical
-		await client.auth().universalAuth.login({
-			clientId: env.INFISICAL_CLIENT_ID, // Infisical client ID
-			clientSecret: env.INFISICAL_CLIENT_SECRET // Infisical client secret
-		})
-
-		const singleSecret = await client.secrets().getSecret({
-			environment: env.INFISICAL_ENVIRONMENT,
-			projectId: env.INFISICAL_PROJECT_ID,
-			secretName: env.INFISICAL_SECRET_NAME
-		})
-
-		expect(singleSecret?.secretValue).toBeDefined()
+		const secret = await getMasterSigner()
+		expect(secret).toBeDefined()
 	})
 
 	it("encrypt/decrypt", async () => {

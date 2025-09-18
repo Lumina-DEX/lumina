@@ -26,28 +26,53 @@ addRoute(router, "POST", "/api/:network/sync", { path: "sync" })
 addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
 
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
+addRoute(router, "POST", "/workflows/sync-pool", { path: "sync-pool" })
 
 import { Container } from "@cloudflare/containers"
+import { cleanPendingPools } from "./supabase"
 
 export class FetchToken extends Container<Env> {
 	defaultPort = 3000
 	sleepAfter = "5m"
 }
 
+//TODO: Update this when we launch a new network.
+const liveNetworks = networks.filter((n) => !n.includes("mainnet"))
+
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
-		await Promise.all(networks.map((network) => sync({ env, network, context })))
-		console.log("Synced all networks")
+		// Make sure the type here matches the triggers in wrangler.jsonc
+		switch (event.cron as "*/30 * * * *" | "0 0 * * *") {
+			case "*/30 * * * *":
+				await Promise.all(liveNetworks.map((network) => sync({ env, network, context })))
+				console.log("Synced all networks")
+				break
+			case "0 0 * * *":
+				await cleanPendingPools({ env })
+				console.log("Cleaned pending pools")
+				break
+		}
 	},
 	async fetch(request, env, context): Promise<Response> {
 		//TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
 
+		// Manually trigger the SyncPool workflow for Auth users
+		if (match?.data.path === "sync-pool" && auth({ env, request })) {
+			const body = await request.json()
+			const params = v.parse(v.object({ network: v.string(), poolAddress: v.string() }), body)
+			const instance = await env.SYNC_POOL.create({ params })
+			return Response.json(
+				{ id: instance.id, details: await instance.status() },
+				{ headers, status: 201 }
+			)
+		}
+
 		// Manually trigger the Scheduled event for Auth users
 		if (match?.data.path === "scheduled" && auth({ env, request })) {
-			await Promise.all(networks.map((network) => sync({ env, network, context })))
+			await Promise.all(liveNetworks.map((network) => sync({ env, network, context })))
 			return new Response("Synced all networks", { headers, status: 200 })
 		}
 
@@ -198,3 +223,4 @@ export default {
 } satisfies ExportedHandler<Env>
 
 export { TokenList } from "./do"
+export { SyncPool } from "./workflow"

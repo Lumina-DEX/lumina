@@ -5,6 +5,7 @@ import { GraphQLError } from "graphql"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
+import { getInfisicalSecret } from "./helpers"
 
 type Builder = {
 	Context: Context
@@ -141,7 +142,7 @@ builder.mutationField("confirmJob", (t) =>
 		type: "String",
 		description: "Confirm a job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
-		resolve: async (_, { jobId }, { database, queues }) => {
+		resolve: async (_, { jobId }, { database, queues, shouldUpdateCDN }) => {
 			using q = queues()
 			using db = database()
 			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
@@ -150,8 +151,18 @@ builder.mutationField("confirmJob", (t) =>
 			if (job) await job.remove()
 			if (data[0].status === "confirmed") return `Job for pool ${jobId} is already confirmed`
 			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
-			//TODO: Add logic to trigger a workflow to handle the confirmed job and update the CDN
-			return `Job for pool "${data[0].publicKey}" confirmed`
+			const { network, publicKey: poolAddress } = data[0]
+			if (shouldUpdateCDN) {
+				const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
+				const response = await fetch("https://cdn.luminadex.com/workflows", {
+					method: "POST",
+					headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+					body: JSON.stringify({ poolAddress, network })
+				})
+				const result = await response.json()
+				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${JSON.stringify(result)}`
+			}
+			return `Job for pool "${poolAddress}" confirmed`
 		}
 	})
 )

@@ -1,7 +1,6 @@
 {
 	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
 	"name": "luminadex-contracts-cdn",
-	"account_id": "a12d2915bc16ee8550f19399839623f7",
 	"compatibility_date": "2025-01-16",
 	"main": "src/index.ts",
 	"workers_dev": true,
@@ -11,7 +10,8 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
-		"DO_TOKENLIST_NAME": "db-prod-v2"
+		"DO_TOKENLIST_NAME": "db-prod-v2",
+		"SUPABASE_URL": "https://dqofogasktmvjqcjaeyk.supabase.co"
 	},
 	// Workers Static Assets
 	"assets": {
@@ -50,8 +50,8 @@
 	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 	// Schedule cron triggers:
 	"triggers": {
-		// Every 30 minutes
-		"crons": ["*/30 * * * *"]
+		// Every 30 minutes, every day at midnight
+		"crons": ["*/30 * * * *", "0 0 * * *"]
 	},
 	"unsafe": {
 		"bindings": [
@@ -65,13 +65,13 @@
 				}
 			}
 		]
-	}
+	},
 	// Worfklows are not working with vitest https://github.com/cloudflare/workers-sdk/issues/7414
-	// "workflows": [
-	//     {
-	//         "name": "sync-blockchain",
-	//         "binding": "SYNC_BLOCKCHAIN",
-	//         "class_name": "SyncBlockchain"
-	//     }
-	// ]
+	"workflows": [
+		{
+			"name": "sync-pool",
+			"binding": "SYNC_POOL",
+			"class_name": "SyncPool"
+		}
+	]
 }

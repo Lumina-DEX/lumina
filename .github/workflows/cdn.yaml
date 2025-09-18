@@ -57,7 +57,6 @@ jobs:
           result-encoding: string
           script: |
             const url = "${{ steps.cloudflare.outputs.deployment-url }}"
-            const rawOutput = `${{ steps.cloudflare.outputs.command-output }}`
             const output = process.env.COMMAND_OUTPUT
             const body =
             `### 🛸 LuminaDex CDN is live 🏌️‍♀️
