@@ -1,7 +1,6 @@
 import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import Loading from "./Loading"
-import { useEffect } from "react"
 
 const PoolCreationJob = ({
 	actor
