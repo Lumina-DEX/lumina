@@ -34,3 +34,6 @@ logs
 .next
 .open-next
 packages/contracts-cdn/public
+
+Dockerfile
+Dockerfile.Container

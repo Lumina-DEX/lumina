@@ -1,61 +1,53 @@
-# syntax=docker/dockerfile:1.7-labs
-# Stage 1: Base image with Bun
-# Using the official Bun image for a lean and fast environment.
-FROM oven/bun:1 AS base
+#### BASE STAGE
+#### Installs moon.
+
+FROM node:latest AS base
 WORKDIR /app
 
-# Stage 2: Install system dependencies for the base image
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN apt update && apt install -y git unzip gzip xz-utils curl
+# Install moon binary
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+ENV PATH="/root/.moon/bin:/root/.proto/bin:$PATH"
 
-# Set the PROTO_HOME environment variable for all subsequent layers
-ENV PROTO_HOME="/usr/local/proto"
+#### SKELETON STAGE
+#### Scaffolds repository skeleton structures.
 
-# Set the default shell to bash 
-SHELL ["/bin/bash", "-c"]
+FROM base AS skeleton
 
-# Execute the installation in a single, clean RUN command.
-RUN curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold signer
 
-# Add the proto binary directory to the PATH
-ENV PATH="$PATH:$PROTO_HOME/bin"
-ENV PATH="$PROTO_HOME/shims:$PATH"
+#### BUILD STAGE
+#### Builds the project.
 
-RUN proto --version
-COPY .prototools ./.prototools
-RUN proto install moon
-FROM base AS builder
-WORKDIR /app
+FROM base AS build
 
-# Copy workspace configuration files
-COPY pnpm-workspace.yaml ./
-COPY tsconfig.json ./
-COPY package.json ./
-COPY patches ./patches/
-COPY .moon ./.moon
-COPY pnpm-lock.yaml ./
+# Copy workspace configs
+COPY --from=skeleton /app/.moon/docker/workspace .
+COPY --from=skeleton /app/patches ./patches
+# Install dependencies
+ENV MOON_LOG=trace
+ENV MOON_DEBUG_PROCESS_ENV=true
+RUN moon --version
+RUN moon docker setup
 
-# Copy all package.json files from the monorepo packages
-COPY --parents packages/*/package.json .
+# Copy project sources
+COPY --from=skeleton /app/.moon/docker/sources .
 
-RUN moon setup
-RUN pnpm fetch
+# Build the project
+RUN moon run signer:build
 
-COPY packages/contracts/ ./packages/contracts/
-COPY packages/sdk/ ./packages/sdk/
-COPY packages/signer/ ./packages/signer/
+# Prune extraneous dependencies
+RUN moon docker prune
 
-RUN moon signer:build
+#### START STAGE
+#### Runs the project.
 
-# Stage 3: Production image
-# This is the final image that will be deployed.
-FROM base AS production
-WORKDIR /app
+FROM base AS start
 
-# Copy application from the build stage
-COPY --from=builder --chown=bun:bun /app/ .
-
-ENV NODE_ENV=production
+# Copy built sources
+COPY --from=build /root/.proto /root/.proto
+COPY --from=build /app /app
 EXPOSE 3001
-CMD ["moon", "signer:start"]
+WORKDIR /app/packages/signer
+CMD ["bun", "run", "src/index.ts"]
