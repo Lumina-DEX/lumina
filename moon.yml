@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=.moon/cache/schemas/project.json
+
+layer: tool
+
+tasks:
+  changeset:
+    command: changeset
+  version:
+    command: bun run scripts/version.ts
+  publish:
+    script: changeset tag && pnpm publish -r --no-git-checks --access public
+    deps: ["contracts:build", "sdk:build"]
+    options:
+      runDepsInParallel: false
+  format-all:
+    command: dprint fmt --allow-no-files
+  check-all:
+    command: dprint check --allow-no-files

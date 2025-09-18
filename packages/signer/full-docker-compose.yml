@@ -1,8 +1,8 @@
 services:
-  signer: 
+  signer:
     build:
       context: ../..
-      dockerfile: Dockerfile
+      dockerfile: packages/signer/Dockerfile
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -26,5 +26,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-volumes: 
+volumes:
   postgres_data:

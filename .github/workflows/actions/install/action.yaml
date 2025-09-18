@@ -1,40 +1,45 @@
 name: Install Bun & PNPM
+description: "Setup Bun, PNPM, Node.js and install dependencies"
 inputs:
   install:
     description: Choose a specific package to install
     required: false
   node-version:
+    description: Node.js version to use (fallback if not set in package.json engines)
     required: false
     default: 22.9.0
   bun-version:
+    description: Bun version to use (fallback if not set in package.json engines)
     required: false
     default: 1.1.34
   pnpm-version:
+    description: PNPM version to use (fallback if not set in package.json engines)
     required: false
     default: 9.14.2
 
 runs:
   using: composite
   steps:
-    - run: echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
+    - name: 📦 Read package engines
+      run: echo "PACKAGE_JSON=$(jq -c . < package.json)" >> $GITHUB_ENV
       shell: bash
 
-    - name: Use Bun ${{ fromJson(env.PACKAGE_JSON).engines.bun || inputs.bun-version }} 
+    - name: 🍞 Use Bun ${{ fromJson(env.PACKAGE_JSON).engines.bun || inputs.bun-version }}
       uses: oven-sh/setup-bun@v2
       with:
-        bun-version: ${{ fromJson(env.PACKAGE_JSON).engines.bun || inputs.bun-version }} 
+        bun-version: ${{ fromJson(env.PACKAGE_JSON).engines.bun || inputs.bun-version }}
 
-    - name: Use Pnpm ${{ fromJson(env.PACKAGE_JSON).engines.pnpm || inputs.pnpm-version }} 
+    - name: 📦 Use PNPM ${{ fromJson(env.PACKAGE_JSON).engines.pnpm || inputs.pnpm-version }}
       uses: pnpm/action-setup@v3
       with:
-        version: ${{ fromJson(env.PACKAGE_JSON).engines.pnpm || inputs.pnpm-version }} 
+        version: ${{ fromJson(env.PACKAGE_JSON).engines.pnpm || inputs.pnpm-version }}
 
-    - name: Use Node.js ${{ fromJson(env.PACKAGE_JSON).engines.node || inputs.node-version }}
+    - name: 🔧 Use Node.js ${{ fromJson(env.PACKAGE_JSON).engines.node || inputs.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ fromJson(env.PACKAGE_JSON).engines.node || inputs.node-version }}
         cache: pnpm
 
-    - name: Install dependencies
+    - name: 📥 Install dependencies
       run: pnpm install ${{ inputs.install && format('--filter {0}', inputs.install) || '' }}
       shell: bash

@@ -1,0 +1,53 @@
+name: "Cloudflare Deploy Action (Moon)"
+description: "Runs a moon task and grabs the first URL from the output as the deployment URL."
+author: "Hebilicious"
+
+inputs:
+  task:
+    description: "The moon task to run for deployment"
+    required: true
+  working-directory:
+    description: "The working directory to execute the command from."
+    required: false
+    default: "."
+
+outputs:
+  deployment-url:
+    description: "The URL of the deployed Cloudflare Worker or Pages site."
+    value: ${{ steps.deploy-step.outputs.deployment-url }}
+  command-output:
+    description: "The full standard output of the deployment command."
+    value: ${{ steps.deploy-step.outputs.command-output }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: 🚀 Run deployment task
+      id: deploy-step
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -o pipefail
+        COMMAND_TO_RUN="moon run ${{ inputs.task }}"
+        echo "Running deployment command: $COMMAND_TO_RUN"
+        OUTPUT_FILE=$(mktemp)
+
+        $COMMAND_TO_RUN 2>&1 | tee "$OUTPUT_FILE"
+        COMMAND_OUTPUT=$(cat "$OUTPUT_FILE")
+
+        # Filter by task, extract URLs, get the first one, and remove trailing punctuation.
+        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | grep "${{ inputs.task }}" | grep -Eo 'https?://[-a-zA-Z0-9_.~!*()''%?&=#$+,/]+' | head -n 1 | sed 's/\.$//' || true)
+
+        echo "command-output<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMAND_OUTPUT" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+        if [ -n "$DEPLOYMENT_URL" ]; then
+          echo "deployment-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Found deployment URL: $DEPLOYMENT_URL"
+        else
+          echo "deployment-url=" >> $GITHUB_OUTPUT
+          echo "No deployment URL found."
+        fi
+
+        rm "$OUTPUT_FILE"

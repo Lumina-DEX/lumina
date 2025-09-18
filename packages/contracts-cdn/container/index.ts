@@ -1,8 +1,8 @@
 import {
-	NetworkStateQuery,
-	fetchAllFromPoolFactory,
-	networks,
 	archiveUrls,
+	fetchAllFromPoolFactory,
+	NetworkStateQuery,
+	networks,
 	type urls
 } from "@lumina-dex/sdk"
 import { request as gqlrequest } from "graphql-request"

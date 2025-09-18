@@ -1,11 +1,10 @@
+import { execSync } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
-
 import { unzipSync, zipSync } from "fflate"
 
-import { execSync } from "node:child_process"
-
 import contracts from "../../contracts/package.json" with { type: "json" }
+
 const { version } = contracts
 console.log(`Creating cache for version ${version}`)
 

@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: library
+
+fileGroups:
+  sources:
+    - src/**/*
+    - rollup.config.mjs
+    - package.json
+    - tsconfig.*
+    - eslint.config.mjs
+  test:
+    - tests/**/*
+    - vitest.config.ts
+
+tasks:
+  build:
+    command: rollup -c rollup.config.mjs
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - dist/
+  build-tsc:
+    command: tsc --project tsconfig.tsc.json
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - output/
+  docs: 
+    command: typedoc src/indexpool.ts --out @out(0)
+    deps: [build]
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - docs/
+  typecheck:
+    command: tsc --noEmit --project tsconfig.tsc.json
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  lint:
+    command: eslint src/* tests/*
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  lint-fix:
+    command: eslint src/* tests/* --fix
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  base-test: 
+    command: vitest
+    args: [run, --testTimeout=150000]
+    deps: [build]
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  test-watch:
+    extends: base-test
+    args: watch
+    preset: "watcher"
+    options:
+      mergeArgs: replace
+  test: 
+    extends: base-test
+  test-coverage:
+    extends: base-test
+    args: --coverage
+  test-factory:
+    extends: base-test
+    args: Factory
+  test-faucet:
+    extends: base-test
+    args: Faucet
+  test-data:
+    extends: base-test
+    args: PoolData
+  test-token:
+    extends: base-test
+    args: PoolToken
+  test-multisig:
+    extends: base-test
+    args: MultiSig

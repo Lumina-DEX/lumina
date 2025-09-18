@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: application
+
+dependsOn:
+  - sdk
+
+fileGroups:
+  sources:
+    - src/**/*
+    - index.html
+    - public/**/*
+    - vite.config.ts
+    - package.json
+    - tsconfig.json
+
+tasks:
+  build:
+    command: vite build
+    deps: [^:build]
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - "dist/"
+  typecheck:
+    command: tsc --noEmit
+    deps: [^:build]
+    inputs:
+      - "@group(sources)"
+  preview:
+    command: vite preview
+    preset: "server"
+    deps: [build]
+  dev:
+    command: vite
+    args: --port=3003
+    preset: "server"
+  deploy:
+    command: wrangler pages deploy dist/
+    deps: [build]

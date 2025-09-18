@@ -13,10 +13,6 @@
         "name": "@service/cdn"
       },
       {
-        "path": "../packages/contracts-cdn/container",
-        "name": "cdn@container/tokens"
-      },
-      {
         "path": "../packages/signer",
         "name": "@service/signer"
       },
@@ -43,7 +39,8 @@
     "extensions": {
       "recommendations": [
         "dprint.dprint",
-        "biomejs.biome"
+        "biomejs.biome",
+        "moonrepo.moon-console"
       ]
     },
   }
