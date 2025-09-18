@@ -1,3 +1,4 @@
+import { Container } from "@cloudflare/containers"
 import type { Networks } from "@lumina-dex/sdk"
 import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
@@ -13,6 +14,7 @@ import {
 	sync,
 	tokenCacheKey
 } from "./http"
+import { cleanPoolTable } from "./supabase"
 
 const router = createRouter<{ path: string }>()
 
@@ -27,9 +29,6 @@ addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
 
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 addRoute(router, "POST", "/workflows/sync-pool", { path: "sync-pool" })
-
-import { Container } from "@cloudflare/containers"
-import { cleanPendingPools } from "./supabase"
 
 export class FetchToken extends Container<Env> {
 	defaultPort = 3000
@@ -49,7 +48,7 @@ export default {
 				console.log("Synced all networks")
 				break
 			case "0 0 * * *":
-				await cleanPendingPools({ env })
+				await cleanPoolTable({ env })
 				console.log("Cleaned pending pools")
 				break
 		}
@@ -58,7 +57,6 @@ export default {
 		//TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
-
 		// Manually trigger the SyncPool workflow for Auth users
 		if (match?.data.path === "sync-pool" && auth({ env, request })) {
 			const body = await request.json()
@@ -72,6 +70,11 @@ export default {
 
 		// Manually trigger the Scheduled event for Auth users
 		if (match?.data.path === "scheduled" && auth({ env, request })) {
+			const t = url.searchParams.get("type")
+			if (t === "clean") {
+				await cleanPoolTable({ env })
+				return new Response("Cleaned and confirmed pools", { headers, status: 200 })
+			}
 			await Promise.all(liveNetworks.map((network) => sync({ env, network, context })))
 			return new Response("Synced all networks", { headers, status: 200 })
 		}

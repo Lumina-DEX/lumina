@@ -11,6 +11,7 @@ export interface WaitForPoolParams {
 
 export class SyncPool extends WorkflowEntrypoint<Env, WaitForPoolParams> {
 	async run(event: WorkflowEvent<WaitForPoolParams>, step: WorkflowStep) {
+		console.log("Workflow triggered with payload:", event.payload)
 		const { network, poolAddress } = event.payload
 		const id = `${network}_${poolAddress}`
 		const container = getContainer(this.env.FETCHTOKEN, id)
@@ -36,9 +37,11 @@ export class SyncPool extends WorkflowEntrypoint<Env, WaitForPoolParams> {
 		await Promise.all([
 			step.do("Update CDN database", async () => {
 				await updateTokensAndPools({ env: this.env, context: this.ctx, network, tokens, pools })
+				console.log(`Updated CDN database for network ${network}`)
 			}),
 			step.do("Update Signer database", async () => {
 				await updatePool({ env: this.env, poolAddress, network })
+				console.log(`Updated Signer database for pool ${poolAddress} on network ${network}`)
 			})
 		])
 	}

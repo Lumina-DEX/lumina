@@ -15,31 +15,38 @@ export const updatePool = async ({
 		.eq("network", network)
 }
 
-export const cleanPendingPools = async ({ env }: { env: Env }) => {
+export const cleanPoolTable = async ({ env }: { env: Env }) => {
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY)
 	const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-	const { data: pendingPools, error } = await supabase
+	const { data: pendingPools, error: pendingError } = await supabase
 		.from("Pool")
 		.select()
 		.eq("status", "pending")
 		.lt("created_at", oneDayAgo)
 
-	if (!pendingPools || error) {
-		console.error("Error fetching pending pools", error)
+	const { data: confirmedPools, error: confirmedError } = await supabase
+		.from("Pool")
+		.select()
+		.eq("status", "confirmed")
+
+	const pools = [...(pendingPools || []), ...(confirmedPools || [])]
+	const error = pendingError || confirmedError
+	if (!pools || error) {
+		console.error("Error fetching pools", error)
 		return
 	}
 
-	if (pendingPools.length === 0) {
-		console.log("No pending pools to clean")
+	if (pools.length === 0) {
+		console.log("No pools to clean")
 		return
 	}
-	console.log(`Cleaning ${pendingPools.length} pending pools`)
+	console.log(`Cleaning ${pendingPools.length} pools`)
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
 	//TODO: Use p-limit to do this in batches.
-	for (const { id, network, public_key: address } of pendingPools) {
+	for (const { id, network, public_key: address } of pools) {
 		const exist = await tokenList.poolExists({ network: network as Networks, address })
 		if (exist) {
 			console.log(`Pool ${address} exists on network ${network}, updating status to deployed`)
