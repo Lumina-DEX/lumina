@@ -51,8 +51,7 @@ export const cleanPoolTable = async ({ env }: { env: Env }) => {
 		if (exist) {
 			console.log(`Pool ${address} exists on network ${network}, updating status to deployed`)
 			await supabase.from("Pool").update({ status: "deployed" }).eq("id", id)
-		}
-		if (!exist) {
+		} else {
 			console.log(`Pool ${address} does not exist on network ${network}, deleting from database`)
 			await supabase.from("Pool").delete().eq("id", id)
 		}
