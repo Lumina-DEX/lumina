@@ -1,4 +1,4 @@
-import { getRandom } from "@cloudflare/containers"
+import { getContainer } from "@cloudflare/containers"
 import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
 
 interface ServeAsset {
@@ -77,7 +77,7 @@ export const sync = async ({ env, context, network }: SyncInput) => {
 	const url = `http://localhost/${network}`
 	console.log(`Syncing tokens from ${url} for network ${network}`)
 	// TODO: Fix when autoscaling is released https://developers.cloudflare.com/containers/scaling-and-routing/#autoscaling-and-routing-unreleased
-	const container = await getRandom(env.FETCHTOKEN, 1)
+	const container = getContainer(env.FETCHTOKEN)
 	const response = await container.fetch(url, { method: "GET" })
 	console.log(`Response from ${url}:`, response.status, response.statusText)
 	if (response.ok) {
