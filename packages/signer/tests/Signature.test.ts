@@ -23,7 +23,9 @@ const Schema = v.object({
 	INFISICAL_CLIENT_ID: v.string(),
 	INFISICAL_CLIENT_SECRET: v.string()
 })
-v.parse(Schema, process.env)
+const env = v.parse(Schema, process.env)
+if (env.DATABASE_URL.includes("supabase"))
+	throw new Error("Supabase detected, do not run test against prod urls.")
 
 const { drizzle: db } = getDb()
 describe("Signature", () => {
@@ -181,7 +183,7 @@ describe("Signature", () => {
 
 					signerAId = res[0].insertedId
 
-					await db.insert(signerMerkleNetworks).values({
+					await tx.insert(signerMerkleNetworks).values({
 						signerId: signerAId,
 						network,
 						permission: Number(allRight),
@@ -195,7 +197,7 @@ describe("Signature", () => {
 						.returning({ insertedId: signerMerkle.id })
 					signerBId = res[0].insertedId
 
-					await db.insert(signerMerkleNetworks).values({
+					await tx.insert(signerMerkleNetworks).values({
 						signerId: signerBId,
 						network,
 						permission: Number(allRight),
