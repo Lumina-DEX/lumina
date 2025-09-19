@@ -5,19 +5,6 @@ import { getDb } from "../src/db"
 const { drizzle: db } = getDb()
 
 async function seed() {
-	// First, seed the networks
-	const networks = ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
-
-	console.log("🌱 Seeding networks...")
-	for (const network of networks) {
-		try {
-			await db.insert(dbNetworks).values({ network }).onConflictDoNothing()
-			console.log(`✅ Network inserted/exists: ${network}`)
-		} catch (error) {
-			console.log(`⚠️  Network already exists: ${network}`)
-		}
-	}
-
 	const signers = [
 		{
 			publicKey: "B62qjpbiYvHwbU5ARVbE5neMcuxfxg2zt8wHjkWVKHEiD1micG92CtJ",
@@ -69,22 +56,24 @@ async function seed() {
 			.from(signerMerkle)
 			.where(eq(signerMerkle.publicKey, signerData.publicKey))
 			.limit(1)
+			.then((result) => result.length > 0)
 
-		let signerId: number
-
-		if (existing.length === 0) {
+		if (!existing) {
 			// Insert new signer
-			const [newSigner] = await db
-				.insert(signerMerkle)
-				.values({ publicKey: signerData.publicKey })
-				.returning()
-
-			signerId = newSigner.id
+			await db.insert(signerMerkle).values({ publicKey: signerData.publicKey }).returning()
 			console.log(`✅ Signer inserted: ${signerData.publicKey}`)
 		} else {
-			signerId = existing[0].id
 			console.log(`⚠️  Signer already exists: ${signerData.publicKey}`)
 		}
+
+		// Get the signer Id of this public key
+		const [signer] = await db
+			.select({ id: signerMerkle.id })
+			.from(signerMerkle)
+			.where(eq(signerMerkle.publicKey, signerData.publicKey))
+			.limit(1)
+
+		const signerId = signer?.id
 
 		// Insert network permissions for this signer
 		for (const network of signerData.networks) {
