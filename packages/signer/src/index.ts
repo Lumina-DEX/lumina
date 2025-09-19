@@ -8,7 +8,6 @@ const Schema = v.object({
 	DATABASE_URL: v.string(),
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
-	INFISICAL_SECRET_NAME: v.string(),
 	INFISICAL_CLIENT_ID: v.string(),
 	INFISICAL_CLIENT_SECRET: v.string()
 })
@@ -21,6 +20,7 @@ export type Context = {
 	database: Database
 	queues: Queues
 	env: Env
+	shouldUpdateCDN?: boolean
 }
 
 const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
@@ -35,7 +35,12 @@ export const yoga = createYoga<{ env: typeof env }>({
 		exposedHeaders: ["*"]
 	}),
 	context: async ({ env }) => {
-		return { env, database: getDb, queues } satisfies Context
+		return {
+			env,
+			database: getDb,
+			queues,
+			shouldUpdateCDN: commitHash !== "development"
+		} satisfies Context
 	},
 	plugins: [
 		{

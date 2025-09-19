@@ -59,7 +59,7 @@ tasks:
       cache: false
   db-migrate:
     description: Run migrations. This leverages the DATABASE_URL env variable.
-    command: drizzle-kit migrate
+    command: bun run scripts/migrate.ts
     options:
       cache: false
   db-studio:

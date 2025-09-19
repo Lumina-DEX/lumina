@@ -188,7 +188,6 @@ dokku config:set pool-signer \
   DATABASE_URL=your_postgresql_database_url \
   INFISICAL_ENVIRONMENT=your_infisical_environment \
   INFISICAL_PROJECT_ID=your_infisical_project_id \
-  INFISICAL_SECRET_NAME=your_infisical_secret_name \
   INFISICAL_CLIENT_ID=your_infisical_client_id \
   INFISICAL_CLIENT_SECRET=your_infisical_client_secret
 ```
