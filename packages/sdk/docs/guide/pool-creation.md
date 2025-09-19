@@ -92,10 +92,7 @@ The `createPoolMachine` context includes an `error` field that contains details 
 ```typescript
 type CreatePoolContext = {
 	// ... other fields
-	error?: unknown // Contains error details when something goes wrong
-	poolCheck?: {
-		exists: boolean // Result of the pool existence check
-	}
+	errors: Error[] // Contains error details when something goes wrong
 }
 ```
 
@@ -132,7 +129,6 @@ const creatingPools = computed(() => {
         status: state.value,
         context: state.context,
         error: state.context.error, // Access error information
-        poolExists: state.context.poolCheck?.exists, // Check if pool already exists
       })),
     };
   });
@@ -146,9 +142,12 @@ const creatingPools = computed(() => {
     <div v-for="pool in creatingPools" :key="pool.id">
       <h3>Job ID: {{ pool.id }}</h3>
       <p><strong>Status:</strong> {{ pool.state.status }}</p>
-      <p v-if="pool.state.poolExists"><strong>Pool Already Exists!</strong></p>
-      <div v-if="pool.state.error" class="error">
-        <strong>Error:</strong> {{ pool.state.error }}
+      <p v-if="pool.state.status === 'POOL_ALREADY_EXISTS'"><strong>Pool Already Exists!</strong></p>
+      <div v-if="pool.state.errors && pool.state.errors.length > 0" class="error">
+        <strong>Errors:</strong> 
+        <ul>
+          <li v-for="(error, index) in pool.state.errors" :key="index">{{ error.message }}</li>
+        </ul>
       </div>
       <details>
         <summary>Full Context</summary>
@@ -215,8 +214,7 @@ const PoolCreationJob = ({
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context,
-		error: state.context.error,
-		poolExists: state.context.poolCheck?.exists
+		error: state.context.error
 	}))
 
 	return (
