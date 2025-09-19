@@ -5,6 +5,7 @@ import { GraphQLError } from "graphql"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
+import { updateStatusAndCDN } from "./helpers"
 
 type Builder = {
 	Context: Context
@@ -18,7 +19,10 @@ interface Job {
 }
 const Job = builder.objectRef<Job>("Job").implement({
 	description: "A job representing a pool creation task",
-	fields: (t) => ({ id: t.exposeString("id"), status: t.exposeString("status") })
+	fields: (t) => ({
+		id: t.exposeString("id"),
+		status: t.exposeString("status")
+	})
 })
 
 interface JobResult {
@@ -141,7 +145,7 @@ builder.mutationField("confirmJob", (t) =>
 		type: "String",
 		description: "Confirm a job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
-		resolve: async (_, { jobId }, { database, queues }) => {
+		resolve: async (_, { jobId }, { database, queues, shouldUpdateCDN }) => {
 			using q = queues()
 			using db = database()
 			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
@@ -150,8 +154,12 @@ builder.mutationField("confirmJob", (t) =>
 			if (job) await job.remove()
 			if (data[0].status === "confirmed") return `Job for pool ${jobId} is already confirmed`
 			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
-			//TODO: Add logic to trigger a workflow to handle the confirmed job and update the CDN
-			return `Job for pool "${data[0].publicKey}" confirmed`
+			const { network, publicKey: poolAddress } = data[0]
+			if (shouldUpdateCDN) {
+				const result = await updateStatusAndCDN({ poolAddress, network })
+				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${result}`
+			}
+			return `Job for pool "${poolAddress}" confirmed`
 		}
 	})
 )

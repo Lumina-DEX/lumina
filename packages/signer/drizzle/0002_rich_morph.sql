@@ -1,0 +1,1 @@
+ALTER TABLE "PoolKey" ADD CONSTRAINT "PoolOrFactory" CHECK ((num_nonnulls("PoolKey"."pool_id", "PoolKey"."factory_id") = 1));

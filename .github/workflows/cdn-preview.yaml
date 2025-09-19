@@ -32,8 +32,8 @@ jobs:
       - name: 🧪 Run contracts-cdn tests
         run: moon contracts-cdn:test
 
-      - name: 🗂️ Build contracts-cdn cache
-        run: moon contracts-cdn:build-cache
+      # - name: 🗂️ Build contracts-cdn cache
+      #   run: moon contracts-cdn:build-cache
 
       - name: 🚀 Deploy to Cloudflare Workers Static Assets
         id: cloudflare

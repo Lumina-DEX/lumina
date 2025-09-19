@@ -36,7 +36,7 @@ runs:
         COMMAND_OUTPUT=$(cat "$OUTPUT_FILE")
 
         # Filter by task, extract URLs, get the first one, and remove trailing punctuation.
-        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | grep "${{ inputs.task }}" | grep -Eo 'https?://[-a-zA-Z0-9_.~!*()''%?&=#$+,/]+' | head -n 1 | sed 's/\.$//' || true)
+        DEPLOYMENT_URL=$(echo "$COMMAND_OUTPUT" | sed -n '/${{ inputs.task }} | Deployed/,$p' | grep -Eo 'https?://[-a-zA-Z0-9_.~!*()''%?&=#$+,/]+' | head -n 1 | sed 's/\.$//' || true)
 
         echo "command-output<<EOF" >> $GITHUB_OUTPUT
         echo "$COMMAND_OUTPUT" >> $GITHUB_OUTPUT
