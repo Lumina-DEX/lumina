@@ -128,7 +128,7 @@ const creatingPools = computed(() => {
       state: useSelector(poolActor, (state) => ({
         status: state.value,
         context: state.context,
-        error: state.context.error, // Access error information
+        errors: state.context.errors, // Access error information
       })),
     };
   });
@@ -214,7 +214,7 @@ const PoolCreationJob = ({
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context,
-		error: state.context.error
+		errors: state.context.errors
 	}))
 
 	return (
