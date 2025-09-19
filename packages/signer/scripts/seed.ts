@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm"
-import { signerMerkle, dbNetworks, signerMerkleNetworks } from "../drizzle/schema"
+import { signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import { getDb } from "../src/db"
 
 const { drizzle: db } = getDb()
@@ -60,7 +60,7 @@ async function seed() {
 
 		if (!existing) {
 			// Insert new signer
-			await db.insert(signerMerkle).values({ publicKey: signerData.publicKey }).returning()
+			await db.insert(signerMerkle).values({ publicKey: signerData.publicKey })
 			console.log(`✅ Signer inserted: ${signerData.publicKey}`)
 		} else {
 			console.log(`⚠️  Signer already exists: ${signerData.publicKey}`)
@@ -73,7 +73,8 @@ async function seed() {
 			.where(eq(signerMerkle.publicKey, signerData.publicKey))
 			.limit(1)
 
-		const signerId = signer?.id
+		if (!signer) continue
+		const signerId = signer.id
 
 		// Insert network permissions for this signer
 		for (const network of signerData.networks) {
