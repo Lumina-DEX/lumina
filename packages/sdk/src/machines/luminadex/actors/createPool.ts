@@ -1,7 +1,9 @@
 import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
+import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
 import { Observable } from "rxjs"
 import { assign, enqueueActions, fromObservable, fromPromise, setup } from "xstate"
+import { luminadexFactories, MINA_ADDRESS } from "../../../constants"
 import { createPoolSignerClient } from "../../../graphql/clients"
 import {
 	ConfirmTransactionMutation,
@@ -13,14 +15,16 @@ import { createMeasure, prefixedLogger } from "../../../helpers/debug"
 import { sendTransaction } from "../../../helpers/transfer"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
-// Required imports for pool existence check
-import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
-import { luminadexFactories, MINA_ADDRESS } from "../../../constants"
 
 const logger = prefixedLogger("[POOL CREATION API]")
 const measure = createMeasure(logger)
 
-// Function to check if a pool already exists
+const addError = (fallbackError: Error) => ({ context, event }: { context: any; event: any }) => {
+	const error = event.error instanceof Error ? event.error : fallbackError
+	logger.error(error)
+	return { errors: [...context.errors, error] }
+}
+
 export const checkPoolExists = fromPromise(
 	async ({ input }: { input: { tokenA: string; tokenB: string; network: Networks } }) => {
 		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
@@ -37,7 +41,6 @@ export const checkPoolExists = fromPromise(
 				? PublicKey.empty()
 				: PublicKey.fromBase58(input.tokenB)
 
-			// Order tokens as in the signer
 			const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
 			const token0 = Provable.if(
 				tokenAPublicKey.isEmpty().or(tokenALower),
@@ -49,7 +52,6 @@ export const checkPoolExists = fromPromise(
 			const isMinaTokenPool = token0.isEmpty().toBoolean()
 
 			if (isMinaTokenPool) {
-				// Check for MINA-Token pool
 				const tokenAccount = await fetchAccount({
 					publicKey: token1,
 					tokenId: factoryTokenId
@@ -62,7 +64,6 @@ export const checkPoolExists = fromPromise(
 					return { exists: true }
 				}
 			} else {
-				// Check for Token-Token pool
 				const fields = token0.toFields().concat(token1.toFields())
 				const hash = Poseidon.hashToGroup(fields)
 				const pairPublickey = PublicKey.fromGroup(hash)
@@ -87,14 +88,11 @@ export const checkPoolExists = fromPromise(
 			return { exists: false }
 		} catch (error) {
 			logger.error("Error checking pool existence:", error)
-			// In case of verification error, let the process continue
-			// rather than blocking completely
 			throw error
 		}
 	}
 )
 
-// 0. Fetch job status
 export const getJobStatus = fromPromise(
 	async ({ input }: { input: { client: Client; jobId: string } }) => {
 		logger.start("Checking job status for:", input.jobId)
@@ -105,7 +103,6 @@ export const getJobStatus = fromPromise(
 	}
 )
 
-// 1. Create a pool creation job
 export const createPoolMutation = fromPromise(
 	async ({
 		input
@@ -126,7 +123,6 @@ export const createPoolMutation = fromPromise(
 	}
 )
 
-// 2. Subscribe to job status updates
 export const checkJobStatus = fromObservable(
 	({ input }: { input: { client: Client; jobId: string } }) => {
 		logger.start("Subscribing to job status for:", input.jobId)
@@ -147,13 +143,12 @@ export const checkJobStatus = fromObservable(
 							observer.error(new Error("Error while processing data from subscription"))
 							return
 						}
-						observer.next(data) // Forward the status update
+						observer.next(data)
 						logger.success("Job status update received:", data)
 						observer.complete()
 					}
 				})
 
-			// On cleanup, unsubscribe from the urql subscription
 			return () => {
 				logger.info("Unsubscribing from job status updates for:", input.jobId)
 				unsubscribe()
@@ -163,7 +158,6 @@ export const checkJobStatus = fromObservable(
 	}
 )
 
-// 3. Sign o1js transaction
 export const signPoolTransaction = fromPromise(
 	async ({ input }: { input: { transaction: string; wallet: WalletActorRef } }) => {
 		logger.start("Signing transaction")
@@ -173,7 +167,6 @@ export const signPoolTransaction = fromPromise(
 	}
 )
 
-// 4. Send final GraphQL mutation
 export const confirmPoolCreation = fromPromise(
 	async ({ input }: { input: { client: Client; jobId: string } }) => {
 		logger.start("Finalizing pool creation for job:", input.jobId)
@@ -203,10 +196,7 @@ export const createPoolMachine = setup({
 				hash: string
 				url: string
 			}
-			poolCheck?: {
-				exists: boolean
-			}
-			error?: unknown
+			errors: Error[]
 		},
 		input: {} as {
 			tokenA: string
@@ -240,7 +230,7 @@ export const createPoolMachine = setup({
 			hash: "",
 			url: ""
 		},
-		error: undefined
+		errors: []
 	}),
 	states: {
 		INIT: {
@@ -253,8 +243,6 @@ export const createPoolMachine = setup({
 				else enqueue.raise({ type: "status" })
 			})
 		},
-
-		// New state to check pool existence
 		CHECKING_POOL_EXISTS: {
 			invoke: {
 				src: "checkPoolExists",
@@ -265,42 +253,23 @@ export const createPoolMachine = setup({
 				}),
 				onDone: [
 					{
-						// If pool already exists, go to specific error state
 						target: "POOL_ALREADY_EXISTS",
-						guard: ({ event }) => event.output?.exists === true,
-						actions: assign(({ event }) => ({
-							poolCheck: event.output,
-							error: new Error("Pool already exists for the specified token pair")
-						}))
+						guard: ({ event }) => event.output?.exists === true
 					},
 					{
-						// If pool doesn't exist, continue with creation
-						target: "CREATING",
-						actions: assign(({ event }) => ({
-							poolCheck: event.output
-						}))
+						target: "CREATING"
 					}
 				],
 				onError: {
-					// In case of verification error, continue anyway
-					// (better to try creating than blocking completely)
 					target: "CREATING",
-					actions: assign(({ event }) => ({
-						poolCheck: { exists: false },
-						error: event.error
-					}))
+					actions: assign(addError(new Error("Pool check failed")))
 				}
 			}
 		},
-
-		// New final state for pools that already exist
 		POOL_ALREADY_EXISTS: {
 			type: "final",
-			entry: ({ context }) => {
-				logger.error("Pool creation aborted: Pool already exists", context.poolCheck)
-			}
+			description: "Pool already exists for the specified token pair"
 		},
-
 		GET_STATUS: {
 			invoke: {
 				src: "getJobStatus",
@@ -315,7 +284,10 @@ export const createPoolMachine = setup({
 					},
 					{ target: "WAITING_FOR_PROOF" }
 				],
-				onError: { target: "FAILED" }
+				onError: {
+					target: "FAILED",
+					actions: assign(addError(new Error("Failed to get job status")))
+				}
 			}
 		},
 		CREATING: {
@@ -336,9 +308,7 @@ export const createPoolMachine = setup({
 				},
 				onError: {
 					target: "ERRORED",
-					actions: assign(({ event }) => ({
-						error: event.error
-					}))
+					actions: assign(addError(new Error("Failed to create pool")))
 				}
 			}
 		},
@@ -354,9 +324,7 @@ export const createPoolMachine = setup({
 				onDone: { target: "SIGNING" },
 				onError: {
 					target: "ERRORED",
-					actions: assign(({ event }) => ({
-						error: event.error
-					}))
+					actions: assign(addError(new Error("Error waiting for proof")))
 				}
 			}
 		},
@@ -373,7 +341,10 @@ export const createPoolMachine = setup({
 						transaction: { hash: event.output.hash, url: event.output.url }
 					}))
 				},
-				onError: { target: "FAILED" }
+				onError: {
+					target: "FAILED",
+					actions: assign(addError(new Error("Transaction signing failed")))
+				}
 			}
 		},
 		CONFIRMING: {
@@ -381,11 +352,23 @@ export const createPoolMachine = setup({
 				src: "confirmPoolCreation",
 				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
 				onDone: "COMPLETED",
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "ERRORED",
+					actions: assign(addError(new Error("Transaction confirmation failed")))
+				}
 			}
 		},
-		ERRORED: { after: { 1000: { target: "INIT" } } },
-		COMPLETED: { type: "final" },
-		FAILED: { type: "final" }
+		ERRORED: {
+			after: { 1000: { target: "INIT" } },
+			description: "An error occurred, will retry"
+		},
+		COMPLETED: {
+			type: "final",
+			description: "Pool creation completed successfully"
+		},
+		FAILED: {
+			type: "final",
+			description: "Pool creation failed with non-recoverable error"
+		}
 	}
 })
