@@ -40,8 +40,7 @@ type PoolKey = {
 
 const { drizzle: db } = getDb()
 describe("Signature", () => {
-	//TODO: Fix seed script and re-enable test
-	it.skip("rebuild merkle", async () => {
+	it("rebuild merkle", async () => {
 		const network = "mina:devnet" as const
 
 		const [merkleMap] = await getMerkle(db, network)
@@ -133,8 +132,8 @@ describe("Signature", () => {
 			}
 		}
 	})
-	//TODO: Fix seed script and re-enable test
-	it.skip("decrypt from db", async () => {
+
+	it("decrypt from db", async () => {
 		await initializeBindings()
 
 		const network = "zeko:testnet" as const
