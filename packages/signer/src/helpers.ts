@@ -11,12 +11,16 @@ import {
 	MerkleMap,
 	Mina,
 	Poseidon,
+	PrivateKey,
 	PublicKey,
 	UInt64
 } from "o1js"
 import * as v from "valibot"
-import { signerMerkle, signerMerkleNetworks, type poolKey as tPoolKey } from "../drizzle/schema"
+import { pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import type { getDb } from "./db"
+
+type Drizzle = ReturnType<typeof getDb>["drizzle"]
+type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
 
 export const getEnv = () => {
 	const Schema = v.object({
@@ -30,7 +34,6 @@ export const getEnv = () => {
 	return env
 }
 
-type NewPoolKey = typeof tPoolKey.$inferInsert
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number
 }
@@ -38,7 +41,7 @@ type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 // list of different approved user to sign
 
 export async function getMerkle(
-	database: ReturnType<typeof getDb>["drizzle"],
+	database: Drizzle,
 	network: Networks
 ): Promise<[MerkleMap, NewSignerMerkle[]]> {
 	let users: NewSignerMerkle[] = []
@@ -54,8 +57,8 @@ export async function getMerkle(
 		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
 		.where(and(eq(signerMerkleNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
-	const allRightHash = Poseidon.hash(allRight.toFields())
-	const deployRightHash = Poseidon.hash(deployPoolRight.toFields())
+	const _allRightHash = Poseidon.hash(allRight.toFields())
+	const _deployRightHash = Poseidon.hash(deployPoolRight.toFields())
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
@@ -71,11 +74,7 @@ export async function getMerkle(
 	return [merkle, users]
 }
 
-export function getUniqueUserPairs(
-	users: NewSignerMerkle[],
-	poolId: number,
-	key: string
-): NewPoolKey[] {
+export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key: string) {
 	const pairs = []
 
 	for (let i = 0; i < users.length; i++) {
@@ -91,7 +90,7 @@ export function getUniqueUserPairs(
 			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB.publicKey))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
-			const poolKeyRow: NewPoolKey = {
+			const poolKeyRow = {
 				poolId: poolId,
 				signer1Id: userA.id,
 				signer2Id: userB.id,
@@ -174,4 +173,43 @@ export const compileContracts = async () => {
 	console.log("compile pool fungible token")
 	await FungibleToken.compile({ cache })
 	console.timeEnd("compile")
+}
+
+export const updateStatusAndCDN = async ({
+	poolAddress,
+	network
+}: {
+	poolAddress: string
+	network: Networks
+}) => {
+	const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
+	const response = await fetch("https://cdn.luminadex.com/workflows", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${secret}`
+		},
+		body: JSON.stringify({ poolAddress, network })
+	})
+	const result = await response.json()
+	return JSON.stringify(result)
+}
+
+export const createPoolKeys = async (
+	database: Drizzle | Transaction
+): Promise<{
+	newPoolPrivateKey: PrivateKey
+	newPoolPublicKey: PublicKey
+	newPoolPublicKeyBase58: string
+}> => {
+	const newPoolPrivateKey = PrivateKey.random()
+	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
+	const newPoolPublicKeyBase58 = newPoolPublicKey.toBase58()
+	const [exists] = await database
+		.select()
+		.from(pool)
+		.where(eq(pool.publicKey, newPoolPublicKeyBase58))
+	if (exists) return createPoolKeys(database)
+	console.log("Generated new pool key:", newPoolPublicKeyBase58)
+	return { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 }
 }

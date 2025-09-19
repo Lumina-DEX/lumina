@@ -5,7 +5,7 @@ import { GraphQLError } from "graphql"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
-import { getInfisicalSecret } from "./helpers"
+import { updateStatusAndCDN } from "./helpers"
 
 type Builder = {
 	Context: Context
@@ -19,7 +19,10 @@ interface Job {
 }
 const Job = builder.objectRef<Job>("Job").implement({
 	description: "A job representing a pool creation task",
-	fields: (t) => ({ id: t.exposeString("id"), status: t.exposeString("status") })
+	fields: (t) => ({
+		id: t.exposeString("id"),
+		status: t.exposeString("status")
+	})
 })
 
 interface JobResult {
@@ -153,14 +156,8 @@ builder.mutationField("confirmJob", (t) =>
 			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
 			const { network, publicKey: poolAddress } = data[0]
 			if (shouldUpdateCDN) {
-				const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
-				const response = await fetch("https://cdn.luminadex.com/workflows", {
-					method: "POST",
-					headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
-					body: JSON.stringify({ poolAddress, network })
-				})
-				const result = await response.json()
-				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${JSON.stringify(result)}`
+				const result = await updateStatusAndCDN({ poolAddress, network })
+				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${result}`
 			}
 			return `Job for pool "${poolAddress}" confirmed`
 		}

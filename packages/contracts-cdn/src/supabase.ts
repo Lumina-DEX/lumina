@@ -5,12 +5,13 @@ import type { Database } from "./pooldb.types"
 export const updatePool = async ({
 	env,
 	poolAddress,
-	network
-}: { env: Env; poolAddress: string; network: string }) => {
+	network,
+	status
+}: { env: Env; poolAddress: string; network: string; status: "deployed" | "unconfirmed" }) => {
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY)
 	await supabase
 		.from("Pool")
-		.update({ status: "deployed" })
+		.update({ status })
 		.eq("public_key", poolAddress)
 		.eq("network", network)
 }
@@ -19,16 +20,13 @@ export const cleanPoolTable = async ({ env }: { env: Env }) => {
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY)
 	const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-	const { data: pendingPools, error: pendingError } = await supabase
-		.from("Pool")
-		.select()
-		.eq("status", "pending")
-		.lt("created_at", oneDayAgo)
-
-	const { data: confirmedPools, error: confirmedError } = await supabase
-		.from("Pool")
-		.select()
-		.eq("status", "confirmed")
+	const [
+		{ data: pendingPools, error: pendingError },
+		{ data: confirmedPools, error: confirmedError }
+	] = await Promise.all([
+		supabase.from("Pool").select().eq("status", "pending").lt("created_at", oneDayAgo),
+		supabase.from("Pool").select().eq("status", "confirmed").lt("created_at", oneDayAgo)
+	])
 
 	const pools = [...(pendingPools || []), ...(confirmedPools || [])]
 	const error = pendingError || confirmedError
@@ -53,7 +51,7 @@ export const cleanPoolTable = async ({ env }: { env: Env }) => {
 			await supabase.from("Pool").update({ status: "deployed" }).eq("id", id)
 		} else {
 			console.log(`Pool ${address} does not exist on network ${network}, deleting from database`)
-			await supabase.from("Pool").delete().eq("id", id)
+			await supabase.from("Pool").update({ status: "unconfirmed" }).eq("id", id)
 		}
 	}
 }

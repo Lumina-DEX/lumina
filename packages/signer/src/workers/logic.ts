@@ -15,6 +15,7 @@ import { getDb } from "@/db"
 import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
+	createPoolKeys,
 	fundNewAccount,
 	getFee,
 	getMasterSigner,
@@ -35,9 +36,9 @@ export const createPoolAndTransaction = async ({
 	Mina.setActiveInstance(Network)
 
 	console.log("data", { tokenA, tokenB, user, network })
-	const newPoolPrivateKey = PrivateKey.random()
-	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
-	console.debug("pool public Key", newPoolPublicKey.toBase58())
+	const { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 } = await createPoolKeys(
+		db.drizzle
+	)
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
@@ -52,7 +53,7 @@ export const createPoolAndTransaction = async ({
 		const result = await txOrm
 			.insert(pool)
 			.values({
-				publicKey: newPoolPublicKey.toBase58(),
+				publicKey: newPoolPublicKeyBase58,
 				tokenA,
 				tokenB,
 				user,
@@ -67,10 +68,7 @@ export const createPoolAndTransaction = async ({
 		// insert the encrypted key of the pool in database
 		await txOrm.insert(tPoolKey).values(listPair)
 		// console.log("Inserted pool keys into database", listPair)
-		const signature = Signature.create(
-			masterSignerPrivateKey,
-			newPoolPrivateKey.toPublicKey().toFields()
-		)
+		const signature = Signature.create(masterSignerPrivateKey, newPoolPublicKey.toFields())
 		const witness = merkle.getWitness(Poseidon.hash(masterSignerPublicKey.toFields()))
 		const factory = luminadexFactories[network]
 		const factoryKey = PublicKey.fromBase58(factory)
@@ -162,8 +160,5 @@ export const createPoolAndTransaction = async ({
 		console.timeEnd("prove")
 		return minaTx.toJSON()
 	})
-	return {
-		poolPublicKey: newPoolPublicKey.toBase58(),
-		transactionJson: minaTransaction
-	}
+	return { poolPublicKey: newPoolPublicKeyBase58, transactionJson: minaTransaction }
 }

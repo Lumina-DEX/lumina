@@ -31,7 +31,6 @@ CREATE TABLE "SignerMerkleNetwork" (
 );
 
 -- CUSTOM : Insert permission in new table --
--- Insert permission in new table
 INSERT INTO "SignerMerkleNetwork" ("signer_id", "network", "permission", "active")
 SELECT 
     s.id, 

@@ -23,18 +23,7 @@ const Schema = v.object({
 	INFISICAL_CLIENT_ID: v.string(),
 	INFISICAL_CLIENT_SECRET: v.string()
 })
-const env = v.parse(Schema, process.env)
-
-type NewPoolKey = typeof tPoolKey.$inferInsert
-
-type PoolKey = {
-	public_key: string
-	signer_1: string
-	signer_2: string
-	encrypted_key: string
-	generated_public_1: string
-	generated_public_2: string
-}
+v.parse(Schema, process.env)
 
 const { drizzle: db } = getDb()
 describe("Signature", () => {
@@ -124,7 +113,7 @@ describe("Signature", () => {
 
 		const network = "zeko:testnet" as const
 
-		const [merkleMap, data] = await getMerkle(db, network)
+		const [_merkleMap, data] = await getMerkle(db, network)
 
 		// Pick two signers with permission 'all' for the test
 		const testSigners = data.filter((x) => x.permission === Number(allRight)).slice(0, 2)
@@ -145,138 +134,135 @@ describe("Signature", () => {
 		const tokenB = "TEST_TOKEN_B"
 		const user = testPubA
 
-		await db
-			.transaction(async (tx) => {
-				try {
-					// Insert pool
-					const poolInsert = await tx
-						.insert(pool)
-						.values({
-							jobId: "test-job-id",
-							network,
-							publicKey: testPoolPub,
-							tokenA,
-							tokenB,
-							user,
-							status: "pending"
-						})
-						.returning({ insertedId: pool.id })
-					const insertedPoolId = poolInsert[0].insertedId
+		await db.transaction(async (tx) => {
+			try {
+				// Insert pool
+				const poolInsert = await tx
+					.insert(pool)
+					.values({
+						jobId: "test-job-id",
+						network,
+						publicKey: testPoolPub,
+						tokenA,
+						tokenB,
+						user,
+						status: "pending"
+					})
+					.returning({ insertedId: pool.id })
+				const insertedPoolId = poolInsert[0].insertedId
 
-					// Prepare poolKey row using sandbox logic
-					const encrypA = Encryption.encrypt(
-						Encoding.stringToFields(testPoolKey),
-						PublicKey.fromBase58(testPubA)
-					)
-					const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
-					const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(testPubB))
-					const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
-					const encrypted_key = encrypB.cipherText.join(",")
+				// Prepare poolKey row using sandbox logic
+				const encrypA = Encryption.encrypt(
+					Encoding.stringToFields(testPoolKey),
+					PublicKey.fromBase58(testPubA)
+				)
+				const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
+				const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(testPubB))
+				const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
+				const encrypted_key = encrypB.cipherText.join(",")
 
-					// Insert two test signers if not present
-					const [signerA] = await tx
-						.select()
-						.from(signerMerkle)
-						.where(eq(signerMerkle.publicKey, testPubA))
-						.limit(1)
-					const [signerB] = await tx
-						.select()
-						.from(signerMerkle)
-						.where(eq(signerMerkle.publicKey, testPubB))
-						.limit(1)
-					let signerAId = signerA?.id
-					let signerBId = signerB?.id
-					if (!signerAId) {
-						const res = await tx
-							.insert(signerMerkle)
-							.values({ publicKey: testPubA })
-							.returning({ insertedId: signerMerkle.id })
+				// Insert two test signers if not present
+				const [signerA] = await tx
+					.select()
+					.from(signerMerkle)
+					.where(eq(signerMerkle.publicKey, testPubA))
+					.limit(1)
+				const [signerB] = await tx
+					.select()
+					.from(signerMerkle)
+					.where(eq(signerMerkle.publicKey, testPubB))
+					.limit(1)
+				let signerAId = signerA?.id
+				let signerBId = signerB?.id
+				if (!signerAId) {
+					const res = await tx
+						.insert(signerMerkle)
+						.values({ publicKey: testPubA })
+						.returning({ insertedId: signerMerkle.id })
 
-						signerAId = res[0].insertedId
+					signerAId = res[0].insertedId
 
-						await db.insert(signerMerkleNetworks).values({
-							signerId: signerAId,
-							network,
-							permission: Number(allRight),
-							active: true
-						})
-					}
-					if (!signerBId) {
-						const res = await tx
-							.insert(signerMerkle)
-							.values({ publicKey: testPubB })
-							.returning({ insertedId: signerMerkle.id })
-						signerBId = res[0].insertedId
-
-						await db.insert(signerMerkleNetworks).values({
-							signerId: signerBId,
-							network,
-							permission: Number(allRight),
-							active: true
-						})
-					}
-
-					const poolKeyRow = {
-						poolId: insertedPoolId,
-						signer1Id: signerAId,
-						signer2Id: signerBId,
-						generatedPublic1: encryptAPub,
-						generatedPublic2: encryptBPub,
-						encryptedKey: encrypted_key
-					}
-					await tx.insert(tPoolKey).values(poolKeyRow).returning({ insertedId: tPoolKey.id })
-
-					// Now fetch and test as before
-					const poolKeyData = await tx
-						.select()
-						.from(tPoolKey)
-						.where(
-							and(
-								eq(tPoolKey.signer1Id, signerAId),
-								eq(tPoolKey.signer2Id, signerBId),
-								eq(tPoolKey.poolId, insertedPoolId)
-							)
-						)
-						.limit(1)
-					const element: NewPoolKey = poolKeyData[0]
-
-					const poolPublicInfo = await tx
-						.select()
-						.from(pool)
-						.where(eq(pool.id, element.poolId!))
-						.limit(1)
-					const poolPublicKey = poolPublicInfo[0].publicKey
-
-					const pkA = testPrivA
-					const pkB = testPrivB
-
-					// test encryption decryption works successfully
-					const encryptedFields = encryptedKeyToField(element.encryptedKey)
-
-					const cypherB: Encryption.CipherText = {
-						cipherText: encryptedFields,
-						publicKey: PublicKey.fromBase58(element.generatedPublic2).toGroup()
-					}
-					const decodeB = Encryption.decrypt(cypherB, pkB)
-					const cypherA: Encryption.CipherText = {
-						cipherText: decodeB,
-						publicKey: PublicKey.fromBase58(element.generatedPublic1).toGroup()
-					}
-					const decodeKey = Encryption.decrypt(cypherA, pkA)
-					const plainKey = Encoding.stringFromFields(decodeKey)
-					const privPool = PrivateKey.fromBase58(plainKey)
-
-					expect(privPool.toPublicKey().toBase58()).toEqual(poolPublicKey)
-				} finally {
-					tx.rollback()
+					await db.insert(signerMerkleNetworks).values({
+						signerId: signerAId,
+						network,
+						permission: Number(allRight),
+						active: true
+					})
 				}
-			})
-			.catch((error) => {
-				console.error("Transaction failed:", error)
-			})
+				if (!signerBId) {
+					const res = await tx
+						.insert(signerMerkle)
+						.values({ publicKey: testPubB })
+						.returning({ insertedId: signerMerkle.id })
+					signerBId = res[0].insertedId
+
+					await db.insert(signerMerkleNetworks).values({
+						signerId: signerBId,
+						network,
+						permission: Number(allRight),
+						active: true
+					})
+				}
+
+				const poolKeyRow = {
+					poolId: insertedPoolId,
+					signer1Id: signerAId,
+					signer2Id: signerBId,
+					generatedPublic1: encryptAPub,
+					generatedPublic2: encryptBPub,
+					encryptedKey: encrypted_key
+				}
+				await tx.insert(tPoolKey).values(poolKeyRow).returning({ insertedId: tPoolKey.id })
+
+				// Now fetch and test as before
+				const [element] = await tx
+					.select()
+					.from(tPoolKey)
+					.where(
+						and(
+							eq(tPoolKey.signer1Id, signerAId),
+							eq(tPoolKey.signer2Id, signerBId),
+							eq(tPoolKey.poolId, insertedPoolId)
+						)
+					)
+					.limit(1)
+				if (!element.poolId) throw new Error("No poolId found on inserted poolKey row")
+				const poolPublicInfo = await tx
+					.select()
+					.from(pool)
+					.where(eq(pool.id, element.poolId))
+					.limit(1)
+				const poolPublicKey = poolPublicInfo[0].publicKey
+
+				const pkA = testPrivA
+				const pkB = testPrivB
+
+				// test encryption decryption works successfully
+				const encryptedFields = encryptedKeyToField(element.encryptedKey)
+
+				const cypherB: Encryption.CipherText = {
+					cipherText: encryptedFields,
+					publicKey: PublicKey.fromBase58(element.generatedPublic2).toGroup()
+				}
+				const decodeB = Encryption.decrypt(cypherB, pkB)
+				const cypherA: Encryption.CipherText = {
+					cipherText: decodeB,
+					publicKey: PublicKey.fromBase58(element.generatedPublic1).toGroup()
+				}
+				const decodeKey = Encryption.decrypt(cypherA, pkA)
+				const plainKey = Encoding.stringFromFields(decodeKey)
+				const privPool = PrivateKey.fromBase58(plainKey)
+
+				expect(privPool.toPublicKey().toBase58()).toEqual(poolPublicKey)
+			} finally {
+				try {
+					tx.rollback()
+				} catch {}
+			}
+		})
 	})
 
-	function getUniqueUserPairsTest(users: string[], key: string, publicKey: string): PoolKey[] {
+	function getUniqueUserPairsTest(users: string[], key: string, publicKey: string) {
 		const pairs = []
 
 		for (let i = 0; i < users.length; i++) {
@@ -292,7 +278,7 @@ describe("Signature", () => {
 				const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
 				const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 				const encrypted_key = encrypB.cipherText.join(",")
-				const poolKeyRow: PoolKey = {
+				const poolKeyRow = {
 					public_key: publicKey,
 					signer_1: userA,
 					signer_2: userB,
