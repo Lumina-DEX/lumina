@@ -8,6 +8,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
       - postgres
