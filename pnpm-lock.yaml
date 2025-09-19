@@ -13614,9 +13614,6 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.12
 
-<<<<<<< HEAD
-  '@neon-rs/load@0.0.4': {}
-=======
   '@napi-rs/wasm-runtime@1.0.5':
     dependencies:
       '@emnapi/core': 1.5.0
@@ -13624,9 +13621,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@neon-rs/load@0.0.4':
-    optional: true
->>>>>>> origin/main
+  '@neon-rs/load@0.0.4': {}
 
   '@netlify/functions@2.8.2':
     dependencies:
@@ -17345,7 +17340,7 @@ snapshots:
       content-type: 1.0.5
       cookie: 0.7.2
       cookie-signature: 1.2.2
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.3(supports-color@9.4.0)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
