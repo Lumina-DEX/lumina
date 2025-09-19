@@ -1,3 +1,4 @@
+import type { ZkappCommand } from "@aurowallet/mina-provider"
 import {
 	allRight,
 	deployPoolRight,
@@ -14,12 +15,14 @@ import {
 	AccountUpdate,
 	Bool,
 	fetchAccount,
+	fetchTransactionStatus,
 	MerkleMap,
 	Mina,
 	Poseidon,
 	PrivateKey,
 	PublicKey,
 	Signature,
+	Transaction as O1Transaction,
 	UInt64,
 	UInt8
 } from "o1js"
@@ -705,6 +708,21 @@ const minaInstance = (networkUrl: NetworkUri) => {
 	logger.success("Mina instance set", url)
 }
 
+async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {
+	const result = await fetchTransactionStatus(zkAppId, url)
+	return result
+}
+
+async function sendZkAppCommand(zkappCommand: ZkappCommand) {
+	const sentTransaction = await O1Transaction.fromJSON(zkappCommand).send()
+	if (!sentTransaction.data) {
+		throw new Error(
+			JSON.stringify({ message: "Transaction failed", errors: sentTransaction.errors })
+		)
+	}
+	return { hash: sentTransaction.hash, zkAppId: sentTransaction.data.sendZkapp.zkapp.id }
+}
+
 // Export worker API
 export const luminaDexWorker = {
 	// Unused
@@ -730,7 +748,10 @@ export const luminaDexWorker = {
 	withdrawLiquidity,
 	// Faucet Operations
 	claim,
-	minaInstance
+	minaInstance,
+	// Helpers
+	transactionStatus,
+	sendZkAppCommand
 }
 
 // Shared Worker

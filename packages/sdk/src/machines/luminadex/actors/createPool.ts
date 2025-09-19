@@ -2,6 +2,7 @@ import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
 import { Observable } from "rxjs"
 import { assign, enqueueActions, fromObservable, fromPromise, setup } from "xstate"
+import type { LuminaDexWorker } from "../../../dex/luminadex-worker"
 import { createPoolSignerClient } from "../../../graphql/clients"
 import {
 	ConfirmTransactionMutation,
@@ -10,7 +11,7 @@ import {
 	PoolCreationSubscription
 } from "../../../graphql/pool-signer"
 import { createMeasure, prefixedLogger } from "../../../helpers/debug"
-import { sendTransaction } from "../../../helpers/transfer"
+import { transactionMachine } from "../../transaction"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
 
@@ -86,17 +87,7 @@ export const checkJobStatus = fromObservable(
 	}
 )
 
-// 3. Sign o1js transaction
-export const signPoolTransaction = fromPromise(
-	async ({ input }: { input: { transaction: string; wallet: WalletActorRef } }) => {
-		logger.start("Signing transaction")
-		const result = await sendTransaction({ tx: input.transaction, wallet: input.wallet })
-		logger.success("Transaction signed successfully", result)
-		return result
-	}
-)
-
-// 4. Send final GraphQL mutation
+// 3. Send final GraphQL mutation
 export const confirmPoolCreation = fromPromise(
 	async ({ input }: { input: { client: Client; jobId: string } }) => {
 		logger.start("Finalizing pool creation for job:", input.jobId)
@@ -107,40 +98,46 @@ export const confirmPoolCreation = fromPromise(
 	}
 )
 
+interface CreatePoolContext {
+	tokenA: string
+	tokenB: string
+	user: string
+	network: Networks
+	wallet: WalletActorRef
+	worker: LuminaDexWorker
+	client: Client
+	job: {
+		id: string
+		status: string
+		transactionJson: string
+		poolPublicKey: string
+	}
+	transaction: {
+		hash: string
+		url: string
+	}
+}
+
+export interface CreatePoolInput {
+	tokenA: string
+	tokenB: string
+	user: string
+	network: Networks
+	wallet: WalletActorRef
+	worker: LuminaDexWorker
+}
+
 export const createPoolMachine = setup({
 	types: {
-		context: {} as {
-			tokenA: string
-			tokenB: string
-			user: string
-			network: Networks
-			wallet: WalletActorRef
-			client: Client
-			job: {
-				id: string
-				status: string
-				transactionJson: string
-				poolPublicKey: string
-			}
-			transaction: {
-				hash: string
-				url: string
-			}
-		},
-		input: {} as {
-			tokenA: string
-			tokenB: string
-			user: string
-			network: Networks
-			wallet: WalletActorRef
-		}
+		context: {} as CreatePoolContext,
+		input: {} as CreatePoolInput
 	},
 	actors: {
 		createPoolMutation,
 		checkJobStatus,
-		signPoolTransaction,
 		confirmPoolCreation,
-		getJobStatus
+		getJobStatus,
+		transactionMachine
 	}
 }).createMachine({
 	id: "createPoolFlow",
@@ -218,16 +215,19 @@ export const createPoolMachine = setup({
 		},
 		SIGNING: {
 			invoke: {
-				src: "signPoolTransaction",
+				src: "transactionMachine",
 				input: ({ context }) => ({
+					id: context.job.id,
 					transaction: context.job.transactionJson,
-					wallet: context.wallet
+					wallet: context.wallet,
+					worker: context.worker
 				}),
 				onDone: {
 					target: "CONFIRMING",
-					actions: assign(({ event }) => ({
-						transaction: { hash: event.output.hash, url: event.output.url }
-					}))
+					actions: assign(({ event }) => {
+						if (event.output.result instanceof Error) throw event.output.result
+						return { transaction: event.output.result }
+					})
 				},
 				onError: { target: "FAILED" }
 			}
