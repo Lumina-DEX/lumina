@@ -1,5 +1,6 @@
 import fs from "node:fs/promises"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import typescript from "@rollup/plugin-typescript"
 import { defineConfig } from "rollup"
@@ -17,7 +18,7 @@ export default defineConfig([
     plugins: [dts(), {
       // Clean up the dist folder after build
       buildEnd: async () => {
-        const __dirname = new URL(".", import.meta.url).pathname
+        const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
         const distPath = path.join(__dirname, "dist")
         const files = await fs.readdir(distPath, { recursive: true })

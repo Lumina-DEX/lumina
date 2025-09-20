@@ -1,7 +1,19 @@
 import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
+import { produce } from "immer"
+import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
 import { Observable } from "rxjs"
-import { assign, enqueueActions, fromObservable, fromPromise, setup } from "xstate"
+import {
+	type ActionArgs,
+	assign,
+	enqueueActions,
+	type ErrorActorEvent,
+	type EventObject,
+	fromObservable,
+	fromPromise,
+	setup
+} from "xstate"
+import { luminadexFactories, MINA_ADDRESS } from "../../../constants"
 import type { LuminaDexWorker } from "../../../dex/luminadex-worker"
 import { createPoolSignerClient } from "../../../graphql/clients"
 import {
@@ -18,24 +30,104 @@ import type { Networks } from "../../wallet/types"
 const logger = prefixedLogger("[POOL CREATION API]")
 const measure = createMeasure(logger)
 
-// 0. Fetch job status
-export const getJobStatus = fromPromise(
-	async ({ input }: { input: { client: Client; jobId: string } }) => {
-		logger.start("Checking job status for:", input.jobId)
-		const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
-		if (result.error) throw new Error(result.error.message)
-		logger.success("Job status fetched successfully", result.data?.poolCreationJob)
-		return result.data?.poolCreationJob
+const addError =
+	(fallbackError: Error) =>
+	({ context, event }: ActionArgs<CreatePoolContext, ErrorActorEvent, EventObject>) => {
+		const error = event.error instanceof Error ? event.error : fallbackError
+		logger.error(error)
+		return { errors: [...context.errors, error] }
+	}
+
+export const checkPoolExists = fromPromise<
+	{ exists: boolean },
+	{ tokenA: string; tokenB: string; network: Networks }
+>(
+	async ({ input }) => {
+		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
+
+		try {
+			const factory = luminadexFactories[input.network]
+			const factoryKey = PublicKey.fromBase58(factory)
+			const factoryTokenId = TokenId.derive(factoryKey)
+
+			const tokenAPublicKey = input.tokenA === MINA_ADDRESS
+				? PublicKey.empty()
+				: PublicKey.fromBase58(input.tokenA)
+			const tokenBPublicKey = input.tokenB === MINA_ADDRESS
+				? PublicKey.empty()
+				: PublicKey.fromBase58(input.tokenB)
+
+			const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
+			const token0 = Provable.if(
+				tokenAPublicKey.isEmpty().or(tokenALower),
+				tokenAPublicKey,
+				tokenBPublicKey
+			)
+			const token1 = Provable.if(token0.equals(tokenBPublicKey), tokenAPublicKey, tokenBPublicKey)
+
+			const isMinaTokenPool = token0.isEmpty().toBoolean()
+
+			if (isMinaTokenPool) {
+				const tokenAccount = await fetchAccount({
+					publicKey: token1,
+					tokenId: factoryTokenId
+				})
+				const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+				const poolExists = balancePool.toBigInt() > 0n
+
+				if (poolExists) {
+					logger.info("Pool already exists for MINA-Token pair:", token1.toBase58())
+					return { exists: true }
+				}
+			} else {
+				const fields = token0.toFields().concat(token1.toFields())
+				const hash = Poseidon.hashToGroup(fields)
+				const pairPublickey = PublicKey.fromGroup(hash)
+				const tokenAccount = await fetchAccount({
+					publicKey: pairPublickey,
+					tokenId: factoryTokenId
+				})
+				const balancePool = tokenAccount?.account?.balance || UInt64.from(0n)
+				const poolExists = balancePool.toBigInt() > 0n
+
+				if (poolExists) {
+					logger.info(
+						"Pool already exists for Token-Token pair:",
+						token0.toBase58(),
+						token1.toBase58()
+					)
+					return { exists: true }
+				}
+			}
+
+			logger.success("Pool does not exist, can proceed with creation")
+			return { exists: false }
+		} catch (error) {
+			logger.error("Error checking pool existence:", error)
+			throw error
+		}
 	}
 )
 
-// 1. Create a pool creation job
-export const createPoolMutation = fromPromise(
-	async ({
-		input
-	}: {
-		input: { client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
-	}) => {
+export const getJobStatus = fromPromise<
+	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
+	{ client: Client; jobId: string }
+>(
+	async ({ input }) => {
+		logger.start("Checking job status for:", input.jobId)
+		const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
+		if (result.error) throw new Error(result.error.message)
+		if (!result.data) throw new Error("No data received from job status query")
+		logger.success("Job status fetched successfully", result.data.poolCreationJob)
+		return result.data.poolCreationJob
+	}
+)
+
+export const createPoolMutation = fromPromise<
+	{ jobId: string },
+	{ client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
+>(
+	async ({ input }) => {
 		logger.start("Creating pool with input:", input)
 		const { client, ...args } = input
 		const result = await client.mutation(CreatePoolMutation, {
@@ -50,18 +142,20 @@ export const createPoolMutation = fromPromise(
 	}
 )
 
-// 2. Subscribe to job status updates
-export const checkJobStatus = fromObservable(
-	({ input }: { input: { client: Client; jobId: string } }) => {
+export const checkJobStatus = fromObservable<
+	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
+	{ client: Client; jobId: string }
+>(
+	({ input }) => {
 		logger.start("Subscribing to job status for:", input.jobId)
 		const stop = measure("Pool Creation Server Side Proof")
-		return new Observable<ResultOf<typeof PoolCreationSubscription>["poolCreation"]>((observer) => {
+		return new Observable((observer) => {
 			const { unsubscribe } = input.client
 				.subscription(PoolCreationSubscription, { jobId: input.jobId })
 				.subscribe((result) => {
 					logger.info("Received subscription result:", result)
 					if (result.error) {
-						observer.error(result.error)
+						observer.error(result.error.message)
 						return
 					}
 
@@ -71,13 +165,12 @@ export const checkJobStatus = fromObservable(
 							observer.error(new Error("Error while processing data from subscription"))
 							return
 						}
-						observer.next(data) // Forward the status update
+						observer.next(data)
 						logger.success("Job status update received:", data)
 						observer.complete()
 					}
 				})
 
-			// On cleanup, unsubscribe from the urql subscription
 			return () => {
 				logger.info("Unsubscribing from job status updates for:", input.jobId)
 				unsubscribe()
@@ -88,8 +181,11 @@ export const checkJobStatus = fromObservable(
 )
 
 // 3. Send final GraphQL mutation
-export const confirmPoolCreation = fromPromise(
-	async ({ input }: { input: { client: Client; jobId: string } }) => {
+export const confirmPoolCreation = fromPromise<
+	{ success: true },
+	{ client: Client; jobId: string }
+>(
+	async ({ input }) => {
 		logger.start("Finalizing pool creation for job:", input.jobId)
 		const result = await input.client.mutation(ConfirmTransactionMutation, { jobId: input.jobId })
 			.toPromise()
@@ -106,6 +202,8 @@ interface CreatePoolContext {
 	wallet: WalletActorRef
 	worker: LuminaDexWorker
 	client: Client
+	errors: Error[]
+	poolExist: boolean
 	job: {
 		id: string
 		status: string
@@ -118,6 +216,11 @@ interface CreatePoolContext {
 	}
 }
 
+const clientAndJob = ({ context }: { context: CreatePoolContext }) => ({
+	client: context.client,
+	jobId: context.job.id
+})
+
 export interface CreatePoolInput {
 	tokenA: string
 	tokenB: string
@@ -127,12 +230,15 @@ export interface CreatePoolInput {
 	worker: LuminaDexWorker
 }
 
+class UnhandledError extends Error {}
+
 export const createPoolMachine = setup({
 	types: {
 		context: {} as CreatePoolContext,
 		input: {} as CreatePoolInput
 	},
 	actors: {
+		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
 		confirmPoolCreation,
@@ -145,29 +251,50 @@ export const createPoolMachine = setup({
 	context: ({ input }) => ({
 		...input,
 		client: createPoolSignerClient(),
-		job: {
-			id: "",
-			status: "",
-			transactionJson: "",
-			poolPublicKey: ""
-		},
-		transaction: {
-			hash: "",
-			url: ""
-		}
+		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
+		transaction: { hash: "", url: "" },
+		poolExist: false,
+		errors: []
 	}),
 	states: {
 		INIT: {
-			on: { create: { target: "CREATING" }, status: { target: "GET_STATUS" } },
+			on: {
+				create: [
+					{ target: "CREATING", guard: ({ context }) => context.poolExist === true },
+					{ target: "CHECKING_POOL_EXISTS", guard: ({ context }) => context.poolExist === false }
+				],
+				status: { target: "GET_STATUS" }
+			},
 			entry: enqueueActions(({ context, enqueue }) => {
-				if (context.job.id.length === 0) enqueue.raise({ type: "create" })
-				else enqueue.raise({ type: "status" })
+				if (context.job.id) enqueue.raise({ type: "status" })
+				else enqueue.raise({ type: "create" })
 			})
 		},
+		CHECKING_POOL_EXISTS: {
+			invoke: {
+				src: "checkPoolExists",
+				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
+				onDone: [
+					{
+						target: "POOL_ALREADY_EXISTS",
+						guard: ({ event }) => event.output.exists === true,
+						actions: assign({ poolExist: true })
+					},
+					{ target: "CREATING" }
+				],
+				onError: {
+					target: "CREATING",
+					actions: assign(addError(new Error("Pool check failed")))
+				}
+			}
+		},
 		GET_STATUS: {
+			// TODO: Implement SDK helpers for persistence.
+			description:
+				"This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
 			invoke: {
 				src: "getJobStatus",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onDone: [
 					{
 						target: "SIGNING",
@@ -178,7 +305,10 @@ export const createPoolMachine = setup({
 					},
 					{ target: "WAITING_FOR_PROOF" }
 				],
-				onError: { target: "FAILED" }
+				onError: {
+					target: "FAILED",
+					actions: assign(addError(new Error("Failed to get job status")))
+				}
 			}
 		},
 		CREATING: {
@@ -193,55 +323,87 @@ export const createPoolMachine = setup({
 				}),
 				onDone: {
 					target: "WAITING_FOR_PROOF",
-					actions: assign(({ context, event }) => ({
-						job: { ...context.job, id: event.output.jobId }
-					}))
+					actions: assign(({ context, event }) =>
+						produce(context, (draft) => {
+							draft.job.id = event.output.jobId
+						})
+					)
 				},
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "RETRY",
+					actions: assign(addError(new Error("Failed to create pool")))
+				}
 			}
 		},
 		WAITING_FOR_PROOF: {
 			invoke: {
 				src: "checkJobStatus",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onSnapshot: {
 					actions: assign(({ context, event }) => ({
 						job: { ...context.job, ...event.snapshot?.context }
 					}))
 				},
 				onDone: { target: "SIGNING" },
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "RETRY",
+					actions: assign(addError(new Error("Error waiting for proof")))
+				}
 			}
 		},
 		SIGNING: {
 			invoke: {
 				src: "transactionMachine",
-				input: ({ context }) => ({
-					id: context.job.id,
-					transaction: context.job.transactionJson,
-					wallet: context.wallet,
-					worker: context.worker
+				input: ({ context: { wallet, worker, job } }) => ({
+					id: job.id,
+					transaction: job.transactionJson,
+					wallet,
+					worker
 				}),
-				onDone: {
-					target: "CONFIRMING",
-					actions: assign(({ event }) => {
-						if (event.output.result instanceof Error) throw event.output.result
-						return { transaction: event.output.result }
-					})
-				},
-				onError: { target: "FAILED" }
+				onDone: [
+					{ target: "RETRY", guard: ({ event }) => event.output.result instanceof Error },
+					{
+						target: "CONFIRMING",
+						actions: assign(({ event }) => {
+							if (event.output.result instanceof Error) {
+								throw new UnhandledError(event.output.result.message)
+							}
+							return { transaction: event.output.result }
+						})
+					}
+				],
+				onError: {
+					target: "RETRY",
+					actions: assign(addError(new Error("Transaction signing failed")))
+				}
 			}
 		},
 		CONFIRMING: {
 			invoke: {
 				src: "confirmPoolCreation",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onDone: "COMPLETED",
-				onError: { target: "ERRORED" }
+				onError: {
+					target: "RETRY",
+					actions: assign(addError(new Error("Transaction confirmation failed")))
+				}
 			}
 		},
-		ERRORED: { after: { 1000: { target: "INIT" } } },
-		COMPLETED: { type: "final" },
-		FAILED: { type: "final" }
+		RETRY: {
+			after: { 1000: { target: "INIT" } },
+			description: "An error occurred, will retry"
+		},
+		COMPLETED: {
+			type: "final",
+			description: "Pool creation completed successfully"
+		},
+		POOL_ALREADY_EXISTS: {
+			type: "final",
+			description: "Pool already exists for the specified token pair."
+		},
+		FAILED: {
+			type: "final",
+			description: "Pool creation failed with non-recoverable error"
+		}
 	}
 })
