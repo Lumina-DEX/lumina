@@ -9,7 +9,7 @@ import {
 } from "xstate"
 import { createClientOptions, createMinaClient } from "../graphql/clients"
 import { createPoolMachine } from "./luminadex/actors/createPool"
-import { canDoDexAction } from "./luminadex/helpers"
+import { canDoDexAction, canStartDexAction } from "./luminadex/helpers"
 import { createLuminaDexMachine } from "./luminadex/machine"
 import { transactionMachine } from "./transaction"
 import { createWalletMachine } from "./wallet/machine"
@@ -51,7 +51,7 @@ export const createWallet = (...[options]: MachineOptions<WalletMachine>): Walle
  * ___________________________________________________________ */
 
 const dexMachine = createLuminaDexMachine()
-export { canDoDexAction, dexMachine }
+export { canDoDexAction, canStartDexAction, dexMachine }
 
 export type DexActor = ReturnType<typeof createActor<DexMachine>>
 export type DexMachine = typeof dexMachine

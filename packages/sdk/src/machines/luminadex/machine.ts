@@ -12,7 +12,7 @@ import {
 	calculateRemoveLiquidityAmount,
 	calculateSwapAmount,
 	compileContract,
-	loadContracts
+	initContracts
 } from "./actors/operations"
 import {
 	addLiquidity,
@@ -68,7 +68,7 @@ export const createLuminaDexMachine = () =>
 			detectWalletChange,
 			createPoolMachine: createPoolMachine as any, // TODO: TS7056 :/
 			transactionMachine: transactionMachine as any, // TODO: TS7056 :/
-			loadContracts,
+			initContracts,
 			compileContract,
 			claim,
 			swap,
@@ -203,14 +203,14 @@ export const createLuminaDexMachine = () =>
 		type: "parallel",
 		states: {
 			contractSystem: {
-				initial: "LOADING_CONTRACTS",
+				initial: "INIT_CONTRACTS",
 				states: {
-					LOADING_CONTRACTS: {
+					INIT_CONTRACTS: {
 						invoke: {
-							src: "loadContracts",
+							src: "initContracts",
 							input: ({ context }) => ({ ...inputWorker(context), features: context.features }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context, event }) => ({
 									...context,
 									contract: { ...context.contract, toLoad: event.output }
@@ -227,7 +227,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "FungibleToken" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "FungibleToken" }))
 							},
 							onError: {
@@ -241,7 +241,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) =>
 									loaded({ context, contract: "FungibleTokenAdmin" })
 								)
@@ -257,7 +257,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "Pool" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "Pool" }))
 							},
 							onError: {
@@ -271,7 +271,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolTokenHolder" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
 							},
 							onError: {
@@ -285,7 +285,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolFactory" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
 							},
 							onError: {
@@ -299,7 +299,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "Faucet" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "Faucet" }))
 							},
 							onError: {
@@ -308,8 +308,8 @@ export const createLuminaDexMachine = () =>
 							}
 						}
 					},
-					IDLE: {
-						description: "The compiled contracts are ready.",
+					LOADING: {
+						description: "The compiled contracts are loading.",
 						entry: enqueueActions(({ context, enqueue }) => {
 							if (context.contract.toLoad.size > 0) {
 								const [next, ...remaining] = Array.from(context.contract.toLoad)
@@ -324,9 +324,11 @@ export const createLuminaDexMachine = () =>
 								if (next) enqueue.raise({ type: "LoadNextContract" })
 							} else {
 								logger.success("All features have been loaded", context.features)
+								enqueue.raise({ type: "ContractsReady" })
 							}
 						}),
 						on: {
+							ContractsReady: { target: "READY" },
 							LoadNextContract: [
 								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
@@ -334,9 +336,14 @@ export const createLuminaDexMachine = () =>
 								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
 								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },
 								{ target: "COMPILE_FAUCET", guard: "compileFaucet" }
-							],
+							]
+						}
+					},
+					READY: {
+						description: "The contracts are compiled and ready to be used.",
+						on: {
 							LoadFeatures: {
-								target: "IDLE",
+								target: "LOADING",
 								description: "Load additional features on the fly.",
 								reenter: true,
 								actions: enqueueActions(({ context, event, enqueue }) => {
@@ -362,7 +369,7 @@ export const createLuminaDexMachine = () =>
 						}
 					},
 					FAILED: {
-						on: { LoadContracts: "LOADING_CONTRACTS" },
+						on: { InitContracts: "INIT_CONTRACTS" },
 						exit: assign(({ context }) => ({ contract: { ...context.contract, error: null } }))
 					}
 				}

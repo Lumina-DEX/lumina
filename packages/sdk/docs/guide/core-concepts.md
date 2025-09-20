@@ -78,24 +78,6 @@ style: {
   fill: transparent
 }
 
-contractSystem: Contract System {
-  LOADING_CONTRACTS -> COMPILE_FUNGIBLE_TOKEN: loadContracts
-  COMPILE_FUNGIBLE_TOKEN -> COMPILE_POOL: compileContract
-  COMPILE_POOL -> COMPILE_POOL_TOKEN_HOLDER: compileContract
-  COMPILE_POOL_TOKEN_HOLDER -> COMPILE_FUNGIBLE_TOKEN_ADMIN: compileContract
-  COMPILE_FUNGIBLE_TOKEN_ADMIN -> COMPILE_POOL_FACTORY: compileContract
-  COMPILE_POOL_FACTORY -> COMPILE_FAUCET: compileContract
-  COMPILE_FAUCET -> CONTRACTS_READY: compileContract
-}
-```
-
-```d2
-direction: down
-
-style: {
-  fill: transparent
-}
-
   
 Calculating {
 

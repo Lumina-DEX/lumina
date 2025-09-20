@@ -34,14 +34,14 @@ The DEX machine is a parallel state machine with two regions:
 
 ### Contract System States
 
-- `LOADING_CONTRACTS`: Loading contract definitions
+- `INIT_CONTRACTS`: Loading contract definitions
 - `COMPILE_FUNGIBLE_TOKEN`: Compiling the fungible token contract
 - `COMPILE_POOL`: Compiling the pool contract
 - `COMPILE_POOL_TOKEN_HOLDER`: Compiling the pool token holder contract
 - `COMPILE_FUNGIBLE_TOKEN_ADMIN`: Compiling the fungible token admin contract
 - `COMPILE_POOL_FACTORY`: Compiling the pool factory contract
 - `COMPILE_FAUCET`: Compiling the faucet contract
-- `CONTRACTS_READY`: All contracts are compiled and ready
+- `READY`: All contracts are compiled and ready
 - `FAILED`: Contract compilation failed
 
 ### DEX System States

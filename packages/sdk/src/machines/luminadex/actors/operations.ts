@@ -17,11 +17,11 @@ import type {
 	SwapSettings
 } from "../types"
 
-export const loadContracts = fromPromise(
+export const initContracts = fromPromise(
 	async ({ input }: { input: { worker: DexWorker; features: DexFeatures } }) => {
 		const { worker, features } = input
-		return act("loadContracts", async () => {
-			await worker.loadContracts()
+		return act("initContracts", async () => {
+			await worker.initContracts()
 			return setToLoadFromFeatures(features)
 		})
 	}

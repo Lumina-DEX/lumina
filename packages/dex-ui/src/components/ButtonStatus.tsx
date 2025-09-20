@@ -16,7 +16,7 @@ const ButtonStatus = ({ onClick, text }) => {
 	}, [dexState])
 	return (
 		<>
-			{!dexState?.contractSystem || dexState.contractSystem !== "IDLE" ? (
+			{!dexState?.contractSystem || dexState.contractSystem !== "READY" ? (
 				<Button color="success" variant="contained" size="large" className="w-full" disabled>
 					Contracts Loading...
 				</Button>

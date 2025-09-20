@@ -71,6 +71,22 @@ const Dex = createDex({
 Wallet.send({ type: "Connect" })
 ```
 
+## Handling ready and loading states
+
+In order to handle loading and ready states, you can look at the context and the state of the machines.
+Here are some of the useful states :
+
+- `Wallet`:
+  - `INIT`: The initial state.
+  - `UNSUPPORTED`: No wallet extensions is detected
+- `Dex`:
+  - `contractSystem`:
+    - `READY`: All contracts are ready.
+  - `dexSystem`:
+    - `DEX.READY`: The DEX is ready for operations.
+
+We expose 2 helpers, [`canDoDexAction`](../api/helpers.md#candodexaction) and [`canStartDexAction`](../api/helpers.md#canstartdexaction) to determine more granularly which actions are possible.
+
 ## Feature Loading
 
 You can choose which specific features you need from the SDK when initializing it.

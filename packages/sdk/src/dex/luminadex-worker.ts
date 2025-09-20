@@ -100,7 +100,7 @@ const proveTransaction = async (transaction: Transaction) => {
 }
 
 // Contract Management
-const loadContracts = async () => {
+const initContracts = async () => {
 	logger.start("Importing contracts ...")
 	const {
 		PoolFactory,
@@ -731,7 +731,7 @@ export const luminaDexWorker = {
 	// getTransactionJSON,
 	// getDeploymentKey
 	// Contract Management
-	loadContracts,
+	initContracts,
 	compileContract,
 	// Account & Balance Operations
 	// fetchMinaAccountToken,

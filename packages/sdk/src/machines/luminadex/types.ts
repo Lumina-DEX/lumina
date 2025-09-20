@@ -75,7 +75,8 @@ interface DexContext {
 }
 
 type ContractEvent =
-	| { type: "LoadContracts" }
+	| { type: "ContractsReady" }
+	| { type: "InitContracts" }
 	| { type: "LoadNextContract" }
 	| { type: "LoadFeatures"; features: DexFeatures }
 
