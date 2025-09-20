@@ -73,14 +73,14 @@ The `createPoolMachine` has several states that represent the progress of the po
 
 - `INIT`: The initial state.
 - `CHECKING_POOL_EXISTS`: Validates that the pool doesn't already exist on-chain.
-- `POOL_ALREADY_EXISTS`: Final state reached when a pool already exists for the token pair.
 - `GET_STATUS`: Fetching the status of an existing job.
 - `CREATING`: A new pool creation job is being created on the server.
 - `WAITING_FOR_PROOF`: The server is generating the zk-proof for the pool creation. This is the longest step.
 - `SIGNING`: The machine is waiting for the user to sign the transaction with their wallet.
 - `CONFIRMING`: The signed transaction is being sent to the server for confirmation.
+- `RETRY`: An error occurred during the process. The machine will retry.
 - `COMPLETED`: The pool has been successfully created.
-- `ERRORED`: An error occurred during the process. The machine might retry.
+- `POOL_ALREADY_EXISTS`: Final state reached when a pool already exists for the token pair.
 - `FAILED`: A non-recoverable error occurred.
 
 By monitoring these states, you can provide detailed feedback to your users about the pool creation process.
