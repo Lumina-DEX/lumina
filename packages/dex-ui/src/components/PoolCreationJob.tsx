@@ -13,13 +13,21 @@ const PoolCreationJob = ({
 	return (
 		<div className="flex flex-row justify-center w-96">
 			<div className="flex flex-col items-center">
-				<h5>Status : {poolState.status}</h5>
-				{(poolState.status === "ERRORED" || poolState.status === "FAILED") && (
-					<span>Check that the token is deployed and that no pool already exists for it</span>
+				{(poolState.status === "RETRY" || poolState.status === "FAILED") && (
+					<span className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+						An error occurred.
+					</span>
+				)}
+
+				{poolState.status === "POOL_ALREADY_EXISTS" && (
+					<span className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+						A pool already exists for this token pair.
+					</span>
 				)}
 				{poolState.status === "COMPLETED" && <span> Pool created successfully</span>}
 				{poolState.status !== "COMPLETED" &&
-					poolState.status !== "ERRORED" &&
+					poolState.status !== "RETRY" &&
+					poolState.status !== "POOL_ALREADY_EXISTS" &&
 					poolState.status !== "FAILED" && <Loading />}
 			</div>
 		</div>

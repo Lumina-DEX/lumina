@@ -56,21 +56,45 @@ If you want to allow users to create multiple pools simultaneously, use this id 
 Due to an underlying limitation, you will have to manually type the `createPoolMachine` actor when accessing it. Refer to the examples below for more details.
 :::
 
+## Pool Existence Validation
+
+The `createPoolMachine` includes built-in validation to check if a pool already exists before initiating the creation process. This prevents unnecessary server-side computations and provides immediate feedback to users.
+
+The validation process:
+
+1. Checks the blockchain to see if a pool for the specified token pair already exists
+2. If a pool exists, the machine transitions to `POOL_ALREADY_EXISTS` state immediately
+3. If no pool exists, the creation process continues normally
+4. In case of validation errors, the process continues to avoid blocking users
+
 ## `createPoolMachine` States
 
 The `createPoolMachine` has several states that represent the progress of the pool creation:
 
 - `INIT`: The initial state.
+- `CHECKING_POOL_EXISTS`: Validates that the pool doesn't already exist on-chain.
 - `GET_STATUS`: Fetching the status of an existing job.
 - `CREATING`: A new pool creation job is being created on the server.
 - `WAITING_FOR_PROOF`: The server is generating the zk-proof for the pool creation. This is the longest step.
 - `SIGNING`: The machine is waiting for the user to sign the transaction with their wallet.
 - `CONFIRMING`: The signed transaction is being sent to the server for confirmation.
+- `RETRY`: An error occurred during the process. The machine will retry.
 - `COMPLETED`: The pool has been successfully created.
-- `ERRORED`: An error occurred during the process. The machine might retry.
+- `POOL_ALREADY_EXISTS`: Final state reached when a pool already exists for the token pair.
 - `FAILED`: A non-recoverable error occurred.
 
 By monitoring these states, you can provide detailed feedback to your users about the pool creation process.
+
+## Error Handling
+
+The `createPoolMachine` context includes an `error` field that contains details about any errors that occur during the pool creation process:
+
+```typescript
+type CreatePoolContext = {
+	// ... other fields
+	errors: Error[] // Contains error details when something goes wrong
+}
+```
 
 ## Framework Examples
 
@@ -97,13 +121,14 @@ const creatingPools = computed(() => {
   if (!createPool || !createPool.pools) {
     return [];
   }
-  return Object.entries(createPool.pools).map(([poolId, p]) => {
-    const poolActor = p as ActorRefFromLogic<CreatePoolMachine>;
+  return Object.entries(createPool.pools).map(([poolId, poolActor]) => {
     return {
       id: poolId,
+	  //Note: Don't use nested useSelector calls. Use v-for and components instead.
       state: useSelector(poolActor, (state) => ({
         status: state.value,
         context: state.context,
+        errors: state.context.errors, // Access error information
       })),
     };
   });
@@ -116,7 +141,18 @@ const creatingPools = computed(() => {
     <div v-if="creatingPools.length === 0">No pool creation in progress.</div>
     <div v-for="pool in creatingPools" :key="pool.id">
       <h3>Job ID: {{ pool.id }}</h3>
-      <pre>{{ pool.state }}</pre>
+      <p><strong>Status:</strong> {{ pool.state.status }}</p>
+      <p v-if="pool.state.status === 'POOL_ALREADY_EXISTS'"><strong>Pool Already Exists!</strong></p>
+      <div v-if="pool.state.errors && pool.state.errors.length > 0" class="error">
+        <strong>Errors:</strong> 
+        <ul>
+          <li v-for="(error, index) in pool.state.errors" :key="index">{{ error.message }}</li>
+        </ul>
+      </div>
+      <details>
+        <summary>Full Context</summary>
+        <pre>{{ pool.state }}</pre>
+      </details>
     </div>
   </div>
 </template>
@@ -146,13 +182,14 @@ export const PoolCreationStatus = () => {
 		return <div>No pool creation in progress.</div>
 	}
 
-	const creatingPools = Object.entries(createPool.pools).map(([poolId, p]) => {
-		const poolActor = p as ActorRefFromLogic<CreatePoolMachine>
-		return {
-			id: poolId,
-			actor: poolActor
+	const creatingPools = Object.entries(createPool.pools).map(
+		([poolId, poolActor]) => {
+			return {
+				id: poolId,
+				actor: poolActor
+			}
 		}
-	})
+	)
 
 	if (creatingPools.length === 0) {
 		return <div>No pool creation in progress.</div>
@@ -177,7 +214,8 @@ const PoolCreationJob = ({
 }) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
-		context: state.context
+		context: state.context,
+		errors: state.context.errors
 	}))
 
 	return (
@@ -188,3 +226,17 @@ const PoolCreationJob = ({
 	)
 }
 ```
+
+## State Transitions
+
+The typical flow for pool creation is:
+
+1. `INIT` → `CHECKING_POOL_EXISTS`
+2. `CHECKING_POOL_EXISTS` → `POOL_ALREADY_EXISTS` (if pool exists)
+3. `CHECKING_POOL_EXISTS` → `CREATING` (if pool doesn't exist)
+4. `CREATING` → `WAITING_FOR_PROOF`
+5. `WAITING_FOR_PROOF` → `SIGNING`
+6. `SIGNING` → `CONFIRMING`
+7. `CONFIRMING` → `COMPLETED`
+
+Error transitions can occur from any state to `ERRORED` or `FAILED` depending on the type of error encountered.
