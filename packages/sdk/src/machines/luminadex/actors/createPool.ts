@@ -1,5 +1,6 @@
 import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
+import { produce } from "immer"
 import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
 import { Observable } from "rxjs"
 import {
@@ -202,6 +203,7 @@ interface CreatePoolContext {
 	worker: LuminaDexWorker
 	client: Client
 	errors: Error[]
+	poolExist: boolean
 	job: {
 		id: string
 		status: string
@@ -214,6 +216,11 @@ interface CreatePoolContext {
 	}
 }
 
+const clientAndJob = ({ context }: { context: CreatePoolContext }) => ({
+	client: context.client,
+	jobId: context.job.id
+})
+
 export interface CreatePoolInput {
 	tokenA: string
 	tokenB: string
@@ -222,6 +229,8 @@ export interface CreatePoolInput {
 	wallet: WalletActorRef
 	worker: LuminaDexWorker
 }
+
+class UnhandledError extends Error {}
 
 export const createPoolMachine = setup({
 	types: {
@@ -244,17 +253,21 @@ export const createPoolMachine = setup({
 		client: createPoolSignerClient(),
 		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
 		transaction: { hash: "", url: "" },
+		poolExist: false,
 		errors: []
 	}),
 	states: {
 		INIT: {
 			on: {
-				create: { target: "CHECKING_POOL_EXISTS" },
+				create: [
+					{ target: "CREATING", guard: ({ context }) => context.poolExist === true },
+					{ target: "CHECKING_POOL_EXISTS", guard: ({ context }) => context.poolExist === false }
+				],
 				status: { target: "GET_STATUS" }
 			},
 			entry: enqueueActions(({ context, enqueue }) => {
-				if (context.job.id.length === 0) enqueue.raise({ type: "create" })
-				else enqueue.raise({ type: "status" })
+				if (context.job.id) enqueue.raise({ type: "status" })
+				else enqueue.raise({ type: "create" })
 			})
 		},
 		CHECKING_POOL_EXISTS: {
@@ -264,7 +277,8 @@ export const createPoolMachine = setup({
 				onDone: [
 					{
 						target: "POOL_ALREADY_EXISTS",
-						guard: ({ event }) => event.output.exists === true
+						guard: ({ event }) => event.output.exists === true,
+						actions: assign({ poolExist: true })
 					},
 					{ target: "CREATING" }
 				],
@@ -276,10 +290,11 @@ export const createPoolMachine = setup({
 		},
 		GET_STATUS: {
 			// TODO: Implement SDK helpers for persistence.
-			description: "This only happens if the jobId is already known, e.g. user refreshes the page.",
+			description:
+				"This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
 			invoke: {
 				src: "getJobStatus",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onDone: [
 					{
 						target: "SIGNING",
@@ -308,12 +323,14 @@ export const createPoolMachine = setup({
 				}),
 				onDone: {
 					target: "WAITING_FOR_PROOF",
-					actions: assign(({ context, event }) => ({
-						job: { ...context.job, id: event.output.jobId }
-					}))
+					actions: assign(({ context, event }) =>
+						produce(context, (draft) => {
+							draft.job.id = event.output.jobId
+						})
+					)
 				},
 				onError: {
-					target: "ERRORED",
+					target: "RETRY",
 					actions: assign(addError(new Error("Failed to create pool")))
 				}
 			}
@@ -321,7 +338,7 @@ export const createPoolMachine = setup({
 		WAITING_FOR_PROOF: {
 			invoke: {
 				src: "checkJobStatus",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onSnapshot: {
 					actions: assign(({ context, event }) => ({
 						job: { ...context.job, ...event.snapshot?.context }
@@ -329,7 +346,7 @@ export const createPoolMachine = setup({
 				},
 				onDone: { target: "SIGNING" },
 				onError: {
-					target: "ERRORED",
+					target: "RETRY",
 					actions: assign(addError(new Error("Error waiting for proof")))
 				}
 			}
@@ -343,15 +360,20 @@ export const createPoolMachine = setup({
 					wallet,
 					worker
 				}),
-				onDone: {
-					target: "CONFIRMING",
-					actions: assign(({ event }) => {
-						if (event.output.result instanceof Error) throw event.output.result
-						return { transaction: event.output.result }
-					})
-				},
+				onDone: [
+					{ target: "RETRY", guard: ({ event }) => event.output.result instanceof Error },
+					{
+						target: "CONFIRMING",
+						actions: assign(({ event }) => {
+							if (event.output.result instanceof Error) {
+								throw new UnhandledError(event.output.result.message)
+							}
+							return { transaction: event.output.result }
+						})
+					}
+				],
 				onError: {
-					target: "FAILED",
+					target: "RETRY",
 					actions: assign(addError(new Error("Transaction signing failed")))
 				}
 			}
@@ -359,15 +381,15 @@ export const createPoolMachine = setup({
 		CONFIRMING: {
 			invoke: {
 				src: "confirmPoolCreation",
-				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
+				input: clientAndJob,
 				onDone: "COMPLETED",
 				onError: {
-					target: "ERRORED",
+					target: "RETRY",
 					actions: assign(addError(new Error("Transaction confirmation failed")))
 				}
 			}
 		},
-		ERRORED: {
+		RETRY: {
 			after: { 1000: { target: "INIT" } },
 			description: "An error occurred, will retry"
 		},
