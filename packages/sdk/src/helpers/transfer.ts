@@ -1,6 +1,5 @@
 import type { ZkappCommand } from "@aurowallet/mina-provider"
 import { type DBSchema, openDB } from "idb"
-import { hash } from "ohash"
 import type { Networks } from "../machines/wallet/types"
 
 const baseUrl = {
@@ -39,17 +38,18 @@ export const createDb = () =>
 	})
 
 export const hashDb = ({
+	id,
 	network,
 	account,
 	transaction,
 	db = createDb()
 }: {
+	id: string
 	db?: ReturnType<typeof createDb>
 	network: Networks
 	account: string
 	transaction: string
 }) => {
-	const id = hash(transaction)
 	const findUnconfirmed = async () => {
 		const transactions = await (await db).getAllFromIndex("transactions", "by-id", id)
 		return transactions.find((t) => t.confirmed === false)
@@ -90,6 +90,6 @@ export const hashDb = ({
 }
 
 export const createExplorerUrl = ({ network, hash }: { network: Networks; hash: string }) =>
-	`${baseUrl[network]}/account/${hash}/zk-txs` as const
+	`${baseUrl[network]}/tx/${hash}/zk-txs` as const
 
 export type HashDb = ReturnType<typeof hashDb>

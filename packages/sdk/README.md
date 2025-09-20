@@ -17,9 +17,10 @@ By using this SDK, you acknowledge and accept these risks and limitations.
 
 ## Quick Links
 
-- 📚 [Documentation](https://lumina-dex.github.io/sdk/) - Comprehensive guides and API reference
-- 🚀 [Getting Started](https://lumina-dex.github.io/sdk/guide/getting-started) - Installation and basic usage
-- 📖 [API Reference](https://lumina-dex.github.io/sdk/api/overview) - Detailed API documentation
+- 📚 [Documentation](https://sdk.luminadex.com/) - Comprehensive guides and API reference
+- 📜 [Contracts Reference](https://lumina-dex.github.io/lumina/) - Detailed smart contract reference
+- 💻 [O1js Docs](https://docs.o1labs.org/o1js) - Official documentation for the o1js library
+- ⚙️ [XState Docs](https://stately.ai/docs) - Official documentation for the XState library
 
 ## Features
 
@@ -32,16 +33,22 @@ By using this SDK, you acknowledge and accept these risks and limitations.
 
 ```bash
 # Using npm
-npm install @lumina-dex/sdk
+npm install @lumina-dex/sdk o1js
+```
 
+```bash
 # Using pnpm
-pnpm add @lumina-dex/sdk
+pnpm add @lumina-dex/sdk o1js
+```
 
+```bash
 # Using yarn
-yarn add @lumina-dex/sdk
+yarn add @lumina-dex/sdk o1js
+```
 
+```bash
 # Using bun
-bun add @lumina-dex/sdk
+bun add @lumina-dex/sdk o1js
 ```
 
 ## Basic Usage
@@ -119,7 +126,6 @@ import { dexMachine, walletMachine } from "@lumina-dex/sdk"
 import { useActor } from "@lumina-dex/sdk/vue"
 import { computed } from "vue"
 
-// Create shared composable
 const Wallet = useActor(walletMachine)
 const Dex = useActor(dexMachine, {
   input: {

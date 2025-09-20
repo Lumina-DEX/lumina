@@ -41,16 +41,15 @@ if (swapLid) {
 ## React Example
 
 ```tsx
-import { useSelector } from "@lumina-dex/sdk/react"
-
-export function LatestSwapTx({ Dex }: { Dex: ReturnType<typeof createDex> }) {
+export function LatestSwapTransaction() {
+	const { Dex } = useContext(LuminaContext)
 	const lid = useSelector(Dex, s => s.context.dex.swap.transactionLid)
 	const txActor = useSelector(
 		Dex,
 		s => lid ? s.context.transactions[lid] : undefined
 	)
-	const status = useSelector(txActor, a => a?.getSnapshot().value)
-	const result = useSelector(txActor, a => a?.getSnapshot().context.result)
+	const status = useSelector(txActor, a => a?.value)
+	const result = useSelector(txActor, a => a?.context.result)
 	if (!lid || !txActor) return null
 	if (status === "DONE" && result && !(result instanceof Error)) {
 		return <a href={result.url} target="_blank">View Tx</a>
@@ -63,12 +62,11 @@ export function LatestSwapTx({ Dex }: { Dex: ReturnType<typeof createDex> }) {
 
 ```vue
 <script setup lang="ts">
-import { useSelector } from '@lumina-dex/sdk/vue'
-const props = defineProps<{ Dex: any }>()
-const lid = useSelector(props.Dex, s => s.context.dex.swap.transactionLid)
-const txActor = useSelector(props.Dex, s => lid ? s.context.transactions[lid] : undefined)
-const status = useSelector(txActor, a => a?.getSnapshot().value)
-const result = useSelector(txActor, a => a?.getSnapshot().context.result)
+const dex = useLuminaDexStore()
+const lid = useSelector(dex.Dex, s => s.context.dex.swap.transactionLid)
+const txActor = useSelector(dex.Dex, s => lid ? s.context.transactions[lid] : undefined)
+const status = useSelector(txActor, a => a?.value)
+const result = useSelector(txActor, a => a?.context.result)
 </script>
 <template>
   <div v-if="lid && txActor">

@@ -139,7 +139,7 @@ export const transactionMachine = setup({
 			signedTransaction: null,
 			sentTransaction: null,
 			result: new Error("Transaction failed"),
-			db: hashDb({ network, account, transaction }),
+			db: hashDb({ id, network, account, transaction }),
 			network
 		}
 	},

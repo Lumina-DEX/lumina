@@ -36,7 +36,40 @@ const Dex = useActor(dexMachine, {
 })
 ```
 
-You can use `createSharedComposable` from VueUse or `defineStore` from Pinia to share stateful logic between different components.
+## Creating a Shared Composable
+
+You can use `provide`/`inject`, `createSharedComposable` from VueUse or `defineStore` from Pinia to share stateful logic between different components.
+Here's an example using Pinia:
+
+```ts
+import { dexMachine, walletMachine } from "@lumina-dex/sdk"
+import { useMachine } from "@lumina-dex/sdk/vue"
+import { defineStore } from "pinia"
+
+export const useLuminaDexStore = defineStore("luminaDex", () => {
+	const Wallet = useMachine(walletMachine)
+
+	const Dex = useMachine(dexMachine, {
+		input: {
+			wallet: Wallet.actorRef,
+			features: ["Swap"],
+			frontendFee: {
+				destination: "B62qmdQRb8FKaKA7cwaujmuTBbpp5NXTJFQqL1X9ya5nkvHSuWsiQ1H",
+				amount: 1
+			}
+		}
+	})
+
+	onBeforeMount(() => {
+		// auto-connect
+		if (Wallet.snapshot.value.matches("INIT")) {
+			Wallet.send({ type: "Connect" })
+		}
+	})
+
+	return { Wallet, Bridge }
+})
+```
 
 ## Using the SDK in Components
 
@@ -44,26 +77,17 @@ In your Vue components:
 
 ```vue
 <script setup lang="ts">
-import { useLuminaDex } from "../composables/useLuminaDex"
 import { onMounted, computed } from "vue"
-
-// Get the actors
-const { Wallet, Dex } = useLuminaDex()
+// Get the dex store
+const dex = useLuminaDexStore()
 
 // Access wallet state with computed properties. You can also use `useSelector`.
-const walletState = computed(() => Wallet.snapshot.value.value)
-const isReady = computed(() => Wallet.snapshot.value.matches("READY"))
-const account = computed(() => Wallet.snapshot.value.context.account)
+const walletState = computed(() => dex.Wallet.snapshot.value.value)
+const isReady = computed(() => dex.Wallet.snapshot.value.matches("READY"))
+const account = computed(() => dex.Wallet.snapshot.value.context.account)
 const minaBalance = computed(() => 
-  Wallet.snapshot.value.context.balances["mina:devnet"]?.MINA || 0
+  dex.Wallet.snapshot.value.context.balances["mina:devnet"]?.MINA || 0
 )
-
-// Connect to wallet on component mount
-onMounted(() => {
-  if (walletState.value === "INIT") {
-    Wallet.send({ type: "Connect" })
-  }
-})
 
 // Handle manual connect
 const connect = () => Wallet.send({ type: "Connect" })
@@ -92,13 +116,13 @@ import { useLuminaDex } from "../composables/useLuminaDex"
 import { fetchTokenList, type Networks, type LuminaToken } from "@lumina-dex/sdk"
 import { onMounted, ref, watch } from "vue"
 
-const { Wallet } = useLuminaDex()
+const dex = useLuminaDexStore()
 const tokens = ref<LuminaToken[]>([])
 
 const fetchTokenBalances = async () => {
   const resultTokens = await fetchTokenList("mina:devnet")
   tokens.value = resultTokens
-	Wallet.send({
+	dex.Wallet.send({
 			type: "FetchBalance",
 			network: "mina:devnet",
 			tokens: resultTokens.map((token) => ({
@@ -111,7 +135,7 @@ const fetchTokenBalances = async () => {
 }
 
 // Watch for wallet ready state
-const end = Wallet.actorRef.subscribe(state => {
+const end = dex.Wallet.actorRef.subscribe(state => {
   if (state.value === "READY") {
     fetchTokenBalances()
     end.unsubscribe()
@@ -139,11 +163,10 @@ Here's an example of a token swap component in Vue:
 
 ```vue
 <script setup lang="ts">
-import { useLuminaDex } from "../composables/useLuminaDex"
 import { canDoDexAction } from "@lumina-dex/sdk"
 import { computed, reactive } from "vue"
 
-const { Dex } = useLuminaDex()
+const dex = useLuminaDexStore()
 
 // Form state using reactive
 const swapForm = reactive({
@@ -155,12 +178,12 @@ const swapForm = reactive({
 })
 
 // Computed properties for state access
-const dexState = computed(() => Dex.snapshot.value.value)
-const swapSettings = computed(() => Dex.snapshot.value.context.dex.swap)
-const canDo = computed(() => canDoDexAction(Dex.snapshot.value.context))
+const dexState = computed(() => dex.Dex.snapshot.value.value)
+const swapSettings = computed(() => dex.Dex.snapshot.value.context.dex.swap)
+const canDo = computed(() => canDoDexAction(dex.Dex.snapshot.value.context))
 const dexError = computed(() => ({
-  dexError: Dex.snapshot.value.context.dex.error,
-  contractError: Dex.snapshot.value.context.contract.error
+  dexError: dex.Dex.snapshot.value.context.dex.error,
+  contractError: dex.Dex.snapshot.value.context.contract.error
 }))
 
 // Form validation
@@ -174,7 +197,7 @@ const isValid = computed(() =>
 
 // Handle calculate swap
 const calculateSwap = () => {
-  Dex.send({
+ dex.Dex.send({
     type: "ChangeSwapSettings",
     settings: {
       pool: swapForm.pool,
@@ -190,7 +213,7 @@ const calculateSwap = () => {
 
 // Handle execute swap
 const executeSwap = () => {
-  Dex.send({ type: "Swap" })
+  dex.Dex.send({ type: "Swap" })
 }
 </script>
 

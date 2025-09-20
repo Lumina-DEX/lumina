@@ -7,19 +7,19 @@ The LuminaDex SDK is a powerful library for interacting with the Lumina DEX cont
 ::: code-group
 
 ```bash [npm]
-npm install @lumina-dex/sdk
+npm install @lumina-dex/sdk o1js
 ```
 
 ```bash [pnpm]
-pnpm add @lumina-dex/sdk
+pnpm add @lumina-dex/sdk o1js
 ```
 
 ```bash [yarn]
-yarn add @lumina-dex/sdk
+yarn add @lumina-dex/sdk o1js
 ```
 
 ```bash [bun]
-bun add @lumina-dex/sdk
+bun add @lumina-dex/sdk o1js
 ```
 
 :::
@@ -30,7 +30,15 @@ To develop a dapp using the LuminaDex SDK effectively, you'll need:
 
 - A modern JavaScript environment with ES modules support
 - A Mina wallet extension installed in the user's browser (like Auro Wallet)
-- Basic familiarity with state machines (though not strictly required)
+- Basic familiarity with state machines
+
+## Quick Links
+
+The SDK is built on top of o1js and xstate. For more information you can refer to the following resources:
+
+- 📜 [Contracts Reference](https://lumina-dex.github.io/lumina/) - Detailed smart contract reference
+- 💻 [O1js Docs](https://docs.o1labs.org/o1js) - Official documentation for the o1js library
+- ⚙️ [XState Docs](https://stately.ai/docs) - Official documentation for the XState library
 
 ## Quick Start
 
@@ -93,10 +101,15 @@ If you want to load additional features after the SDK has been initialized, you 
 Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool"] })
 ```
 
-## Framework Integration
+## Frontend framework Integration
 
-The SDK is framework-agnostic, but it provides dedicated integration modules for both React and Vue.
+The SDK is built on xstate and is therefore framework-agnostic, but we provide documentation and example for React and Vue.
 See the [React Integration](/guide/react-integration) and [Vue Integration](/guide/vue-integration) pages for complete examples.
+
+- For usage with svelte, see [@xstate/svelte](https://stately.ai/docs/xstate-svelte)
+- For usage with solid, see [@xstate/solid](https://www.npmjs.com/package/@xstate/solid)
+
+For other frameworks and vanilla JS, use [xstate actors](https://stately.ai/docs/category/actors) directly.
 
 ## Debugging and Caching
 

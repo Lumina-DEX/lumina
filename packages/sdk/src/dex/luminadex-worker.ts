@@ -659,7 +659,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	})
 	return await proveTransaction(transaction)
 }
-export function getMerkle(): MerkleMap {
+function getMerkle(): MerkleMap {
 	const ownerPublic = PublicKey.fromBase58(
 		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
 	)

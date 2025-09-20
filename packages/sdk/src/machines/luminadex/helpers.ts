@@ -1,4 +1,4 @@
-import { hash } from "ohash"
+import { nanoid } from "nanoid"
 import type { ActionArgs, ErrorActorEvent } from "xstate"
 import { luminadexFactories } from "../../constants"
 import { createLogger } from "../../helpers/debug"
@@ -81,7 +81,7 @@ export const setDexError = (message: string) =>
 export const createTransactionInput = (
 	{ context, transaction }: { context: LuminaDexMachineContext; transaction: string }
 ): TransactionMachineInput => {
-	const id = hash(transaction)
+	const id = nanoid()
 	return {
 		id,
 		transaction,
