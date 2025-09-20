@@ -24,7 +24,7 @@ jobs:
           database_url: ${{ env.SUPABASE_DB_URL }}
           path: "backup.tar"
           postgresql_version: "17"
-          options: "-O -F t" 
+          options: "-O -F t"
 
       - name: Rename dump with timestamp
         run: |
