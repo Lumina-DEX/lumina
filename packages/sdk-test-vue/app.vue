@@ -1,9 +1,7 @@
 <script lang="ts" setup>
 /** biome-ignore-all lint/correctness/noUnusedVariables: <vue> */
 import {
-  type ActorRefFromLogic,
   canDoDexAction,
-  type CreatePoolMachine,
   dexMachine,
   fetchTokenList,
   type LuminaToken,
@@ -43,10 +41,17 @@ const contractStatus = computed(() => ({
 const minaBalances = computed(() =>
   Wallet.snapshot.value.context.balances["mina:devnet"]
 )
+
+const notEmpty = (obj: Reactive<unknown>) =>
+  Object.values(obj).every(a =>
+    typeof a === "string" ? a.length > 0 : typeof a === "boolean"
+  )
+
 const tokens = ref<LuminaToken[]>([])
 
-// Form states for each operation
-
+/**
+ * Swap
+ * _____________________________________________________________________________________ */
 const swapSettings = computed(() => Dex.snapshot.value.context.dex.swap)
 const swapForm = reactive({
   pool: "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY",
@@ -56,6 +61,28 @@ const swapForm = reactive({
   slippagePercent: 0.5
 })
 
+const handleCalculateSwap = () => {
+  Dex.send({
+    type: "ChangeSwapSettings",
+    settings: {
+      pool: swapForm.pool,
+      from: {
+        address: swapForm.fromAddress,
+        amount: swapForm.fromAmount
+      },
+      to: swapForm.toAddress,
+      slippagePercent: swapForm.slippagePercent
+    }
+  })
+}
+
+const handleSwap = () => {
+  Dex.send({ type: "Swap" })
+}
+
+/**
+ * Liquidity
+ * _____________________________________________________________________________________ */
 const addLiquiditySettings = computed(() =>
   Dex.snapshot.value.context.dex.addLiquidity
 )
@@ -77,62 +104,19 @@ const removeLiquidityForm = reactive({
   slippagePercent: 0.5
 })
 
-const deployPoolSettings = computed(() =>
-  Dex.snapshot.value.context.dex.deployPool
-)
-const deployTokenSettings = computed(() =>
-  Dex.snapshot.value.context.dex.deployToken
-)
-
-const deployPoolForm = reactive({
-  tokenA: "MINA",
-  tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
-  manual: false
-})
-
-const creatingPool = computed(() => {
-  const createPool = Dex.snapshot.value.context.dex.createPool
-  return Object.entries(createPool.pools).map(([poolId, p]) => {
-    const pool = p as ActorRefFromLogic<CreatePoolMachine>
-    return {
-      id: poolId,
-      pool: useSelector(
-        pool,
-        state => ({ status: state.value, context: state.context })
-      )
-    }
-  })
-})
-
-const deployTokenForm = reactive({ symbol: "" })
-
-const mintSettings = computed(() => Dex.snapshot.value.context.dex.mint)
-const mintForm = reactive({
-  to: "",
-  token: "",
-  amount: 0
-})
-
-const claimSettings = computed(() => Dex.snapshot.value.context.dex.claim)
-
-// Action handlers
-const handleCalculateSwap = () => {
-  Dex.send({
-    type: "ChangeSwapSettings",
-    settings: {
-      pool: swapForm.pool,
-      from: {
-        address: swapForm.fromAddress,
-        amount: swapForm.fromAmount
-      },
-      to: swapForm.toAddress,
-      slippagePercent: swapForm.slippagePercent
-    }
-  })
+const addLiquidity = () => {
+  Dex.send({ type: "AddLiquidity" })
 }
 
-const handleSwap = () => {
-  Dex.send({ type: "Swap" })
+const calculateRemoveLiquidity = () => {
+  Dex.send({
+    type: "ChangeRemoveLiquiditySettings",
+    settings: {
+      pool: removeLiquidityForm.pool,
+      lpAmount: removeLiquidityForm.lpAmount,
+      slippagePercent: removeLiquidityForm.slippagePercent
+    }
+  })
 }
 
 const handleAddLiquidity = () => {
@@ -153,23 +137,28 @@ const handleAddLiquidity = () => {
   })
 }
 
-const addLiquidity = () => {
-  Dex.send({ type: "AddLiquidity" })
-}
-
-const calculateRemoveLiquidity = () => {
-  Dex.send({
-    type: "ChangeRemoveLiquiditySettings",
-    settings: {
-      pool: removeLiquidityForm.pool,
-      lpAmount: removeLiquidityForm.lpAmount,
-      slippagePercent: removeLiquidityForm.slippagePercent
-    }
-  })
-}
-
 const handleRemoveLiquidity = () => {
   Dex.send({ type: "RemoveLiquidity" })
+}
+
+/**
+ * Pool
+ * _____________________________________________________________________________________ */
+const deployPoolSettings = computed(() =>
+  Dex.snapshot.value.context.dex.deployPool
+)
+const deployTokenSettings = computed(() =>
+  Dex.snapshot.value.context.dex.deployToken
+)
+
+const deployPoolForm = reactive({
+  tokenA: "MINA",
+  tokenB: "B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW",
+  manual: false
+})
+
+const enableManualDeployPool = () => {
+  Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool"] })
 }
 
 const handleDeployPool = () => {
@@ -182,6 +171,42 @@ const handleDeployPool = () => {
   })
 }
 
+// In practice, do not use useSelector in a loop. Create components.
+const creatingPool = computed(() => {
+  const createPool = Dex.snapshot.value.context.dex.createPool
+  return Object.entries(createPool.pools).map(([poolId, pool]) => {
+    return {
+      id: poolId,
+      pool: useSelector(
+        pool,
+        state => ({ status: state.value, context: state.context })
+      )
+    }
+  })
+})
+
+/**
+ * Transactions
+ * _____________________________________________________________________________________ */
+
+// In practice, do not use useSelector in a loop. Create components.
+const transactions = computed(() => {
+  const list = Dex.snapshot.value.context.transactions
+  return Object.entries(list).map(([id, actor]) => {
+    return {
+      id,
+      actor: useSelector(
+        actor,
+        state => ({ status: state.value, context: state.context })
+      )
+    }
+  })
+})
+/**
+ * Token
+ * _____________________________________________________________________________________ */
+const deployTokenForm = reactive({ symbol: "" })
+
 const handleDeployToken = () => {
   Dex.send({
     type: "DeployToken",
@@ -190,6 +215,20 @@ const handleDeployToken = () => {
     }
   })
 }
+
+const enableDeployToken = () => {
+  Dex.send({ type: "LoadFeatures", features: ["DeployToken"] })
+}
+
+/**
+ * Mint
+ * _____________________________________________________________________________________ */
+const mintSettings = computed(() => Dex.snapshot.value.context.dex.mint)
+const mintForm = reactive({
+  to: "",
+  token: "",
+  amount: 0
+})
 
 const handleMintToken = () => {
   Dex.send({
@@ -202,16 +241,13 @@ const handleMintToken = () => {
   })
 }
 
+/**
+ * Claim
+ * _____________________________________________________________________________________ */
+const claimSettings = computed(() => Dex.snapshot.value.context.dex.claim)
+
 const handleClaimFromFaucet = () => {
   Dex.send({ type: "ClaimTokensFromFaucet" })
-}
-
-const enableDeployPool = () => {
-  Dex.send({ type: "LoadFeatures", features: ["ManualDeployPool"] })
-}
-
-const enableDeployToken = () => {
-  Dex.send({ type: "LoadFeatures", features: ["DeployToken"] })
 }
 
 const enableClaim = () => {
@@ -233,12 +269,6 @@ const fetchTokenBalances = async () => {
   })
 }
 
-onMounted(() => {
-  if (Wallet.snapshot.value.matches("INIT")) {
-    Wallet.send({ type: "Connect" })
-  }
-})
-
 const end = Wallet.actorRef.subscribe(state => {
   if (state.value === "READY") {
     fetchTokenBalances()
@@ -246,10 +276,11 @@ const end = Wallet.actorRef.subscribe(state => {
   }
 })
 
-const notEmpty = (obj: Reactive<unknown>) =>
-  Object.values(obj).every(a =>
-    typeof a === "string" ? a.length > 0 : typeof a === "boolean"
-  )
+onMounted(() => {
+  if (Wallet.snapshot.value.matches("INIT")) {
+    Wallet.send({ type: "Connect" })
+  }
+})
 </script>
 
 <template>
@@ -272,6 +303,8 @@ const notEmpty = (obj: Reactive<unknown>) =>
     <div>Error: {{ dexError }}</div>
     <h2>Available Tokens</h2>
     <pre>{{ tokens }}</pre>
+    <h2>Transactions</h2>
+    <pre>{{ transactions }}</pre>
     <h2>Swap</h2>
     <pre>{{ swapSettings }}</pre>
     <div>
@@ -285,7 +318,7 @@ const notEmpty = (obj: Reactive<unknown>) =>
         placeholder="Slippage %"
       >
       <button
-        :disabled="!(canDo.changeSwapSettings && notEmpty(swapForm))"
+        :disabled="!canDo.changeSwapSettings || notEmpty(swapForm)"
         @click="handleCalculateSwap"
       >
         Calculate Swap
@@ -363,7 +396,7 @@ const notEmpty = (obj: Reactive<unknown>) =>
     </div>
 
     <h2>Deploy</h2>
-    <button :disabled="canDo.deployPool" @click="enableDeployPool">
+    <button :disabled="canDo.deployPool" @click="enableManualDeployPool">
       Enable Deploy Pool
     </button>
     <button :disabled="canDo.deployToken" @click="enableDeployToken">

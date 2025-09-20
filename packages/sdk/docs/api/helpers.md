@@ -80,7 +80,11 @@ Several pre-defined GraphQL operations are available for querying blockchain dat
 
 ### `canDoDexAction`
 
-Checks what DEX actions are currently possible based on the context state.
+Checks what DEX actions are currently possible based on loaded contracts and state.
+
+This is helpful to control the `disabled` attributes within UI buttons.
+
+_For example, if the swap contracts are loaded, but you haven't calculated the amounts with `ChangeSwapSettings`, it will return `false`._
 
 ```ts
 import { canDoDexAction } from "@lumina-dex/sdk"
@@ -109,6 +113,26 @@ interface CanDo {
 	mintToken: boolean
 	claim: boolean
 }
+```
+
+### `canStartDexAction`
+
+Similar to `canDoDexAction` but only checks if the necessary contracts are loaded.
+
+This is helpful to conditionally render a page that requires a feature to be available.
+
+_For example, if the swap contracts are loaded, but you haven't calculated the amounts with `ChangeSwapSettings`, it will return `true`._
+
+```ts
+import { canStartDexAction } from "@lumina-dex/sdk"
+
+// Get the current context
+const context = Dex.getSnapshot().context
+
+// Check what actions are possible
+const canStart = canStartDexAction(context)
+
+// Use the results to do conditional rendering
 ```
 
 ## Data Fetching Functions

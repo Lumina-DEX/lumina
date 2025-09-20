@@ -1,12 +1,5 @@
-import {
-	fetchPoolList,
-	type LuminaPool,
-	type LuminaToken,
-	type Networks,
-	PublicKey,
-	TokenId
-} from "@lumina-dex/sdk"
-
+import { fetchPoolList, type LuminaPool, type LuminaToken, type Networks } from "@lumina-dex/sdk"
+import { PublicKey, TokenId } from "o1js"
 export const poolToka = "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY"
 export const toka = "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
 

@@ -36,7 +36,7 @@ export default function Layout({ children }) {
 	// Do Setup
 
 	useEffect(() => {
-		if (dexState?.contractSystem === "IDLE") {
+		if (dexState?.contractSystem === "READY") {
 			setDisplayText("")
 		}
 		setDisplayText(JSON.stringify(dexState))

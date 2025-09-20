@@ -9,6 +9,23 @@ export const Route = createFileRoute("/")({
 	component: HomeComponent
 })
 
+export function LatestSwapTransaction() {
+	const { Dex } = useContext(LuminaContext)
+	const lid = useSelector(Dex, (s) => s.context.dex.swap.transactionLid)
+	const txActor = useSelector(Dex, (s) => (lid ? s.context.transactions[lid] : undefined))
+	const status = useSelector(txActor, (a) => a?.value)
+	const result = useSelector(txActor, (a) => a?.context.result)
+	if (!lid || !txActor) return null
+	if (status === "DONE" && result && !(result instanceof Error)) {
+		return (
+			<a href={result.url} target="_blank">
+				View Tx
+			</a>
+		)
+	}
+	return <span>Tx Status: {String(status)}</span>
+}
+
 function HomeComponent() {
 	const { Wallet, Dex } = useContext(LuminaContext)
 
@@ -61,6 +78,7 @@ function HomeComponent() {
 				end.unsubscribe()
 			}
 		})
+		return end.unsubscribe
 	}, [])
 
 	return (

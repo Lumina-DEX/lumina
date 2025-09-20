@@ -1,106 +1,95 @@
-import { AccountUpdate, Field, Mina, PublicKey, type Types } from "o1js"
-import type { WalletActorRef } from "../machines/wallet/actors"
-import { logger } from "./debug"
+import type { ZkappCommand } from "@aurowallet/mina-provider"
+import { type DBSchema, openDB } from "idb"
+import type { Networks } from "../machines/wallet/types"
 
-export const l1NodeUrl = "https://api.minascan.io/node/devnet/v1/graphql"
+const baseUrl = {
+	"mina:devnet": "https://minascan.io/devnet",
+	"mina:mainnet": "https://minascan.io/mainnet",
+	"zeko:testnet": "https://zekoscan.io/testnet",
+	"zeko:mainnet": "https://zekoscan.io/mainnet"
+} as const
 
-export const l1ArchiveUrl = "https://api.minascan.io/archive/devnet/v1/graphql"
-
-const outerBridgePublicKey = PublicKey.fromBase58(
-	"B62qpuhMDp748xtE77iBXRRaipJYgs6yumAeTzaM7zS9dn8avLPaeFF"
-)
-
-export const innerBridgePublicKey = PublicKey.fromBase58(
-	"B62qjDedeP9617oTUeN8JGhdiqWg4t64NtQkHaoZB9wyvgSjAyupPU1"
-)
-
-export type Direction = "DEPOSIT" | "WITHDRAW"
-
-type Action = {
-	actions: string[][]
+export interface SavedTransaction {
+	timestamp: number
+	confirmed: boolean
+	network: Networks
+	account: string
+	transaction: string
+	zkappCommand: ZkappCommand
 	hash: string
+	zkAppId: string
+	id: string
 }
-export const actionsToTransfer = (actions: Action[]) => {
-	return actions.flat().map(({ actions, hash }) => {
-		const [amount, x, yParity] = actions[0]
-		return {
-			amount,
-			pk: PublicKey.from({ x: Field.from(x), isOdd: yParity === "1" }),
-			actionState: Field.from(hash),
-			json: actions
+
+interface LuminaDexDB extends DBSchema {
+	transactions: {
+		value: SavedTransaction
+		key: string
+		indexes: { "by-id": string }
+	}
+}
+
+export const createDb = () =>
+	openDB<LuminaDexDB>("Lumina-Dex", 1, {
+		upgrade(db) {
+			const store = db.createObjectStore("transactions", { keyPath: "id" })
+			store.createIndex("by-id", "id")
 		}
 	})
-}
 
-/**
- * We should find a better way to find the transfer.
- */
-export const findTransfer = async (pk: PublicKey, amount: number) => {
-	const actions = await Mina.fetchActions(outerBridgePublicKey)
-
-	if ("error" in actions) throw new Error(JSON.stringify(actions))
-
-	const transfer = actionsToTransfer(actions.reverse()).find(
-		(action) => action.amount === amount.toString() && action.pk.equals(pk)
-	)
-
-	if (transfer === undefined) throw new Error("No matching transfer found")
-
-	return transfer
-}
-
-export type Transfer = Awaited<ReturnType<typeof findTransfer>>
-
-export const fetchTransfersExtension = async (actionState: Field) => {
-	const actions = await Mina.fetchActions(outerBridgePublicKey, { fromActionState: actionState })
-
-	if ("error" in actions) throw new Error(JSON.stringify(actions))
-
-	return actionsToTransfer(actions)
-}
-
-export type After = Awaited<ReturnType<typeof fetchTransfersExtension>>
-
-export const applyAccountUpdates = (tx: Mina.Transaction<false, false>, accountUpdates: string) => {
-	// Append proved account update to the command
-	for (const accountUpdate of JSON.parse(accountUpdates) as Types.Json.AccountUpdate[]) {
-		const au = AccountUpdate.fromJSON(accountUpdate)
-		logger.info({ accountUpdate, au })
-		tx.transaction.accountUpdates.push(au)
+export const hashDb = ({
+	id,
+	network,
+	account,
+	transaction,
+	db = createDb()
+}: {
+	id: string
+	db?: ReturnType<typeof createDb>
+	network: Networks
+	account: string
+	transaction: string
+}) => {
+	const findUnconfirmed = async () => {
+		const transactions = await (await db).getAllFromIndex("transactions", "by-id", id)
+		return transactions.find((t) => t.confirmed === false)
 	}
-	return tx
-}
 
-export const sendTransaction = async (
-	{ tx, wallet }: { tx: Mina.Transaction<false, false> | string; wallet: WalletActorRef }
-) => {
-	const transaction = typeof tx === "string" ? tx : tx.toJSON()
-	const updateResult = await window.mina.sendTransaction({ onlySign: false, transaction })
-	if (updateResult instanceof Error) {
-		logger.error("Transaction failed", updateResult)
-		throw updateResult
-	}
-	if ("hash" in updateResult) {
-		const timestamp = Date.now()
-		const { currentNetwork, account } = wallet.getSnapshot().context
-		const hash = updateResult.hash
-		const storageKey = `lumina-sdk-tx-${timestamp}-${currentNetwork}-${account}-${hash}`
-		localStorage.setItem(
-			storageKey,
-			JSON.stringify({ timestamp, currentNetwork, account, hash, transaction })
-		)
-		logger.success("Transaction sent and saved to localStorage", updateResult)
-		const baseUrl = {
-			"mina:devnet": "https://minascan.io/devnet",
-			"mina:mainnet": "https://minascan.io/mainnet",
-			"zeko:testnet": "https://zekoscan.io/testnet",
-			"zeko:mainnet": "https://zekoscan.io/mainnet"
-		} as const
-		return {
-			hash: updateResult.hash,
-			url: `${baseUrl[currentNetwork]}/account/${updateResult.hash}/zk-txs` as const
+	const saveSigned = async ({
+		hash,
+		confirmed,
+		zkAppId,
+		zkappCommand
+	}: { hash: string; confirmed: boolean; zkAppId: string; zkappCommand: ZkappCommand }) => {
+		const toStore = {
+			id,
+			timestamp: Date.now(),
+			network,
+			account,
+			hash,
+			zkAppId,
+			zkappCommand,
+			transaction
 		}
+		await (await db).put("transactions", { ...toStore, confirmed })
+		console.log(`Transaction confirmed:${confirmed} saved.`, toStore)
 	}
-	logger.warn("An unexpected transaction result was received", updateResult)
-	return { hash: "", url: "" }
+
+	const confirmTransaction = async () => {
+		const DB = await db
+		const tx = await DB.get("transactions", id)
+		if (!tx) throw new Error("Transaction not found")
+		tx.confirmed = true
+		await DB.put("transactions", tx)
+	}
+
+	const createResult = ({ hash }: { hash: string }) => {
+		return { hash, url: createExplorerUrl({ network, hash }) }
+	}
+	return { saveSigned, confirmTransaction, findUnconfirmed, createResult }
 }
+
+export const createExplorerUrl = ({ network, hash }: { network: Networks; hash: string }) =>
+	`${baseUrl[network]}/tx/${hash}/zk-txs` as const
+
+export type HashDb = ReturnType<typeof hashDb>

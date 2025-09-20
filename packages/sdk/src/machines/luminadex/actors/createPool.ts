@@ -2,8 +2,18 @@ import type { Client } from "@urql/core"
 import type { ResultOf } from "gql.tada"
 import { fetchAccount, Poseidon, Provable, PublicKey, TokenId, UInt64 } from "o1js"
 import { Observable } from "rxjs"
-import { assign, enqueueActions, fromObservable, fromPromise, setup } from "xstate"
+import {
+	type ActionArgs,
+	assign,
+	enqueueActions,
+	type ErrorActorEvent,
+	type EventObject,
+	fromObservable,
+	fromPromise,
+	setup
+} from "xstate"
 import { luminadexFactories, MINA_ADDRESS } from "../../../constants"
+import type { LuminaDexWorker } from "../../../dex/luminadex-worker"
 import { createPoolSignerClient } from "../../../graphql/clients"
 import {
 	ConfirmTransactionMutation,
@@ -12,21 +22,26 @@ import {
 	PoolCreationSubscription
 } from "../../../graphql/pool-signer"
 import { createMeasure, prefixedLogger } from "../../../helpers/debug"
-import { sendTransaction } from "../../../helpers/transfer"
+import { transactionMachine } from "../../transaction"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
 
 const logger = prefixedLogger("[POOL CREATION API]")
 const measure = createMeasure(logger)
 
-const addError = (fallbackError: Error) => ({ context, event }: { context: any; event: any }) => {
-	const error = event.error instanceof Error ? event.error : fallbackError
-	logger.error(error)
-	return { errors: [...context.errors, error] }
-}
+const addError =
+	(fallbackError: Error) =>
+	({ context, event }: ActionArgs<CreatePoolContext, ErrorActorEvent, EventObject>) => {
+		const error = event.error instanceof Error ? event.error : fallbackError
+		logger.error(error)
+		return { errors: [...context.errors, error] }
+	}
 
-export const checkPoolExists = fromPromise(
-	async ({ input }: { input: { tokenA: string; tokenB: string; network: Networks } }) => {
+export const checkPoolExists = fromPromise<
+	{ exists: boolean },
+	{ tokenA: string; tokenB: string; network: Networks }
+>(
+	async ({ input }) => {
 		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
 
 		try {
@@ -93,22 +108,25 @@ export const checkPoolExists = fromPromise(
 	}
 )
 
-export const getJobStatus = fromPromise(
-	async ({ input }: { input: { client: Client; jobId: string } }) => {
+export const getJobStatus = fromPromise<
+	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
+	{ client: Client; jobId: string }
+>(
+	async ({ input }) => {
 		logger.start("Checking job status for:", input.jobId)
 		const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
 		if (result.error) throw new Error(result.error.message)
-		logger.success("Job status fetched successfully", result.data?.poolCreationJob)
-		return result.data?.poolCreationJob
+		if (!result.data) throw new Error("No data received from job status query")
+		logger.success("Job status fetched successfully", result.data.poolCreationJob)
+		return result.data.poolCreationJob
 	}
 )
 
-export const createPoolMutation = fromPromise(
-	async ({
-		input
-	}: {
-		input: { client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
-	}) => {
+export const createPoolMutation = fromPromise<
+	{ jobId: string },
+	{ client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
+>(
+	async ({ input }) => {
 		logger.start("Creating pool with input:", input)
 		const { client, ...args } = input
 		const result = await client.mutation(CreatePoolMutation, {
@@ -123,11 +141,14 @@ export const createPoolMutation = fromPromise(
 	}
 )
 
-export const checkJobStatus = fromObservable(
-	({ input }: { input: { client: Client; jobId: string } }) => {
+export const checkJobStatus = fromObservable<
+	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
+	{ client: Client; jobId: string }
+>(
+	({ input }) => {
 		logger.start("Subscribing to job status for:", input.jobId)
 		const stop = measure("Pool Creation Server Side Proof")
-		return new Observable<ResultOf<typeof PoolCreationSubscription>["poolCreation"]>((observer) => {
+		return new Observable((observer) => {
 			const { unsubscribe } = input.client
 				.subscription(PoolCreationSubscription, { jobId: input.jobId })
 				.subscribe((result) => {
@@ -158,17 +179,12 @@ export const checkJobStatus = fromObservable(
 	}
 )
 
-export const signPoolTransaction = fromPromise(
-	async ({ input }: { input: { transaction: string; wallet: WalletActorRef } }) => {
-		logger.start("Signing transaction")
-		const result = await sendTransaction({ tx: input.transaction, wallet: input.wallet })
-		logger.success("Transaction signed successfully", result)
-		return result
-	}
-)
-
-export const confirmPoolCreation = fromPromise(
-	async ({ input }: { input: { client: Client; jobId: string } }) => {
+// 3. Send final GraphQL mutation
+export const confirmPoolCreation = fromPromise<
+	{ success: true },
+	{ client: Client; jobId: string }
+>(
+	async ({ input }) => {
 		logger.start("Finalizing pool creation for job:", input.jobId)
 		const result = await input.client.mutation(ConfirmTransactionMutation, { jobId: input.jobId })
 			.toPromise()
@@ -177,42 +193,48 @@ export const confirmPoolCreation = fromPromise(
 	}
 )
 
+interface CreatePoolContext {
+	tokenA: string
+	tokenB: string
+	user: string
+	network: Networks
+	wallet: WalletActorRef
+	worker: LuminaDexWorker
+	client: Client
+	errors: Error[]
+	job: {
+		id: string
+		status: string
+		transactionJson: string
+		poolPublicKey: string
+	}
+	transaction: {
+		hash: string
+		url: string
+	}
+}
+
+export interface CreatePoolInput {
+	tokenA: string
+	tokenB: string
+	user: string
+	network: Networks
+	wallet: WalletActorRef
+	worker: LuminaDexWorker
+}
+
 export const createPoolMachine = setup({
 	types: {
-		context: {} as {
-			tokenA: string
-			tokenB: string
-			user: string
-			network: Networks
-			wallet: WalletActorRef
-			client: Client
-			job: {
-				id: string
-				status: string
-				transactionJson: string
-				poolPublicKey: string
-			}
-			transaction: {
-				hash: string
-				url: string
-			}
-			errors: Error[]
-		},
-		input: {} as {
-			tokenA: string
-			tokenB: string
-			user: string
-			network: Networks
-			wallet: WalletActorRef
-		}
+		context: {} as CreatePoolContext,
+		input: {} as CreatePoolInput
 	},
 	actors: {
 		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
-		signPoolTransaction,
 		confirmPoolCreation,
-		getJobStatus
+		getJobStatus,
+		transactionMachine
 	}
 }).createMachine({
 	id: "createPoolFlow",
@@ -220,16 +242,8 @@ export const createPoolMachine = setup({
 	context: ({ input }) => ({
 		...input,
 		client: createPoolSignerClient(),
-		job: {
-			id: "",
-			status: "",
-			transactionJson: "",
-			poolPublicKey: ""
-		},
-		transaction: {
-			hash: "",
-			url: ""
-		},
+		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
+		transaction: { hash: "", url: "" },
 		errors: []
 	}),
 	states: {
@@ -246,19 +260,13 @@ export const createPoolMachine = setup({
 		CHECKING_POOL_EXISTS: {
 			invoke: {
 				src: "checkPoolExists",
-				input: ({ context }) => ({
-					tokenA: context.tokenA,
-					tokenB: context.tokenB,
-					network: context.network
-				}),
+				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
 				onDone: [
 					{
 						target: "POOL_ALREADY_EXISTS",
-						guard: ({ event }) => event.output?.exists === true
+						guard: ({ event }) => event.output.exists === true
 					},
-					{
-						target: "CREATING"
-					}
+					{ target: "CREATING" }
 				],
 				onError: {
 					target: "CREATING",
@@ -266,11 +274,9 @@ export const createPoolMachine = setup({
 				}
 			}
 		},
-		POOL_ALREADY_EXISTS: {
-			type: "final",
-			description: "Pool already exists for the specified token pair"
-		},
 		GET_STATUS: {
+			// TODO: Implement SDK helpers for persistence.
+			description: "This only happens if the jobId is already known, e.g. user refreshes the page.",
 			invoke: {
 				src: "getJobStatus",
 				input: ({ context }) => ({ client: context.client, jobId: context.job.id }),
@@ -330,16 +336,19 @@ export const createPoolMachine = setup({
 		},
 		SIGNING: {
 			invoke: {
-				src: "signPoolTransaction",
-				input: ({ context }) => ({
-					transaction: context.job.transactionJson,
-					wallet: context.wallet
+				src: "transactionMachine",
+				input: ({ context: { wallet, worker, job } }) => ({
+					id: job.id,
+					transaction: job.transactionJson,
+					wallet,
+					worker
 				}),
 				onDone: {
 					target: "CONFIRMING",
-					actions: assign(({ event }) => ({
-						transaction: { hash: event.output.hash, url: event.output.url }
-					}))
+					actions: assign(({ event }) => {
+						if (event.output.result instanceof Error) throw event.output.result
+						return { transaction: event.output.result }
+					})
 				},
 				onError: {
 					target: "FAILED",
@@ -365,6 +374,10 @@ export const createPoolMachine = setup({
 		COMPLETED: {
 			type: "final",
 			description: "Pool creation completed successfully"
+		},
+		POOL_ALREADY_EXISTS: {
+			type: "final",
+			description: "Pool already exists for the specified token pair."
 		},
 		FAILED: {
 			type: "final",

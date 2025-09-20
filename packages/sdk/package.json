@@ -36,7 +36,6 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@aurowallet/mina-provider": "^1.0.6",
-    "@gql.tada/vue-support": "^1.0.1",
     "@lumina-dex/contracts": "workspace:^",
     "@urql/core": "^5.2.0",
     "@urql/exchange-retry": "^1.3.0",
@@ -48,6 +47,9 @@
     "fflate": "^0.8.2",
     "gql.tada": "^1.8.10",
     "graphql-sse": "^2.5.4",
+    "idb": "^8.0.3",
+    "immer": "^10.1.3",
+    "nanoid": "^5.1.5",
     "p-limit": "^6.2.0",
     "rxjs": "^7.8.2",
     "urql": "^4.1.0",
@@ -57,6 +59,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",
     "@cloudflare/workers-types": "^4.20241127.0",
+    "@gql.tada/vue-support": "^1.0.1",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
     "magic-string": "^0.30.14",
@@ -66,6 +69,7 @@
     "vitepress": "^1.6.3",
     "vitepress-plugin-d2": "^1.0.4",
     "vitepress-plugin-llms": "^1.1.0",
+    "vitest": "^3.2.4",
     "wrangler": "^4.1.0"
   },
   "peerDependencies": {

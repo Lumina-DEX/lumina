@@ -1,172 +1,51 @@
 import * as Comlink from "comlink"
-import { PrivateKey } from "o1js"
-import {
-	type ActionArgs,
-	and,
-	assertEvent,
-	assign,
-	enqueueActions,
-	type ErrorActorEvent,
-	fromPromise,
-	setup,
-	spawnChild,
-	stopChild
-} from "xstate"
-import { chainFaucets, luminadexFactories, poolInstance } from "../../constants/index"
-import type {
-	AddLiquidity,
-	DeployPoolArgs,
-	FaucetSettings,
-	LuminaDexWorker,
-	MintToken,
-	SwapArgs,
-	WithdrawLiquidity
-} from "../../dex/luminadex-worker"
-import {
-	getAmountLiquidityOut,
-	getAmountOut,
-	getAmountOutFromLiquidity,
-	getFirstAmountLiquidityOut
-} from "../../dex/utils"
-import { createMeasure, getDebugConfig, prefixedLogger } from "../../helpers/debug"
-import { sendTransaction } from "../../helpers/transfer"
+import { produce } from "immer"
+import { and, assertEvent, assign, enqueueActions, setup, spawnChild, stopChild } from "xstate"
+import { chainFaucets, poolInstance } from "../../constants/index"
+import type { LuminaDexWorker } from "../../dex/luminadex-worker"
 import { isBetween } from "../../helpers/validation"
+import { transactionMachine } from "../transaction"
 import { detectWalletChange } from "../wallet/actors"
-import { createPoolMachine } from "./actors/createPool"
+import { type CreatePoolInput, createPoolMachine } from "./actors/createPool"
+import {
+	calculateAddLiquidityAmount,
+	calculateRemoveLiquidityAmount,
+	calculateSwapAmount,
+	compileContract,
+	initContracts
+} from "./actors/operations"
+import {
+	addLiquidity,
+	claim,
+	deployPool,
+	deployToken,
+	mintToken,
+	removeLiquidity,
+	swap
+} from "./actors/transactions"
+import {
+	canDoDexAction,
+	canStartDexAction,
+	createTransactionInput,
+	inputCompile,
+	inputWorker,
+	loaded,
+	logger,
+	luminaDexFactory,
+	resetSettings,
+	setContractError,
+	setDexError,
+	setToLoadFromFeatures,
+	walletNetwork,
+	walletUser
+} from "./helpers"
 import type {
-	AddLiquiditySettings,
-	Can,
 	ContractName,
-	DexFeatures,
-	DexWorker,
-	InputDexWorker,
 	LuminaDexMachineContext,
 	LuminaDexMachineEvent,
-	LuminaDexMachineInput,
-	RemoveLiquiditySettings,
-	SwapSettings,
-	Token,
-	User
+	LuminaDexMachineInput
 } from "./types"
 
-const logger = prefixedLogger("[DEX]")
-const measure = createMeasure(logger)
-
-const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
-
-const walletNetwork = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.currentNetwork
-
-const walletUser = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.account
-
-const inputWorker = (c: LuminaDexMachineContext) => ({
-	worker: c.contract.worker,
-	wallet: c.wallet
-})
-
-const luminaDexFactory = (c: LuminaDexMachineContext) => luminadexFactories[walletNetwork(c)]
-
-const inputCompile = (
-	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => ({ worker: context.contract.worker, contract })
-
-const loaded = (
-	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => {
-	return {
-		contract: {
-			...context.contract,
-			currentlyLoading: null,
-			loaded: { ...context.contract.loaded, [contract]: true }
-		}
-	}
-}
-
-const setContractError = (message: string) =>
-(
-	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
-) => {
-	return { contract: { ...context.contract, error: { message, error: event.error } } }
-}
-
-const setDexError = (message: string) =>
-(
-	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
-) => {
-	return { dex: { ...context.dex, error: { message, error: event.error } } }
-}
-
-const resetSettings = { calculated: null, transactionResult: null } as const
-
-/**
- * Helper function to measure and log the time taken to execute an action.
- */
-const act = async <T>(label: string, body: (stop: () => void) => Promise<T>) => {
-	const stop = measure(label)
-	logger.start(label)
-	try {
-		const result = await body(stop)
-		logger.success(label)
-		stop()
-		return result
-	} catch (e) {
-		logger.error(`${label} Error:`, e)
-		stop()
-		throw e
-	}
-}
-
-/**
- * Verify if the contracts are loaded for a given action.
- */
-const canStartDexAction = (context: LuminaDexMachineContext) => {
-	const loaded = context.contract.loaded
-	return {
-		changeSwapSettings: loaded.Pool && loaded.FungibleToken,
-		swap: loaded.Pool && loaded.FungibleToken,
-		changeAddLiquiditySettings: loaded.Pool && loaded.FungibleToken,
-		addLiquidity: loaded.Pool && loaded.FungibleToken,
-		changeRemoveLiquiditySettings: loaded.Pool && loaded.FungibleToken,
-		removeLiquidity: loaded.Pool && loaded.FungibleToken && loaded.PoolTokenHolder,
-		deployPool: loaded.PoolFactory,
-		deployToken: loaded.FungibleToken && loaded.FungibleTokenAdmin,
-		mintToken: loaded.FungibleToken,
-		claim: loaded.FungibleToken && loaded.Faucet
-	} satisfies Record<keyof Can, boolean>
-}
-
-/**
- * Verify if the user can perform a Dex action based on loaded contracts and calculated values.
- */
-export const canDoDexAction = (context: LuminaDexMachineContext) => {
-	const start = canStartDexAction(context)
-	return {
-		...start,
-		addLiquidity: start.addLiquidity && context.dex.addLiquidity.calculated !== null,
-		removeLiquidity: start.removeLiquidity && context.dex.removeLiquidity.calculated !== null,
-		swap: start.swap && context.dex.swap.calculated !== null
-	}
-}
-
-const setToLoadFromFeatures = (features: DexFeatures) => {
-	const toLoad = new Set<ContractName>([])
-	if (features.includes("Swap")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("Pool")
-		toLoad.add("PoolTokenHolder")
-	}
-	if (features.includes("ManualDeployPool")) {
-		toLoad.add("PoolFactory")
-	}
-	if (features.includes("DeployToken")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("FungibleTokenAdmin")
-	}
-	if (features.includes("Claim")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("Faucet")
-	}
-	return toLoad
-}
 export const createLuminaDexMachine = () =>
 	setup({
 		types: {
@@ -188,214 +67,19 @@ export const createLuminaDexMachine = () =>
 		actors: {
 			detectWalletChange,
 			createPoolMachine: createPoolMachine as any, // TODO: TS7056 :/
-			loadContracts: fromPromise(
-				async ({ input }: { input: { worker: DexWorker; features: DexFeatures } }) => {
-					const { worker, features } = input
-					return act("loadContracts", async () => {
-						await worker.loadContracts()
-						return setToLoadFromFeatures(features)
-					})
-				}
-			),
-			compileContract: fromPromise(
-				async ({ input }: { input: { worker: DexWorker; contract: ContractName } }) => {
-					const { worker, contract } = input
-					return act(contract, async () => {
-						const disableCache = getDebugConfig().disableCache
-						await worker.compileContract({ contract, disableCache })
-					})
-				}
-			),
-			claim: fromPromise(
-				async ({ input }: { input: InputDexWorker & User & { faucet: FaucetSettings } }) =>
-					act("claim", async (stop) => {
-						const { worker, wallet, user, faucet } = input
-						const tx = await worker.claim({ user, faucet })
-						stop()
-						return await sendTransaction({ tx, wallet })
-					})
-			),
-			swap: fromPromise(async ({ input }: { input: InputDexWorker & SwapArgs }) => {
-				return act("swap", async (stop) => {
-					const { worker, wallet, ...swapSettings } = input
-					const tx = await worker.swap(swapSettings)
-					stop()
-					return await sendTransaction({ tx, wallet })
-				})
-			}),
-			addLiquidity: fromPromise(async ({ input }: { input: AddLiquidity & InputDexWorker }) =>
-				act("addLiquidity", async (stop) => {
-					const { worker, wallet, ...config } = input
-					const tx = await worker.addLiquidity(config)
-					stop()
-					return await sendTransaction({ tx, wallet })
-				})
-			),
-			removeLiquidity: fromPromise(
-				async ({ input }: { input: WithdrawLiquidity & InputDexWorker }) => {
-					return act("removeLiquidity", async (stop) => {
-						const { worker, wallet, ...config } = input
-						const tx = await worker.withdrawLiquidity(config)
-						stop()
-						return await sendTransaction({ tx, wallet })
-					})
-				}
-			),
-			mintToken: fromPromise(async ({ input }: { input: InputDexWorker & MintToken }) =>
-				act("mintToken", async (stop) => {
-					const { worker, wallet, ...config } = input
-					const tx = await worker.mintToken(config)
-					stop()
-					return await sendTransaction({ tx, wallet })
-				})
-			),
-			deployPool: fromPromise(async ({ input }: { input: InputDexWorker & DeployPoolArgs }) =>
-				act("deployPool", async (stop) => {
-					const { worker, wallet, ...config } = input
-					const tx = await worker.deployPoolInstance(config)
-					stop()
-					return await sendTransaction({ tx, wallet })
-				})
-			),
-			deployToken: fromPromise(
-				async ({ input }: { input: InputDexWorker & { symbol: string } & User }) =>
-					act("deployToken", async (stop) => {
-						const { worker, symbol, wallet, user } = input
-						// TokenKey
-						const tk = PrivateKey.random()
-						const tokenKey = tk.toBase58()
-						const tokenKeyPublic = tk.toPublicKey().toBase58()
-						// TokenAdminKey
-						const tak = PrivateKey.random()
-						const tokenAdminKey = tak.toBase58()
-						const tokenAdminKeyPublic = tak.toPublicKey().toBase58()
-
-						const tx = await worker.deployToken({ user, tokenKey, tokenAdminKey, symbol })
-						stop()
-						const transactionOutput = await sendTransaction({ tx, wallet })
-						return {
-							transactionOutput,
-							token: { symbol, tokenKey, tokenAdminKey, tokenKeyPublic, tokenAdminKeyPublic }
-						}
-					})
-			),
-			calculateSwapAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & SwapSettings & { frontendFee: number } }) => {
-					return act("calculateSwapAmount", async () => {
-						const { worker, pool, slippagePercent, from, frontendFee } = input
-						const reserves = await worker.getReserves(pool)
-						const settings = { from, slippagePercent }
-						if (reserves.token0.amount && reserves.token1.amount) {
-							const amountIn = amount(from)
-							const ok = reserves.token0.address === from.address
-							const balanceIn = Number.parseInt(
-								ok ? reserves.token0.amount : reserves.token1.amount
-							)
-							const balanceOut = Number.parseInt(
-								ok ? reserves.token1.amount : reserves.token0.amount
-							)
-							const swapAmount = getAmountOut({
-								amountIn,
-								balanceIn,
-								balanceOut,
-								slippagePercent,
-								frontendFee
-							})
-							return { swapAmount, settings }
-						}
-						const swapAmount = {
-							amountIn: 0,
-							amountOut: 0,
-							balanceOutMin: 0,
-							balanceInMax: 0
-						}
-						return { swapAmount, settings }
-					})
-				}
-			),
-			calculateAddLiquidityAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & AddLiquiditySettings }) => {
-					return act("calculateAddLiquidityAmount", async () => {
-						const { worker, pool, tokenA, tokenB, slippagePercent } = input
-						const reserves = await worker.getReserves(pool)
-
-						const isToken0 = reserves.token0.address === tokenA.address
-
-						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-							const balanceA = Number.parseInt(
-								isToken0 ? reserves.token0.amount : reserves.token1.amount
-							)
-							const balanceB = Number.parseInt(
-								isToken0 ? reserves.token1.amount : reserves.token0.amount
-							)
-
-							const liquidity = Number.parseInt(reserves.liquidity)
-
-							if (liquidity > 0) {
-								const amountAIn = amount(tokenA)
-								const liquidityAmount = getAmountLiquidityOut({
-									tokenA: {
-										address: tokenA.address,
-										amountIn: amountAIn,
-										balance: balanceA
-									},
-									tokenB: { address: tokenB.address, balance: balanceB },
-									supply: liquidity,
-									slippagePercent
-								})
-								return liquidityAmount
-							}
-
-							const amountAIn = amount(tokenA)
-							const amountBIn = amount(tokenB)
-							const liquidityAmount = getFirstAmountLiquidityOut({
-								tokenA: { address: tokenA.address, amountIn: amountAIn },
-								tokenB: { address: tokenB.address, amountIn: amountBIn }
-							})
-							return liquidityAmount
-						}
-						const liquidityAmount = {
-							tokenA: { address: "", amountIn: 0, balanceMax: 0 },
-							tokenB: { address: "", amountIn: 0, balanceMax: 0 },
-							supplyMin: 0,
-							liquidity: 0
-						}
-						return liquidityAmount
-					})
-				}
-			),
-			calculateRemoveLiquidityAmount: fromPromise(
-				async ({ input }: { input: InputDexWorker & RemoveLiquiditySettings }) => {
-					return act("calculateRemoveLiquidityAmount", async () => {
-						const { worker, pool, lpAmount, slippagePercent } = input
-						const reserves = await worker.getReserves(pool)
-
-						if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-							const balanceA = Number.parseInt(reserves.token0.amount)
-							const balanceB = Number.parseInt(reserves.token1.amount)
-
-							const supply = Number.parseInt(reserves.liquidity)
-							// lp token has 9 decimals
-							const liquidity = Number.parseInt(lpAmount) * 10 ** 9
-							const liquidityAmount = getAmountOutFromLiquidity({
-								liquidity,
-								tokenA: { address: reserves.token0.address, balance: balanceA },
-								tokenB: { address: reserves.token1.address, balance: balanceB },
-								supply,
-								slippagePercent
-							})
-							return liquidityAmount
-						}
-						const liquidityAmount = {
-							tokenA: { address: "", amountOut: 0, balanceMin: 0 },
-							tokenB: { address: "", amountOut: 0, balanceMin: 0 },
-							supplyMax: 0,
-							liquidity: 0
-						}
-						return liquidityAmount
-					})
-				}
-			)
+			transactionMachine: transactionMachine as any, // TODO: TS7056 :/
+			initContracts,
+			compileContract,
+			claim,
+			swap,
+			addLiquidity,
+			removeLiquidity,
+			mintToken,
+			deployPool,
+			deployToken,
+			calculateSwapAmount,
+			calculateAddLiquidityAmount,
+			calculateRemoveLiquidityAmount
 		},
 		actions: {
 			createPool: enqueueActions(({ context, enqueue, event }) => {
@@ -405,23 +89,21 @@ export const createLuminaDexMachine = () =>
 				const network = walletNetwork(context)
 				const user = walletUser(context)
 				const id = `createPool-${network}-${user}-${tokenA}-${tokenB}`
-				const input = { wallet: context.wallet, tokenA, tokenB, user, network }
+				const input = {
+					wallet: context.wallet,
+					tokenA,
+					tokenB,
+					user,
+					network,
+					worker: context.contract.worker
+				} satisfies CreatePoolInput
 				enqueue.assign(({ spawn }) => {
 					const machine = context.dex.createPool.pools[id]
 					if (machine) stopChild(id)
 					const created = spawn("createPoolMachine", { id, input })
-					return {
-						dex: {
-							...context.dex,
-							createPool: {
-								...context.dex.createPool,
-								pools: {
-									...context.dex.createPool.pools,
-									[id]: created
-								}
-							}
-						}
-					}
+					return produce(context, draft => {
+						draft.dex.createPool.pools[id] = created
+					})
 				})
 			})
 		}
@@ -437,6 +119,7 @@ export const createLuminaDexMachine = () =>
 			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
 			logger.info("Dex Features loaded:", features)
 			return {
+				transactions: {},
 				features: features ?? ["Swap"], // Default to Swap feature if none provided
 				can: {
 					changeSwapSettings: false,
@@ -488,13 +171,13 @@ export const createLuminaDexMachine = () =>
 						slippagePercent: 0,
 						...resetSettings
 					},
-					claim: { transactionResult: null },
-					mint: { to: "", token: "", amount: 0, transactionResult: null },
-					deployPool: { tokenA: "", tokenB: "", transactionResult: null },
+					claim: { transactionLid: null },
+					mint: { to: "", token: "", amount: 0, transactionLid: null },
+					deployPool: { tokenA: "", tokenB: "", transactionLid: null },
 					createPool: { tokenA: "", tokenB: "", pools: {} },
 					deployToken: {
 						symbol: "",
-						transactionResult: null,
+						transactionLid: null,
 						result: {
 							tokenKey: "",
 							tokenAdminKey: "",
@@ -520,14 +203,14 @@ export const createLuminaDexMachine = () =>
 		type: "parallel",
 		states: {
 			contractSystem: {
-				initial: "LOADING_CONTRACTS",
+				initial: "INIT_CONTRACTS",
 				states: {
-					LOADING_CONTRACTS: {
+					INIT_CONTRACTS: {
 						invoke: {
-							src: "loadContracts",
+							src: "initContracts",
 							input: ({ context }) => ({ ...inputWorker(context), features: context.features }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context, event }) => ({
 									...context,
 									contract: { ...context.contract, toLoad: event.output }
@@ -544,7 +227,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "FungibleToken" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "FungibleToken" }))
 							},
 							onError: {
@@ -558,7 +241,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) =>
 									loaded({ context, contract: "FungibleTokenAdmin" })
 								)
@@ -574,7 +257,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "Pool" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "Pool" }))
 							},
 							onError: {
@@ -588,7 +271,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolTokenHolder" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolTokenHolder" }))
 							},
 							onError: {
@@ -602,7 +285,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "PoolFactory" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "PoolFactory" }))
 							},
 							onError: {
@@ -616,7 +299,7 @@ export const createLuminaDexMachine = () =>
 							src: "compileContract",
 							input: ({ context }) => inputCompile({ context, contract: "Faucet" }),
 							onDone: {
-								target: "IDLE",
+								target: "LOADING",
 								actions: assign(({ context }) => loaded({ context, contract: "Faucet" }))
 							},
 							onError: {
@@ -625,8 +308,8 @@ export const createLuminaDexMachine = () =>
 							}
 						}
 					},
-					IDLE: {
-						description: "The compiled contracts are ready.",
+					LOADING: {
+						description: "The compiled contracts are loading.",
 						entry: enqueueActions(({ context, enqueue }) => {
 							if (context.contract.toLoad.size > 0) {
 								const [next, ...remaining] = Array.from(context.contract.toLoad)
@@ -641,9 +324,11 @@ export const createLuminaDexMachine = () =>
 								if (next) enqueue.raise({ type: "LoadNextContract" })
 							} else {
 								logger.success("All features have been loaded", context.features)
+								enqueue.raise({ type: "ContractsReady" })
 							}
 						}),
 						on: {
+							ContractsReady: { target: "READY" },
 							LoadNextContract: [
 								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
@@ -651,9 +336,14 @@ export const createLuminaDexMachine = () =>
 								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
 								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },
 								{ target: "COMPILE_FAUCET", guard: "compileFaucet" }
-							],
+							]
+						}
+					},
+					READY: {
+						description: "The contracts are compiled and ready to be used.",
+						on: {
 							LoadFeatures: {
-								target: "IDLE",
+								target: "LOADING",
 								description: "Load additional features on the fly.",
 								reenter: true,
 								actions: enqueueActions(({ context, event, enqueue }) => {
@@ -679,7 +369,7 @@ export const createLuminaDexMachine = () =>
 						}
 					},
 					FAILED: {
-						on: { LoadContracts: "LOADING_CONTRACTS" },
+						on: { InitContracts: "INIT_CONTRACTS" },
 						exit: assign(({ context }) => ({ contract: { ...context.contract, error: null } }))
 					}
 				}
@@ -721,7 +411,7 @@ export const createLuminaDexMachine = () =>
 										deployPool: {
 											...context.dex.deployPool,
 											...event.settings,
-											transactionResult: null
+											transactionLid: null
 										}
 									}
 								}))
@@ -735,7 +425,7 @@ export const createLuminaDexMachine = () =>
 										...context.dex,
 										deployToken: {
 											symbol: event.settings.symbol,
-											transactionResult: null,
+											transactionLid: null,
 											result: null
 										}
 									}
@@ -746,7 +436,7 @@ export const createLuminaDexMachine = () =>
 								description: "Claim tokens from the faucet. Testnet Only.",
 								guard: and(["isTestnet", ({ context }) => canStartDexAction(context).claim]),
 								actions: assign(({ context }) => ({
-									dex: { ...context.dex, claim: { transactionResult: null } }
+									dex: { ...context.dex, claim: { transactionLid: null } }
 								}))
 							},
 							MintToken: {
@@ -756,7 +446,7 @@ export const createLuminaDexMachine = () =>
 								actions: assign(({ context, event }) => ({
 									dex: {
 										...context.dex,
-										mint: { ...context.dex.mint, ...event.settings, transactionResult: null }
+										mint: { ...context.dex.mint, ...event.settings, transactionLid: null }
 									}
 								}))
 							},
@@ -824,16 +514,19 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										deployToken: {
-											...context.dex.deployToken,
-											...event.output.token,
-											transactionResult: event.output.transactionOutput
-										}
-									}
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output.transactionOutput
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										const { symbol, ...result } = event.output.token
+										draft.dex.deployToken.symbol = symbol
+										draft.dex.deployToken.transactionLid = input.id
+										draft.dex.deployToken.result = result
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",
@@ -860,12 +553,16 @@ export const createLuminaDexMachine = () =>
 							onDone: {
 								target: "DEX.READY",
 								actions: [
-									assign(({ context, event }) => ({
-										dex: {
-											...context.dex,
-											deployPool: { ...context.dex.deployPool, transactionResult: event.output }
-										}
-									}))
+									assign(({ context, event, spawn }) => {
+										const input = createTransactionInput({
+											context,
+											transaction: event.output
+										})
+										return produce(context, draft => {
+											draft.transactions[input.id] = spawn("transactionMachine", { input })
+											draft.dex.deployPool.transactionLid = input.id
+										})
+									})
 								]
 							},
 							onError: {
@@ -884,9 +581,16 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: { ...context.dex, claim: { transactionResult: event.output } }
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										draft.dex.claim.transactionLid = input.id
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",
@@ -910,12 +614,16 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										mint: { ...context.dex.mint, transactionResult: event.output }
-									}
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										draft.dex.mint.transactionLid = input.id
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",
@@ -947,12 +655,17 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										swap: { ...context.dex.swap, calculated: null, transactionResult: event.output }
-									}
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										draft.dex.swap.transactionLid = input.id
+										draft.dex.swap.calculated = null
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",
@@ -986,16 +699,17 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										addLiquidity: {
-											...context.dex.addLiquidity,
-											calculated: null,
-											transactionResult: event.output
-										}
-									}
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										draft.dex.addLiquidity.transactionLid = input.id
+										draft.dex.addLiquidity.calculated = null
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",
@@ -1030,16 +744,17 @@ export const createLuminaDexMachine = () =>
 							},
 							onDone: {
 								target: "DEX.READY",
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										removeLiquidity: {
-											...context.dex.removeLiquidity,
-											calculated: null,
-											transactionResult: event.output
-										}
-									}
-								}))
+								actions: assign(({ context, event, spawn }) => {
+									const input = createTransactionInput({
+										context,
+										transaction: event.output
+									})
+									return produce(context, draft => {
+										draft.transactions[input.id] = spawn("transactionMachine", { input })
+										draft.dex.removeLiquidity.transactionLid = input.id
+										draft.dex.removeLiquidity.calculated = null
+									})
+								})
 							},
 							onError: {
 								target: "DEX.ERROR",

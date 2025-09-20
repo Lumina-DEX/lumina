@@ -82,7 +82,7 @@ export function WalletConnect() {
 		if (walletState === "INIT") {
 			connect()
 		}
-	}, [walletState])
+	}, [])
 
 	return (
 		<div>
@@ -153,6 +153,7 @@ export function TokenList() {
 				end.unsubscribe()
 			}
 		})
+		return end.unsubscribe
 	}, [Wallet, loaded, fetchTokens])
 
 	return (

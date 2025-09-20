@@ -34,14 +34,14 @@ The DEX machine is a parallel state machine with two regions:
 
 ### Contract System States
 
-- `LOADING_CONTRACTS`: Loading contract definitions
+- `INIT_CONTRACTS`: Loading contract definitions
 - `COMPILE_FUNGIBLE_TOKEN`: Compiling the fungible token contract
 - `COMPILE_POOL`: Compiling the pool contract
 - `COMPILE_POOL_TOKEN_HOLDER`: Compiling the pool token holder contract
 - `COMPILE_FUNGIBLE_TOKEN_ADMIN`: Compiling the fungible token admin contract
 - `COMPILE_POOL_FACTORY`: Compiling the pool factory contract
 - `COMPILE_FAUCET`: Compiling the faucet contract
-- `CONTRACTS_READY`: All contracts are compiled and ready
+- `READY`: All contracts are compiled and ready
 - `FAILED`: Contract compilation failed
 
 ### DEX System States
@@ -263,7 +263,9 @@ const contractError = context.contract.error
 // Access swap state
 const swapSettings = context.dex.swap
 const swapResult = context.dex.swap.calculated
-const swapTransaction = context.dex.swap.transactionResult
+const swapTransactionLid = context.dex.swap.transactionLid // internal id
+const txActor = swapTransactionLid && context.transactions[swapTransactionLid]
+const txResult = txActor?.getSnapshot().context.result // { hash, url } | Error
 
 // Access liquidity state
 const addLiquiditySettings = context.dex.addLiquidity
@@ -336,3 +338,36 @@ unsubscribe()
 ## Type Definitions
 
 Refer to the [source code](https://github.com/Lumina-DEX/lumina/blob/main/packages/sdk/src/machines/luminadex/types.ts) for the full type definitions.
+
+## Transaction Tracking
+
+Each action that produces a zkApp transaction (swap, add/remove liquidity, mint, claim, deploy pool/token) is represented by a dedicated `transactionMachine` child actor. The DEX context stores a stable internal id (`transactionLid`) instead of an inline result object.
+
+### Access Pattern
+
+```ts
+const { dex, transactions } = Dex.getSnapshot().context
+const addLid = dex.addLiquidity.transactionLid
+if (addLid) {
+	const txActor = transactions[addLid]
+	const txState = txActor.getSnapshot()
+	console.log(txState.value) // SIGNING, SENDING, WAITING, DONE
+	console.log(txState.context.result) // { hash, url } | Error (after DONE)
+}
+```
+
+### Lifecycle States
+
+| State    | Description                                          |
+| -------- | ---------------------------------------------------- |
+| RESUMING | Attempting to recover a previously saved transaction |
+| SIGNING  | Awaiting user wallet signature                       |
+| SENDING  | Broadcasting the signed command                      |
+| WAITING  | Polling for inclusion (Mina networks only)           |
+| DONE     | Final result available (`{ hash, url }` or Error)    |
+
+Pending transactions persist across reloads via IndexedDB (using the `idb` package). The SDK auto-resumes them when the actor restarts.
+
+### Summary
+
+Retrieve the `transactionLid`, look up the corresponding child actor, then read its state and `context.result` to present progress and final outcome.

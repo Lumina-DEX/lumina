@@ -5,6 +5,9 @@ layer: tool
 tasks:
   changeset:
     command: changeset
+    options:
+      cache: false
+      interactive: true
   version:
     command: bun run scripts/version.ts
   publish:

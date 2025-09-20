@@ -68,7 +68,8 @@ export default defineConfig({
 						{ text: "Swapping Tokens", link: "/guide/swapping-tokens" },
 						{ text: "Managing Liquidity", link: "/guide/managing-liquidity" },
 						{ text: "Server-Side Pool Creation", link: "/guide/pool-creation" },
-						{ text: "Fetching Data", link: "/guide/fetching-data" }
+						{ text: "Fetching Data", link: "/guide/fetching-data" },
+						{ text: "Transaction Tracking", link: "/guide/transaction-tracking" }
 					]
 				}
 			],
@@ -79,6 +80,8 @@ export default defineConfig({
 						{ text: "Overview", link: "/api/overview" },
 						{ text: "Wallet Machine", link: "/api/wallet-machine" },
 						{ text: "Dex Machine", link: "/api/dex-machine" },
+						{ text: "Transaction Machine", link: "/api/transaction-machine" },
+						{ text: "Create Pool Machine", link: "/api/create-pool-machine" },
 						{ text: "Helper Functions", link: "/api/helpers" }
 					]
 				}

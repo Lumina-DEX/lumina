@@ -1,6 +1,7 @@
 import type * as Comlink from "comlink"
 import type { ActorRefFrom } from "xstate"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
+import type { transactionMachine } from "../transaction"
 import type { WalletActorRef } from "../wallet/actors"
 import type { WalletEmit } from "../wallet/types"
 import type { createPoolMachine } from "./actors/createPool"
@@ -13,7 +14,7 @@ export interface Token {
 	decimal?: number
 }
 
-interface LuminaError {
+export interface LuminaError {
 	message: string
 	error: unknown
 }
@@ -31,7 +32,7 @@ interface ContractContext {
 interface DexContext {
 	error: LuminaError | null
 	addLiquidity: {
-		transactionResult: DexTransactionResult
+		transactionLid: DexTransactionLid
 		calculated: {
 			tokenA: { address: string; amountIn: number; balanceMax: number }
 			tokenB: { address: string; amountIn: number; balanceMax: number }
@@ -40,7 +41,7 @@ interface DexContext {
 		} | null
 	} & AddLiquiditySettings
 	removeLiquidity: {
-		transactionResult: DexTransactionResult
+		transactionLid: DexTransactionLid
 		calculated: {
 			tokenA: { address: string; amountOut: number; balanceMin: number }
 			tokenB: { address: string; amountOut: number; balanceMin: number }
@@ -49,7 +50,7 @@ interface DexContext {
 		} | null
 	} & RemoveLiquiditySettings
 	swap: {
-		transactionResult: DexTransactionResult
+		transactionLid: DexTransactionLid
 		calculated: {
 			amountIn: number
 			amountOut: number
@@ -57,13 +58,13 @@ interface DexContext {
 			balanceInMax: number
 		} | null
 	} & SwapSettings
-	mint: Omit<MintToken, "user"> & { transactionResult: DexTransactionResult }
-	deployPool: PoolSettings & { transactionResult: DexTransactionResult }
+	mint: Omit<MintToken, "user"> & { transactionLid: DexTransactionLid }
+	deployPool: PoolSettings & { transactionLid: DexTransactionLid }
 	createPool: PoolSettings & { pools: Record<string, ActorRefFrom<typeof createPoolMachine>> }
-	claim: { transactionResult: DexTransactionResult }
+	claim: { transactionLid: DexTransactionLid }
 	deployToken: {
 		symbol: string
-		transactionResult: DexTransactionResult
+		transactionLid: DexTransactionLid
 		result: {
 			tokenKey: string
 			tokenAdminKey: string
@@ -74,7 +75,8 @@ interface DexContext {
 }
 
 type ContractEvent =
-	| { type: "LoadContracts" }
+	| { type: "ContractsReady" }
+	| { type: "InitContracts" }
 	| { type: "LoadNextContract" }
 	| { type: "LoadFeatures"; features: DexFeatures }
 
@@ -133,6 +135,7 @@ export interface LuminaDexMachineContext {
 	dex: DexContext
 	contract: ContractContext
 	frontendFee: FrontendFee
+	transactions: Record<string, ActorRefFrom<typeof transactionMachine>>
 }
 
 type DexFeature = "Swap" | "ManualDeployPool" | "DeployToken" | "Claim"
@@ -147,7 +150,6 @@ export interface LuminaDexMachineInput {
 
 export interface InputDexWorker {
 	worker: DexWorker
-	wallet: WalletActorRef
 }
 
 export interface SwapSettings {
@@ -188,4 +190,8 @@ export type ContractName =
 	| "FungibleTokenAdmin"
 	| "Faucet"
 
-export type DexTransactionResult = { hash: string; url: string } | null
+/**
+ * LID = Lumina Internal ID
+ * Used to track transactions internally
+ */
+export type DexTransactionLid = string | null
