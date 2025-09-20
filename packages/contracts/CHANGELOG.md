@@ -1,5 +1,12 @@
 # @lumina-dex/contracts
 
+## 0.8.0
+
+### Minor Changes
+
+- 0d356f6: Update factory contract
+  Update multisig rigth type from Struct to Field
+
 ## 0.7.0
 
 ### Minor Changes
