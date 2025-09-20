@@ -121,10 +121,10 @@ const creatingPools = computed(() => {
   if (!createPool || !createPool.pools) {
     return [];
   }
-  return Object.entries(createPool.pools).map(([poolId, p]) => {
-    const poolActor = p as ActorRefFromLogic<CreatePoolMachine>;
+  return Object.entries(createPool.pools).map(([poolId, poolActor]) => {
     return {
       id: poolId,
+	  //Note: Don't use nested useSelector calls. Use v-for and components instead.
       state: useSelector(poolActor, (state) => ({
         status: state.value,
         context: state.context,
@@ -182,13 +182,14 @@ export const PoolCreationStatus = () => {
 		return <div>No pool creation in progress.</div>
 	}
 
-	const creatingPools = Object.entries(createPool.pools).map(([poolId, p]) => {
-		const poolActor = p as ActorRefFromLogic<CreatePoolMachine>
-		return {
-			id: poolId,
-			actor: poolActor
+	const creatingPools = Object.entries(createPool.pools).map(
+		([poolId, poolActor]) => {
+			return {
+				id: poolId,
+				actor: poolActor
+			}
 		}
-	})
+	)
 
 	if (creatingPools.length === 0) {
 		return <div>No pool creation in progress.</div>
@@ -222,6 +223,7 @@ const PoolCreationJob = ({
 			<h3>Job ID: {id}</h3>
 			<pre>{JSON.stringify(poolState, null, 2)}</pre>
 		</div>
+	)
 }
 ```
 
