@@ -1,3 +1,4 @@
+import type { ZkappCommand } from "@aurowallet/mina-provider"
 import {
 	allRight,
 	deployPoolRight,
@@ -14,12 +15,14 @@ import {
 	AccountUpdate,
 	Bool,
 	fetchAccount,
+	fetchTransactionStatus,
 	MerkleMap,
 	Mina,
 	Poseidon,
 	PrivateKey,
 	PublicKey,
 	Signature,
+	Transaction as O1Transaction,
 	UInt64,
 	UInt8
 } from "o1js"
@@ -97,7 +100,7 @@ const proveTransaction = async (transaction: Transaction) => {
 }
 
 // Contract Management
-const loadContracts = async () => {
+const initContracts = async () => {
 	logger.start("Importing contracts ...")
 	const {
 		PoolFactory,
@@ -656,7 +659,7 @@ const claim = async ({ user, faucet }: { user: string; faucet: FaucetSettings })
 	})
 	return await proveTransaction(transaction)
 }
-export function getMerkle(): MerkleMap {
+function getMerkle(): MerkleMap {
 	const ownerPublic = PublicKey.fromBase58(
 		"B62qjabhmpW9yfLbvUz87BR1u462RRqFfXgoapz8X3Fw8uaXJqGG8WH"
 	)
@@ -705,6 +708,21 @@ const minaInstance = (networkUrl: NetworkUri) => {
 	logger.success("Mina instance set", url)
 }
 
+async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {
+	const result = await fetchTransactionStatus(zkAppId, url)
+	return result
+}
+
+async function sendZkAppCommand(zkappCommand: ZkappCommand) {
+	const sentTransaction = await O1Transaction.fromJSON(zkappCommand).send()
+	if (!sentTransaction.data) {
+		throw new Error(
+			JSON.stringify({ message: "Transaction failed", errors: sentTransaction.errors })
+		)
+	}
+	return { hash: sentTransaction.hash, zkAppId: sentTransaction.data.sendZkapp.zkapp.id }
+}
+
 // Export worker API
 export const luminaDexWorker = {
 	// Unused
@@ -713,7 +731,7 @@ export const luminaDexWorker = {
 	// getTransactionJSON,
 	// getDeploymentKey
 	// Contract Management
-	loadContracts,
+	initContracts,
 	compileContract,
 	// Account & Balance Operations
 	// fetchMinaAccountToken,
@@ -730,7 +748,10 @@ export const luminaDexWorker = {
 	withdrawLiquidity,
 	// Faucet Operations
 	claim,
-	minaInstance
+	minaInstance,
+	// Helpers
+	transactionStatus,
+	sendZkAppCommand
 }
 
 // Shared Worker

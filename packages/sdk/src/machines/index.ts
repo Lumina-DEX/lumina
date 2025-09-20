@@ -8,8 +8,10 @@ import {
 	type RequiredActorOptionsKeys
 } from "xstate"
 import { createClientOptions, createMinaClient } from "../graphql/clients"
-import type { createPoolMachine } from "./luminadex/actors/createPool"
-import { canDoDexAction, createLuminaDexMachine } from "./luminadex/machine"
+import { createPoolMachine } from "./luminadex/actors/createPool"
+import { canDoDexAction, canStartDexAction } from "./luminadex/helpers"
+import { createLuminaDexMachine } from "./luminadex/machine"
+import { transactionMachine } from "./transaction"
 import { createWalletMachine } from "./wallet/machine"
 
 type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<[
@@ -49,7 +51,7 @@ export const createWallet = (...[options]: MachineOptions<WalletMachine>): Walle
  * ___________________________________________________________ */
 
 const dexMachine = createLuminaDexMachine()
-export { canDoDexAction, dexMachine }
+export { canDoDexAction, canStartDexAction, dexMachine }
 
 export type DexActor = ReturnType<typeof createActor<DexMachine>>
 export type DexMachine = typeof dexMachine
@@ -62,6 +64,13 @@ export const createDex = (...[options]: MachineOptions<DexMachine>): DexActor =>
 	return dex
 }
 
-export type LuminaContext = { Wallet: WalletActor; Dex: DexActor }
+/**
+ * Other Machines
+ * ___________________________________________________________ */
 
 export type CreatePoolMachine = typeof createPoolMachine
+export type TransactionMachine = typeof transactionMachine
+
+export { createPoolMachine, transactionMachine }
+
+export type LuminaContext = { Wallet: WalletActor; Dex: DexActor }

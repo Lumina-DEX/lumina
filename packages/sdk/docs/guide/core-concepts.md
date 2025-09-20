@@ -69,24 +69,7 @@ The DEX machine handles all operations related to the Lumina DEX:
 - Deploying pools and tokens
 - Minting tokens
 - Claiming from faucet (on test networks)
-
-```d2
-direction: down
-
-style: {
-  fill: transparent
-}
-
-contractSystem: Contract System {
-  LOADING_CONTRACTS -> COMPILE_FUNGIBLE_TOKEN: loadContracts
-  COMPILE_FUNGIBLE_TOKEN -> COMPILE_POOL: compileContract
-  COMPILE_POOL -> COMPILE_POOL_TOKEN_HOLDER: compileContract
-  COMPILE_POOL_TOKEN_HOLDER -> COMPILE_FUNGIBLE_TOKEN_ADMIN: compileContract
-  COMPILE_FUNGIBLE_TOKEN_ADMIN -> COMPILE_POOL_FACTORY: compileContract
-  COMPILE_POOL_FACTORY -> COMPILE_FAUCET: compileContract
-  COMPILE_FAUCET -> CONTRACTS_READY: compileContract
-}
-```
+- Tracking and resuming transactions via dedicated child `transactionMachine` actors
 
 ```d2
 direction: down
@@ -160,6 +143,10 @@ Operations {
 ```
 
 > Both machines expose an `UNSUPPORTED` state when no Mina wallet provider is available in the browser. Use this to drive UI that recommends installing Auro Wallet.
+
+### Transaction Machines
+
+Every user action that emits a zkApp transaction spawns (or resumes) a `transactionMachine` responsible for signing, sending, persisting and waiting for inclusion. Instead of storing raw `{ hash, url }` pairs in the action context, the DEX context now keeps a `transactionLid` and a `transactions` map of child actors. See the Transaction Tracking guide for details.
 
 ## Network Types
 
