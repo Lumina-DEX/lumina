@@ -1,8 +1,8 @@
 "use client"
+import { poolToka, tokenA } from "@/utils/addresses"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useContext, useEffect, useState } from "react"
 import CurrencyFormat from "react-currency-format"
-import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
@@ -90,12 +90,12 @@ const Liquidity = () => {
 
 	const setAmountA = (value: string) => {
 		setFromAmount(value)
-		//setUpdateAmount(value);
+		// setUpdateAmount(value);
 	}
 
 	const setAmountB = (value: string) => {
 		setToAmount(value)
-		//setUpdateAmount(value);
+		// setUpdateAmount(value);
 	}
 
 	return (
@@ -103,7 +103,7 @@ const Liquidity = () => {
 			<div className="flex flex-col p-5 gap-5 items-center">
 				<div className="text-xl">Add liquidity</div>
 				<div>
-					<span>Slippage (%) : </span>
+					<span>Slippage (%) :</span>
 					<input
 						type="number"
 						defaultValue={slippagePercent}
@@ -126,11 +126,7 @@ const Liquidity = () => {
 					)}
 				</div>
 				<div>
-					<button
-						type="button"
-						onClick={() => setToDai(!toDai)}
-						className="w-8 bg-cyan-500 text-lg text-white rounded"
-					>
+					<button type="button" onClick={() => setToDai(!toDai)} className="w-8 bg-cyan-500 text-lg text-white rounded">
 						&#8645;
 					</button>
 				</div>

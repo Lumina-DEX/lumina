@@ -74,7 +74,8 @@ const Menu = () => {
 					</li>
 				</ul>
 			</nav>
-			<style>{`
+			<style>
+				{`
         .hideMenuNav {
           display: none;
         }
@@ -92,7 +93,8 @@ const Menu = () => {
           justify-content: space-evenly;
           align-items: center;
         }
-      `}</style>
+      `}
+			</style>
 		</>
 	)
 }

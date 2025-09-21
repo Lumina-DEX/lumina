@@ -79,9 +79,7 @@ if (Dex.getSnapshot().state.matches({ dexSystem: "DEX.READY" })) {
 
 // Handle unsupported environment for DEX operations
 if (Dex.getSnapshot().state.matches({ dexSystem: "UNSUPPORTED" })) {
-	console.log(
-		"DEX unsupported: No Mina wallet detected. Ask user to install/enable wallet."
-	)
+	console.log("DEX unsupported: No Mina wallet detected. Ask user to install/enable wallet.")
 }
 ```
 
@@ -319,15 +317,9 @@ const unsubscribe = Dex.subscribe((state) => {
 	console.log("Available actions:", canDo)
 
 	// Handle specific state transitions
-	if (
-		state.matches({ dexSystem: "DEX.READY" })
-		&& state.context.dex.swap.calculated
-	) {
+	if (state.matches({ dexSystem: "DEX.READY" }) && state.context.dex.swap.calculated) {
 		console.log("Swap calculation complete")
-		console.log(
-			"Expected output:",
-			state.context.dex.swap.calculated.amountOut / 1e9
-		)
+		console.log("Expected output:", state.context.dex.swap.calculated.amountOut / 1e9)
 	}
 })
 

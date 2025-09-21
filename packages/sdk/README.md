@@ -74,7 +74,7 @@ const Dex = createDex({
 Wallet.send({ type: "Connect" })
 
 // Subscribe to wallet state changes
-Wallet.subscribe(state => {
+Wallet.subscribe((state) => {
 	console.log("Wallet state:", state.value)
 	console.log("Current network:", state.context.currentNetwork)
 	console.log("Account address:", state.context.account)
@@ -88,11 +88,7 @@ The SDK provides dedicated integration modules for both React and Vue.
 ### React
 
 ```tsx
-import {
-	createDex,
-	createWallet,
-	type LuminaContext as LC
-} from "@lumina-dex/sdk"
+import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { createContext, useContext } from "react"
 
@@ -128,10 +124,10 @@ import { computed } from "vue"
 
 const Wallet = useActor(walletMachine)
 const Dex = useActor(dexMachine, {
-  input: {
-    wallet: Wallet.actorRef,
-    frontendFee: { destination: "", amount: 0 }
-  }
+	input: {
+		wallet: Wallet.actorRef,
+		frontendFee: { destination: "", amount: 0 }
+	}
 })
 
 // Reactive state
@@ -233,15 +229,16 @@ if (swapLid) {
 import { useSelector } from "@lumina-dex/sdk/react"
 
 function LatestSwapTx({ Dex }: { Dex: ReturnType<typeof createDex> }) {
-	const swapLid = useSelector(Dex, s => s.context.dex.swap.transactionLid)
-	const txActor = useSelector(
-		Dex,
-		s => swapLid ? s.context.transactions[swapLid] : undefined
-	)
-	const txState = useSelector(txActor, a => a?.getSnapshot())
+	const swapLid = useSelector(Dex, (s) => s.context.dex.swap.transactionLid)
+	const txActor = useSelector(Dex, (s) => (swapLid ? s.context.transactions[swapLid] : undefined))
+	const txState = useSelector(txActor, (a) => a?.getSnapshot())
 	if (!swapLid || !txActor || !txState) return null
 	if (txState.value === "DONE" && !(txState.context.result instanceof Error)) {
-		return <a href={txState.context.result.url} target="_blank">View Tx</a>
+		return (
+			<a href={txState.context.result.url} target="_blank">
+				View Tx
+			</a>
+		)
 	}
 	return <span>Tx Status: {String(txState.value)}</span>
 }
@@ -251,21 +248,27 @@ function LatestSwapTx({ Dex }: { Dex: ReturnType<typeof createDex> }) {
 
 ```vue
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useSelector } from '@lumina-dex/sdk/vue'
+import { useSelector } from "@lumina-dex/sdk/vue"
+import { computed } from "vue"
 
 const props = defineProps<{ Dex: any }>()
-const swapLid = useSelector(props.Dex, s => s.context.dex.swap.transactionLid)
-const txActor = useSelector(props.Dex, s => swapLid ? s.context.transactions[swapLid] : undefined)
+const swapLid = useSelector(props.Dex, (s) => s.context.dex.swap.transactionLid)
+const txActor = useSelector(props.Dex, (s) =>
+	swapLid ? s.context.transactions[swapLid] : undefined
+)
 const txStatus = computed(() => txActor?.getSnapshot().value)
 const txResult = computed(() => txActor?.getSnapshot().context.result)
 </script>
 
 <template>
-	<div v-if="swapLid && txActor">
-		<a v-if="txStatus==='DONE' && txResult && !('message' in txResult)" :href="txResult.url" target="_blank">View Tx</a>
-		<span v-else>Tx Status: {{ txStatus }}</span>
-	</div>
+  <div v-if="swapLid && txActor">
+    <a
+      v-if='txStatus === "DONE" && txResult && !("message" in txResult)'
+      :href="txResult.url"
+      target="_blank"
+    >View Tx</a>
+    <span v-else>Tx Status: {{ txStatus }}</span>
+  </div>
 </template>
 ```
 

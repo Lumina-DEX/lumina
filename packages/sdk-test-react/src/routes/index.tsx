@@ -1,9 +1,9 @@
-import { useCallback, useContext, useEffect, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
-import { LuminaContext } from "../main"
-import { useSelector } from "@lumina-dex/sdk/react"
 import { fetchTokenList, type LuminaToken } from "@lumina-dex/sdk"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { createFileRoute } from "@tanstack/react-router"
+import { useCallback, useContext, useEffect, useState } from "react"
 import { version } from "../../../sdk/package.json" with { type: "json" }
+import { LuminaContext } from "../main"
 
 export const Route = createFileRoute("/")({
 	component: HomeComponent

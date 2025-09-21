@@ -38,16 +38,6 @@ tasks:
     inputs:
       - "@group(sources)"
       - "@group(test)"
-  lint:
-    command: eslint src/* tests/*
-    inputs:
-      - "@group(sources)"
-      - "@group(test)"
-  lint-fix:
-    command: eslint src/* tests/* --fix
-    inputs:
-      - "@group(sources)"
-      - "@group(test)"
   base-test:
     command: vitest
     args: [run, --testTimeout=150000]
@@ -81,3 +71,31 @@ tasks:
   test-multisig:
     extends: base-test
     args: MultiSig
+  oxlint:
+    command: oxlint --type-aware
+    options:
+      runInCI: true
+      cache: false
+  oxlint-fix:
+    command: oxlint --type-aware --fix
+  eslint:
+    command: eslint
+    options:
+      runInCI: true
+      cache: false
+  eslint-fix:
+    command: eslint --fix
+  lint:
+    deps: [oxlint, eslint]
+    options:
+      runDepsInParallel: false
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  lint-fix:
+    deps: [oxlint-fix, eslint-fix]
+    options:
+      runDepsInParallel: false
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"

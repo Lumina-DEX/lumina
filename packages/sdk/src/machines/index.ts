@@ -14,11 +14,10 @@ import { createLuminaDexMachine } from "./luminadex/machine"
 import { transactionMachine } from "./transaction"
 import { createWalletMachine } from "./wallet/machine"
 
-type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<[
-	options?:
-		& ActorOptions<Machine>
-		& { [K in RequiredActorOptionsKeys<Machine>]: unknown }
-], IsNotNever<RequiredActorOptionsKeys<Machine>>>
+type MachineOptions<Machine extends AnyStateMachine> = ConditionalRequired<
+	[options?: ActorOptions<Machine> & { [K in RequiredActorOptionsKeys<Machine>]: unknown }],
+	IsNotNever<RequiredActorOptionsKeys<Machine>>
+>
 
 /**
  * GraphQL client

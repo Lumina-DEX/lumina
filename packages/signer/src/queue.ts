@@ -1,7 +1,7 @@
+import { Queue, QueueEvents, Worker as BullMqWorker } from "bullmq"
+import IORedis from "ioredis"
 import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
-import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
 import type { createPoolAndTransaction } from "./workers/logic"
 
@@ -23,12 +23,12 @@ const worker = new BullMqWorker("createPool", processorUrl, {
 	concurrency
 })
 
-//TODO: Figure out if singletons can be used in some cases.
+// TODO: Figure out if singletons can be used in some cases.
 export const queues = () => {
-	const createPoolQueue = new Queue<
-		CreatePoolInputType,
-		Awaited<ReturnType<typeof createPoolAndTransaction>>
-	>("createPool", { connection })
+	const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
+		"createPool",
+		{ connection }
+	)
 
 	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 

@@ -89,23 +89,27 @@ Wallet.send({
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	tokens: [{
-		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-		decimal: 1e9,
-		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
-		symbol: "USDC"
-	}]
+	tokens: [
+		{
+			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+			decimal: 1e9,
+			tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
+			symbol: "USDC"
+		}
+	]
 })
 
 // Fetch Lumina LP token balance
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	tokens: [{
-		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-		decimal: 1e9,
-		symbol: "LLP-USDC_MINA"
-	}]
+	tokens: [
+		{
+			poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+			decimal: 1e9,
+			symbol: "LLP-USDC_MINA"
+		}
+	]
 })
 ```
 

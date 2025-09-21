@@ -20,16 +20,6 @@ tasks:
       - "@group(sources)"
     outputs:
       - dist/
-  lint:
-    command: oxlint
-    args: [src/]
-    inputs:
-      - "@group(sources)"
-  lint-fix:
-    command: oxlint
-    args: [--fix, src/]
-    inputs:
-      - "@group(sources)"
   schema-get-zeko:
     command: gql-tada generate schema 'https://testnet.zeko.io/graphql' --output @out(0)
     outputs:
@@ -72,3 +62,11 @@ tasks:
   docs-deploy-preview:
     command: wrangler versions upload
     deps: [build]
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"

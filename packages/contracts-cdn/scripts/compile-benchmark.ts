@@ -17,9 +17,7 @@ const createCt = (cache: Cache) => async (contract: Contract) => {
 }
 
 async function compileContracts(cache: Cache) {
-	const { FungibleToken, Pool, PoolFactory, PoolTokenHolder } = await import(
-		"@lumina-dex/contracts"
-	)
+	const { FungibleToken, Pool, PoolFactory, PoolTokenHolder } = await import("@lumina-dex/contracts")
 
 	const ct = createCt(cache)
 	console.time("CompileContracts")
@@ -64,10 +62,7 @@ async function zipFileRemote() {
 	const response = await fetch("https://luminadex-contracts-cdn.hebilicious.workers.dev/bundle.zip")
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 	const zipBuffer = await response.arrayBuffer()
-	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<
-		string,
-		Uint8Array
-	>
+	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<string, Uint8Array>
 	return data
 }
 

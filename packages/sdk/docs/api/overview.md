@@ -77,11 +77,7 @@ Framework-specific utilities:
 // Network types
 type NetworkLayer = "mina" | "zeko"
 type ChainNetwork = "mainnet" | "devnet" | "testnet"
-type NetworkUri =
-	| "mina:mainnet"
-	| "mina:devnet"
-	| "zeko:testnet"
-	| "zeko:mainnet"
+type NetworkUri = "mina:mainnet" | "mina:devnet" | "zeko:testnet" | "zeko:mainnet"
 type Networks = keyof typeof urls
 
 // Actor types
@@ -132,7 +128,7 @@ const Dex = createDex({
 Wallet.send({ type: "Connect" })
 
 // 3. Listen for state changes
-Wallet.subscribe(state => {
+Wallet.subscribe((state) => {
 	console.log("Wallet state:", state.value)
 
 	// 4. When wallet is ready, perform DEX operations
@@ -151,7 +147,7 @@ Wallet.subscribe(state => {
 })
 
 // 5. Listen for DEX state changes
-Dex.subscribe(state => {
+Dex.subscribe((state) => {
 	console.log("DEX state:", state.value)
 
 	// Example: Execute swap when calculation is ready

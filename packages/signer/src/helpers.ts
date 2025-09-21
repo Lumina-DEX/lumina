@@ -40,10 +40,7 @@ type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 
 // list of different approved user to sign
 
-export async function getMerkle(
-	database: Drizzle,
-	network: Networks
-): Promise<[MerkleMap, NewSignerMerkle[]]> {
+export async function getMerkle(database: Drizzle, network: Networks): Promise<[MerkleMap, NewSignerMerkle[]]> {
 	let users: NewSignerMerkle[] = []
 
 	const data = await database
@@ -82,10 +79,7 @@ export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key
 			const userA = users[i]
 			const userB = users[j]
 			// double encryption to need multisig to decode the key
-			const encrypA = Encryption.encrypt(
-				Encoding.stringToFields(key),
-				PublicKey.fromBase58(userA.publicKey)
-			)
+			const encrypA = Encryption.encrypt(Encoding.stringToFields(key), PublicKey.fromBase58(userA.publicKey))
 			const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
 			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB.publicKey))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
@@ -137,9 +131,7 @@ export const fundNewAccount = (network: Networks, feePayer: PublicKey, numberOfA
 		const accountUpdate = AccountUpdate.createSigned(feePayer)
 		accountUpdate.label = "AccountUpdate.fundNewAccount()"
 		const fee = (
-			creationFee
-				? UInt64.from(creationFee)
-				: Mina.activeInstance.getNetworkConstants().accountCreationFee
+			creationFee ? UInt64.from(creationFee) : Mina.activeInstance.getNetworkConstants().accountCreationFee
 		).mul(numberOfAccounts)
 		accountUpdate.balance.subInPlace(fee)
 		return accountUpdate
@@ -175,13 +167,7 @@ export const compileContracts = async () => {
 	console.timeEnd("compile")
 }
 
-export const updateStatusAndCDN = async ({
-	poolAddress,
-	network
-}: {
-	poolAddress: string
-	network: Networks
-}) => {
+export const updateStatusAndCDN = async ({ poolAddress, network }: { poolAddress: string; network: Networks }) => {
 	const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
 	const response = await fetch("https://cdn.luminadex.com/workflows", {
 		method: "POST",
@@ -205,10 +191,7 @@ export const createPoolKeys = async (
 	const newPoolPrivateKey = PrivateKey.random()
 	const newPoolPublicKey = newPoolPrivateKey.toPublicKey()
 	const newPoolPublicKeyBase58 = newPoolPublicKey.toBase58()
-	const [exists] = await database
-		.select()
-		.from(pool)
-		.where(eq(pool.publicKey, newPoolPublicKeyBase58))
+	const [exists] = await database.select().from(pool).where(eq(pool.publicKey, newPoolPublicKeyBase58))
 	if (exists) return createPoolKeys(database)
 	console.log("Generated new pool key:", newPoolPublicKeyBase58)
 	return { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 }

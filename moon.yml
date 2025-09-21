@@ -21,9 +21,9 @@ tasks:
       cache: false
   format-all-fix:
     command: dprint fmt --allow-no-files
-  lint-all:
+    options:
+      cache: false
+  oxlint-all:
     command: oxlint --type-aware
     options:
       cache: false
-  lint-all-fix:
-    command: oxlint --type-aware --fix

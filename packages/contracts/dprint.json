@@ -1,7 +1,14 @@
 {
-	"extends": "../../dprint.json",
 	"typescript": {
 		"useTabs": false,
-		"lineWidth": 120
-	}
+		"lineWidth": 120,
+		"semiColons": "asi",
+		"trailingCommas": "never"
+	},
+	"excludes": [
+		"**/node_modules"
+	],
+	"plugins": [
+		"https://plugins.dprint.dev/typescript-0.95.11.wasm"
+	]
 }

@@ -13,13 +13,14 @@
 		"@opennextjs/cloudflare": "^1.6.5",
 		"coi-serviceworker": "^0.1.7",
 		"next": "14.2.3",
-		"o1js": "2.4.0",
+		"o1js": "catalog:",
 		"react": "^18",
 		"react-currency-format": "github:mohitgupta8888/react-currency-format#4f365ec5005e23451a3b95da1a209b0025622b8d",
 		"react-dom": "^18",
 		"zustand": "^4.4.1"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "catalog:",
 		"@types/node": "^20",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",

@@ -1,38 +1,29 @@
 {
-	"typescript": {
-		"semiColons": "asi",
-		"quoteStyle": "preferDouble",
-		"trailingCommas": "never",
-		"lineWidth": 100,
-		"useTabs": true
+	"biome": {
+		"lineWidth": 120,
+		"trailingCommas": "none",
+		"semicolons": "asNeeded"
 	},
 	"graphql": {
 		"printWidth": 120,
 		"useTabs": false
+	},
+	"markdown": {
+		"lineWidth": 120
 	},
 	"yaml": {
 		"quotes": "forceDouble",
 		"formatComments": true,
 		"trailingComma": false
 	},
-	"json": {
-		"lineWidth": 250,
-		"useTabs": true
-	},
-	"excludes": [
-		"**/node_modules",
-		"**/worker-configuration.d.ts",
-		"pnpm-workspace.yaml",
-		"pnpm-lock.yaml"
-	],
+	"excludes": ["**/node_modules", "**/worker-configuration.d.ts", "pnpm-lock.yaml"],
 	"plugins": [
 		"https://plugins.dprint.dev/markdown-0.17.8.wasm",
 		"https://plugins.dprint.dev/g-plane/pretty_graphql-v0.2.0.wasm",
 		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.5.1.wasm",
-		"https://plugins.dprint.dev/typescript-0.95.11.wasm",
 		"https://plugins.dprint.dev/g-plane/malva-v0.14.3.wasm",
 		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.23.4.wasm",
 		"https://plugins.dprint.dev/dockerfile-0.3.3.wasm",
-		"https://plugins.dprint.dev/json-0.20.0.wasm"
+		"https://plugins.dprint.dev/biome-0.10.3.wasm"
 	]
 }

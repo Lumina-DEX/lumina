@@ -351,8 +351,7 @@ onMounted(() => {
         placeholder="Slippage %"
       >
       <button
-        :disabled="!(canDo.changeAddLiquiditySettings
-        && notEmpty(addLiquidityForm))"
+        :disabled="!(canDo.changeAddLiquiditySettings && notEmpty(addLiquidityForm))"
         @click="handleAddLiquidity"
       >
         Calculate Liquidity
@@ -373,8 +372,10 @@ onMounted(() => {
         placeholder="Slippage %"
       >
       <button
-        :disabled="!(canDo.changeRemoveLiquiditySettings
-        && notEmpty(removeLiquidityForm))"
+        :disabled="!(
+        	canDo.changeRemoveLiquiditySettings &&
+        	notEmpty(removeLiquidityForm)
+        )"
         @click="handleRemoveLiquidity"
       >
         Calculate Remove Liquidity
@@ -400,7 +401,7 @@ onMounted(() => {
       <input v-model="deployPoolForm.tokenA" placeholder="Token A Address">
       <input v-model="deployPoolForm.tokenB" placeholder="Token B Address">
       <input v-model="deployPoolForm.manual" type="checkbox" />
-      <button :disabled="!(notEmpty(deployPoolForm))" @click="handleDeployPool">
+      <button :disabled="!notEmpty(deployPoolForm)" @click="handleDeployPool">
         Deploy Pool
       </button>
     </div>

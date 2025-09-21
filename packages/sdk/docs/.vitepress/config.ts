@@ -12,16 +12,13 @@ export default defineConfig({
 	},
 	markdown: {
 		config: (md) => {
-			md.use(
-				d2Plugin,
-				{
-					scale: 1,
-					padding: 16,
-					theme: Theme.NEUTRAL_DEFAULT,
-					darkTheme: Theme.DARK_MUAVE,
-					sketch: true
-				} satisfies Config
-			)
+			md.use(d2Plugin, {
+				scale: 1,
+				padding: 16,
+				theme: Theme.NEUTRAL_DEFAULT,
+				darkTheme: Theme.DARK_MUAVE,
+				sketch: true
+			} satisfies Config)
 		}
 	},
 	head: [
@@ -88,9 +85,7 @@ export default defineConfig({
 			]
 		},
 
-		socialLinks: [
-			{ icon: "github", link: "https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk" }
-		],
+		socialLinks: [{ icon: "github", link: "https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk" }],
 		editLink: {
 			text: "Edit this page on GitHub",
 			pattern: "https://github.com/Lumina-DEX/lumina/edit/main/packages/sdk/docs/:path"

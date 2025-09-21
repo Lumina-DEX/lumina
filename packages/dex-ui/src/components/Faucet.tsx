@@ -18,20 +18,10 @@ const Faucet = () => {
 					<span>You can only claim TOKA once by network and address</span>
 				</div>
 				<ButtonStatus onClick={claim} text={"Claim"} />
-				<a
-					className="text-blue-500 underline"
-					href="https://faucet.minaprotocol.com/"
-					target="_blank"
-					rel="noopener"
-				>
+				<a className="text-blue-500 underline" href="https://faucet.minaprotocol.com/" target="_blank" rel="noopener">
 					Official Mina Faucet
 				</a>
-				<a
-					className="text-blue-500 underline"
-					href="https://zeko.io/faucet"
-					target="_blank"
-					rel="noopener"
-				>
+				<a className="text-blue-500 underline" href="https://zeko.io/faucet" target="_blank" rel="noopener">
 					Official Zeko Faucet
 				</a>
 			</div>

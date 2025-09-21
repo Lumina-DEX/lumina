@@ -60,7 +60,12 @@ export const hashDb = ({
 		confirmed,
 		zkAppId,
 		zkappCommand
-	}: { hash: string; confirmed: boolean; zkAppId: string; zkappCommand: ZkappCommand }) => {
+	}: {
+		hash: string
+		confirmed: boolean
+		zkAppId: string
+		zkappCommand: ZkappCommand
+	}) => {
 		const toStore = {
 			id,
 			timestamp: Date.now(),

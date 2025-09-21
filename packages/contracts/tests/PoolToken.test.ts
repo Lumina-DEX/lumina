@@ -472,7 +472,14 @@ describe("Pool Factory Token", () => {
 
     const txn2 = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
-      await tokenHolder.swapFromTokenToToken(protocol, UInt64.from(5), amountIn, UInt64.from(1), balanceMax, balanceMin)
+      await tokenHolder.swapFromTokenToToken(
+        protocol,
+        UInt64.from(5),
+        amountIn,
+        UInt64.from(1),
+        balanceMax,
+        balanceMin
+      )
       await zkToken0.approveAccountUpdate(tokenHolder.self)
     })
     console.log("swap from token", txn2.toPretty())

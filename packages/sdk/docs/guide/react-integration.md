@@ -15,11 +15,7 @@ Please refer to [xstate documentation](https://stately.ai/docs/xstate-react) for
 The recommended approach is to use React Context to make the Wallet and DEX actors available throughout your application:
 
 ```tsx
-import {
-	createDex,
-	createWallet,
-	type LuminaContext as LC
-} from "@lumina-dex/sdk"
+import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
 import { createContext, ReactNode } from "react"
 
 const Wallet = createWallet()
@@ -43,11 +39,7 @@ const rootElement = document.getElementById("app")
 
 if (!rootElement?.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement as HTMLElement)
-	root.render(
-		<LuminaContext.Provider value={Context}>
-			{/* Your app goes here */}
-		</LuminaContext.Provider>
-	)
+	root.render(<LuminaContext.Provider value={Context}>{/* Your app goes here */}</LuminaContext.Provider>)
 }
 ```
 
@@ -69,10 +61,7 @@ export function WalletConnect() {
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const isReady = useSelector(Wallet, (state) => state.matches("READY"))
 	const account = useSelector(Wallet, (state) => state.context.account)
-	const minaBalance = useSelector(
-		Wallet,
-		(state) => state.context.balances["mina:devnet"]?.MINA || 0
-	)
+	const minaBalance = useSelector(Wallet, (state) => state.context.balances["mina:devnet"]?.MINA || 0)
 
 	// Handle connect button click
 	const connect = () => Wallet.send({ type: "Connect" })
@@ -86,7 +75,9 @@ export function WalletConnect() {
 
 	return (
 		<div>
-			{!isReady ? <button onClick={connect}>Connect Wallet</button> : (
+			{!isReady ? (
+				<button onClick={connect}>Connect Wallet</button>
+			) : (
 				<div>
 					<p>Connected: {account}</p>
 					<p>MINA Balance: {minaBalance}</p>
@@ -102,11 +93,7 @@ export function WalletConnect() {
 You can fetch token data and update balances as follows:
 
 ```tsx
-import {
-	fetchTokenList,
-	type LuminaToken,
-	type Networks
-} from "@lumina-dex/sdk"
+import { fetchTokenList, type LuminaToken, type Networks } from "@lumina-dex/sdk"
 import { useContext, useEffect, useState } from "react"
 import { LuminaContext } from "../providers/LuminaProvider"
 
@@ -159,7 +146,9 @@ export function TokenList() {
 	return (
 		<div>
 			<h2>Available Tokens</h2>
-			{loading ? <p>Loading tokens...</p> : (
+			{loading ? (
+				<p>Loading tokens...</p>
+			) : (
 				<ul>
 					{tokens.map((token) => (
 						<li key={token.tokenId}>
@@ -187,13 +176,9 @@ export function SwapComponent() {
 	const { Dex } = useContext(LuminaContext)
 
 	// Form state
-	const [pool, setPool] = useState(
-		"B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH"
-	)
+	const [pool, setPool] = useState("B62qjGnANmDdJoBhWCQpbN2v3V4CBb5u1VJSCqCVZbpS5uDs7aZ7TCH")
 	const [fromAddress, setFromAddress] = useState("MINA")
-	const [toAddress, setToAddress] = useState(
-		"B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w"
-	)
+	const [toAddress, setToAddress] = useState("B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w")
 	const [amount, setAmount] = useState("1")
 	const [slippage, setSlippage] = useState(0.5)
 
@@ -228,11 +213,7 @@ export function SwapComponent() {
 			<h2>Swap Tokens</h2>
 
 			<div>
-				<input
-					value={pool}
-					onChange={(e) => setPool(e.target.value)}
-					placeholder="Pool Address"
-				/>
+				<input value={pool} onChange={(e) => setPool(e.target.value)} placeholder="Pool Address" />
 			</div>
 
 			<div>
@@ -244,20 +225,11 @@ export function SwapComponent() {
 			</div>
 
 			<div>
-				<input
-					value={toAddress}
-					onChange={(e) => setToAddress(e.target.value)}
-					placeholder="To Token Address"
-				/>
+				<input value={toAddress} onChange={(e) => setToAddress(e.target.value)} placeholder="To Token Address" />
 			</div>
 
 			<div>
-				<input
-					value={amount}
-					onChange={(e) => setAmount(e.target.value)}
-					placeholder="Amount"
-					type="text"
-				/>
+				<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" type="text" />
 			</div>
 
 			<div>
@@ -272,20 +244,14 @@ export function SwapComponent() {
 				/>
 			</div>
 
-			<button
-				onClick={calculateSwap}
-				disabled={!canDo.changeSwapSettings}
-			>
+			<button onClick={calculateSwap} disabled={!canDo.changeSwapSettings}>
 				Calculate Swap
 			</button>
 
 			{swapSettings.calculated && (
 				<div>
 					<p>Expected output: {swapSettings.calculated.amountOut / 1e9}</p>
-					<button
-						onClick={executeSwap}
-						disabled={!canDo.swap}
-					>
+					<button onClick={executeSwap} disabled={!canDo.swap}>
 						Execute Swap
 					</button>
 				</div>

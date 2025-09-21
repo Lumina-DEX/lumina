@@ -4,16 +4,7 @@ import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
 import { PoolSchema, TokenSchema } from "./helper"
-import {
-	auth,
-	getDb,
-	headers,
-	notFound,
-	poolCacheKey,
-	serveAsset,
-	sync,
-	tokenCacheKey
-} from "./http"
+import { auth, getDb, headers, notFound, poolCacheKey, serveAsset, sync, tokenCacheKey } from "./http"
 import { cleanPoolTable } from "./supabase"
 
 const router = createRouter<{ path: string }>()
@@ -35,7 +26,7 @@ export class FetchToken extends Container<Env> {
 	sleepAfter = "5m"
 }
 
-//TODO: Update this when we launch a new network.
+// TODO: Update this when we launch a new network.
 const liveNetworks = networks.filter((n) => !n.includes("mainnet"))
 
 export default {
@@ -54,7 +45,7 @@ export default {
 		}
 	},
 	async fetch(request, env, context): Promise<Response> {
-		//TODO: implement rate-limiting and bot protection here.
+		// TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
 		// Manually trigger the SyncPool workflow for Auth users
@@ -62,10 +53,7 @@ export default {
 			const body = await request.json()
 			const params = v.parse(v.object({ network: v.string(), poolAddress: v.string() }), body)
 			const instance = await env.SYNC_POOL.create({ params })
-			return Response.json(
-				{ id: instance.id, details: await instance.status() },
-				{ headers, status: 201 }
-			)
+			return Response.json({ id: instance.id, details: await instance.status() }, { headers, status: 201 })
 		}
 
 		// Manually trigger the Scheduled event for Auth users
@@ -175,9 +163,7 @@ export default {
 
 			const db = getDb(env)
 			const count =
-				match.params.entities === "tokens"
-					? await db.countTokens({ network })
-					: await db.countPools({ network })
+				match.params.entities === "tokens" ? await db.countTokens({ network }) : await db.countPools({ network })
 
 			return Response.json(count)
 		}
@@ -193,9 +179,7 @@ export default {
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 
-			const cacheKey = isToken
-				? tokenCacheKey(match.params.network)
-				: poolCacheKey(match.params.network)
+			const cacheKey = isToken ? tokenCacheKey(match.params.network) : poolCacheKey(match.params.network)
 			const cache = caches.default
 			const cacheResponse = await cache.match(cacheKey)
 			if (cacheResponse?.ok) {
@@ -203,13 +187,11 @@ export default {
 			}
 
 			const db = getDb(env)
-			const data = isToken
-				? await db.findAllTokens({ network })
-				: await db.findAllPools({ network })
+			const data = isToken ? await db.findAllTokens({ network }) : await db.findAllPools({ network })
 			if (!data) return notFound()
 			const response = Response.json(data, { headers })
 			context.waitUntil(cache.put(cacheKey, response.clone()))
-			data[Symbol.dispose]() //TODO: Use using keyword
+			data[Symbol.dispose]() // TODO: Use using keyword
 			return response
 		}
 

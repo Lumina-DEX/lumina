@@ -1,0 +1,66 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"root": true,
+	"files": {
+		"experimentalScannerIgnores": [".git"],
+		"includes": [
+			"**/*.tsx",
+			"**/*.jsx",
+			"**/*.ts",
+			"**/*.vue",
+			"**/*.js",
+			"!**/worker-configuration.d.ts",
+			"!**/graphql/*.d.ts"
+		]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"overrides": [
+		{
+			"includes": ["*.vue"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUnusedVariables": "off"
+					}
+				}
+			}
+		}
+	],
+	"formatter": {
+		"enabled": true
+	},
+	"linter": {
+		"domains": {
+			"vue": "all"
+		},
+		"rules": {
+			"correctness": {
+				"noUnusedImports": {
+					"level": "warn",
+					"fix": "safe"
+				}
+			},
+			"style": {
+				"useConst": {
+					"level": "warn",
+					"fix": "safe"
+				},
+				"useImportType": "error",
+				"noParameterAssign": "error",
+				"useAsConstAssertion": "error",
+				"useDefaultParameterLast": "error",
+				"useEnumInitializers": "error",
+				"useSelfClosingElements": "error",
+				"useSingleVarDeclarator": "error",
+				"noUnusedTemplateLiteral": "error",
+				"useNumberNamespace": "error",
+				"noInferrableTypes": "error",
+				"noUselessElse": "error"
+			}
+		}
+	}
+}

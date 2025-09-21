@@ -5,3 +5,8 @@ onlyBuiltDependencies:
   - lefthook
 patchedDependencies:
   "@gql.tada/internal": "patches/@gql.tada__internal.patch"
+catalog:
+  "@biomejs/biome": ^2.2.4
+  oxlint: ^1.16.0
+  oxlint-tsgolint: ^0.2.0
+  o1js: 2.4.0

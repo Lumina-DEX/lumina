@@ -1,33 +1,28 @@
 <html>
-
-<head>
-
+  <head>
     <script>
-        function calcul() {
-            let a = document.getElementById("a").valueAsNumber;
-            let x = document.getElementById("x").valueAsNumber;
-            let y = document.getElementById("y").valueAsNumber;
-            let result = document.getElementById("result");
+    function calcul() {
+      let a = document.getElementById("a").valueAsNumber
+      let x = document.getElementById("x").valueAsNumber
+      let y = document.getElementById("y").valueAsNumber
+      let result = document.getElementById("result")
 
-            let b = (a * x) / (a + y);
+      let b = (a * x) / (a + y)
 
-            console.log(b);
-            result.textContent = b;
-
-        }
-
+      console.log(b)
+      result.textContent = b
+    }
     </script>
-</head>
+  </head>
 
-<body>
-    <p> b = (a * x)/(a + y)</p>
+  <body>
+    <p>b = (a * x)/(a + y)</p>
 
     <input type="number" placeholder="a" id="a" />
     <input type="number" placeholder="x" id="x" />
     <input type="number" placeholder="y" id="y" />
 
-    <button onclick="calcul()"> Calcul</button>
+    <button onclick="calcul()">Calcul</button>
     <span>Result : <span id="result"></span></span>
-</body>
-
+  </body>
 </html>

@@ -72,7 +72,7 @@ const Wallet = createWallet()
 Wallet.send({ type: "Connect" })
 
 // Wait for connection, then fetch MINA balance
-Wallet.subscribe(state => {
+Wallet.subscribe((state) => {
 	if (state.matches("READY")) {
 		// Fetch native MINA balance
 		Wallet.send({
@@ -88,12 +88,14 @@ const fetchTokenBalance = (token) => {
 	Wallet.send({
 		type: "FetchBalance",
 		network: "mina:devnet",
-		tokens: [{
-			address: token.address,
-			decimal: 10 ** token.decimals,
-			tokenId: token.tokenId,
-			symbol: token.symbol
-		}]
+		tokens: [
+			{
+				address: token.address,
+				decimal: 10 ** token.decimals,
+				tokenId: token.tokenId,
+				symbol: token.symbol
+			}
+		]
 	})
 }
 ```
@@ -115,11 +117,7 @@ The Archive, Node and Zeko endpoint don't support all queries. Make sure to use 
 :::
 
 ```ts
-import {
-	createMinaClient,
-	FetchAccountBalanceQuery,
-	urls
-} from "@lumina-dex/sdk"
+import { createMinaClient, FetchAccountBalanceQuery, urls } from "@lumina-dex/sdk"
 
 const customQuery = async () => {
 	const client = createMinaClient(urls["mina:devnet"])

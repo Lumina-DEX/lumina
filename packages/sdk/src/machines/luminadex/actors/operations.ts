@@ -17,15 +17,13 @@ import type {
 	SwapSettings
 } from "../types"
 
-export const initContracts = fromPromise(
-	async ({ input }: { input: { worker: DexWorker; features: DexFeatures } }) => {
-		const { worker, features } = input
-		return act("initContracts", async () => {
-			await worker.initContracts()
-			return setToLoadFromFeatures(features)
-		})
-	}
-)
+export const initContracts = fromPromise(async ({ input }: { input: { worker: DexWorker; features: DexFeatures } }) => {
+	const { worker, features } = input
+	return act("initContracts", async () => {
+		await worker.initContracts()
+		return setToLoadFromFeatures(features)
+	})
+})
 
 export const compileContract = fromPromise(
 	async ({ input }: { input: { worker: DexWorker; contract: ContractName } }) => {
@@ -46,12 +44,8 @@ export const calculateSwapAmount = fromPromise(
 			if (reserves.token0.amount && reserves.token1.amount) {
 				const amountIn = amount(from)
 				const ok = reserves.token0.address === from.address
-				const balanceIn = Number.parseInt(
-					ok ? reserves.token0.amount : reserves.token1.amount
-				)
-				const balanceOut = Number.parseInt(
-					ok ? reserves.token1.amount : reserves.token0.amount
-				)
+				const balanceIn = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
+				const balanceOut = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
 				const swapAmount = getAmountOut({
 					amountIn,
 					balanceIn,
@@ -81,12 +75,8 @@ export const calculateAddLiquidityAmount = fromPromise(
 			const isToken0 = reserves.token0.address === tokenA.address
 
 			if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-				const balanceA = Number.parseInt(
-					isToken0 ? reserves.token0.amount : reserves.token1.amount
-				)
-				const balanceB = Number.parseInt(
-					isToken0 ? reserves.token1.amount : reserves.token0.amount
-				)
+				const balanceA = Number.parseInt(isToken0 ? reserves.token0.amount : reserves.token1.amount)
+				const balanceB = Number.parseInt(isToken0 ? reserves.token1.amount : reserves.token0.amount)
 
 				const liquidity = Number.parseInt(reserves.liquidity)
 

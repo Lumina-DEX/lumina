@@ -9,10 +9,7 @@ export const createClientOptions = (url: string) =>
 	({
 		url,
 		requestPolicy: "network-only",
-		exchanges: [
-			getRetryExchange(),
-			fetchExchange
-		]
+		exchanges: [getRetryExchange(), fetchExchange]
 	}) as ClientOptions
 
 export const createMinaClient = (url: string) => {

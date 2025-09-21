@@ -1,17 +1,7 @@
+import { getDb } from "@/db"
 import { deployPoolRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
-import {
-	fetchAccount,
-	Mina,
-	Poseidon,
-	PrivateKey,
-	Provable,
-	PublicKey,
-	Signature,
-	TokenId,
-	UInt64
-} from "o1js"
-import { getDb } from "@/db"
+import { fetchAccount, Mina, Poseidon, PrivateKey, Provable, PublicKey, Signature, TokenId, UInt64 } from "o1js"
 import { pool, poolKey as tPoolKey } from "../../drizzle/schema"
 import type { CreatePoolInputType } from "../graphql"
 import {
@@ -36,9 +26,7 @@ export const createPoolAndTransaction = async ({
 	Mina.setActiveInstance(Network)
 
 	console.log("data", { tokenA, tokenB, user, network })
-	const { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 } = await createPoolKeys(
-		db.drizzle
-	)
+	const { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 } = await createPoolKeys(db.drizzle)
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
@@ -75,18 +63,12 @@ export const createPoolAndTransaction = async ({
 		const zkFactory = new PoolFactory(factoryKey)
 		const factoryTokenId = TokenId.derive(factoryKey)
 
-		const tokenAPublicKey =
-			tokenA === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenA)
-		const tokenBPublicKey =
-			tokenB === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenB)
+		const tokenAPublicKey = tokenA === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenA)
+		const tokenBPublicKey = tokenB === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenB)
 
 		// For pool creation, we need to ensure that tokenA and tokenB are ordered
 		const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
-		const token0 = Provable.if(
-			tokenAPublicKey.isEmpty().or(tokenALower),
-			tokenAPublicKey,
-			tokenBPublicKey
-		)
+		const token0 = Provable.if(tokenAPublicKey.isEmpty().or(tokenALower), tokenAPublicKey, tokenBPublicKey)
 		const token1 = Provable.if(token0.equals(tokenBPublicKey), tokenAPublicKey, tokenBPublicKey)
 
 		await fetchAccount({ publicKey: user })

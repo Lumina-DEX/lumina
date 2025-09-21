@@ -12,7 +12,7 @@ RUN apt update && apt install -y git unzip gzip xz-utils curl
 # Set the PROTO_HOME environment variable for all subsequent layers
 ENV PROTO_HOME="/usr/local/proto"
 
-# Set the default shell to bash 
+# Set the default shell to bash
 SHELL ["/bin/bash", "-c"]
 
 # Execute the installation in a single, clean RUN command.

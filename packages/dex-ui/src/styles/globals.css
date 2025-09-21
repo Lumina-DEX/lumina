@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   --primary-font: "Orbitron";
   --secondary-font: "Metrophobic";
@@ -10,17 +9,15 @@
   --primary-color: #351c75;
   --secondary-color: #f7f5de;
 
-
-
-  font-family: var(--primary-font), var(--secondary-font), Inter, system-ui,
-    Avenir, Helvetica, Arial, sans-serif;
+  font-family:
+    var(--primary-font), var(--secondary-font), Inter, system-ui, Avenir,
+    Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color: var(--text-primary);
   background-color: var(--background-l0);
 }
-
 
 .lightmode {
   --background-l0: #ffffff;
@@ -118,7 +115,7 @@ a:hover {
 }
 
 .logo {
-  background-image: url('/assets/logo/logo.png');
+  background-image: url("/assets/logo/logo.png");
 }
 
 .font-metrophobic {
@@ -185,7 +182,7 @@ a[target="_blank"]:hover {
   border-style: solid;
   border-color: rgb(6 182 212) #ccc #ccc;
   border-radius: 100%;
-  animation: rotation .7s infinite linear;
+  animation: rotation 0.7s infinite linear;
 }
 
 @keyframes rotation {

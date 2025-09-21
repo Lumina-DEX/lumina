@@ -3,14 +3,7 @@ import type { ActionArgs, ErrorActorEvent } from "xstate"
 import { luminadexFactories } from "../../constants"
 import { createLogger } from "../../helpers/debug"
 import type { TransactionMachineInput } from "../transaction"
-import type {
-	Can,
-	ContractName,
-	DexFeatures,
-	LuminaDexMachineContext,
-	LuminaDexMachineEvent,
-	Token
-} from "./types"
+import type { Can, ContractName, DexFeatures, LuminaDexMachineContext, LuminaDexMachineEvent, Token } from "./types"
 
 export const { act, logger } = createLogger("[DEX]")
 
@@ -37,8 +30,7 @@ export const setToLoadFromFeatures = (features: DexFeatures) => {
 	return toLoad
 }
 
-export const walletNetwork = (c: LuminaDexMachineContext) =>
-	c.wallet.getSnapshot().context.currentNetwork
+export const walletNetwork = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.currentNetwork
 
 export const walletUser = (c: LuminaDexMachineContext) => c.wallet.getSnapshot().context.account
 
@@ -48,13 +40,12 @@ export const inputWorker = (c: LuminaDexMachineContext) => ({
 
 export const luminaDexFactory = (c: LuminaDexMachineContext) => luminadexFactories[walletNetwork(c)]
 
-export const inputCompile = (
-	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => ({ worker: context.contract.worker, contract })
+export const inputCompile = ({ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }) => ({
+	worker: context.contract.worker,
+	contract
+})
 
-export const loaded = (
-	{ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }
-) => {
+export const loaded = ({ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }) => {
 	return {
 		contract: {
 			...context.contract,
@@ -64,23 +55,25 @@ export const loaded = (
 	}
 }
 
-export const setContractError = (message: string) =>
-(
-	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
-) => {
-	return { contract: { ...context.contract, error: { message, error: event.error } } }
-}
+export const setContractError =
+	(message: string) =>
+	({ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>) => {
+		return { contract: { ...context.contract, error: { message, error: event.error } } }
+	}
 
-export const setDexError = (message: string) =>
-(
-	{ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>
-) => {
-	return { dex: { ...context.dex, error: { message, error: event.error } } }
-}
+export const setDexError =
+	(message: string) =>
+	({ context, event }: ActionArgs<LuminaDexMachineContext, ErrorActorEvent, LuminaDexMachineEvent>) => {
+		return { dex: { ...context.dex, error: { message, error: event.error } } }
+	}
 
-export const createTransactionInput = (
-	{ context, transaction }: { context: LuminaDexMachineContext; transaction: string }
-): TransactionMachineInput => {
+export const createTransactionInput = ({
+	context,
+	transaction
+}: {
+	context: LuminaDexMachineContext
+	transaction: string
+}): TransactionMachineInput => {
 	const id = nanoid()
 	return {
 		id,

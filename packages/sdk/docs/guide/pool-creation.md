@@ -106,33 +106,37 @@ Here's how you can track the status of pool creation jobs in a Vue application u
 
 ```vue
 <script lang="ts" setup>
-import { computed } from "vue";
-import { useActor, useSelector } from "@lumina-dex/sdk/vue";
-import { type ActorRefFromLogic, dexMachine, type CreatePoolMachine } from "@lumina-dex/sdk";
+import {
+	type ActorRefFromLogic,
+	type CreatePoolMachine,
+	dexMachine
+} from "@lumina-dex/sdk"
+import { useActor, useSelector } from "@lumina-dex/sdk/vue"
+import { computed } from "vue"
 
 const Dex = useActor(dexMachine, {
-  input: {
-    // ... your dex machine input
-  },
-});
+	input: {
+		// ... your dex machine input
+	}
+})
 
 const creatingPools = computed(() => {
-  const createPool = Dex.snapshot.value.context.dex.createPool;
-  if (!createPool || !createPool.pools) {
-    return [];
-  }
-  return Object.entries(createPool.pools).map(([poolId, poolActor]) => {
-    return {
-      id: poolId,
-	  //Note: Don't use nested useSelector calls. Use v-for and components instead.
-      state: useSelector(poolActor, (state) => ({
-        status: state.value,
-        context: state.context,
-        errors: state.context.errors, // Access error information
-      })),
-    };
-  });
-});
+	const createPool = Dex.snapshot.value.context.dex.createPool
+	if (!createPool || !createPool.pools) {
+		return []
+	}
+	return Object.entries(createPool.pools).map(([poolId, poolActor]) => {
+		return {
+			id: poolId,
+			// Note: Don't use nested useSelector calls. Use v-for and components instead.
+			state: useSelector(poolActor, (state) => ({
+				status: state.value,
+				context: state.context,
+				errors: state.context.errors // Access error information
+			}))
+		}
+	})
+})
 </script>
 
 <template>
@@ -142,11 +146,18 @@ const creatingPools = computed(() => {
     <div v-for="pool in creatingPools" :key="pool.id">
       <h3>Job ID: {{ pool.id }}</h3>
       <p><strong>Status:</strong> {{ pool.state.status }}</p>
-      <p v-if="pool.state.status === 'POOL_ALREADY_EXISTS'"><strong>Pool Already Exists!</strong></p>
-      <div v-if="pool.state.errors && pool.state.errors.length > 0" class="error">
-        <strong>Errors:</strong> 
+      <p v-if='pool.state.status === "POOL_ALREADY_EXISTS"'>
+        <strong>Pool Already Exists!</strong>
+      </p>
+      <div
+        v-if="pool.state.errors && pool.state.errors.length > 0"
+        class="error"
+      >
+        <strong>Errors:</strong>
         <ul>
-          <li v-for="(error, index) in pool.state.errors" :key="index">{{ error.message }}</li>
+          <li v-for="(error, index) in pool.state.errors" :key="index">
+            {{ error.message }}
+          </li>
         </ul>
       </div>
       <details>
@@ -163,11 +174,7 @@ const creatingPools = computed(() => {
 For React applications, you can use the `@lumina-dex/sdk/react` package to achieve a similar result.
 
 ```tsx
-import {
-	type ActorRefFromLogic,
-	type CreatePoolMachine,
-	dexMachine
-} from "@lumina-dex/sdk"
+import { type ActorRefFromLogic, type CreatePoolMachine, dexMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import React, { useContext } from "react"
 
@@ -182,14 +189,12 @@ export const PoolCreationStatus = () => {
 		return <div>No pool creation in progress.</div>
 	}
 
-	const creatingPools = Object.entries(createPool.pools).map(
-		([poolId, poolActor]) => {
-			return {
-				id: poolId,
-				actor: poolActor
-			}
+	const creatingPools = Object.entries(createPool.pools).map(([poolId, poolActor]) => {
+		return {
+			id: poolId,
+			actor: poolActor
 		}
-	)
+	})
 
 	if (creatingPools.length === 0) {
 		return <div>No pool creation in progress.</div>
@@ -205,13 +210,7 @@ export const PoolCreationStatus = () => {
 	)
 }
 
-const PoolCreationJob = ({
-	id,
-	actor
-}: {
-	id: string
-	actor: ActorRefFromLogic<CreatePoolMachine>
-}) => {
+const PoolCreationJob = ({ id, actor }: { id: string; actor: ActorRefFromLogic<CreatePoolMachine> }) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context,

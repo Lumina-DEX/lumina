@@ -17,7 +17,7 @@ export const getDb = (env: Env) => {
  * Serve an asset if it exists or return a 404. Use cache if possible.
  */
 export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
-	//Cache Key must be a Request to avoid leaking headers to other users.
+	// Cache Key must be a Request to avoid leaking headers to other users.
 	const cacheKey = new Request(assetUrl.toString(), request)
 	const cache = caches.default
 	const cacheResponse = await cache.match(cacheKey)
@@ -25,7 +25,7 @@ export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset
 
 	const assetResponse = await env.ASSETS.fetch(assetUrl)
 	const response = new Response(assetResponse.body, assetResponse)
-	//Here we can control the cache headers precisely.
+	// Here we can control the cache headers precisely.
 	if (response.ok) {
 		for (const [n, v] of Object.entries(headers)) response.headers.append(n, v)
 		response.headers.append("Cache-Control", "public, max-age=31536000, immutable")
@@ -36,17 +36,11 @@ export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset
 
 export type TokensAndPools = { tokens: LuminaToken[]; pools: LuminaPool[] }
 export type SyncInput = { env: Env; network: Networks; context: ExecutionContext }
-export const updateTokensAndPools = async ({
-	env,
-	tokens,
-	pools,
-	network,
-	context
-}: TokensAndPools & SyncInput) => {
+export const updateTokensAndPools = async ({ env, tokens, pools, network, context }: TokensAndPools & SyncInput) => {
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
-	//TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
+	// TODO: Do this without reseting the database after every sync. We should add some logic to only insert the new tokens.
 	await tokenList.reset({ network })
 	const result = await tokenList.insertToken(tokens)
 	const poolResult = await tokenList.insertPool(

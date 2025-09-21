@@ -8,13 +8,13 @@
 	"[javascript]": {
 		"editor.defaultFormatter": "dprint.dprint",
 		"editor.codeActionsOnSave": {
-			"source.fixAll.oxc": "explicit"
+			"source.fixAll.biome": "explicit"
 		}
 	},
 	"[typescript]": {
 		"editor.defaultFormatter": "dprint.dprint",
 		"editor.codeActionsOnSave": {
-			"source.fixAll.oxc": "explicit"
+			"source.fixAll.biome": "explicit"
 		}
 	},
 	"[json]": {

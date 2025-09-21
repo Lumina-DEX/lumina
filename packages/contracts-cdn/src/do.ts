@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers"
 import { and, count, eq, or, sql } from "drizzle-orm"
-import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite"
+import { drizzle, type DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite"
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
 import * as schema from "../drizzle/schema"
@@ -150,20 +150,12 @@ export class TokenList extends DurableObject {
 	 */
 
 	async countTokens({ network }: Network) {
-		const result = this.db
-			.select({ count: count() })
-			.from(tokens)
-			.where(eq(tokens.chainId, network))
-			.all()
+		const result = this.db.select({ count: count() }).from(tokens).where(eq(tokens.chainId, network)).all()
 		return result[0].count
 	}
 
 	async countPools({ network }: Network) {
-		const result = this.db
-			.select({ count: count() })
-			.from(pools)
-			.where(eq(pools.chainId, network))
-			.all()
+		const result = this.db.select({ count: count() }).from(pools).where(eq(pools.chainId, network)).all()
 		return result[0].count
 	}
 
@@ -179,7 +171,7 @@ export class TokenList extends DurableObject {
 	}
 
 	async seed() {
-		//This is only used for local development and tests like in api.spec.ts
+		// This is only used for local development and tests like in api.spec.ts
 		this.insertToken([
 			{
 				address: "MINA",

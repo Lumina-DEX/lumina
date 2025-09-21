@@ -6,10 +6,9 @@ export const getDb = () => {
 	try {
 		// /!\ Use prepare:false if using a transaction pool mode
 		console.log("Initializing database connection...")
-		const client = postgres(
-			process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer",
-			{ prepare: false }
-		)
+		const client = postgres(process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer", {
+			prepare: false
+		})
 		const db = drizzle(client, { relations })
 		return {
 			drizzle: db,

@@ -1,14 +1,5 @@
 import { sql } from "drizzle-orm"
-import {
-	boolean,
-	check,
-	integer,
-	pgTable,
-	serial,
-	text,
-	timestamp,
-	uniqueIndex
-} from "drizzle-orm/pg-core"
+import { boolean, check, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 const networkEnums = ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
 // Table: SignerMerkle

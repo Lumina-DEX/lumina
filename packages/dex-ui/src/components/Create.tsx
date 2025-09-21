@@ -27,21 +27,11 @@ const Create = () => {
 			<div className="flex flex-col p-5 gap-5 items-center">
 				<div className="text-xl">Create Pool</div>
 				<div>
-					<span>Token address : </span>{" "}
-					<input
-						type="text"
-						defaultValue={tokenAddress}
-						onChange={(event) => setTokenAddress(event.target.value)}
-					/>
+					<span>Token address :</span>{" "}
+					<input type="text" defaultValue={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)} />
 				</div>
 				<ButtonStatus onClick={createPool} text={"Create Pool"} />
-				{creatingPools && (
-					<PoolCreationJob
-						key={creatingPools.id}
-						id={creatingPools.id}
-						actor={creatingPools.actor}
-					/>
-				)}
+				{creatingPools && <PoolCreationJob key={creatingPools.id} id={creatingPools.id} actor={creatingPools.actor} />}
 			</div>
 		</div>
 	)

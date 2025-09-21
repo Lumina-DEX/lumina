@@ -43,16 +43,17 @@ if (swapLid) {
 ```tsx
 export function LatestSwapTransaction() {
 	const { Dex } = useContext(LuminaContext)
-	const lid = useSelector(Dex, s => s.context.dex.swap.transactionLid)
-	const txActor = useSelector(
-		Dex,
-		s => lid ? s.context.transactions[lid] : undefined
-	)
-	const status = useSelector(txActor, a => a?.value)
-	const result = useSelector(txActor, a => a?.context.result)
+	const lid = useSelector(Dex, (s) => s.context.dex.swap.transactionLid)
+	const txActor = useSelector(Dex, (s) => (lid ? s.context.transactions[lid] : undefined))
+	const status = useSelector(txActor, (a) => a?.value)
+	const result = useSelector(txActor, (a) => a?.context.result)
 	if (!lid || !txActor) return null
 	if (status === "DONE" && result && !(result instanceof Error)) {
-		return <a href={result.url} target="_blank">View Tx</a>
+		return (
+			<a href={result.url} target="_blank">
+				View Tx
+			</a>
+		)
 	}
 	return <span>Tx Status: {String(status)}</span>
 }
@@ -63,14 +64,20 @@ export function LatestSwapTransaction() {
 ```vue
 <script setup lang="ts">
 const dex = useLuminaDexStore()
-const lid = useSelector(dex.Dex, s => s.context.dex.swap.transactionLid)
-const txActor = useSelector(dex.Dex, s => lid ? s.context.transactions[lid] : undefined)
-const status = useSelector(txActor, a => a?.value)
-const result = useSelector(txActor, a => a?.context.result)
+const lid = useSelector(dex.Dex, (s) => s.context.dex.swap.transactionLid)
+const txActor = useSelector(dex.Dex, (s) =>
+	lid ? s.context.transactions[lid] : undefined
+)
+const status = useSelector(txActor, (a) => a?.value)
+const result = useSelector(txActor, (a) => a?.context.result)
 </script>
 <template>
   <div v-if="lid && txActor">
-    <a v-if="status==='DONE' && result && !('message' in result)" :href="result.url" target="_blank">View Tx</a>
+    <a
+      v-if='status === "DONE" && result && !("message" in result)'
+      :href="result.url"
+      target="_blank"
+    >View Tx</a>
     <span v-else>Tx Status: {{ status }}</span>
   </div>
 </template>

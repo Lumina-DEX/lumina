@@ -14,14 +14,15 @@ export const createCacheList = (cacheList: CachedFile[]) =>
 	}, {})
 
 const fetchWithRetry =
-	(retries = 3) => async (url: string, options: RequestInit): Promise<Response> => {
+	(retries = 3) =>
+	async (url: string, options: RequestInit): Promise<Response> => {
 		for (let i = 0; i < retries; i++) {
 			try {
 				const response = await fetch(url, options)
 				if (response.ok) return response
 			} catch (error) {
 				if (i === retries - 1) throw error
-				await new Promise(resolve => setTimeout(resolve, 500 * 2 ** i)) // Exponential backoff
+				await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** i)) // Exponential backoff
 			}
 		}
 		throw new Error("Max retries reached")
@@ -41,10 +42,9 @@ export const fetchCachedContracts = async () => {
 		json.cache
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
-				const response = await fetchWithRetry(3)(
-					`${luminaCdnOrigin}/v${contractsVersion}/cache/${file}.txt`,
-					{ headers }
-				)
+				const response = await fetchWithRetry(3)(`${luminaCdnOrigin}/v${contractsVersion}/cache/${file}.txt`, {
+					headers
+				})
 				return {
 					file,
 					data: new Uint8Array(await response.arrayBuffer())
@@ -68,10 +68,7 @@ export const fetchZippedContracts = async () => {
 	const response = await fetch(`${luminaCdnOrigin}/v${contractsVersion}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 	const zipBuffer = await response.arrayBuffer()
-	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<
-		string,
-		Uint8Array
-	>
+	const data = unzipSync(new Uint8Array(zipBuffer as ArrayBufferLike)) as unknown as Record<string, Uint8Array>
 	const cacheList = Object.entries(data).map(([file, data]) => ({
 		file: file.split(".")[0],
 		data: new Uint8Array(data)

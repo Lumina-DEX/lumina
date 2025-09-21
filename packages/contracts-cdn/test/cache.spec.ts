@@ -3,8 +3,7 @@ import { describe, expect, it } from "vitest"
 import worker from "../src"
 import { cache, version } from "./generated-cache"
 
-const createRequest = (url: string) =>
-	new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`)
+const createRequest = (url: string) => new Request<unknown, IncomingRequestCfProperties>(`http://example.com/${url}`)
 const cacheRequest = createRequest(`api/manifest/v${version}`)
 
 describe("Cache and CDN", () => {
@@ -21,9 +20,7 @@ describe("Cache and CDN", () => {
 			const ctx = createExecutionContext()
 			const response = await worker.fetch(cacheRequest, env, ctx)
 			await waitOnExecutionContext(ctx)
-			expect(response.headers.get("cache-control")).toBe(
-				"public, max-age=0, must-revalidate, s-maxage=10"
-			)
+			expect(response.headers.get("cache-control")).toBe("public, max-age=0, must-revalidate, s-maxage=10")
 		})
 	})
 

@@ -1,9 +1,9 @@
+import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
+import { createRouter, RouterProvider } from "@tanstack/react-router"
 import React from "react"
-import ReactDOM from "react-dom/client"
-import { RouterProvider, createRouter } from "@tanstack/react-router"
-import { routeTree } from "./routeTree.gen"
-import { type LuminaContext as LC, createDex, createWallet } from "@lumina-dex/sdk"
 import { createContext } from "react"
+import ReactDOM from "react-dom/client"
+import { routeTree } from "./routeTree.gen"
 
 const Wallet = createWallet()
 

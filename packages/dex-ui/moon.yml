@@ -41,16 +41,6 @@ tasks:
     extends: typecheck
     args: [--incremental, --watch]
     preset: "watcher"
-  lint:
-    command: oxlint
-    args: [src/]
-    inputs:
-      - "@group(sources)"
-  lint-fix:
-    command: oxlint
-    args: [--fix, src/]
-    inputs:
-      - "@group(sources)"
   dev:
     command: next dev
     deps: [^:build]
@@ -65,3 +55,11 @@ tasks:
   deploy-preview:
     command: opennextjs-cloudflare upload
     deps: [build]
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"
