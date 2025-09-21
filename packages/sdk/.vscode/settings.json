@@ -1,18 +1,20 @@
 {
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "dprint.dprint",
-  "[javascript]": {
-    "editor.defaultFormatter": "dprint.dprint",
-    "editor.codeActionsOnSave": {
-      "quickfix.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    }
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "dprint.dprint",
-    "editor.codeActionsOnSave": {
-      "quickfix.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    }
-  }
+	"editor.defaultFormatter": "dprint.dprint",
+	"editor.formatOnSave": true,
+	"biome.enabled": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "explicit"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.oxc": "explicit"
+		}
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.oxc": "explicit"
+		}
+	}
 }

@@ -42,11 +42,13 @@ tasks:
     args: [--incremental, --watch]
     preset: "watcher"
   lint:
-    command: biome lint src/
+    command: oxlint
+    args: [src/]
     inputs:
       - "@group(sources)"
   lint-fix:
-    command: biome lint --write src/
+    command: oxlint
+    args: [--fix, src/]
     inputs:
       - "@group(sources)"
   dev:

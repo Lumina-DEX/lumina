@@ -44,13 +44,15 @@ tasks:
     outputs:
       - worker-configuration.d.ts
   lint:
-    command: biome lint src/
+    command: oxlint
+    args: [src/]
     inputs:
       - "@group(sources)"
       - "@group(tests)"
       - "@group(container)"
   lint-fix:
-    command: biome lint --write src/
+    command: oxlint
+    args: [--fix, src/]
     inputs:
       - "@group(sources)"
       - "@group(tests)"

@@ -86,8 +86,7 @@ builder.mutationField("createPool", (t) =>
 			})
 			return { id: jobId, status: "created" }
 		}
-	})
-)
+	}))
 
 builder.subscriptionField("poolCreation", (t) =>
 	t.field({
@@ -122,8 +121,7 @@ builder.subscriptionField("poolCreation", (t) =>
 			})
 		},
 		resolve: (transaction) => transaction
-	})
-)
+	}))
 
 builder.queryField("poolCreationJob", (t) =>
 	t.field({
@@ -137,8 +135,7 @@ builder.queryField("poolCreationJob", (t) =>
 			const status = await job.getState()
 			return { status, ...job.returnvalue }
 		}
-	})
-)
+	}))
 
 builder.mutationField("confirmJob", (t) =>
 	t.field({
@@ -161,8 +158,7 @@ builder.mutationField("confirmJob", (t) =>
 			}
 			return `Job for pool "${poolAddress}" confirmed`
 		}
-	})
-)
+	}))
 
 builder.queryType()
 builder.mutationType()

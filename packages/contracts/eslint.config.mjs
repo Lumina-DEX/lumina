@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 
 import { FlatCompat } from "@eslint/eslintrc"
 import jsLint from "@eslint/js"
+import oxlint from "eslint-plugin-oxlint"
 import pluginSimpleImportSort from "eslint-plugin-simple-import-sort"
 import unusedImports from "eslint-plugin-unused-imports"
 import globals from "globals"
@@ -18,6 +19,8 @@ const compat = new FlatCompat({
 })
 
 export default [
+  // Oxlint recommended (disables overlapping ESLint core rules for performance)
+  ...(oxlint.configs?.recommended ?? []),
   // config parsers
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,jsx,tsx}"]

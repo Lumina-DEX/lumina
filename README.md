@@ -59,7 +59,7 @@ The tasks in the root `.moon/tasks.yaml` are available to all projects.
 
 ## Formatting and checks
 
-- Format entire workspace: `moon format-all`
+- Format entire workspace: `moon run format-all-fix`
 
 ## Discover and diagnose tasks (optional)
 

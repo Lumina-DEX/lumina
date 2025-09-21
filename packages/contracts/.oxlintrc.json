@@ -1,0 +1,15 @@
+{
+	"$schema": "../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../.oxlintrc.json"],
+	"plugins": ["import", "promise"],
+	"rules": {
+		"import/default": "error",
+		"import/namespace": "error",
+		"promise/no-callback-in-promise": "error",
+		"promise/no-new-statics": "error",
+		"promise/valid-params": "error",
+		"no-unused-vars": "off",
+		"no-constant-condition": "off",
+		"prefer-const": "warn"
+	}
+}

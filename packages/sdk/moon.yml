@@ -3,7 +3,7 @@
 layer: library
 
 dependsOn:
-- contracts
+  - contracts
 
 fileGroups:
   sources:
@@ -11,21 +11,23 @@ fileGroups:
     - scripts/**/*
     - package.json
     - tsconfig.json
-    
+
 tasks:
   build:
     command: unbuild
     deps: [^:build]
-    inputs: 
+    inputs:
       - "@group(sources)"
     outputs:
       - dist/
   lint:
-    command: biome lint src/
+    command: oxlint
+    args: [src/]
     inputs:
       - "@group(sources)"
   lint-fix:
-    command: biome lint --write src/
+    command: oxlint
+    args: [--fix, src/]
     inputs:
       - "@group(sources)"
   schema-get-zeko:

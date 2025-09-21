@@ -26,7 +26,7 @@ tasks:
       - "@group(sources)"
     outputs:
       - output/
-  docs: 
+  docs:
     command: typedoc src/indexpool.ts --out @out(0)
     deps: [build]
     inputs:
@@ -48,7 +48,7 @@ tasks:
     inputs:
       - "@group(sources)"
       - "@group(test)"
-  base-test: 
+  base-test:
     command: vitest
     args: [run, --testTimeout=150000]
     deps: [build]
@@ -61,7 +61,7 @@ tasks:
     preset: "watcher"
     options:
       mergeArgs: replace
-  test: 
+  test:
     extends: base-test
   test-coverage:
     extends: base-test

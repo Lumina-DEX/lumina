@@ -1,5 +1,23 @@
 {
 	"editor.defaultFormatter": "dprint.dprint",
 	"editor.formatOnSave": true,
-	"biome.enabled": false
+	"biome.enabled": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "explicit"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.oxc": "explicit"
+		}
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.oxc": "explicit"
+		}
+	},
+	"[json]": {
+		"editor.defaultFormatter": "dprint.dprint"
+	}
 }
