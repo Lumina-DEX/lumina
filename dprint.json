@@ -16,7 +16,7 @@
 		"formatComments": true,
 		"trailingComma": false
 	},
-	"excludes": ["**/node_modules", "**/worker-configuration.d.ts", "pnpm-lock.yaml"],
+	"excludes": ["**/node_modules", "**/worker-configuration.d.ts", "**/graphql/*.d.ts", "pnpm-lock.yaml"],
 	"plugins": [
 		"https://plugins.dprint.dev/markdown-0.17.8.wasm",
 		"https://plugins.dprint.dev/g-plane/pretty_graphql-v0.2.0.wasm",

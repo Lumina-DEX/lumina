@@ -11,9 +11,9 @@ import {
   Provable,
   PublicKey,
   Signature,
+  UInt8,
   UInt32,
   UInt64,
-  UInt8,
   VerificationKey
 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"

@@ -3,7 +3,16 @@
 		"useTabs": false,
 		"lineWidth": 120,
 		"semiColons": "asi",
-		"trailingCommas": "never"
+		"trailingCommas": "never",
+		"importDeclaration.forceMultiLine": "never",
+		"importDeclaration.forceSingleLine": false,
+		"importDeclaration.sortNamedImports": "maintain",
+		"importDeclaration.sortTypeOnlyImports": "none",
+		"importDeclaration.preferHanging": false,
+		"importDeclaration.preferSingleLine": false,
+		"importDeclaration.spaceSurroundingNamedImports": true,
+		"importDeclaration.trailingCommas": "never",
+		"module.sortImportDeclarations": "maintain"
 	},
 	"excludes": [
 		"**/node_modules"

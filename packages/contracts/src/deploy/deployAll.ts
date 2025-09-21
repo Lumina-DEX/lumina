@@ -29,9 +29,9 @@ import {
   PublicKey,
   Signature,
   SmartContract,
+  UInt8,
   UInt32,
-  UInt64,
-  UInt8
+  UInt64
 } from "o1js"
 
 import {

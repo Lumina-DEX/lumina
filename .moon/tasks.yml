@@ -16,6 +16,9 @@ tasks:
     options:
       runInCI: true
       cache: false
+  lint-fix:
+    options:
+      cache: false
   typecheck:
     options:
       runInCI: true

@@ -4,10 +4,10 @@ import { fileURLToPath } from "node:url"
 
 import { FlatCompat } from "@eslint/eslintrc"
 import jsLint from "@eslint/js"
+import { defineConfig } from "eslint/config"
 import oxlint from "eslint-plugin-oxlint"
 import pluginSimpleImportSort from "eslint-plugin-simple-import-sort"
 import unusedImports from "eslint-plugin-unused-imports"
-import { defineConfig } from "eslint/config"
 import globals from "globals"
 import tsLint from "typescript-eslint"
 

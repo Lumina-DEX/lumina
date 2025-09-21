@@ -84,7 +84,7 @@ tasks:
       runInCI: true
       cache: false
   eslint-fix:
-    command: eslint --fix
+    command: eslint
   lint:
     deps: [oxlint, eslint]
     options:

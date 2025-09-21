@@ -1,5 +1,5 @@
 import { Field, MerkleMap, Poseidon, Provable, PublicKey, Signature, UInt32 } from "o1js"
-import { AccountUpdate, Bool, Mina, PrivateKey, UInt64, UInt8 } from "o1js"
+import { AccountUpdate, Bool, Mina, PrivateKey, UInt8, UInt64 } from "o1js"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
@@ -289,7 +289,7 @@ describe("Pool Factory Mina", () => {
     })).rejects.toThrow()
 
     txn = await Mina.transaction(senderAccount, async () => {
-      await zkPool.send({ to: senderAccount, amount: UInt64.from(1000) })
+      zkPool.send({ to: senderAccount, amount: UInt64.from(1000) })
       await zkPool.approveAccountUpdate(zkPool.self)
     })
     console.log("transfer", txn.toPretty())
@@ -323,7 +323,7 @@ describe("Pool Factory Mina", () => {
   it("cant mint token", async () => {
     const txn = await Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkPool.internal.mint({ address: senderAccount, amount: UInt64.one })
+      zkPool.internal.mint({ address: senderAccount, amount: UInt64.one })
       await zkPool.approveAccountUpdate(zkPool.self)
     })
     console.log("txn mint", txn.toPretty())
@@ -332,7 +332,7 @@ describe("Pool Factory Mina", () => {
 
     await expect(Mina.transaction(senderAccount, async () => {
       AccountUpdate.fundNewAccount(senderAccount, 1)
-      await zkApp.internal.mint({ address: senderAccount, amount: UInt64.one })
+      zkApp.internal.mint({ address: senderAccount, amount: UInt64.one })
       await zkApp.approveAccountUpdate(zkApp.self)
     })).rejects.toThrow()
   })
