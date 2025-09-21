@@ -93,16 +93,15 @@ async function seed() {
 
 				if (result.length > 0) {
 					console.log(
-						`   ✅ Permission added: ${network} (${signerData.permission === 1 ? "deploy" : "all"}) for signer ID: ${signerId}`
+						`   ✅ Permission added: ${network} (${
+							signerData.permission === 1 ? "deploy" : "all"
+						}) for signer ID: ${signerId}`
 					)
 				} else {
 					console.log(`   ⚠️  Permission already exists: ${network} for signer ID: ${signerId}`)
 				}
 			} catch (error) {
-				console.error(
-					`   ❌ Error inserting permission for ${network}, signer ID: ${signerId}:`,
-					error
-				)
+				console.error(`   ❌ Error inserting permission for ${network}, signer ID: ${signerId}:`, error)
 			}
 		}
 	}

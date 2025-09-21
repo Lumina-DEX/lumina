@@ -7,14 +7,7 @@ import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
-import type {
-	AllTokenBalances,
-	Balance,
-	FetchBalanceInput,
-	TokenBalances,
-	WalletEmit,
-	WalletEvent
-} from "./types"
+import type { AllTokenBalances, Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -43,9 +36,7 @@ const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
 	return "mina:devnet" // Fallback to devnet
 }
 
-export const createWalletMachine = (
-	{ createMinaClient }: { createMinaClient: (url: string) => Client }
-) =>
+export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (url: string) => Client }) =>
 	setup({
 		types: {
 			context: {} as {
@@ -120,16 +111,19 @@ export const createWalletMachine = (
 				const limit = pLimit(10)
 				const publicKey = input.address
 				const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
-				const tokens = input.tokens.filter((token) => token.symbol !== "MINA").map((token) => {
-					return {
-						symbol: token.symbol,
-						decimal: token.decimal,
-						tokenId: "poolAddress" in token
-							? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
-							: token.tokenId,
-						publicKey
-					}
-				})
+				const tokens = input.tokens
+					.filter((token) => token.symbol !== "MINA")
+					.map((token) => {
+						return {
+							symbol: token.symbol,
+							decimal: token.decimal,
+							tokenId:
+								"poolAddress" in token
+									? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
+									: token.tokenId,
+							publicKey
+						}
+					})
 				const allTokens = [mina, ...tokens]
 				const queries = Object.fromEntries(
 					allTokens.map((token) => [
@@ -150,10 +144,7 @@ export const createWalletMachine = (
 						const result = results[index]
 						const token = allTokens[index]
 						const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
-						const [layer, netType] = (input.network as Networks).split(":") as [
-							NetworkLayer,
-							ChainNetwork
-						]
+						const [layer, netType] = (input.network as Networks).split(":") as [NetworkLayer, ChainNetwork]
 						acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
 						return acc
 					},

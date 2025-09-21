@@ -8,11 +8,7 @@ export default class MyDocument extends Document {
 				<Head>
 					<meta name="theme-color" content="#311d72" />
 					{["Orbitron", "Cutive Mono", "Metrophobic"].map((font) => (
-						<link
-							key={font}
-							href={`https://fonts.googleapis.com/css?family=${font}&display=swap`}
-							rel="stylesheet"
-						/>
+						<link key={font} href={`https://fonts.googleapis.com/css?family=${font}&display=swap`} rel="stylesheet" />
 					))}
 				</Head>
 				<body className="lightmode">

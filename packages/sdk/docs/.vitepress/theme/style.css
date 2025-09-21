@@ -137,15 +137,14 @@
   --docsearch-primary-color: var(--vp-c-brand-1) !important;
 }
 
-
-.d2-diagram{
+.d2-diagram {
   width: fit-content;
   height: fit-content;
   margin: auto auto;
   padding: 2rem 0;
 }
 
-.d2-diagram svg{
+.d2-diagram svg {
   max-height: 75ch;
   max-width: 75ch;
 }

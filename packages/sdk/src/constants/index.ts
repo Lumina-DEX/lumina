@@ -4,17 +4,9 @@ export type NetworkLayer = "mina" | "zeko"
 
 export type ChainNetwork = "mainnet" | "devnet" | "testnet"
 
-export type NetworkUri = Exclude<
-	`${NetworkLayer}:${ChainNetwork}`,
-	"zeko:devnet" | "mina:testnet"
->
+export type NetworkUri = Exclude<`${NetworkLayer}:${ChainNetwork}`, "zeko:devnet" | "mina:testnet">
 
-export const networks = [
-	"mina:mainnet",
-	"mina:devnet",
-	"zeko:testnet",
-	"zeko:mainnet"
-] as const
+export const networks = ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"] as const
 
 /**
  * Factory start block deployment

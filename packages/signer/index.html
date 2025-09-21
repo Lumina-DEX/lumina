@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <title>Create Pool with Auro Wallet</title>
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Create Pool with Auro Wallet</title>
+    <style>
     body {
       font-family: Arial, sans-serif;
       padding: 2rem;
@@ -46,89 +45,107 @@
     #connect:disabled {
       background: #888;
     }
-  </style>
-</head>
+    </style>
+  </head>
 
-<body>
+  <body>
+    <form id="createPoolForm">
+      <h2>Create Pool</h2>
 
-  <form id="createPoolForm">
-    <h2>Create Pool</h2>
+      <button type="button" id="connect">Connect Auro Wallet</button>
 
-    <button type="button" id="connect">Connect Auro Wallet</button>
+      <input
+        type="text"
+        id="tokenA"
+        name="tokenA"
+        placeholder="Token A"
+        required
+        value="MINA"
+      />
+      <input
+        type="text"
+        id="tokenB"
+        name="tokenB"
+        placeholder="Token B"
+        required
+        value="B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW"
+      />
+      <input
+        type="text"
+        id="user"
+        name="user"
+        placeholder="User Public Key"
+        readonly
+      />
+      <label>
+        Network:
+        <select name="network" id="network" required>
+          <option value="mina:devnet">mina:devnet</option>
+          <option value="mina:mainnet">mina:mainnet</option>
+          <option value="zeko:testnet">zeko:testnet</option>
+          <option value="zeko:mainnet">zeko:mainnet</option>
+        </select>
+      </label><br /><br />
 
-    <input type="text" id="tokenA" name="tokenA" placeholder="Token A" required value="MINA" />
-    <input type="text" id="tokenB" name="tokenB" placeholder="Token B" required
-      value="B62qqbQt3E4re5VLpgsQnhDj4R4bYvhXLds1dK9nRiUBRF9wweFxadW" />
-    <input type="text" id="user" name="user" placeholder="User Public Key" readonly />
-    <label>
-      Network:
-      <select name="network" id="network" required>
-        <option value="mina:devnet">mina:devnet</option>
-        <option value="mina:mainnet">mina:mainnet</option>
-        <option value="zeko:testnet">zeko:testnet</option>
-        <option value="zeko:mainnet">zeko:mainnet</option>
-      </select>
-    </label><br /><br />
+      <button type="submit">Create Pool</button>
 
-    <button type="submit">Create Pool</button>
+      <div id="status" style="margin-top: 20px; font-weight: bold"></div>
 
-    <div id="status" style="margin-top:20px; font-weight:bold;"></div>
+      <div id="result"></div>
+    </form>
 
-    <div id="result"></div>
-  </form>
+    <script>
+    const connectButton = document.getElementById("connect")
+const userField = document.getElementById("user")
+const resultBox = document.getElementById("result")
+const statusDiv = document.getElementById("status")
 
-  <script>
-    const connectButton = document.getElementById('connect');
-    const userField = document.getElementById('user');
-    const resultBox = document.getElementById('result');
-    const statusDiv = document.getElementById('status');
+let userAddress = ""
 
-    let userAddress = "";
+async function connectWallet() {
+	if (!window.mina) {
+		alert("Auro Wallet is not installed. Please install it first.")
+		return
+	}
 
-    async function connectWallet() {
-      if (!window.mina) {
-        alert("Auro Wallet is not installed. Please install it first.");
-        return;
-      }
+	try {
+		const accounts = await window.mina.requestAccounts()
+		userAddress = accounts[0]
+		userField.value = userAddress
+		connectButton.textContent = "Connected"
+		connectButton.disabled = true
+	} catch (err) {
+		alert("Failed to connect to Auro Wallet: " + err.message)
+	}
+}
 
-      try {
-        const accounts = await window.mina.requestAccounts();
-        userAddress = accounts[0];
-        userField.value = userAddress;
-        connectButton.textContent = "Connected";
-        connectButton.disabled = true;
-      } catch (err) {
-        alert("Failed to connect to Auro Wallet: " + err.message);
-      }
-    }
-
-    async function createPool(tokenA, tokenB, network) {
-      const createPoolMutation = `
+async function createPool(tokenA, tokenB, network) {
+	const createPoolMutation = `
         mutation CreatePool($input: CreatePoolInput!) {
           createPool(input: $input) {
             id
           }
         }
-      `;
-      const variables = {
-        input: { tokenA, tokenB, user: userAddress, network }
-      };
+      `
+	const variables = {
+		input: { tokenA, tokenB, user: userAddress, network }
+	}
 
-      const response = await fetch('http://localhost:3001/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: createPoolMutation, variables })
-      });
+	const response = await fetch("http://localhost:3001/graphql", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ query: createPoolMutation, variables })
+	})
 
-      const res = await response.json();
-      if (res.errors) {
-        throw new Error(res.errors.map(e => e.message).join('\n'));
-      }
-      return res.data.createPool.id;
-    }
+	const res = await response.json()
+	if (res.errors) {
+		throw new Error(res.errors.map((e) => e.message).join("\n"))
+	}
+	return res.data.createPool.id
+}
 
-    function subscribeToPoolCreation(jobId) {
-      const subscriptionQuery = `
+function subscribeToPoolCreation(jobId) {
+	const subscriptionQuery = `
         subscription PoolCreation($jobId: String!) {
           poolCreation(jobId: $jobId) {
             transactionJson
@@ -136,104 +153,108 @@
             status
           }
         }
-      `;
+      `
 
-      const url = new URL('http://localhost:3001/graphql');
-      url.searchParams.append('query', subscriptionQuery);
-      url.searchParams.append('variables', JSON.stringify({ jobId }));
+	const url = new URL("http://localhost:3001/graphql")
+	url.searchParams.append("query", subscriptionQuery)
+	url.searchParams.append("variables", JSON.stringify({ jobId }))
 
-      const source = new EventSource(url);
+	const source = new EventSource(url)
 
-      source.addEventListener('error', (e) => {
-        console.error(e);
-        statusDiv.textContent = 'Error with subscription.';
-        source.close();
-      });
+	source.addEventListener("error", (e) => {
+		console.error(e)
+		statusDiv.textContent = "Error with subscription."
+		source.close()
+	})
 
-      source.addEventListener('complete', () => {
-        source.close();
-      });
+	source.addEventListener("complete", () => {
+		source.close()
+	})
 
-      source.addEventListener('next', async (event) => {
-        try {
-          const data = JSON.parse(event.data);
+	source.addEventListener("next", async (event) => {
+		try {
+			const data = JSON.parse(event.data)
 
-          if (data.errors) {
-            throw new Error(data.errors.map(e => e.message).join('\n'));
-          }
+			if (data.errors) {
+				throw new Error(data.errors.map((e) => e.message).join("\n"))
+			}
 
-          const { transactionJson, poolPublicKey, status } = data.data.poolCreation;
+			const { transactionJson, poolPublicKey, status } =
+				data.data.poolCreation
 
-          if (status) {
-            statusDiv.textContent = status;
-          }
+			if (status) {
+				statusDiv.textContent = status
+			}
 
-          if (!transactionJson || !poolPublicKey) {
-            return;
-          }
+			if (!transactionJson || !poolPublicKey) {
+				return
+			}
 
-          statusDiv.textContent = 'Please sign the transaction in your wallet.';
-          const txResult = await window.mina.sendTransaction({
-            transaction: transactionJson
-          });
+			statusDiv.textContent = "Please sign the transaction in your wallet."
+			const txResult = await window.mina.sendTransaction({
+				transaction: transactionJson
+			})
 
-          console.log('Mina Transaction sent:', txResult);
+			console.log("Mina Transaction sent:", txResult)
 
-          statusDiv.textContent = 'Transaction sent! Confirming job...';
-          resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`;
+			statusDiv.textContent = "Transaction sent! Confirming job..."
+			resultBox.innerText = `Transaction sent!\nID: ${txResult.hash}`
 
-          await confirmJob(jobId);
+			await confirmJob(jobId)
 
-          statusDiv.textContent = 'Success! Pool creation confirmed.';
-          source.close();
-        } catch (err) {
-          resultBox.innerText = 'Error: ' + err.message;
-          statusDiv.textContent = 'Erreur : ' + err.message;
-          source.close();
-        }
-      });
-    }
+			statusDiv.textContent = "Success! Pool creation confirmed."
+			source.close()
+		} catch (err) {
+			resultBox.innerText = "Error: " + err.message
+			statusDiv.textContent = "Erreur : " + err.message
+			source.close()
+		}
+	})
+}
 
-    async function confirmJob(jobId) {
-      const confirmJobMutation = `
+async function confirmJob(jobId) {
+	const confirmJobMutation = `
         mutation ConfirmJob($jobId: String!) {
           confirmJob(jobId: $jobId)
         }
-      `;
-      await fetch('http://localhost:3001/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: confirmJobMutation, variables: { jobId } })
-      });
-    }
+      `
+	await fetch("http://localhost:3001/graphql", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			query: confirmJobMutation,
+			variables: { jobId }
+		})
+	})
+}
 
-    connectButton.addEventListener('click', connectWallet);
+connectButton.addEventListener("click", connectWallet)
 
-    document.getElementById('createPoolForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
+document
+	.getElementById("createPoolForm")
+	.addEventListener("submit", async function (e) {
+		e.preventDefault()
 
-      if (!userAddress) {
-        alert("Please connect Auro Wallet first.");
-        return;
-      }
+		if (!userAddress) {
+			alert("Please connect Auro Wallet first.")
+			return
+		}
 
-      const tokenA = document.getElementById('tokenA').value;
-      const tokenB = document.getElementById('tokenB').value;
-      const networkValue = document.getElementById('network').value;
-      const network = networkValue.replace(':', '_');
+		const tokenA = document.getElementById("tokenA").value
+		const tokenB = document.getElementById("tokenB").value
+		const networkValue = document.getElementById("network").value
+		const network = networkValue.replace(":", "_")
 
-      try {
-        statusDiv.textContent = 'Requesting pool creation...';
-        const jobId = await createPool(tokenA, tokenB, network);
-        statusDiv.textContent = `Pool creation job started with ID: ${jobId}. Waiting for transaction details...`;
-        subscribeToPoolCreation(jobId);
-      } catch (err) {
-        resultBox.innerText = 'Error: ' + err.message;
-        statusDiv.textContent = 'Erreur : ' + err.message;
-      }
-    });
-  </script>
-
-</body>
-
+		try {
+			statusDiv.textContent = "Requesting pool creation..."
+			const jobId = await createPool(tokenA, tokenB, network)
+			statusDiv.textContent = `Pool creation job started with ID: ${jobId}. Waiting for transaction details...`
+			subscribeToPoolCreation(jobId)
+		} catch (err) {
+			resultBox.innerText = "Error: " + err.message
+			statusDiv.textContent = "Erreur : " + err.message
+		}
+	})
+    </script>
+  </body>
 </html>

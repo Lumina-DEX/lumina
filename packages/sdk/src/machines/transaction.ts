@@ -56,45 +56,41 @@ export const transactionMachine = setup({
 		output: {} as TransactionMachineOutput
 	},
 	actors: {
-		findUnconfirmedTransaction: fromPromise<SavedTransaction | undefined, { db: HashDb }>(
-			({ input }) => {
-				return act("findUnconfirmedTransaction", async () => {
-					const { db } = input
-					const transaction = await db.findUnconfirmed()
-					return transaction
+		findUnconfirmedTransaction: fromPromise<SavedTransaction | undefined, { db: HashDb }>(({ input }) => {
+			return act("findUnconfirmedTransaction", async () => {
+				const { db } = input
+				const transaction = await db.findUnconfirmed()
+				return transaction
+			})
+		}),
+		signTransaction: fromPromise<ZkappCommand, { transaction: string; user: string }>(({ input }) => {
+			return act("signTransaction", async () => {
+				const { transaction, user } = input
+				const originalTransaction = JSON.parse(transaction) as ZkappCommand
+				logger.info({ originalTransaction })
+				// If the fee is 0, set it to 1 to avoid auro wallet error
+				if (originalTransaction.feePayer.body.fee === "0") {
+					originalTransaction.feePayer.body.fee = "1"
+				}
+				const result = await window.mina.sendTransaction({
+					onlySign: true,
+					transaction: JSON.stringify(originalTransaction)
 				})
-			}
-		),
-		signTransaction: fromPromise<ZkappCommand, { transaction: string; user: string }>(
-			({ input }) => {
-				return act("signTransaction", async () => {
-					const { transaction, user } = input
-					const originalTransaction = JSON.parse(transaction) as ZkappCommand
-					logger.info({ originalTransaction })
-					// If the fee is 0, set it to 1 to avoid auro wallet error
-					if (originalTransaction.feePayer.body.fee === "0") {
-						originalTransaction.feePayer.body.fee = "1"
+				if (result instanceof Error) throw result
+				if ("signedData" in result) {
+					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+					const zkappCommand = (JSON.parse(result.signedData) as any).zkappCommand as ZkappCommand
+					// If the feePayer is not the user, we need to set the authorization to a dummy value
+					if (zkappCommand.feePayer.body.publicKey !== user) {
+						zkappCommand.feePayer.authorization =
+							"7mWxjLYgbJUkZNcGouvhVj5tJ8yu9hoexb9ntvPK8t5LHqzmrL6QJjjKtf5SgmxB4QWkDw7qoMMbbNGtHVpsbJHPyTy2EzRQ"
 					}
-					const result = await window.mina.sendTransaction({
-						onlySign: true,
-						transaction: JSON.stringify(originalTransaction)
-					})
-					if (result instanceof Error) throw result
-					if ("signedData" in result) {
-						// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-						const zkappCommand = (JSON.parse(result.signedData) as any).zkappCommand as ZkappCommand
-						// If the feePayer is not the user, we need to set the authorization to a dummy value
-						if (zkappCommand.feePayer.body.publicKey !== user) {
-							zkappCommand.feePayer.authorization =
-								"7mWxjLYgbJUkZNcGouvhVj5tJ8yu9hoexb9ntvPK8t5LHqzmrL6QJjjKtf5SgmxB4QWkDw7qoMMbbNGtHVpsbJHPyTy2EzRQ"
-						}
-						logger.success({ zkappCommand })
-						return zkappCommand
-					}
-					throw new Error("Couldn't find signedData")
-				})
-			}
-		),
+					logger.success({ zkappCommand })
+					return zkappCommand
+				}
+				throw new Error("Couldn't find signedData")
+			})
+		}),
 		sendSignedTransaction: fromPromise<SentTransaction, SendSignedTxInput>(({ input }) => {
 			return act("sendSignedTransaction", async () => {
 				const { signedTransaction: zkappCommand, db, zeko, worker } = input
@@ -188,13 +184,11 @@ export const transactionMachine = setup({
 				onDone: [
 					{
 						target: "WAITING",
-						guard: ({ context }) =>
-							context.wallet.getSnapshot().context.currentNetwork.includes("mina"),
+						guard: ({ context }) => context.wallet.getSnapshot().context.currentNetwork.includes("mina"),
 						actions: assign({ sentTransaction: ({ event }) => event.output })
 					},
 					{
-						guard: ({ context }) =>
-							context.wallet.getSnapshot().context.currentNetwork.includes("zeko"),
+						guard: ({ context }) => context.wallet.getSnapshot().context.currentNetwork.includes("zeko"),
 						target: "DONE",
 						actions: assign(({ context, event }) => ({
 							sentTransaction: event.output,

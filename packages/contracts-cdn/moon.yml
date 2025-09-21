@@ -43,18 +43,6 @@ tasks:
       - wrangler.jsonc
     outputs:
       - worker-configuration.d.ts
-  lint:
-    command: biome lint src/
-    inputs:
-      - "@group(sources)"
-      - "@group(tests)"
-      - "@group(container)"
-  lint-fix:
-    command: biome lint --write src/
-    inputs:
-      - "@group(sources)"
-      - "@group(tests)"
-      - "@group(container)"
   container-build:
     command: tsdown
     deps: ["^:build"]
@@ -81,3 +69,15 @@ tasks:
   deploy-preview:
     command: wrangler versions upload
     deps: ["^:build"]
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"
+      - "@group(container)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"
+      - "@group(container)"

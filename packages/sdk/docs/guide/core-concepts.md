@@ -155,11 +155,7 @@ The SDK supports several network configurations:
 ```ts
 type NetworkLayer = "mina" | "zeko"
 type ChainNetwork = "mainnet" | "devnet" | "testnet"
-type NetworkUri =
-	| "mina:mainnet"
-	| "mina:devnet"
-	| "zeko:testnet"
-	| "zeko:mainnet"
+type NetworkUri = "mina:mainnet" | "mina:devnet" | "zeko:testnet" | "zeko:mainnet"
 ```
 
 These network identifiers are used throughout the SDK to specify which blockchain network to interact with.

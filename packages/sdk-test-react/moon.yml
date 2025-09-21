@@ -38,3 +38,11 @@ tasks:
   deploy:
     command: wrangler pages deploy dist/
     deps: [build]
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"

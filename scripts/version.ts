@@ -25,4 +25,4 @@ try {
 
 // Run format:all:fix
 console.log("Running format:all:fix...")
-await $`moon run format-all`
+await $`moon run format-all-fix`

@@ -1,79 +1,77 @@
 {
-  "name": "@lumina-dex/sdk",
-  "version": "0.22.0",
-  "type": "module",
-  "sideEffects": false,
-  "author": {
-    "name": "Hebilicious"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Lumina-DEX/lumina.git",
-    "directory": "packages/sdk"
-  },
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
-    },
-    "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.mjs"
-    },
-    "./vue": {
-      "types": "./dist/vue.d.ts",
-      "import": "./dist/vue.mjs"
-    },
-    "./react": {
-      "types": "./dist/react.d.ts",
-      "import": "./dist/react.mjs"
-    }
-  },
-  "main": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "dependencies": {
-    "@aurowallet/mina-provider": "^1.0.6",
-    "@lumina-dex/contracts": "workspace:^",
-    "@urql/core": "^5.2.0",
-    "@urql/exchange-retry": "^1.3.0",
-    "@urql/vue": "^1.4.1",
-    "@xstate/react": "^4.1.3",
-    "@xstate/store": "^2.6.1",
-    "comlink": "^4.4.2",
-    "consola": "^3.4.0",
-    "fflate": "^0.8.2",
-    "gql.tada": "^1.8.10",
-    "graphql-sse": "^2.5.4",
-    "idb": "^8.0.3",
-    "immer": "^10.1.3",
-    "nanoid": "^5.1.5",
-    "p-limit": "^6.2.0",
-    "rxjs": "^7.8.2",
-    "urql": "^4.1.0",
-    "vue": "^3.5.11",
-    "xstate": "5.20.1"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.1.1",
-    "@cloudflare/workers-types": "^4.20241127.0",
-    "@gql.tada/vue-support": "^1.0.1",
-    "@total-typescript/ts-reset": "^0.6.1",
-    "@types/bun": "latest",
-    "magic-string": "^0.30.14",
-    "o1js": "^2.4.0",
-    "rollup": "^4.27.4",
-    "unbuild": "^2.0.0",
-    "vitepress": "^1.6.3",
-    "vitepress-plugin-d2": "^1.0.4",
-    "vitepress-plugin-llms": "^1.1.0",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.1.0"
-  },
-  "peerDependencies": {
-    "o1js": "^2.4.0",
-    "typescript": "^5.6.3"
-  }
+	"name": "@lumina-dex/sdk",
+	"version": "0.22.0",
+	"type": "module",
+	"sideEffects": false,
+	"author": {
+		"name": "Hebilicious"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Lumina-DEX/lumina.git",
+		"directory": "packages/sdk"
+	},
+	"files": ["dist"],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs"
+		},
+		"./constants": {
+			"types": "./dist/constants/index.d.ts",
+			"import": "./dist/constants/index.mjs"
+		},
+		"./vue": {
+			"types": "./dist/vue.d.ts",
+			"import": "./dist/vue.mjs"
+		},
+		"./react": {
+			"types": "./dist/react.d.ts",
+			"import": "./dist/react.mjs"
+		}
+	},
+	"main": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"dependencies": {
+		"@aurowallet/mina-provider": "^1.0.6",
+		"@lumina-dex/contracts": "workspace:^",
+		"@urql/core": "^5.2.0",
+		"@urql/exchange-retry": "^1.3.0",
+		"@urql/vue": "^1.4.1",
+		"@xstate/react": "^4.1.3",
+		"@xstate/store": "^2.6.1",
+		"comlink": "^4.4.2",
+		"consola": "^3.4.0",
+		"fflate": "^0.8.2",
+		"gql.tada": "^1.8.10",
+		"graphql-sse": "^2.5.4",
+		"idb": "^8.0.3",
+		"immer": "^10.1.3",
+		"nanoid": "^5.1.5",
+		"p-limit": "^6.2.0",
+		"rxjs": "^7.8.2",
+		"urql": "^4.1.0",
+		"vue": "^3.5.11",
+		"xstate": "5.20.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"@cloudflare/workers-types": "^4.20241127.0",
+		"@gql.tada/vue-support": "^1.0.1",
+		"@total-typescript/ts-reset": "^0.6.1",
+		"@types/bun": "latest",
+		"magic-string": "^0.30.14",
+		"o1js": "^2.4.0",
+		"rollup": "^4.27.4",
+		"unbuild": "^2.0.0",
+		"vitepress": "^1.6.3",
+		"vitepress-plugin-d2": "^1.0.4",
+		"vitepress-plugin-llms": "^1.1.0",
+		"vitest": "^3.2.4",
+		"wrangler": "^4.1.0"
+	},
+	"peerDependencies": {
+		"o1js": "^2.4.0",
+		"typescript": "^5.6.3"
+	}
 }

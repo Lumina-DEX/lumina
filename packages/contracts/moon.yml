@@ -26,7 +26,7 @@ tasks:
       - "@group(sources)"
     outputs:
       - output/
-  docs: 
+  docs:
     command: typedoc src/indexpool.ts --out @out(0)
     deps: [build]
     inputs:
@@ -38,17 +38,7 @@ tasks:
     inputs:
       - "@group(sources)"
       - "@group(test)"
-  lint:
-    command: eslint src/* tests/*
-    inputs:
-      - "@group(sources)"
-      - "@group(test)"
-  lint-fix:
-    command: eslint src/* tests/* --fix
-    inputs:
-      - "@group(sources)"
-      - "@group(test)"
-  base-test: 
+  base-test:
     command: vitest
     args: [run, --testTimeout=150000]
     deps: [build]
@@ -61,7 +51,7 @@ tasks:
     preset: "watcher"
     options:
       mergeArgs: replace
-  test: 
+  test:
     extends: base-test
   test-coverage:
     extends: base-test
@@ -81,3 +71,31 @@ tasks:
   test-multisig:
     extends: base-test
     args: MultiSig
+  oxlint:
+    command: oxlint --type-aware
+    options:
+      runInCI: true
+      cache: false
+  oxlint-fix:
+    command: oxlint --type-aware --fix
+  eslint:
+    command: eslint
+    options:
+      runInCI: true
+      cache: false
+  eslint-fix:
+    command: eslint
+  lint:
+    deps: [oxlint, eslint]
+    options:
+      runDepsInParallel: false
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"
+  lint-fix:
+    deps: [oxlint-fix, eslint-fix]
+    options:
+      runDepsInParallel: false
+    inputs:
+      - "@group(sources)"
+      - "@group(test)"

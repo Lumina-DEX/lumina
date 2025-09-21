@@ -86,3 +86,13 @@ tasks:
     command: noop
     deps: [services-start, start, web]
     preset: "server"
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"

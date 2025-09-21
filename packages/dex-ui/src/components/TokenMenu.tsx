@@ -1,11 +1,11 @@
 "use client"
-import { useCallback, useContext, useEffect, useState } from "react"
 import { Addresses } from "@/utils/addresses"
-import { Box, Modal } from "@mui/material"
-import { LuminaContext } from "./Layout"
-import { useSelector } from "@lumina-dex/sdk/react"
 import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { Box, Modal } from "@mui/material"
+import { useCallback, useContext, useEffect, useState } from "react"
 import { minaTestnet } from "./Account"
+import { LuminaContext } from "./Layout"
 
 const TokenMenu = ({
 	poolAddress,

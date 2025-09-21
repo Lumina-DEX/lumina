@@ -1,16 +1,23 @@
 {
-  "markdown": {},
-  "typescript": {
-    "semiColons": "asi",
-    "quoteStyle": "preferDouble",
-    "trailingCommas": "never"
-  },
-  "json": {
-  },
-  "excludes": ["**/node_modules"],
-  "plugins": [
-    "https://plugins.dprint.dev/typescript-0.93.2.wasm",
-    "https://plugins.dprint.dev/json-0.19.4.wasm",
-    "https://plugins.dprint.dev/markdown-0.17.8.wasm"
-  ]
+	"typescript": {
+		"useTabs": false,
+		"lineWidth": 120,
+		"semiColons": "asi",
+		"trailingCommas": "never",
+		"importDeclaration.forceMultiLine": "never",
+		"importDeclaration.forceSingleLine": false,
+		"importDeclaration.sortNamedImports": "maintain",
+		"importDeclaration.sortTypeOnlyImports": "none",
+		"importDeclaration.preferHanging": false,
+		"importDeclaration.preferSingleLine": false,
+		"importDeclaration.spaceSurroundingNamedImports": true,
+		"importDeclaration.trailingCommas": "never",
+		"module.sortImportDeclarations": "maintain"
+	},
+	"excludes": [
+		"**/node_modules"
+	],
+	"plugins": [
+		"https://plugins.dprint.dev/typescript-0.95.11.wasm"
+	]
 }

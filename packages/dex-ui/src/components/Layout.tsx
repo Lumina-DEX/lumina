@@ -1,9 +1,9 @@
 "use client"
 
+import Account from "@/components/Account"
 import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { createContext, useEffect, useState } from "react"
-import Account from "@/components/Account"
 import styles from "../styles/Home.module.css"
 
 export const feeAmount = 10
@@ -50,12 +50,7 @@ export default function Layout({ children }) {
 	// Create UI elements
 
 	const stepDisplay = transactionlink ? (
-		<a
-			href={transactionlink}
-			target="_blank"
-			rel="noreferrer"
-			style={{ textDecoration: "underline" }}
-		>
+		<a href={transactionlink} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>
 			View transaction
 		</a>
 	) : (
@@ -66,10 +61,7 @@ export default function Layout({ children }) {
 	)
 
 	const setup = (
-		<div
-			className={styles.start}
-			style={{ fontWeight: "bold", fontSize: "1.5rem", paddingBottom: "5rem" }}
-		>
+		<div className={styles.start} style={{ fontWeight: "bold", fontSize: "1.5rem", paddingBottom: "5rem" }}>
 			{stepDisplay}
 		</div>
 	)

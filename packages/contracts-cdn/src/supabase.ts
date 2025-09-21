@@ -7,26 +7,25 @@ export const updatePool = async ({
 	poolAddress,
 	network,
 	status
-}: { env: Env; poolAddress: string; network: string; status: "deployed" | "unconfirmed" }) => {
+}: {
+	env: Env
+	poolAddress: string
+	network: string
+	status: "deployed" | "unconfirmed"
+}) => {
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY)
-	await supabase
-		.from("Pool")
-		.update({ status })
-		.eq("public_key", poolAddress)
-		.eq("network", network)
+	await supabase.from("Pool").update({ status }).eq("public_key", poolAddress).eq("network", network)
 }
 
 export const cleanPoolTable = async ({ env }: { env: Env }) => {
 	const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_KEY)
 	const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-	const [
-		{ data: pendingPools, error: pendingError },
-		{ data: confirmedPools, error: confirmedError }
-	] = await Promise.all([
-		supabase.from("Pool").select().eq("status", "pending").lt("created_at", oneDayAgo),
-		supabase.from("Pool").select().eq("status", "confirmed").lt("created_at", oneDayAgo)
-	])
+	const [{ data: pendingPools, error: pendingError }, { data: confirmedPools, error: confirmedError }] =
+		await Promise.all([
+			supabase.from("Pool").select().eq("status", "pending").lt("created_at", oneDayAgo),
+			supabase.from("Pool").select().eq("status", "confirmed").lt("created_at", oneDayAgo)
+		])
 
 	const pools = [...(pendingPools || []), ...(confirmedPools || [])]
 	const error = pendingError || confirmedError
@@ -43,7 +42,7 @@ export const cleanPoolTable = async ({ env }: { env: Env }) => {
 	const id = env.TOKENLIST.idFromName(env.DO_TOKENLIST_NAME)
 	const tokenList = env.TOKENLIST.get(id)
 
-	//TODO: Use p-limit to do this in batches.
+	// TODO: Use p-limit to do this in batches.
 	for (const { id, network, public_key: address } of pools) {
 		const exist = await tokenList.poolExists({ network: network as Networks, address })
 		if (exist) {

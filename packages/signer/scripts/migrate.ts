@@ -10,14 +10,10 @@ const checkDatabaseConnectionString = (P = process) => {
 	}
 	if (connectionString.includes("supabase")) {
 		if (args.includes("--force")) {
-			console.log(
-				"/!\\ You are connected to a Supabase url ! Be very careful, this could be live data ! /!\\"
-			)
+			console.log("/!\\ You are connected to a Supabase url ! Be very careful, this could be live data ! /!\\")
 			return
 		}
-		console.error(
-			"Running dangerous commands against a Supabase URL requires the --force flag. Aborting..."
-		)
+		console.error("Running dangerous commands against a Supabase URL requires the --force flag. Aborting...")
 		P.exit(1)
 	}
 }

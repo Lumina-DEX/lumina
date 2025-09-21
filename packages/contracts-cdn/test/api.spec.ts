@@ -1,9 +1,9 @@
 import {
-	SELF,
 	createExecutionContext,
 	createScheduledController,
 	env,
 	fetchMock,
+	SELF,
 	waitOnExecutionContext
 } from "cloudflare:test"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
@@ -31,7 +31,6 @@ describe("API", () => {
 		const request = createRequest("api/mina:devnet/tokens")
 		const response = await SELF.fetch(request)
 		const tokens = (await response.json()) as Token[]
-		// biome-ignore lint/performance/noDelete: <explanation>
 		delete tokens[1]?.timestamp
 		expect(tokens[1]).toEqual({
 			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
@@ -46,11 +45,8 @@ describe("API", () => {
 		const request = createRequest("api/mina:devnet/pools")
 		const response = await SELF.fetch(request)
 		const pools = (await response.json()) as PoolWithTokens[]
-		// biome-ignore lint/performance/noDelete: <explanation>
 		delete pools[0]?.timestamp
-		// biome-ignore lint/performance/noDelete: <explanation>
 		delete pools[0]?.tokens[0]?.timestamp
-		// biome-ignore lint/performance/noDelete: <explanation>
 		delete pools[0]?.tokens[1]?.timestamp
 
 		expect(pools[0]).toEqual({
@@ -108,11 +104,7 @@ describe("API", () => {
 		for await (const chunk of response.body!) {
 			chunks.push(decoder.decode(chunk))
 		}
-		expect(chunks).toEqual([
-			`Starting sync for ${network}...\n`,
-			"{}\n",
-			`Sync completed for ${network}`
-		])
+		expect(chunks).toEqual([`Starting sync for ${network}...\n`, "{}\n", `Sync completed for ${network}`])
 		SELF.fetch(request)
 		const response2 = await SELF.fetch(request)
 		// We send 2 request to trigger the rate limit { limit: 2, period: 10 }
@@ -132,20 +124,17 @@ describe("API", () => {
 		const tokens = (await response1.json()) as Token[]
 		expect(tokens).toHaveLength(2)
 
-		const request2 = new Request<unknown, IncomingRequestCfProperties>(
-			"http://example.com/api/mina:devnet/token",
-			{
-				method: "POST",
-				headers: { Authorization: "Bearer foo" },
-				body: JSON.stringify({
-					address: "testAddress",
-					tokenId: "testTokenId",
-					chainId: "mina:devnet",
-					symbol: "ABC",
-					decimals: 9
-				})
-			}
-		)
+		const request2 = new Request<unknown, IncomingRequestCfProperties>("http://example.com/api/mina:devnet/token", {
+			method: "POST",
+			headers: { Authorization: "Bearer foo" },
+			body: JSON.stringify({
+				address: "testAddress",
+				tokenId: "testTokenId",
+				chainId: "mina:devnet",
+				symbol: "ABC",
+				decimals: 9
+			})
+		})
 		const response2 = await SELF.fetch(request2)
 		expect(response2.status).toBe(201)
 
@@ -161,20 +150,17 @@ describe("API", () => {
 		const pools1 = (await response1.json()) as PoolWithTokens[]
 		expect(pools1).toHaveLength(1)
 
-		const request2 = new Request<unknown, IncomingRequestCfProperties>(
-			"http://example.com/api/mina:devnet/pool",
-			{
-				method: "POST",
-				headers: { Authorization: "Bearer foo" },
-				body: JSON.stringify({
-					address: "test_pool_address",
-					token0Address: "token0_address",
-					token1Address: "token1_address",
-					chainId: "mina:devnet",
-					name: "TEST_POOL"
-				})
-			}
-		)
+		const request2 = new Request<unknown, IncomingRequestCfProperties>("http://example.com/api/mina:devnet/pool", {
+			method: "POST",
+			headers: { Authorization: "Bearer foo" },
+			body: JSON.stringify({
+				address: "test_pool_address",
+				token0Address: "token0_address",
+				token1Address: "token1_address",
+				chainId: "mina:devnet",
+				name: "TEST_POOL"
+			})
+		})
 		const response2 = await SELF.fetch(request2)
 		expect(response2.status).toBe(201)
 

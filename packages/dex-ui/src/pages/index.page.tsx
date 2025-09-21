@@ -1,5 +1,5 @@
-import { useState } from "react"
 import Swap from "@/components/Swap"
+import { useState } from "react"
 
 export default function Home() {
 	const [tab] = useState("swap")

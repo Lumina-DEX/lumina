@@ -60,12 +60,7 @@ const main = async () => {
 			return yoga(request, { env })
 		}
 	})
-	console.info(
-		`Server is running on ${new URL(
-			yoga.graphqlEndpoint,
-			`http://${server.hostname}:${server.port}`
-		)}`
-	)
+	console.info(`Server is running on ${new URL(yoga.graphqlEndpoint, `http://${server.hostname}:${server.port}`)}`)
 }
 
 main()

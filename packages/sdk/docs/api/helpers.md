@@ -28,9 +28,7 @@ Creates a urql GraphQL client for making queries to Mina nodes.
 import { createMinaClient } from "@lumina-dex/sdk"
 
 // Create a client for a specific URL
-const client = createMinaClient(
-	"https://api.minascan.io/node/devnet/v1/graphql"
-)
+const client = createMinaClient("https://api.minascan.io/node/devnet/v1/graphql")
 
 // Use the client to execute queries
 const result = await client.query(FetchAccountBalanceQuery, {
@@ -48,9 +46,7 @@ import { createClientOptions } from "@lumina-dex/sdk"
 import { Client } from "urql"
 
 // Create client options
-const options = createClientOptions(
-	"https://api.minascan.io/node/devnet/v1/graphql"
-)
+const options = createClientOptions("https://api.minascan.io/node/devnet/v1/graphql")
 
 // Create a custom client
 const client = new Client(options)
@@ -147,7 +143,7 @@ import { fetchTokenList } from "@lumina-dex/sdk"
 // Fetch tokens for a specific network
 const tokens = await fetchTokenList("mina:devnet")
 console.log(`Found ${tokens.length} tokens:`)
-tokens.forEach(token => {
+tokens.forEach((token) => {
 	console.log(`${token.symbol}: ${token.address}`)
 })
 ```
@@ -161,7 +157,7 @@ import { fetchPoolList } from "@lumina-dex/sdk"
 // Fetch pools for a specific network
 const pools = await fetchPoolList("mina:devnet")
 console.log(`Found ${pools.length} pools:`)
-pools.forEach(pool => {
+pools.forEach((pool) => {
 	console.log(`${pool.name}: ${pool.address}`)
 })
 ```

@@ -16,6 +16,14 @@ tasks:
     options:
       runDepsInParallel: false
   format-all:
-    command: dprint fmt --allow-no-files
-  check-all:
     command: dprint check --allow-no-files
+    options:
+      cache: false
+  format-all-fix:
+    command: dprint fmt --allow-no-files
+    options:
+      cache: false
+  oxlint-all:
+    command: oxlint --type-aware
+    options:
+      cache: false

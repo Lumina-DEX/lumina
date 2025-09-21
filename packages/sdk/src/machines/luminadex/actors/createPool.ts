@@ -38,10 +38,7 @@ const addError =
 		return { errors: [...context.errors, error] }
 	}
 
-export const checkPoolExists = fromPromise<
-	{ exists: boolean },
-	{ tokenA: string; tokenB: string; network: Networks }
->(
+export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
 	async ({ input }) => {
 		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
 
@@ -50,19 +47,11 @@ export const checkPoolExists = fromPromise<
 			const factoryKey = PublicKey.fromBase58(factory)
 			const factoryTokenId = TokenId.derive(factoryKey)
 
-			const tokenAPublicKey = input.tokenA === MINA_ADDRESS
-				? PublicKey.empty()
-				: PublicKey.fromBase58(input.tokenA)
-			const tokenBPublicKey = input.tokenB === MINA_ADDRESS
-				? PublicKey.empty()
-				: PublicKey.fromBase58(input.tokenB)
+			const tokenAPublicKey = input.tokenA === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(input.tokenA)
+			const tokenBPublicKey = input.tokenB === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(input.tokenB)
 
 			const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
-			const token0 = Provable.if(
-				tokenAPublicKey.isEmpty().or(tokenALower),
-				tokenAPublicKey,
-				tokenBPublicKey
-			)
+			const token0 = Provable.if(tokenAPublicKey.isEmpty().or(tokenALower), tokenAPublicKey, tokenBPublicKey)
 			const token1 = Provable.if(token0.equals(tokenBPublicKey), tokenAPublicKey, tokenBPublicKey)
 
 			const isMinaTokenPool = token0.isEmpty().toBoolean()
@@ -91,11 +80,7 @@ export const checkPoolExists = fromPromise<
 				const poolExists = balancePool.toBigInt() > 0n
 
 				if (poolExists) {
-					logger.info(
-						"Pool already exists for Token-Token pair:",
-						token0.toBase58(),
-						token1.toBase58()
-					)
+					logger.info("Pool already exists for Token-Token pair:", token0.toBase58(), token1.toBase58())
 					return { exists: true }
 				}
 			}
@@ -112,83 +97,75 @@ export const checkPoolExists = fromPromise<
 export const getJobStatus = fromPromise<
 	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
 	{ client: Client; jobId: string }
->(
-	async ({ input }) => {
-		logger.start("Checking job status for:", input.jobId)
-		const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
-		if (result.error) throw new Error(result.error.message)
-		if (!result.data) throw new Error("No data received from job status query")
-		logger.success("Job status fetched successfully", result.data.poolCreationJob)
-		return result.data.poolCreationJob
-	}
-)
+>(async ({ input }) => {
+	logger.start("Checking job status for:", input.jobId)
+	const result = await input.client.query(GetJobStatusQuery, { jobId: input.jobId }).toPromise()
+	if (result.error) throw new Error(result.error.message)
+	if (!result.data) throw new Error("No data received from job status query")
+	logger.success("Job status fetched successfully", result.data.poolCreationJob)
+	return result.data.poolCreationJob
+})
 
 export const createPoolMutation = fromPromise<
 	{ jobId: string },
 	{ client: Client; tokenA: string; tokenB: string; user: string; network: Networks }
->(
-	async ({ input }) => {
-		logger.start("Creating pool with input:", input)
-		const { client, ...args } = input
-		const result = await client.mutation(CreatePoolMutation, {
+>(async ({ input }) => {
+	logger.start("Creating pool with input:", input)
+	const { client, ...args } = input
+	const result = await client
+		.mutation(CreatePoolMutation, {
 			input: { ...args, network: input.network.replace(":", "_") as "mina_devnet" }
-		}).toPromise()
-		const jobId = result.data?.createPool?.id
-		if (result.error || !jobId) {
-			throw new Error(result.error?.message || "Failed to create pool")
-		}
-		logger.success("Pool creation job created successfully", jobId)
-		return { jobId }
+		})
+		.toPromise()
+	const jobId = result.data?.createPool?.id
+	if (result.error || !jobId) {
+		throw new Error(result.error?.message || "Failed to create pool")
 	}
-)
+	logger.success("Pool creation job created successfully", jobId)
+	return { jobId }
+})
 
 export const checkJobStatus = fromObservable<
 	ResultOf<typeof GetJobStatusQuery>["poolCreationJob"],
 	{ client: Client; jobId: string }
->(
-	({ input }) => {
-		logger.start("Subscribing to job status for:", input.jobId)
-		const stop = measure("Pool Creation Server Side Proof")
-		return new Observable((observer) => {
-			const { unsubscribe } = input.client
-				.subscription(PoolCreationSubscription, { jobId: input.jobId })
-				.subscribe((result) => {
-					logger.info("Received subscription result:", result)
-					if (result.error) {
-						observer.error(result.error.message)
+>(({ input }) => {
+	logger.start("Subscribing to job status for:", input.jobId)
+	const stop = measure("Pool Creation Server Side Proof")
+	return new Observable((observer) => {
+		const { unsubscribe } = input.client
+			.subscription(PoolCreationSubscription, { jobId: input.jobId })
+			.subscribe((result) => {
+				logger.info("Received subscription result:", result)
+				if (result.error) {
+					observer.error(result.error.message)
+					return
+				}
+
+				if (result.data?.poolCreation) {
+					const data = result.data.poolCreation
+					if (!data) {
+						observer.error(new Error("Error while processing data from subscription"))
 						return
 					}
+					observer.next(data)
+					logger.success("Job status update received:", data)
+					observer.complete()
+				}
+			})
 
-					if (result.data?.poolCreation) {
-						const data = result.data.poolCreation
-						if (!data) {
-							observer.error(new Error("Error while processing data from subscription"))
-							return
-						}
-						observer.next(data)
-						logger.success("Job status update received:", data)
-						observer.complete()
-					}
-				})
-
-			return () => {
-				logger.info("Unsubscribing from job status updates for:", input.jobId)
-				unsubscribe()
-				stop()
-			}
-		})
-	}
-)
+		return () => {
+			logger.info("Unsubscribing from job status updates for:", input.jobId)
+			unsubscribe()
+			stop()
+		}
+	})
+})
 
 // 3. Send final GraphQL mutation
-export const confirmPoolCreation = fromPromise<
-	{ success: true },
-	{ client: Client; jobId: string }
->(
+export const confirmPoolCreation = fromPromise<{ success: true }, { client: Client; jobId: string }>(
 	async ({ input }) => {
 		logger.start("Finalizing pool creation for job:", input.jobId)
-		const result = await input.client.mutation(ConfirmTransactionMutation, { jobId: input.jobId })
-			.toPromise()
+		const result = await input.client.mutation(ConfirmTransactionMutation, { jobId: input.jobId }).toPromise()
 		logger.success("Transaction confirmed:", result.data?.confirmJob || "No confirmation message")
 		return { success: true }
 	}
@@ -290,8 +267,7 @@ export const createPoolMachine = setup({
 		},
 		GET_STATUS: {
 			// TODO: Implement SDK helpers for persistence.
-			description:
-				"This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
+			description: "This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
 			invoke: {
 				src: "getJobStatus",
 				input: clientAndJob,

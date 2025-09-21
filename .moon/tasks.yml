@@ -7,17 +7,25 @@ tasks:
     command: dprint check
     options:
       runInCI: true
+      cache: false
   format-fix:
     command: dprint fmt --allow-no-files
+    options:
+      cache: false
+  lint:
+    options:
+      runInCI: true
+      cache: false
+  lint-fix:
+    options:
+      cache: false
+  typecheck:
+    options:
+      runInCI: true
+      cache: false
   test:
     options:
       runInCI: true
   build:
-    options:
-      runInCI: true
-  lint:
-    options:
-      runInCI: true
-  typecheck:
     options:
       runInCI: true

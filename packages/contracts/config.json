@@ -1,112 +1,112 @@
 {
-  "version": 1,
-  "deployAliases": {
-    "pool": {
-      "networkId": "testnet",
-      "url": "https://devnet.zeko.io/graphql",
-      "keyPath": "keys/pool.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
-      "fee": "0.01",
-      "smartContract": "Pool"
-    },
-    "tokena": {
-      "networkId": "testnet",
-      "url": "https://devnet.zeko.io/graphql",
-      "keyPath": "keys/tokenA.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
-      "fee": "0.01",
-      "smartContract": "TokenA"
-    },
-    "tokenb": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/tokenB.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
-      "fee": "0.1",
-      "smartContract": "TokenB"
-    },
-    "balancer": {
-      "networkId": "testnet",
-      "url": "https://devnet.zeko.io/graphql",
-      "keyPath": "keys/balancer.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.01",
-      "smartContract": "Balancer"
-    },
-    "showbalance": {
-      "networkId": "testnet",
-      "url": "https://devnet.zeko.io/graphql",
-      "keyPath": "keys/showbalance.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.01",
-      "smartContract": "ShowBalance"
-    },
-    "dex": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/dex.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "DexToken"
-    },
-    "dextoken": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/dextoken.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "DexToken"
-    },
-    "dexnew": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/dexnew.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "DexToken"
-    },
-    "newpool": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/newpool.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "Pool"
-    },
-    "tokenstandard": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/tokenstandard.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "TokenStandard"
-    },
-    "minatokenholder": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/minatokenholder.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1",
-      "smartContract": "MinaTokenHolder"
-    },
-    "poolmina": {
-      "networkId": "testnet",
-      "url": "https://api.minascan.io/node/devnet/v1/graphql",
-      "keyPath": "keys/poolmina.json",
-      "feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
-      "feepayerAlias": "deployer",
-      "fee": "0.1"
-    }
-  }
+	"version": 1,
+	"deployAliases": {
+		"pool": {
+			"networkId": "testnet",
+			"url": "https://devnet.zeko.io/graphql",
+			"keyPath": "keys/pool.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
+			"fee": "0.01",
+			"smartContract": "Pool"
+		},
+		"tokena": {
+			"networkId": "testnet",
+			"url": "https://devnet.zeko.io/graphql",
+			"keyPath": "keys/tokenA.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
+			"fee": "0.01",
+			"smartContract": "TokenA"
+		},
+		"tokenb": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/tokenB.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "B62qk7R5wo6WTwYSpBHPtfikGvkuasJGEv4ZsSA2sigJdqJqYsWUzA1",
+			"fee": "0.1",
+			"smartContract": "TokenB"
+		},
+		"balancer": {
+			"networkId": "testnet",
+			"url": "https://devnet.zeko.io/graphql",
+			"keyPath": "keys/balancer.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.01",
+			"smartContract": "Balancer"
+		},
+		"showbalance": {
+			"networkId": "testnet",
+			"url": "https://devnet.zeko.io/graphql",
+			"keyPath": "keys/showbalance.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.01",
+			"smartContract": "ShowBalance"
+		},
+		"dex": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/dex.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "DexToken"
+		},
+		"dextoken": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/dextoken.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "DexToken"
+		},
+		"dexnew": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/dexnew.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "DexToken"
+		},
+		"newpool": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/newpool.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "Pool"
+		},
+		"tokenstandard": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/tokenstandard.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "TokenStandard"
+		},
+		"minatokenholder": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/minatokenholder.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1",
+			"smartContract": "MinaTokenHolder"
+		},
+		"poolmina": {
+			"networkId": "testnet",
+			"url": "https://api.minascan.io/node/devnet/v1/graphql",
+			"keyPath": "keys/poolmina.json",
+			"feepayerKeyPath": "C:\\Users\\EddyB/.cache/zkapp-cli/keys/deployer.json",
+			"feepayerAlias": "deployer",
+			"fee": "0.1"
+		}
+	}
 }

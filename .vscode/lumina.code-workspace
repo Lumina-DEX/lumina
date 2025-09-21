@@ -1,12 +1,12 @@
 {
     "folders": [
       {
-        "path": "../packages/sdk",
-        "name": "@lumina-dex/sdk"
-      },
-      {
         "path": "../packages/contracts",
         "name": "@lumina-dex/contracts"
+      },
+      {
+        "path": "../packages/sdk",
+        "name": "@lumina-dex/sdk"
       },
       {
         "path": "../packages/contracts-cdn",
@@ -34,12 +34,14 @@
       "typescript.tsdk": "./node_modules/typescript/lib",
 		  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
       "typescript.enablePromptUseWorkspaceTsdk": true,
-      "oxc.enable": false
+      "oxc.enable": false,
+      "oxc.typeAware": true,
+      "biome.enabled": false,
+      "biome.requireConfiguration": true
     },
     "extensions": {
       "recommendations": [
         "dprint.dprint",
-        "biomejs.biome",
         "moonrepo.moon-console"
       ]
     },

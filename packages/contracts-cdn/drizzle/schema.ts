@@ -13,10 +13,7 @@ export const tokens = sqliteTable(
 		decimals: integer().notNull(),
 		timestamp: text().default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [
-		primaryKey({ columns: [table.address, table.chainId] }),
-		index("Token_chainId_idx").on(table.chainId)
-	]
+	(table) => [primaryKey({ columns: [table.address, table.chainId] }), index("Token_chainId_idx").on(table.chainId)]
 )
 export const pools = sqliteTable(
 	"Pool",

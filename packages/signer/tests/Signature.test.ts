@@ -1,18 +1,10 @@
 import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
-import {
-	Encoding,
-	Encryption,
-	fetchAccount,
-	initializeBindings,
-	Mina,
-	PrivateKey,
-	PublicKey
-} from "o1js"
+import { Encoding, Encryption, fetchAccount, initializeBindings, Mina, PrivateKey, PublicKey } from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
-import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
+import { pool, poolKey as tPoolKey, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import { getDb } from "../src/db"
 import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers"
 
@@ -24,8 +16,9 @@ const Schema = v.object({
 	INFISICAL_CLIENT_SECRET: v.string()
 })
 const env = v.parse(Schema, process.env)
-if (env.DATABASE_URL.includes("supabase"))
+if (env.DATABASE_URL.includes("supabase")) {
 	throw new Error("Supabase detected, do not run test against prod urls.")
+}
 
 const { drizzle: db } = getDb()
 describe("Signature", () => {
@@ -118,8 +111,9 @@ describe("Signature", () => {
 
 		// Pick two signers with permission 'all' for the test
 		const testSigners = data.filter((x) => x.permission === Number(allRight)).slice(0, 2)
-		if (testSigners.length < 2)
+		if (testSigners.length < 2) {
 			throw new Error("Need at least 2 active signers with 'all' permission in DB")
+		}
 
 		// Generate test private keys for these signers
 		const testPrivA = PrivateKey.random()
@@ -153,26 +147,15 @@ describe("Signature", () => {
 				const insertedPoolId = poolInsert[0].insertedId
 
 				// Prepare poolKey row using sandbox logic
-				const encrypA = Encryption.encrypt(
-					Encoding.stringToFields(testPoolKey),
-					PublicKey.fromBase58(testPubA)
-				)
+				const encrypA = Encryption.encrypt(Encoding.stringToFields(testPoolKey), PublicKey.fromBase58(testPubA))
 				const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
 				const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(testPubB))
 				const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 				const encrypted_key = encrypB.cipherText.join(",")
 
 				// Insert two test signers if not present
-				const [signerA] = await tx
-					.select()
-					.from(signerMerkle)
-					.where(eq(signerMerkle.publicKey, testPubA))
-					.limit(1)
-				const [signerB] = await tx
-					.select()
-					.from(signerMerkle)
-					.where(eq(signerMerkle.publicKey, testPubB))
-					.limit(1)
+				const [signerA] = await tx.select().from(signerMerkle).where(eq(signerMerkle.publicKey, testPubA)).limit(1)
+				const [signerB] = await tx.select().from(signerMerkle).where(eq(signerMerkle.publicKey, testPubB)).limit(1)
 				let signerAId = signerA?.id
 				let signerBId = signerB?.id
 				if (!signerAId) {
@@ -228,11 +211,7 @@ describe("Signature", () => {
 					)
 					.limit(1)
 				if (!element.poolId) throw new Error("No poolId found on inserted poolKey row")
-				const poolPublicInfo = await tx
-					.select()
-					.from(pool)
-					.where(eq(pool.id, element.poolId))
-					.limit(1)
+				const poolPublicInfo = await tx.select().from(pool).where(eq(pool.id, element.poolId)).limit(1)
 				const poolPublicKey = poolPublicInfo[0].publicKey
 
 				const pkA = testPrivA
@@ -271,10 +250,7 @@ describe("Signature", () => {
 				const userA = users[i]
 				const userB = users[j]
 				// double encryption to need multisig to decode the key
-				const encrypA = Encryption.encrypt(
-					Encoding.stringToFields(key),
-					PublicKey.fromBase58(userA)
-				)
+				const encrypA = Encryption.encrypt(Encoding.stringToFields(key), PublicKey.fromBase58(userA))
 				const encryptAPub = PublicKey.fromGroup(encrypA.publicKey).toBase58()
 				const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB))
 				const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()

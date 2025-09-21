@@ -3,7 +3,7 @@
 layer: library
 
 dependsOn:
-- contracts
+  - contracts
 
 fileGroups:
   sources:
@@ -11,23 +11,15 @@ fileGroups:
     - scripts/**/*
     - package.json
     - tsconfig.json
-    
+
 tasks:
   build:
     command: unbuild
     deps: [^:build]
-    inputs: 
+    inputs:
       - "@group(sources)"
     outputs:
       - dist/
-  lint:
-    command: biome lint src/
-    inputs:
-      - "@group(sources)"
-  lint-fix:
-    command: biome lint --write src/
-    inputs:
-      - "@group(sources)"
   schema-get-zeko:
     command: gql-tada generate schema 'https://testnet.zeko.io/graphql' --output @out(0)
     outputs:
@@ -70,3 +62,11 @@ tasks:
   docs-deploy-preview:
     command: wrangler versions upload
     deps: [build]
+  lint:
+    command: biome lint
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome lint --write
+    inputs:
+      - "@group(sources)"

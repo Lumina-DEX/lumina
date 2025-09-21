@@ -1,8 +1,8 @@
 "use client"
+import { toTokenId } from "@/utils/addresses"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { useCallback, useContext, useEffect } from "react"
-import { toTokenId } from "@/utils/addresses"
 import { LuminaContext } from "./Layout"
 
 const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
@@ -10,8 +10,7 @@ const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const balance = useSelector(
 		Wallet,
-		(state) =>
-			state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
+		(state) => state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
 	)
 
 	const getBalance = useCallback(() => {

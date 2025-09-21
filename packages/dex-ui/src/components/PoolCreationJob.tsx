@@ -2,9 +2,7 @@ import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import Loading from "./Loading"
 
-const PoolCreationJob = ({
-	actor
-}: { id: string; actor: ActorRefFromLogic<CreatePoolMachine> }) => {
+const PoolCreationJob = ({ actor }: { id: string; actor: ActorRefFromLogic<CreatePoolMachine> }) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context
@@ -24,7 +22,7 @@ const PoolCreationJob = ({
 						A pool already exists for this token pair.
 					</span>
 				)}
-				{poolState.status === "COMPLETED" && <span> Pool created successfully</span>}
+				{poolState.status === "COMPLETED" && <span>Pool created successfully</span>}
 				{poolState.status !== "COMPLETED" &&
 					poolState.status !== "RETRY" &&
 					poolState.status !== "POOL_ALREADY_EXISTS" &&

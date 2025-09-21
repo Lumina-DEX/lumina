@@ -2,7 +2,7 @@ import type { Networks } from "@lumina-dex/sdk"
 import * as v from "valibot"
 import { pools, tokens } from "../drizzle/schema"
 
-export { tokens, pools }
+export { pools, tokens }
 
 export type Token = typeof tokens.$inferInsert
 export type Pool = typeof pools.$inferInsert

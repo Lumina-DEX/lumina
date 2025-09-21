@@ -1,6 +1,6 @@
-import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import { getContainer } from "@cloudflare/containers"
 import type { Networks } from "@lumina-dex/sdk"
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import { type TokensAndPools, updateTokensAndPools } from "./http"
 import { updatePool } from "./supabase"
 
@@ -25,14 +25,14 @@ export class SyncPool extends WorkflowEntrypoint<Env, WaitForPoolParams> {
 				async () => {
 					const response = await container.fetch(`http://localhost/${network}`)
 					console.log(`Response status: ${response.status}, statusText: ${response.statusText}`)
-					if (!response.ok)
-						throw new Error(
-							`Failed to fetch from container: ${response.status} ${response.statusText}`
-						)
+					if (!response.ok) {
+						throw new Error(`Failed to fetch from container: ${response.status} ${response.statusText}`)
+					}
 					const data = (await response.json()) as TokensAndPools
 					const exists = data.pools.find((pool) => pool.address === poolAddress)
-					if (!exists)
+					if (!exists) {
 						throw new NotFoundError(`Pool ${poolAddress} not found on network ${network}`)
+					}
 					console.log(`Pool ${poolAddress} found on network ${network}`)
 					return data
 				}

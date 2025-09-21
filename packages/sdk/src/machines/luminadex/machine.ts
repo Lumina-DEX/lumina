@@ -14,15 +14,7 @@ import {
 	compileContract,
 	initContracts
 } from "./actors/operations"
-import {
-	addLiquidity,
-	claim,
-	deployPool,
-	deployToken,
-	mintToken,
-	removeLiquidity,
-	swap
-} from "./actors/transactions"
+import { addLiquidity, claim, deployPool, deployToken, mintToken, removeLiquidity, swap } from "./actors/transactions"
 import {
 	canDoDexAction,
 	canStartDexAction,
@@ -39,12 +31,7 @@ import {
 	walletNetwork,
 	walletUser
 } from "./helpers"
-import type {
-	ContractName,
-	LuminaDexMachineContext,
-	LuminaDexMachineEvent,
-	LuminaDexMachineInput
-} from "./types"
+import type { ContractName, LuminaDexMachineContext, LuminaDexMachineEvent, LuminaDexMachineInput } from "./types"
 
 export const createLuminaDexMachine = () =>
 	setup({
@@ -57,12 +44,10 @@ export const createLuminaDexMachine = () =>
 			isTestnet: ({ context }) => !walletNetwork(context).includes("mainnet"),
 			compileFungibleToken: ({ context }) => context.contract.currentlyLoading === "FungibleToken",
 			compilePool: ({ context }) => context.contract.currentlyLoading === "Pool",
-			compilePoolTokenHolder: ({ context }) =>
-				context.contract.currentlyLoading === "PoolTokenHolder",
+			compilePoolTokenHolder: ({ context }) => context.contract.currentlyLoading === "PoolTokenHolder",
 			compilePoolFactory: ({ context }) => context.contract.currentlyLoading === "PoolFactory",
 			compileFaucet: ({ context }) => context.contract.currentlyLoading === "Faucet",
-			compileFungibleTokenAdmin: ({ context }) =>
-				context.contract.currentlyLoading === "FungibleTokenAdmin"
+			compileFungibleTokenAdmin: ({ context }) => context.contract.currentlyLoading === "FungibleTokenAdmin"
 		},
 		actors: {
 			detectWalletChange,
@@ -101,7 +86,7 @@ export const createLuminaDexMachine = () =>
 					const machine = context.dex.createPool.pools[id]
 					if (machine) stopChild(id)
 					const created = spawn("createPoolMachine", { id, input })
-					return produce(context, draft => {
+					return produce(context, (draft) => {
 						draft.dex.createPool.pools[id] = created
 					})
 				})
@@ -110,7 +95,11 @@ export const createLuminaDexMachine = () =>
 	}).createMachine({
 		id: "luminaDex",
 		context: ({
-			input: { wallet, features, frontendFee: { destination, amount } }
+			input: {
+				wallet,
+				features,
+				frontendFee: { destination, amount }
+			}
 		}) => {
 			if (!isBetween(0, 10)(amount)) throw new Error("The Frontend Fee must be between 0 and 10.")
 			const nsWorker = new Worker(new URL("../../dex/luminadex-worker.ts", import.meta.url), {
@@ -242,9 +231,7 @@ export const createLuminaDexMachine = () =>
 							input: ({ context }) => inputCompile({ context, contract: "FungibleTokenAdmin" }),
 							onDone: {
 								target: "LOADING",
-								actions: assign(({ context }) =>
-									loaded({ context, contract: "FungibleTokenAdmin" })
-								)
+								actions: assign(({ context }) => loaded({ context, contract: "FungibleTokenAdmin" }))
 							},
 							onError: {
 								target: "FAILED",
@@ -356,9 +343,9 @@ export const createLuminaDexMachine = () =>
 									for (const [name, loaded] of Object.entries(context.contract.loaded)) {
 										if (loaded) alreadyLoaded.add(name as ContractName)
 									}
-									const toLoad = context.contract.toLoad.union(additionalToLoad).difference(
-										alreadyLoaded
-									) as Set<ContractName>
+									const toLoad = context.contract.toLoad
+										.union(additionalToLoad)
+										.difference(alreadyLoaded) as Set<ContractName>
 									enqueue.assign({
 										features: [...currentFeatures, ...missingFeatures],
 										contract: { ...context.contract, toLoad }
@@ -386,36 +373,39 @@ export const createLuminaDexMachine = () =>
 							}
 						},
 						on: {
-							DeployPool: [{
-								target: "DEX.READY",
-								description: "Create a pool using the API",
-								guard: ({ event }) => event.settings.manual !== true,
-								actions: {
-									type: "createPool",
-									params: ({ context, event }) => ({
-										wallet: context.wallet,
-										tokenA: event.settings.tokenA,
-										tokenB: event.settings.tokenB,
-										user: walletUser(context),
-										network: walletNetwork(context)
-									})
-								}
-							}, {
-								target: "DEPLOYING_POOL",
-								description: "Deploy a pool manually for a given token.",
-								guard: ({ event, context }) =>
-									event.settings.manual === true && canStartDexAction(context).deployPool,
-								actions: assign(({ context, event }) => ({
-									dex: {
-										...context.dex,
-										deployPool: {
-											...context.dex.deployPool,
-											...event.settings,
-											transactionLid: null
-										}
+							DeployPool: [
+								{
+									target: "DEX.READY",
+									description: "Create a pool using the API",
+									guard: ({ event }) => event.settings.manual !== true,
+									actions: {
+										type: "createPool",
+										params: ({ context, event }) => ({
+											wallet: context.wallet,
+											tokenA: event.settings.tokenA,
+											tokenB: event.settings.tokenB,
+											user: walletUser(context),
+											network: walletNetwork(context)
+										})
 									}
-								}))
-							}],
+								},
+								{
+									target: "DEPLOYING_POOL",
+									description: "Deploy a pool manually for a given token.",
+									guard: ({ event, context }) =>
+										event.settings.manual === true && canStartDexAction(context).deployPool,
+									actions: assign(({ context, event }) => ({
+										dex: {
+											...context.dex,
+											deployPool: {
+												...context.dex.deployPool,
+												...event.settings,
+												transactionLid: null
+											}
+										}
+									}))
+								}
+							],
 							DeployToken: {
 								target: "DEPLOYING_TOKEN",
 								description: "Deploy a token.",
@@ -496,8 +486,7 @@ export const createLuminaDexMachine = () =>
 							Swap: {
 								target: "SWAPPING",
 								guard: ({ context }) => canDoDexAction(context).swap,
-								description:
-									"Create and send a transaction to swap tokens. To be called after ChangeSwapSettings."
+								description: "Create and send a transaction to swap tokens. To be called after ChangeSwapSettings."
 							}
 						}
 					},
@@ -519,7 +508,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output.transactionOutput
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										const { symbol, ...result } = event.output.token
 										draft.dex.deployToken.symbol = symbol
@@ -558,7 +547,7 @@ export const createLuminaDexMachine = () =>
 											context,
 											transaction: event.output
 										})
-										return produce(context, draft => {
+										return produce(context, (draft) => {
 											draft.transactions[input.id] = spawn("transactionMachine", { input })
 											draft.dex.deployPool.transactionLid = input.id
 										})
@@ -586,7 +575,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										draft.dex.claim.transactionLid = input.id
 									})
@@ -619,7 +608,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										draft.dex.mint.transactionLid = input.id
 									})
@@ -660,7 +649,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										draft.dex.swap.transactionLid = input.id
 										draft.dex.swap.calculated = null
@@ -704,7 +693,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										draft.dex.addLiquidity.transactionLid = input.id
 										draft.dex.addLiquidity.calculated = null
@@ -749,7 +738,7 @@ export const createLuminaDexMachine = () =>
 										context,
 										transaction: event.output
 									})
-									return produce(context, draft => {
+									return produce(context, (draft) => {
 										draft.transactions[input.id] = spawn("transactionMachine", { input })
 										draft.dex.removeLiquidity.transactionLid = input.id
 										draft.dex.removeLiquidity.calculated = null

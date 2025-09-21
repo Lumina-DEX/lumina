@@ -32,7 +32,7 @@ const Wallet = createWallet()
 Wallet.send({ type: "Connect" })
 
 // Subscribe to state changes
-Wallet.subscribe(state => {
+Wallet.subscribe((state) => {
 	const currentState = state.value
 	console.log("Wallet state:", currentState)
 
@@ -45,9 +45,7 @@ Wallet.subscribe(state => {
 
 	if (state.matches("UNSUPPORTED")) {
 		// Show UI that guides the user to install Auro Wallet
-		console.log(
-			"No Mina wallet detected. Please install Auro Wallet: https://www.aurowallet.com/"
-		)
+		console.log("No Mina wallet detected. Please install Auro Wallet: https://www.aurowallet.com/")
 	}
 })
 
@@ -85,23 +83,27 @@ Wallet.send({
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	tokens: [{
-		address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-		decimal: 1e9, // Token decimal places
-		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
-		symbol: "USDC"
-	}]
+	tokens: [
+		{
+			address: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+			decimal: 1e9, // Token decimal places
+			tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn",
+			symbol: "USDC"
+		}
+	]
 })
 
 // Fetch Lumina LP token balance
 Wallet.send({
 	type: "FetchBalance",
 	network: "mina:devnet",
-	tokens: [{
-		poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
-		decimal: 1e9,
-		symbol: "LLP-USDC_MINA"
-	}]
+	tokens: [
+		{
+			poolAddress: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
+			decimal: 1e9,
+			symbol: "LLP-USDC_MINA"
+		}
+	]
 })
 ```
 
@@ -148,7 +150,7 @@ function setupWallet() {
 	const Wallet = createWallet()
 
 	// Add event listeners for UI updates
-	const unsubscribe = Wallet.subscribe(state => {
+	const unsubscribe = Wallet.subscribe((state) => {
 		updateUI(state)
 	})
 
