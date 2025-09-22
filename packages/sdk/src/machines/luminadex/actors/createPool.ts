@@ -261,6 +261,7 @@ export const createPoolMachine = setup({
 				],
 				onError: {
 					target: "CREATING",
+					description: "If the pool existence check fails, we optimistically proceed to create the pool.",
 					actions: assign(addError(new Error("Pool check failed")))
 				}
 			}
@@ -338,21 +339,10 @@ export const createPoolMachine = setup({
 				}),
 				onDone: [
 					{
-						target: "RETRY",
-						guard: ({ event }) => event.output.result instanceof Error,
-						actions: assign(({ context, event }) =>
-							produce(context, (draft) => {
-								if (event.output.result instanceof Error) {
-									draft.errors.push(event.output.result)
-								}
-							})
-						)
-					},
-					{
 						target: "CONFIRMING",
 						actions: assign(({ context, event }) =>
 							produce(context, (draft) => {
-								if (!(event.output.result instanceof Error)) {
+								if (event.output.result) {
 									draft.transaction = event.output.result
 								}
 							})
@@ -360,7 +350,7 @@ export const createPoolMachine = setup({
 					}
 				],
 				onError: {
-					target: "RETRY",
+					target: "FAILED",
 					actions: assign(addError(new Error("Transaction signing failed")))
 				}
 			}
@@ -371,7 +361,7 @@ export const createPoolMachine = setup({
 				input: clientAndJob,
 				onDone: "COMPLETED",
 				onError: {
-					target: "RETRY",
+					target: "FAILED",
 					actions: assign(addError(new Error("Transaction confirmation failed")))
 				}
 			}
