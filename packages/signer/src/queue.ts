@@ -1,7 +1,7 @@
-import { Queue, QueueEvents, Worker as BullMqWorker } from "bullmq"
-import IORedis from "ioredis"
 import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
+import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
 import type { createPoolAndTransaction } from "./workers/logic"
 

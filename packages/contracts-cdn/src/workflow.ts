@@ -1,6 +1,6 @@
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import { getContainer } from "@cloudflare/containers"
 import type { Networks } from "@lumina-dex/sdk"
-import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers"
 import { type TokensAndPools, updateTokensAndPools } from "./http"
 import { updatePool } from "./supabase"
 

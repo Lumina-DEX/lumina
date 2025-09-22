@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noUnusedTemplateLiteral: SQL */
 
-import { getDb } from "@/db"
 import readline from "node:readline" // Import the readline module
+import { getDb } from "@/db"
 
 const client = getDb().client
 

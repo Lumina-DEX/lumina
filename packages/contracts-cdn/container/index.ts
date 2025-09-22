@@ -1,4 +1,4 @@
-import { archiveUrls, fetchAllFromPoolFactory, networks, NetworkStateQuery, type urls } from "@lumina-dex/sdk"
+import { archiveUrls, fetchAllFromPoolFactory, NetworkStateQuery, networks, type urls } from "@lumina-dex/sdk"
 import { request as gqlrequest } from "graphql-request"
 
 const server = Bun.serve({

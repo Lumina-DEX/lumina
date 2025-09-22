@@ -30,9 +30,7 @@
 			}
 		}
 	],
-	"formatter": {
-		"enabled": true
-	},
+	"formatter": { "enabled": false },
 	"linter": {
 		"domains": {
 			"vue": "all"

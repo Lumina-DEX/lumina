@@ -1,9 +1,9 @@
 "use client"
 
-import Account from "@/components/Account"
 import { createDex, createWallet, type LuminaContext as LC } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { createContext, useEffect, useState } from "react"
+import Account from "@/components/Account"
 import styles from "../styles/Home.module.css"
 
 export const feeAmount = 10

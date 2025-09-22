@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm"
 import { Encoding, Encryption, fetchAccount, initializeBindings, Mina, PrivateKey, PublicKey } from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
-import { pool, poolKey as tPoolKey, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
+import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
 import { getDb } from "../src/db"
 import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers"
 

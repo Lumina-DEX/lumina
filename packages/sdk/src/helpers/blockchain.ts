@@ -1,5 +1,5 @@
 import { PoolFactory } from "@lumina-dex/contracts"
-import { fetchAccount, fetchLastBlock, Field, Mina, PublicKey, TokenId, UInt32 } from "o1js"
+import { Field, fetchAccount, fetchLastBlock, Mina, PublicKey, TokenId, UInt32 } from "o1js"
 import pLimit from "p-limit"
 import type { SupportedNetwork } from "../constants"
 import { archiveUrls, luminaCdnOrigin, luminadexFactories, startBlock, urls } from "../constants"
