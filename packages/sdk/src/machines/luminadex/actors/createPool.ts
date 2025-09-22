@@ -35,7 +35,9 @@ const addError =
 	({ context, event }: ActionArgs<CreatePoolContext, ErrorActorEvent, EventObject>) => {
 		const error = event.error instanceof Error ? event.error : fallbackError
 		logger.error(error)
-		return { errors: [...context.errors, error] }
+		return produce(context, (draft) => {
+			draft.errors.push(error)
+		})
 	}
 
 export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
@@ -207,8 +209,6 @@ export interface CreatePoolInput {
 	worker: LuminaDexWorker
 }
 
-class UnhandledError extends Error {}
-
 export const createPoolMachine = setup({
 	types: {
 		context: {} as CreatePoolContext,
@@ -337,15 +337,26 @@ export const createPoolMachine = setup({
 					worker
 				}),
 				onDone: [
-					{ target: "RETRY", guard: ({ event }) => event.output.result instanceof Error },
+					{
+						target: "RETRY",
+						guard: ({ event }) => event.output.result instanceof Error,
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								if (event.output.result instanceof Error) {
+									draft.errors.push(event.output.result)
+								}
+							})
+						)
+					},
 					{
 						target: "CONFIRMING",
-						actions: assign(({ event }) => {
-							if (event.output.result instanceof Error) {
-								throw new UnhandledError(event.output.result.message)
-							}
-							return { transaction: event.output.result }
-						})
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								if (!(event.output.result instanceof Error)) {
+									draft.transaction = event.output.result
+								}
+							})
+						)
 					}
 				],
 				onError: {
