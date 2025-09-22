@@ -366,7 +366,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		RETRY: {
-			after: { 1000: { target: "INIT" } },
+			after: { 1000: [{ target: "FAILED", guard: ({ context }) => context.errors.length >= 3 }, { target: "INIT" }] },
 			description: "An error occurred, will retry"
 		},
 		COMPLETED: {
