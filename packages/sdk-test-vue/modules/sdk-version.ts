@@ -1,6 +1,6 @@
-import { defineNuxtModule, updateRuntimeConfig } from "@nuxt/kit"
 import fs from "node:fs"
 import { join } from "node:path"
+import { defineNuxtModule, updateRuntimeConfig } from "@nuxt/kit"
 
 export default defineNuxtModule({
 	meta: {

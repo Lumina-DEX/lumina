@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers"
 import { and, count, eq, or, sql } from "drizzle-orm"
-import { drizzle, type DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite"
+import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite"
 import { migrate } from "drizzle-orm/durable-sqlite/migrator"
 import migrations from "../drizzle/generated/migrations"
 import * as schema from "../drizzle/schema"

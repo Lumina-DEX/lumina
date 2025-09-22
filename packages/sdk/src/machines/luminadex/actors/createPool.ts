@@ -6,9 +6,9 @@ import { Observable } from "rxjs"
 import {
 	type ActionArgs,
 	assign,
-	enqueueActions,
 	type ErrorActorEvent,
 	type EventObject,
+	enqueueActions,
 	fromObservable,
 	fromPromise,
 	setup

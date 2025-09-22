@@ -87,12 +87,12 @@ tasks:
     deps: [services-start, start, web]
     preset: "server"
   lint:
-    command: biome lint
+    command: biome check --formatter-enabled=false
     inputs:
       - "@group(sources)"
       - "@group(tests)"
   lint-fix:
-    command: biome lint --write
+    command: biome check --formatter-enabled=false --write
     inputs:
       - "@group(sources)"
       - "@group(tests)"

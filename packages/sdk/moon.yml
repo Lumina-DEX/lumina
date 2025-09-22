@@ -63,10 +63,10 @@ tasks:
     command: wrangler versions upload
     deps: [build]
   lint:
-    command: biome lint
+    command: biome check --formatter-enabled=false
     inputs:
       - "@group(sources)"
   lint-fix:
-    command: biome lint --write
+    command: biome check --formatter-enabled=false --write
     inputs:
       - "@group(sources)"

@@ -1,6 +1,6 @@
+import { writeFileSync } from "node:fs"
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite"
 import react from "@vitejs/plugin-react"
-import { writeFileSync } from "node:fs"
 import { defineConfig, type Plugin } from "vite"
 
 const webWorkerHeaders = {
