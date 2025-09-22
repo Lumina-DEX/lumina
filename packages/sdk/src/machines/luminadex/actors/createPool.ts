@@ -35,7 +35,9 @@ const addError =
 	({ context, event }: ActionArgs<CreatePoolContext, ErrorActorEvent, EventObject>) => {
 		const error = event.error instanceof Error ? event.error : fallbackError
 		logger.error(error)
-		return { errors: [...context.errors, error] }
+		return produce(context, (draft) => {
+			draft.errors.push(error)
+		})
 	}
 
 export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
@@ -207,8 +209,6 @@ export interface CreatePoolInput {
 	worker: LuminaDexWorker
 }
 
-class UnhandledError extends Error {}
-
 export const createPoolMachine = setup({
 	types: {
 		context: {} as CreatePoolContext,
@@ -261,6 +261,7 @@ export const createPoolMachine = setup({
 				],
 				onError: {
 					target: "CREATING",
+					description: "If the pool existence check fails, we optimistically proceed to create the pool.",
 					actions: assign(addError(new Error("Pool check failed")))
 				}
 			}
@@ -337,19 +338,19 @@ export const createPoolMachine = setup({
 					worker
 				}),
 				onDone: [
-					{ target: "RETRY", guard: ({ event }) => event.output.result instanceof Error },
 					{
 						target: "CONFIRMING",
-						actions: assign(({ event }) => {
-							if (event.output.result instanceof Error) {
-								throw new UnhandledError(event.output.result.message)
-							}
-							return { transaction: event.output.result }
-						})
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								if (event.output.result) {
+									draft.transaction = event.output.result
+								}
+							})
+						)
 					}
 				],
 				onError: {
-					target: "RETRY",
+					target: "FAILED",
 					actions: assign(addError(new Error("Transaction signing failed")))
 				}
 			}
@@ -360,13 +361,13 @@ export const createPoolMachine = setup({
 				input: clientAndJob,
 				onDone: "COMPLETED",
 				onError: {
-					target: "RETRY",
+					target: "FAILED",
 					actions: assign(addError(new Error("Transaction confirmation failed")))
 				}
 			}
 		},
 		RETRY: {
-			after: { 1000: { target: "INIT" } },
+			after: { 1000: [{ target: "FAILED", guard: ({ context }) => context.errors.length >= 3 }, { target: "INIT" }] },
 			description: "An error occurred, will retry"
 		},
 		COMPLETED: {

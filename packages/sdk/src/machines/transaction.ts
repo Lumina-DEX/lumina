@@ -17,6 +17,8 @@ export type Result = ReturnType<HashDb["createResult"]>
 
 type SentTransaction = { hash: string; zkAppId: string }
 
+type TransactionMachineOutput = { result: Result | null }
+
 export type TransactionMachineContext = {
 	id: string
 	transaction: string
@@ -26,7 +28,7 @@ export type TransactionMachineContext = {
 	savedTransaction: SavedTransaction | null
 	signedTransaction: ZkappCommand | null
 	sentTransaction: SentTransaction | null
-	result: Result | Error
+	result: TransactionMachineOutput["result"]
 	db: HashDb
 	network: Networks
 }
@@ -37,8 +39,6 @@ export type TransactionMachineInput = {
 	wallet: Wallet
 	worker: LuminaDexWorker
 }
-
-type TransactionMachineOutput = { result: Result | Error }
 
 type SendSignedTxInput = {
 	zeko: boolean
@@ -134,7 +134,7 @@ export const transactionMachine = setup({
 			savedTransaction: null,
 			signedTransaction: null,
 			sentTransaction: null,
-			result: new Error("Transaction failed"),
+			result: null,
 			db: hashDb({ id, network, account, transaction }),
 			network
 		}
