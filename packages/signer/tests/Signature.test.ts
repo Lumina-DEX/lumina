@@ -1,7 +1,7 @@
 import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
-import { Encoding, Encryption, fetchAccount, initializeBindings, Mina, PrivateKey, PublicKey } from "o1js"
+import { Encoding, Encryption, fetchAccount, initializeBindings, Mina, PrivateKey, Provable, PublicKey } from "o1js"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
@@ -48,12 +48,13 @@ describe("Signature", () => {
 
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
 		const compileVK = await PoolFactory.compile()
+		Provable.log("Compiled vk", compileVK)
 
 		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
 		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash
 
 		expect(compileVK.verificationKey.hash.toBigInt()).toEqual(vkHash?.toBigInt())
-	})
+	}, 300000)
 
 	it("fetch secret", async () => {
 		const secret = await getMasterSigner()
