@@ -1,5 +1,33 @@
 # @lumina-dex/sdk
 
+## 0.23.0
+
+### Minor Changes
+
+- 55b3e4e: # Transaction tracking
+
+  Add a dedicated state machines to track transactions. This is useful for L1 transactions that may take a while to be included in a block.
+
+  `canStartDexAction` helper added to check if an action can be started based on loaded contracts only.
+
+  ## Breaking changes :
+
+  - The SDK no longer exports all `o1js` methods.
+  - `LOADING_CONTRACTS` state in dex.contracts has been renamed to `INIT_CONTRACTS`.
+  - `IDLE` state in dex.contracts has been renamed to `READY`.
+  - The `LoadFeatures` event now only works when in the `READY` state.
+
+- ff62dbd: Check if a pool already exist before creating a pool for a token pair
+- 1bbeb8d: The dex and wallet machines now have a `UNSUPPORTED` state, to help in situations where window.mina is undefined.
+- 0d356f6: Update factory contract
+  Update multisig rigth type from Struct to Field
+
+### Patch Changes
+
+- 3ae0e12: fix: createPool machine should only retry 3 times.
+- Updated dependencies [0d356f6]
+  - @lumina-dex/contracts@0.8.0
+
 ## 0.22.0
 
 ### Minor Changes

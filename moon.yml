@@ -11,7 +11,7 @@ tasks:
   version:
     command: bun run scripts/version.ts
   publish:
-    script: changeset tag && pnpm publish -r --no-git-checks --access public
+    script: pnpm exec changeset tag && pnpm publish -r --no-git-checks --access public
     deps: ["contracts:build", "sdk:build"]
     options:
       runDepsInParallel: false
