@@ -41,6 +41,20 @@ describe("Signature", () => {
 		expect(root.value).toEqual(factoryRoot.value)
 	})
 
+	it("valid verification key", async () => {
+		const network = "mina:devnet" as const
+		const Network = getNetwork(network)
+		Mina.setActiveInstance(Network)
+
+		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
+		const compileVK = await PoolFactory.compile()
+
+		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
+		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash
+
+		expect(compileVK.verificationKey.hash.toBigInt()).toEqual(vkHash?.toBigInt())
+	})
+
 	it("fetch secret", async () => {
 		const secret = await getMasterSigner()
 		expect(secret).toBeDefined()

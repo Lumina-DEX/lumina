@@ -24,10 +24,7 @@ tasks:
     deps: ["^:build", "services-start"]
     preset: "server"
   build:
-    description: |
-      This is empty as Building with bullMQ Worker is impossible.
-      No build tools seems to support it.
-      That means we have to copy everything into the production Docker layer.
+    command: tsc
     deps: ["^:build"]
   dev-uws:
     command: tsx src/uws.ts
