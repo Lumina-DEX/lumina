@@ -48,7 +48,7 @@ describe("Signature", () => {
 
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
 		const compileVK = await PoolFactory.compile()
-		Provable.log("Compiled vk", compileVK)
+		Provable.log("Compiled vk", compileVK.verificationKey.hash)
 
 		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
 		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash
