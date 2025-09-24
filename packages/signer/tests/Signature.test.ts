@@ -50,22 +50,22 @@ describe("Signature", () => {
 		Mina.setActiveInstance(Network)
 
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
-		await PoolFactory.compile()
 		const compileVK = await PoolFactory.compile()
 		Provable.log("Compiled vk", compileVK.verificationKey.hash)
 		console.log("Node.js version:", process.version)
-		console.log("o1js version:", getO1jsVersion())
+		console.log("o1js version:", getVersion("o1js"))
+		console.log("fungible token version:", getVersion("mina-fungible-token"))
 		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
 		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash
 
 		expect(compileVK.verificationKey.hash.toBigInt()).toEqual(vkHash?.toBigInt())
 	}, 300000)
 
-	function getO1jsVersion(): string {
+	function getVersion(name: string): string {
 		try {
 			// Résout l'entrée du package (doit fonctionner même si package.json n'est pas exporté)
 			// eslint-disable-next-line @typescript-eslint/no-var-requires
-			const entry = require.resolve("o1js")
+			const entry = require.resolve(name)
 			let dir = dirname(entry)
 
 			// remonte l'arborescence jusqu'à trouver package.json
