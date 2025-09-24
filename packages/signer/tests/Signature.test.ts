@@ -1,4 +1,4 @@
-import { allRight, PoolFactory } from "@lumina-dex/contracts"
+import { allRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
 import { and, eq, TransactionRollbackError } from "drizzle-orm"
 import {
@@ -56,7 +56,10 @@ describe("Signature", () => {
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
-		const compileVK = await PoolFactory.compile({ cache: Cache.None, forceRecompile: true })
+		const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
+		await FungibleTokenAdmin.compile(cache)
+		await FungibleToken.compile(cache)
+		const compileVK = await PoolFactory.compile(cache)
 		Provable.log("Compiled vk", compileVK.verificationKey.hash)
 		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
 		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash

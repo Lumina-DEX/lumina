@@ -11,16 +11,16 @@ import {
   PoolTokenHolder
 } from "../dist"
 
-const noCache = { cache: Cache.None, forceRecompile: true }
+const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
 describe("Check verification key", () => {
   it("has a valid verification key", async () => {
     const Local = await Mina.LocalBlockchain()
     Mina.setActiveInstance(Local)
 
-    await FungibleTokenAdmin.compile(noCache)
-    await FungibleToken.compile(noCache)
-    const vkFactory = await PoolFactory.compile(noCache)
+    await FungibleTokenAdmin.compile(cache)
+    await FungibleToken.compile(cache)
+    const vkFactory = await PoolFactory.compile(cache)
     expect(vkFactory.verificationKey.hash.toBigInt()).toEqual(
       27167892114307946311220801481226808399786469908061512252307744174796385756329n
     )
