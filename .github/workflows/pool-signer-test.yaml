@@ -47,7 +47,7 @@ jobs:
         run: moon signer:db-migrate && moon signer:db-seed
 
       - name: 🧪 Run integration tests
-        run: moon signer:test-integration -u
+        run: moon signer:test-integration
         env:
           INFISICAL_ENVIRONMENT: dev
           INFISICAL_PROJECT_ID: 1cae9006-c83d-415d-b207-c966c9d1df48

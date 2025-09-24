@@ -24,9 +24,9 @@ describe("Check verification key", () => {
     expect(vkFactory.verificationKey.hash.toBigInt()).toEqual(
       27167892114307946311220801481226808399786469908061512252307744174796385756329n
     )
-    const vkPool = await Pool.compile()
+    const vkPool = await Pool.compile(cache)
     expect(vkPool.verificationKey.hash.toBigInt()).toEqual(contractHash.toBigInt())
-    const vkPoolHolder = await PoolTokenHolder.compile()
+    const vkPoolHolder = await PoolTokenHolder.compile(cache)
     expect(vkPoolHolder.verificationKey.hash.toBigInt()).toEqual(contractHolderHash.toBigInt())
   }, 600000)
 })
