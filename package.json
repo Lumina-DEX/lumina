@@ -11,7 +11,6 @@
 		"@types/node": "^22.9.1",
 		"dprint": "^0.47.5",
 		"lefthook": "^1.11.3",
-		"o1js": "^2.4.0",
 		"oxlint": "catalog:",
 		"oxlint-tsgolint": "catalog:",
 		"taze": "^0.18.0",
