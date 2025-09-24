@@ -4,7 +4,7 @@
 	"type": "module",
 	"dependencies": {
 		"@infisical/sdk": "^4.0.2",
-		"@lumina-dex/contracts": "0.8.0",
+		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"@pothos/core": "^4.7.1",
 		"bullmq": "^5.53.2",
@@ -23,5 +23,6 @@
 		"drizzle-kit": "beta",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4"
-	}
+	},
+	"packageManager": "pnpm@10.17.0"
 }

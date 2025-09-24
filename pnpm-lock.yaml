@@ -443,8 +443,8 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
       '@lumina-dex/contracts':
-        specifier: 0.8.0
-        version: 0.8.0
+        specifier: workspace:^
+        version: link:../contracts
       '@lumina-dex/sdk':
         specifier: workspace:^
         version: link:../sdk
@@ -3032,9 +3032,6 @@ packages:
     resolution: {integrity: sha512-aNcmDrD1Ws+dNZIv9ECbxBQumqB9MlSVEykwfXJpqv/593nABb8Ttg5nAGUPtnADyaGDTrGvPPP81d/KsKho4Q==}
     cpu: [x64]
     os: [win32]
-
-  '@lumina-dex/contracts@0.8.0':
-    resolution: {integrity: sha512-NQp6Y8sF0OAnnpukA1W/bKPhW3AliacjoJ+EN/fe5bLKMK2Edu6mtZrGZilEbJzLeIVWOM0RZStejBjBSNJYog==}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -12937,11 +12934,6 @@ snapshots:
 
   '@libsql/win32-x64-msvc@0.5.13':
     optional: true
-
-  '@lumina-dex/contracts@0.8.0':
-    dependencies:
-      mina-fungible-token: 1.1.0(o1js@2.4.0)
-      o1js: 2.4.0
 
   '@manypkg/find-root@1.1.0':
     dependencies:
