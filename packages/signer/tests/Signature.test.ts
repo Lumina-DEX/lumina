@@ -51,11 +51,10 @@ describe("Signature", () => {
 		expect(root.value).toEqual(factoryRoot.value)
 	})
 
-	it.skip("has a valid verification key", async () => {
+	it("has a valid verification key", async () => {
 		const network = "mina:devnet" as const
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)
-
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
 		const compileVK = await PoolFactory.compile({ cache: Cache.None, forceRecompile: true })
 		Provable.log("Compiled vk", compileVK.verificationKey.hash)
