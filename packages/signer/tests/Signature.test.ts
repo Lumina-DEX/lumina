@@ -50,6 +50,7 @@ describe("Signature", () => {
 		Mina.setActiveInstance(Network)
 
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
+		await PoolFactory.compile()
 		const compileVK = await PoolFactory.compile()
 		Provable.log("Compiled vk", compileVK.verificationKey.hash)
 		console.log("Node.js version:", process.version)
