@@ -1,15 +1,15 @@
 import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
+import { execSync } from "child_process"
 import { and, eq } from "drizzle-orm"
+import { existsSync, readFileSync } from "fs"
 import { Encoding, Encryption, fetchAccount, initializeBindings, Mina, PrivateKey, Provable, PublicKey } from "o1js"
+import { dirname, join } from "path"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
 import { getDb } from "../src/db"
 import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers"
-import { readFileSync, existsSync } from "fs"
-import { dirname, join } from "path"
-import { execSync } from "child_process"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
