@@ -41,7 +41,7 @@ describe("Signature", () => {
 		expect(root.value).toEqual(factoryRoot.value)
 	})
 
-	it("valid verification key", async () => {
+	it("has a valid verification key", async () => {
 		const network = "mina:devnet" as const
 		const Network = getNetwork(network)
 		Mina.setActiveInstance(Network)

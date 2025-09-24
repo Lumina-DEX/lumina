@@ -12,7 +12,7 @@ import {
 } from "../dist"
 
 describe("Check verification key", () => {
-  it("check compile the good vk", async () => {
+  it("has a valid verification key", async () => {
     const Local = await Mina.LocalBlockchain()
     Mina.setActiveInstance(Local)
 
