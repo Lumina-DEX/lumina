@@ -1,8 +1,6 @@
 import { allRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories } from "@lumina-dex/sdk"
-import { execSync } from "child_process"
 import { and, eq, TransactionRollbackError } from "drizzle-orm"
-import { existsSync, readFileSync } from "fs"
 import {
 	Cache,
 	Encoding,
@@ -14,7 +12,6 @@ import {
 	Provable,
 	PublicKey
 } from "o1js"
-import { dirname, join } from "path"
 import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
@@ -62,50 +59,11 @@ describe("Signature", () => {
 		const factoryPublicKey = PublicKey.fromBase58(luminadexFactories[network])
 		const compileVK = await PoolFactory.compile({ cache: Cache.None, forceRecompile: true })
 		Provable.log("Compiled vk", compileVK.verificationKey.hash)
-		console.log("Node.js version:", process.version)
-		console.log("o1js version:", getVersion("o1js"))
-		console.log("fungible token version:", getVersion("mina-fungible-token"))
 		const accountFactory = await fetchAccount({ publicKey: factoryPublicKey })
 		const vkHash = accountFactory.account?.zkapp?.verificationKey?.hash
 
 		expect(compileVK.verificationKey.hash.toBigInt()).toEqual(vkHash?.toBigInt())
 	}, 300000)
-
-	function getVersion(name: string): string {
-		try {
-			// Résout l'entrée du package (doit fonctionner même si package.json n'est pas exporté)
-			// eslint-disable-next-line @typescript-eslint/no-var-requires
-			const entry = require.resolve(name)
-			let dir = dirname(entry)
-
-			// remonte l'arborescence jusqu'à trouver package.json
-			for (let i = 0; i < 20; i++) {
-				const candidate = join(dir, "package.json")
-				if (existsSync(candidate)) {
-					try {
-						const parsed = JSON.parse(readFileSync(candidate, "utf8"))
-						if (parsed && parsed.version) return parsed.version
-					} catch {
-						// ignorer et continuer la remontée
-					}
-				}
-				const parent = dirname(dir)
-				if (parent === dir) break
-				dir = parent
-			}
-		} catch {
-			// ignore, passera au fallback
-		}
-
-		// fallback : interroger npm (utile si lecture du package.json a échoué)
-		try {
-			const out = execSync("npm ls o1js --json --depth=0", { stdio: "pipe" }).toString()
-			const parsed = JSON.parse(out)
-			return parsed.dependencies?.o1js?.version ?? "not installed"
-		} catch {
-			return "not installed"
-		}
-	}
 
 	it("fetch secret", async () => {
 		const secret = await getMasterSigner()

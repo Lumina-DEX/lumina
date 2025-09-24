@@ -158,12 +158,12 @@ export const compileContracts = async () => {
 	console.log("Compiling contracts...")
 	// setNumberOfWorkers(4)
 	console.time("compile")
-	const cache = Cache.FileSystem("./cache")
+	const cache = { cache: Cache.None, forceRecompile: true }
 	console.log("compile pool factory")
-	const vk = await PoolFactory.compile({ cache })
+	const vk = await PoolFactory.compile(cache)
 	console.log("factory vk hash", vk.verificationKey.hash.toBigInt())
 	console.log("compile pool fungible token")
-	await FungibleToken.compile({ cache })
+	await FungibleToken.compile(cache)
 	console.timeEnd("compile")
 }
 
