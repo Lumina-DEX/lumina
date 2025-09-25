@@ -60,34 +60,16 @@ Due to an underlying limitation, you will have to manually type the `createPoolM
 
 The `createPoolMachine` includes comprehensive validation before initiating the creation process:
 
-### Token Existence Validation
-
-Before checking if a pool exists, the machine first validates that both tokens exist on the network. This prevents unnecessary operations and provides immediate feedback when a user attempts to create a pool with non-existent tokens.
-
-The token validation process:
-
-1. Checks if Token A exists on the blockchain (skipped for MINA)
-2. Checks if Token B exists on the blockchain (skipped for MINA)
-3. If any token doesn't exist, transitions to `TOKEN_NOT_EXISTS` state
-4. If both tokens exist, proceeds to pool existence validation
-
-### Pool Existence Validation
-
-After confirming tokens exist, the machine checks if a pool already exists for the token pair. This prevents unnecessary server-side computations and provides immediate feedback to users.
-
-The pool validation process:
-
-1. Checks the blockchain to see if a pool for the specified token pair already exists
-2. If a pool exists, the machine transitions to `POOL_ALREADY_EXISTS` state immediately
-3. If no pool exists, the creation process continues normally
-4. In case of validation errors, the process continues optimistically to avoid blocking users
+Before checking if a pool exists, the machine first validates that both tokens exist on the network.
+After confirming tokens exist, the machine checks if a pool already exists for the token pair.
+This prevents unnecessary operations and provides immediate feedback when a user attempts to create a pool with non-existent tokens.
 
 ## `createPoolMachine` States
 
 The `createPoolMachine` has several states that represent the progress of the pool creation:
 
 - `INIT`: The initial state.
-- `CHECKING_TOKEN_EXISTS`: Validates that both tokens exist on the network.
+- `CHECKING_TOKENS_EXISTS`: Validates that both tokens exist on the network.
 - `CHECKING_POOL_EXISTS`: Validates that the pool doesn't already exist on-chain.
 - `GET_STATUS`: Fetching the status of an existing job.
 - `CREATING`: A new pool creation job is being created on the server.
@@ -110,23 +92,12 @@ The `createPoolMachine` context includes an `errors` field that contains details
 type CreatePoolContext = {
 	// ... other fields
 	errors: Error[] // Contains error details when something goes wrong
-	tokensExist: {
-		tokenA: boolean // Whether token A exists on the network
-		tokenB: boolean // Whether token B exists on the network
-	}
+	exists: { pool: boolean; tokenA: boolean; tokenB: boolean } // Token and pool existence info
+	//
 }
 ```
 
-You can access token existence information to provide specific error messages:
-
-```typescript
-if (!context.tokensExist.tokenA) {
-	// Token A doesn't exist on the network
-}
-if (!context.tokensExist.tokenB) {
-	// Token B doesn't exist on the network
-}
-```
+You can access the context with `useSelector` to display error messages to users.
 
 ## Framework Examples
 
@@ -255,7 +226,7 @@ const PoolCreationJob = ({ id, actor }: { id: string; actor: ActorRefFromLogic<C
 		status: state.value,
 		context: state.context,
 		errors: state.context.errors,
-		tokensExist: state.context.tokensExist
+		exists: state.context.exists
 	}))
 
 	return (
@@ -271,9 +242,9 @@ const PoolCreationJob = ({ id, actor }: { id: string; actor: ActorRefFromLogic<C
 
 The typical flow for pool creation is:
 
-1. `INIT` → `CHECKING_TOKEN_EXISTS`
-2. `CHECKING_TOKEN_EXISTS` → `TOKEN_NOT_EXISTS` (if one or both tokens don't exist)
-3. `CHECKING_TOKEN_EXISTS` → `CHECKING_POOL_EXISTS` (if both tokens exist)
+1. `INIT` → `CHECKING_TOKENS_EXISTS`
+2. `CHECKING_TOKENS_EXISTS` → `TOKEN_NOT_EXISTS` (if one or both tokens don't exist)
+3. `CHECKING_TOKENS_EXISTS` → `CHECKING_POOL_EXISTS` (if both tokens exist)
 4. `CHECKING_POOL_EXISTS` → `POOL_ALREADY_EXISTS` (if pool exists)
 5. `CHECKING_POOL_EXISTS` → `CREATING` (if pool doesn't exist)
 6. `CREATING` → `WAITING_FOR_PROOF`
@@ -281,4 +252,5 @@ The typical flow for pool creation is:
 8. `SIGNING` → `CONFIRMING`
 9. `CONFIRMING` → `COMPLETED`
 
-Error transitions can occur from any state to `RETRY` or `FAILED` depending on the type of error encountered. The machine will retry up to 3 times before transitioning to `FAILED`.
+Error transitions can occur from any state to `RETRY` or `FAILED` depending on the type of error encountered.
+The machine will retry up to 3 times before transitioning to `FAILED`.

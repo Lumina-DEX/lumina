@@ -40,59 +40,23 @@ const addError =
 		})
 	}
 
-export const checkTokenExists = fromPromise<
-	{ tokenAExists: boolean; tokenBExists: boolean },
+const tokenExist = async (token: string) => {
+	try {
+		const { account } = await fetchAccount({ publicKey: PublicKey.fromBase58(token) })
+		return !!account
+	} catch {
+		return false
+	}
+}
+
+export const checkTokensExists = fromPromise<
+	{ tokenA: boolean; tokenB: boolean },
 	{ tokenA: string; tokenB: string; network: Networks }
 >(async ({ input }) => {
-	logger.start("Checking if tokens exist:", input.tokenA, input.tokenB)
+	const tokenA = input.tokenA === MINA_ADDRESS ? true : await tokenExist(input.tokenA)
+	const tokenB = input.tokenB === MINA_ADDRESS ? true : await tokenExist(input.tokenB)
 
-	try {
-		let tokenAExists = true
-		let tokenBExists = true
-
-		if (input.tokenA !== MINA_ADDRESS) {
-			try {
-				const tokenAPublicKey = PublicKey.fromBase58(input.tokenA)
-				const tokenAAccount = await fetchAccount({
-					publicKey: tokenAPublicKey
-				})
-				tokenAExists = !!tokenAAccount?.account
-				if (!tokenAExists) {
-					logger.warn("Token A does not exist:", input.tokenA)
-				}
-			} catch (error) {
-				tokenAExists = false
-				logger.error("Error checking token A:", error)
-			}
-		}
-
-		if (input.tokenB !== MINA_ADDRESS) {
-			try {
-				const tokenBPublicKey = PublicKey.fromBase58(input.tokenB)
-				const tokenBAccount = await fetchAccount({
-					publicKey: tokenBPublicKey
-				})
-				tokenBExists = !!tokenBAccount?.account
-				if (!tokenBExists) {
-					logger.warn("Token B does not exist:", input.tokenB)
-				}
-			} catch (error) {
-				tokenBExists = false
-				logger.error("Error checking token B:", error)
-			}
-		}
-
-		if (tokenAExists && tokenBExists) {
-			logger.success("Both tokens exist, can proceed")
-		} else {
-			logger.error("One or both tokens do not exist")
-		}
-
-		return { tokenAExists, tokenBExists }
-	} catch (error) {
-		logger.error("Error checking token existence:", error)
-		throw error
-	}
+	return { tokenA, tokenB }
 })
 
 export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
@@ -237,11 +201,7 @@ interface CreatePoolContext {
 	worker: LuminaDexWorker
 	client: Client
 	errors: Error[]
-	poolExist: boolean
-	tokensExist: {
-		tokenA: boolean
-		tokenB: boolean
-	}
+	exists: { pool: boolean; tokenA: boolean; tokenB: boolean }
 	job: {
 		id: string
 		status: string
@@ -271,10 +231,11 @@ export interface CreatePoolInput {
 export const createPoolMachine = setup({
 	types: {
 		context: {} as CreatePoolContext,
-		input: {} as CreatePoolInput
+		input: {} as CreatePoolInput,
+		tags: {} as "loading"
 	},
 	actors: {
-		checkTokenExists,
+		checkTokensExists,
 		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
@@ -290,16 +251,15 @@ export const createPoolMachine = setup({
 		client: createPoolSignerClient(),
 		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
 		transaction: { hash: "", url: "" },
-		poolExist: false,
-		tokensExist: { tokenA: false, tokenB: false },
+		exists: { pool: false, tokenA: false, tokenB: false },
 		errors: []
 	}),
 	states: {
 		INIT: {
 			on: {
 				create: [
-					{ target: "CREATING", guard: ({ context }) => context.poolExist === true },
-					{ target: "CHECKING_TOKEN_EXISTS", guard: ({ context }) => context.poolExist === false }
+					{ target: "CREATING", guard: ({ context }) => context.exists.pool === true },
+					{ target: "CHECKING_TOKENS_EXISTS", guard: ({ context }) => context.exists.pool === false }
 				],
 				status: { target: "GET_STATUS" }
 			},
@@ -308,20 +268,19 @@ export const createPoolMachine = setup({
 				else enqueue.raise({ type: "create" })
 			})
 		},
-		CHECKING_TOKEN_EXISTS: {
+		CHECKING_TOKENS_EXISTS: {
+			tags: ["loading"],
 			invoke: {
-				src: "checkTokenExists",
+				src: "checkTokensExists",
 				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
 				onDone: [
 					{
 						target: "TOKEN_NOT_EXISTS",
-						guard: ({ event }) => !event.output.tokenAExists || !event.output.tokenBExists,
+						guard: ({ event }) => !event.output.tokenA || !event.output.tokenB,
 						actions: assign(({ context, event }) =>
 							produce(context, (draft) => {
-								draft.tokensExist = {
-									tokenA: event.output.tokenAExists,
-									tokenB: event.output.tokenBExists
-								}
+								draft.exists.tokenA = event.output.tokenA
+								draft.exists.tokenB = event.output.tokenB
 							})
 						)
 					},
@@ -329,10 +288,8 @@ export const createPoolMachine = setup({
 						target: "CHECKING_POOL_EXISTS",
 						actions: assign(({ context, event }) =>
 							produce(context, (draft) => {
-								draft.tokensExist = {
-									tokenA: event.output.tokenAExists,
-									tokenB: event.output.tokenBExists
-								}
+								draft.exists.tokenA = event.output.tokenA
+								draft.exists.tokenB = event.output.tokenB
 							})
 						)
 					}
@@ -345,6 +302,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		CHECKING_POOL_EXISTS: {
+			tags: ["loading"],
 			invoke: {
 				src: "checkPoolExists",
 				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
@@ -352,7 +310,11 @@ export const createPoolMachine = setup({
 					{
 						target: "POOL_ALREADY_EXISTS",
 						guard: ({ event }) => event.output.exists === true,
-						actions: assign({ poolExist: true })
+						actions: assign(({ context }) =>
+							produce(context, (draft) => {
+								draft.exists.pool = true
+							})
+						)
 					},
 					{ target: "CREATING" }
 				],
@@ -364,6 +326,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		GET_STATUS: {
+			tags: ["loading"],
 			// TODO: Implement SDK helpers for persistence.
 			description: "This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
 			invoke: {
@@ -386,6 +349,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		CREATING: {
+			tags: ["loading"],
 			invoke: {
 				src: "createPoolMutation",
 				input: ({ context }) => ({
@@ -410,6 +374,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		WAITING_FOR_PROOF: {
+			tags: ["loading"],
 			invoke: {
 				src: "checkJobStatus",
 				input: clientAndJob,
@@ -426,6 +391,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		SIGNING: {
+			tags: ["loading"],
 			invoke: {
 				src: "transactionMachine",
 				input: ({ context: { wallet, worker, job } }) => ({
@@ -453,6 +419,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		CONFIRMING: {
+			tags: ["loading"],
 			invoke: {
 				src: "confirmPoolCreation",
 				input: clientAndJob,
