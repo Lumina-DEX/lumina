@@ -40,6 +40,25 @@ const addError =
 		})
 	}
 
+const tokenExist = async (token: string) => {
+	try {
+		const { account } = await fetchAccount({ publicKey: PublicKey.fromBase58(token) })
+		return !!account
+	} catch {
+		return false
+	}
+}
+
+export const checkTokensExists = fromPromise<
+	{ tokenA: boolean; tokenB: boolean },
+	{ tokenA: string; tokenB: string; network: Networks }
+>(async ({ input }) => {
+	const tokenA = input.tokenA === MINA_ADDRESS ? true : await tokenExist(input.tokenA)
+	const tokenB = input.tokenB === MINA_ADDRESS ? true : await tokenExist(input.tokenB)
+
+	return { tokenA, tokenB }
+})
+
 export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
 	async ({ input }) => {
 		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
@@ -182,7 +201,7 @@ interface CreatePoolContext {
 	worker: LuminaDexWorker
 	client: Client
 	errors: Error[]
-	poolExist: boolean
+	exists: { pool: boolean; tokenA: boolean; tokenB: boolean }
 	job: {
 		id: string
 		status: string
@@ -212,9 +231,11 @@ export interface CreatePoolInput {
 export const createPoolMachine = setup({
 	types: {
 		context: {} as CreatePoolContext,
-		input: {} as CreatePoolInput
+		input: {} as CreatePoolInput,
+		tags: {} as "loading"
 	},
 	actors: {
+		checkTokensExists,
 		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
@@ -230,15 +251,15 @@ export const createPoolMachine = setup({
 		client: createPoolSignerClient(),
 		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
 		transaction: { hash: "", url: "" },
-		poolExist: false,
+		exists: { pool: false, tokenA: false, tokenB: false },
 		errors: []
 	}),
 	states: {
 		INIT: {
 			on: {
 				create: [
-					{ target: "CREATING", guard: ({ context }) => context.poolExist === true },
-					{ target: "CHECKING_POOL_EXISTS", guard: ({ context }) => context.poolExist === false }
+					{ target: "CREATING", guard: ({ context }) => context.exists.pool === true },
+					{ target: "CHECKING_TOKENS_EXISTS", guard: ({ context }) => context.exists.pool === false }
 				],
 				status: { target: "GET_STATUS" }
 			},
@@ -247,7 +268,41 @@ export const createPoolMachine = setup({
 				else enqueue.raise({ type: "create" })
 			})
 		},
+		CHECKING_TOKENS_EXISTS: {
+			tags: ["loading"],
+			invoke: {
+				src: "checkTokensExists",
+				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
+				onDone: [
+					{
+						target: "TOKEN_NOT_EXISTS",
+						guard: ({ event }) => !event.output.tokenA || !event.output.tokenB,
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								draft.exists.tokenA = event.output.tokenA
+								draft.exists.tokenB = event.output.tokenB
+							})
+						)
+					},
+					{
+						target: "CHECKING_POOL_EXISTS",
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								draft.exists.tokenA = event.output.tokenA
+								draft.exists.tokenB = event.output.tokenB
+							})
+						)
+					}
+				],
+				onError: {
+					target: "CHECKING_POOL_EXISTS",
+					description: "If token existence check fails, we optimistically proceed to check pool existence.",
+					actions: assign(addError(new Error("Token existence check failed")))
+				}
+			}
+		},
 		CHECKING_POOL_EXISTS: {
+			tags: ["loading"],
 			invoke: {
 				src: "checkPoolExists",
 				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
@@ -255,7 +310,11 @@ export const createPoolMachine = setup({
 					{
 						target: "POOL_ALREADY_EXISTS",
 						guard: ({ event }) => event.output.exists === true,
-						actions: assign({ poolExist: true })
+						actions: assign(({ context }) =>
+							produce(context, (draft) => {
+								draft.exists.pool = true
+							})
+						)
 					},
 					{ target: "CREATING" }
 				],
@@ -267,6 +326,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		GET_STATUS: {
+			tags: ["loading"],
 			// TODO: Implement SDK helpers for persistence.
 			description: "This only happens if the jobId is already known, e.g. on error or if the user refreshes the page.",
 			invoke: {
@@ -289,6 +349,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		CREATING: {
+			tags: ["loading"],
 			invoke: {
 				src: "createPoolMutation",
 				input: ({ context }) => ({
@@ -313,6 +374,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		WAITING_FOR_PROOF: {
+			tags: ["loading"],
 			invoke: {
 				src: "checkJobStatus",
 				input: clientAndJob,
@@ -329,6 +391,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		SIGNING: {
+			tags: ["loading"],
 			invoke: {
 				src: "transactionMachine",
 				input: ({ context: { wallet, worker, job } }) => ({
@@ -356,6 +419,7 @@ export const createPoolMachine = setup({
 			}
 		},
 		CONFIRMING: {
+			tags: ["loading"],
 			invoke: {
 				src: "confirmPoolCreation",
 				input: clientAndJob,
@@ -377,6 +441,10 @@ export const createPoolMachine = setup({
 		POOL_ALREADY_EXISTS: {
 			type: "final",
 			description: "Pool already exists for the specified token pair."
+		},
+		TOKEN_NOT_EXISTS: {
+			type: "final",
+			description: "One or both tokens do not exist on the network."
 		},
 		FAILED: {
 			type: "final",
