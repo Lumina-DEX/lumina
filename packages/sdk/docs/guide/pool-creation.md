@@ -136,7 +136,7 @@ const creatingPools = computed(() => {
 				status: state.value,
 				context: state.context,
 				errors: state.context.errors, // Access error information
-				tokensExist: state.context.tokensExist // Access token existence info
+				exists: state.context.exists // Access token existence info
 			}))
 		}
 	})
@@ -152,9 +152,9 @@ const creatingPools = computed(() => {
       <p><strong>Status:</strong> {{ pool.state.status }}</p>
       <p v-if='pool.state.status === "TOKEN_NOT_EXISTS"'>
         <strong>Token Error:</strong>
-        <span v-if="!pool.state.tokensExist.tokenA"
+        <span v-if="!pool.state.exists.tokenA"
         >Token A doesn't exist on network.</span>
-        <span v-if="!pool.state.tokensExist.tokenB"
+        <span v-if="!pool.state.exists.tokenB"
         >Token B doesn't exist on network.</span>
       </p>
       <p v-if='pool.state.status === "POOL_ALREADY_EXISTS"'>
