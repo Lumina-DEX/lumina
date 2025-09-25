@@ -27,13 +27,6 @@ const PoolCreationJob = ({ actor }: { id: string; actor: ActorRefFromLogic<Creat
 				{(poolState.status === "RETRY" || poolState.status === "FAILED") && (
 					<div className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
 						<span className="text-red-500">An error occurred.</span>
-						{poolState.errors && poolState.errors.length > 0 && (
-							<div className="mt-2 text-sm text-gray-600">
-								{poolState.errors.map((error, index) => (
-									<div key={index}>{error.message}</div>
-								))}
-							</div>
-						)}
 					</div>
 				)}
 
