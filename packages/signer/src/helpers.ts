@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight, deployPoolRight, FungibleToken, PoolFactory } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -158,12 +158,21 @@ export const compileContracts = async () => {
 	console.log("Compiling contracts...")
 	// setNumberOfWorkers(4)
 	console.time("compile")
-	const cache = Cache.FileSystem("./cache")
-	console.log("compile pool factory")
-	const vk = await PoolFactory.compile({ cache })
+	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
+
+	console.time("FungibleTokenAdmin")
+	await FungibleTokenAdmin.compile(cache)
+	console.timeEnd("FungibleTokenAdmin")
+
+	console.time("FungibleToken")
+	await FungibleToken.compile(cache)
+	console.timeEnd("FungibleToken")
+
+	console.time("PoolFactory")
+	const vk = await PoolFactory.compile(cache)
+	console.timeEnd("PoolFactory")
+
 	console.log("factory vk hash", vk.verificationKey.hash.toBigInt())
-	console.log("compile pool fungible token")
-	await FungibleToken.compile({ cache })
 	console.timeEnd("compile")
 }
 

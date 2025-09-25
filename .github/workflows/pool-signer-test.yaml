@@ -42,8 +42,10 @@ jobs:
 
       - name: 🛠️ Setup Moon toolchain
         uses: "moonrepo/setup-toolchain@v0"
+
       - name: 🗃️ DB migrate & seed
         run: moon signer:db-migrate && moon signer:db-seed
+
       - name: 🧪 Run integration tests
         run: moon signer:test-integration
         env:

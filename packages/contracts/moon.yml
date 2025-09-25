@@ -71,6 +71,9 @@ tasks:
   test-multisig:
     extends: base-test
     args: MultiSig
+  test-vk:
+    extends: base-test
+    args: VerificationKey
   oxlint:
     command: oxlint --type-aware
     options:
