@@ -9,7 +9,7 @@ These actions can be performed concurrently with other users.
 
 ## Licensing
 
-Business Source License 1.1
+Modified RPL Licence
 
 Licensor: Lumina Labs
 
