@@ -40,6 +40,61 @@ const addError =
 		})
 	}
 
+export const checkTokenExists = fromPromise<
+	{ tokenAExists: boolean; tokenBExists: boolean },
+	{ tokenA: string; tokenB: string; network: Networks }
+>(async ({ input }) => {
+	logger.start("Checking if tokens exist:", input.tokenA, input.tokenB)
+
+	try {
+		let tokenAExists = true
+		let tokenBExists = true
+
+		if (input.tokenA !== MINA_ADDRESS) {
+			try {
+				const tokenAPublicKey = PublicKey.fromBase58(input.tokenA)
+				const tokenAAccount = await fetchAccount({
+					publicKey: tokenAPublicKey
+				})
+				tokenAExists = !!tokenAAccount?.account
+				if (!tokenAExists) {
+					logger.warn("Token A does not exist:", input.tokenA)
+				}
+			} catch (error) {
+				tokenAExists = false
+				logger.error("Error checking token A:", error)
+			}
+		}
+
+		if (input.tokenB !== MINA_ADDRESS) {
+			try {
+				const tokenBPublicKey = PublicKey.fromBase58(input.tokenB)
+				const tokenBAccount = await fetchAccount({
+					publicKey: tokenBPublicKey
+				})
+				tokenBExists = !!tokenBAccount?.account
+				if (!tokenBExists) {
+					logger.warn("Token B does not exist:", input.tokenB)
+				}
+			} catch (error) {
+				tokenBExists = false
+				logger.error("Error checking token B:", error)
+			}
+		}
+
+		if (tokenAExists && tokenBExists) {
+			logger.success("Both tokens exist, can proceed")
+		} else {
+			logger.error("One or both tokens do not exist")
+		}
+
+		return { tokenAExists, tokenBExists }
+	} catch (error) {
+		logger.error("Error checking token existence:", error)
+		throw error
+	}
+})
+
 export const checkPoolExists = fromPromise<{ exists: boolean }, { tokenA: string; tokenB: string; network: Networks }>(
 	async ({ input }) => {
 		logger.start("Checking if pool exists for tokens:", input.tokenA, input.tokenB)
@@ -183,6 +238,10 @@ interface CreatePoolContext {
 	client: Client
 	errors: Error[]
 	poolExist: boolean
+	tokensExist: {
+		tokenA: boolean
+		tokenB: boolean
+	}
 	job: {
 		id: string
 		status: string
@@ -215,6 +274,7 @@ export const createPoolMachine = setup({
 		input: {} as CreatePoolInput
 	},
 	actors: {
+		checkTokenExists,
 		checkPoolExists,
 		createPoolMutation,
 		checkJobStatus,
@@ -231,6 +291,7 @@ export const createPoolMachine = setup({
 		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
 		transaction: { hash: "", url: "" },
 		poolExist: false,
+		tokensExist: { tokenA: false, tokenB: false },
 		errors: []
 	}),
 	states: {
@@ -238,7 +299,7 @@ export const createPoolMachine = setup({
 			on: {
 				create: [
 					{ target: "CREATING", guard: ({ context }) => context.poolExist === true },
-					{ target: "CHECKING_POOL_EXISTS", guard: ({ context }) => context.poolExist === false }
+					{ target: "CHECKING_TOKEN_EXISTS", guard: ({ context }) => context.poolExist === false }
 				],
 				status: { target: "GET_STATUS" }
 			},
@@ -246,6 +307,42 @@ export const createPoolMachine = setup({
 				if (context.job.id) enqueue.raise({ type: "status" })
 				else enqueue.raise({ type: "create" })
 			})
+		},
+		CHECKING_TOKEN_EXISTS: {
+			invoke: {
+				src: "checkTokenExists",
+				input: ({ context: { tokenA, tokenB, network } }) => ({ tokenA, tokenB, network }),
+				onDone: [
+					{
+						target: "TOKEN_NOT_EXISTS",
+						guard: ({ event }) => !event.output.tokenAExists || !event.output.tokenBExists,
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								draft.tokensExist = {
+									tokenA: event.output.tokenAExists,
+									tokenB: event.output.tokenBExists
+								}
+							})
+						)
+					},
+					{
+						target: "CHECKING_POOL_EXISTS",
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								draft.tokensExist = {
+									tokenA: event.output.tokenAExists,
+									tokenB: event.output.tokenBExists
+								}
+							})
+						)
+					}
+				],
+				onError: {
+					target: "CHECKING_POOL_EXISTS",
+					description: "If token existence check fails, we optimistically proceed to check pool existence.",
+					actions: assign(addError(new Error("Token existence check failed")))
+				}
+			}
 		},
 		CHECKING_POOL_EXISTS: {
 			invoke: {
@@ -377,6 +474,10 @@ export const createPoolMachine = setup({
 		POOL_ALREADY_EXISTS: {
 			type: "final",
 			description: "Pool already exists for the specified token pair."
+		},
+		TOKEN_NOT_EXISTS: {
+			type: "final",
+			description: "One or both tokens do not exist on the network."
 		},
 		FAILED: {
 			type: "final",
