@@ -56,22 +56,38 @@ If you want to allow users to create multiple pools simultaneously, use this id 
 Due to an underlying limitation, you will have to manually type the `createPoolMachine` actor when accessing it. Refer to the examples below for more details.
 :::
 
-## Pool Existence Validation
+## Token and Pool Validation
 
-The `createPoolMachine` includes built-in validation to check if a pool already exists before initiating the creation process. This prevents unnecessary server-side computations and provides immediate feedback to users.
+The `createPoolMachine` includes comprehensive validation before initiating the creation process:
 
-The validation process:
+### Token Existence Validation
+
+Before checking if a pool exists, the machine first validates that both tokens exist on the network. This prevents unnecessary operations and provides immediate feedback when a user attempts to create a pool with non-existent tokens.
+
+The token validation process:
+
+1. Checks if Token A exists on the blockchain (skipped for MINA)
+2. Checks if Token B exists on the blockchain (skipped for MINA)
+3. If any token doesn't exist, transitions to `TOKEN_NOT_EXISTS` state
+4. If both tokens exist, proceeds to pool existence validation
+
+### Pool Existence Validation
+
+After confirming tokens exist, the machine checks if a pool already exists for the token pair. This prevents unnecessary server-side computations and provides immediate feedback to users.
+
+The pool validation process:
 
 1. Checks the blockchain to see if a pool for the specified token pair already exists
 2. If a pool exists, the machine transitions to `POOL_ALREADY_EXISTS` state immediately
 3. If no pool exists, the creation process continues normally
-4. In case of validation errors, the process continues to avoid blocking users
+4. In case of validation errors, the process continues optimistically to avoid blocking users
 
 ## `createPoolMachine` States
 
 The `createPoolMachine` has several states that represent the progress of the pool creation:
 
 - `INIT`: The initial state.
+- `CHECKING_TOKEN_EXISTS`: Validates that both tokens exist on the network.
 - `CHECKING_POOL_EXISTS`: Validates that the pool doesn't already exist on-chain.
 - `GET_STATUS`: Fetching the status of an existing job.
 - `CREATING`: A new pool creation job is being created on the server.
@@ -80,6 +96,7 @@ The `createPoolMachine` has several states that represent the progress of the po
 - `CONFIRMING`: The signed transaction is being sent to the server for confirmation.
 - `RETRY`: An error occurred during the process. The machine will retry.
 - `COMPLETED`: The pool has been successfully created.
+- `TOKEN_NOT_EXISTS`: Final state reached when one or both tokens don't exist on the network.
 - `POOL_ALREADY_EXISTS`: Final state reached when a pool already exists for the token pair.
 - `FAILED`: A non-recoverable error occurred.
 
@@ -87,12 +104,27 @@ By monitoring these states, you can provide detailed feedback to your users abou
 
 ## Error Handling
 
-The `createPoolMachine` context includes an `error` field that contains details about any errors that occur during the pool creation process:
+The `createPoolMachine` context includes an `errors` field that contains details about any errors that occur during the pool creation process:
 
 ```typescript
 type CreatePoolContext = {
 	// ... other fields
 	errors: Error[] // Contains error details when something goes wrong
+	tokensExist: {
+		tokenA: boolean // Whether token A exists on the network
+		tokenB: boolean // Whether token B exists on the network
+	}
+}
+```
+
+You can access token existence information to provide specific error messages:
+
+```typescript
+if (!context.tokensExist.tokenA) {
+	// Token A doesn't exist on the network
+}
+if (!context.tokensExist.tokenB) {
+	// Token B doesn't exist on the network
 }
 ```
 
@@ -132,7 +164,8 @@ const creatingPools = computed(() => {
 			state: useSelector(poolActor, (state) => ({
 				status: state.value,
 				context: state.context,
-				errors: state.context.errors // Access error information
+				errors: state.context.errors, // Access error information
+				tokensExist: state.context.tokensExist // Access token existence info
 			}))
 		}
 	})
@@ -146,6 +179,13 @@ const creatingPools = computed(() => {
     <div v-for="pool in creatingPools" :key="pool.id">
       <h3>Job ID: {{ pool.id }}</h3>
       <p><strong>Status:</strong> {{ pool.state.status }}</p>
+      <p v-if='pool.state.status === "TOKEN_NOT_EXISTS"'>
+        <strong>Token Error:</strong>
+        <span v-if="!pool.state.tokensExist.tokenA"
+        >Token A doesn't exist on network.</span>
+        <span v-if="!pool.state.tokensExist.tokenB"
+        >Token B doesn't exist on network.</span>
+      </p>
       <p v-if='pool.state.status === "POOL_ALREADY_EXISTS"'>
         <strong>Pool Already Exists!</strong>
       </p>
@@ -214,7 +254,8 @@ const PoolCreationJob = ({ id, actor }: { id: string; actor: ActorRefFromLogic<C
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context,
-		errors: state.context.errors
+		errors: state.context.errors,
+		tokensExist: state.context.tokensExist
 	}))
 
 	return (
@@ -230,12 +271,14 @@ const PoolCreationJob = ({ id, actor }: { id: string; actor: ActorRefFromLogic<C
 
 The typical flow for pool creation is:
 
-1. `INIT` → `CHECKING_POOL_EXISTS`
-2. `CHECKING_POOL_EXISTS` → `POOL_ALREADY_EXISTS` (if pool exists)
-3. `CHECKING_POOL_EXISTS` → `CREATING` (if pool doesn't exist)
-4. `CREATING` → `WAITING_FOR_PROOF`
-5. `WAITING_FOR_PROOF` → `SIGNING`
-6. `SIGNING` → `CONFIRMING`
-7. `CONFIRMING` → `COMPLETED`
+1. `INIT` → `CHECKING_TOKEN_EXISTS`
+2. `CHECKING_TOKEN_EXISTS` → `TOKEN_NOT_EXISTS` (if one or both tokens don't exist)
+3. `CHECKING_TOKEN_EXISTS` → `CHECKING_POOL_EXISTS` (if both tokens exist)
+4. `CHECKING_POOL_EXISTS` → `POOL_ALREADY_EXISTS` (if pool exists)
+5. `CHECKING_POOL_EXISTS` → `CREATING` (if pool doesn't exist)
+6. `CREATING` → `WAITING_FOR_PROOF`
+7. `WAITING_FOR_PROOF` → `SIGNING`
+8. `SIGNING` → `CONFIRMING`
+9. `CONFIRMING` → `COMPLETED`
 
-Error transitions can occur from any state to `ERRORED` or `FAILED` depending on the type of error encountered.
+Error transitions can occur from any state to `RETRY` or `FAILED` depending on the type of error encountered. The machine will retry up to 3 times before transitioning to `FAILED`.
