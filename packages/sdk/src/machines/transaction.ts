@@ -159,7 +159,8 @@ export const transactionMachine = setup({
 							enqueue.assign({ savedTransaction: event.output })
 						})
 					}
-				]
+				],
+				onError: "FAILED"
 			}
 		},
 		SIGNING: {
@@ -170,7 +171,8 @@ export const transactionMachine = setup({
 				onDone: {
 					target: "SENDING",
 					actions: assign({ signedTransaction: ({ event }) => event.output })
-				}
+				},
+				onError: "FAILED"
 			}
 		},
 		SENDING: {
@@ -195,7 +197,8 @@ export const transactionMachine = setup({
 							result: context.db.createResult({ hash: event.output.hash })
 						}))
 					}
-				]
+				],
+				onError: "FAILED"
 			}
 		},
 		WAITING: {
@@ -213,9 +216,11 @@ export const transactionMachine = setup({
 						enqueue.assign({ result: db.createResult({ hash: event.output }) })
 						db.confirmTransaction()
 					})
-				}
+				},
+				onError: "FAILED"
 			}
 		},
-		DONE: { type: "final" }
+		DONE: { type: "final" },
+		FAILED: { type: "final" }
 	}
 })
