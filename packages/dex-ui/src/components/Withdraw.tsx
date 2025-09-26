@@ -32,7 +32,7 @@ const Withdraw = () => {
 				}
 			})
 		},
-		[Dex, pool.address]
+		[Dex, pool?.address]
 	)
 
 	const withdrawLiquidity = () => {
