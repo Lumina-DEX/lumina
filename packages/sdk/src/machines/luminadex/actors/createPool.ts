@@ -23,7 +23,7 @@ import {
 	PoolCreationSubscription
 } from "../../../graphql/pool-signer"
 import { createMeasure, prefixedLogger } from "../../../helpers/debug"
-import { transactionMachine } from "../../transaction"
+import { type TransactionMachineOutput, transactionMachine } from "../../transaction"
 import type { WalletActorRef } from "../../wallet/actors"
 import type { Networks } from "../../wallet/types"
 
@@ -241,7 +241,7 @@ export const createPoolMachine = setup({
 		checkJobStatus,
 		confirmPoolCreation,
 		getJobStatus,
-		transactionMachine
+		transactionMachine: transactionMachine as any // TODO: TS7056 :/
 	}
 }).createMachine({
 	id: "createPoolFlow",
@@ -392,9 +392,10 @@ export const createPoolMachine = setup({
 		},
 		SIGNING: {
 			tags: ["loading"],
+			//TODO: Because of TS 7056, we have to typecast here.
 			invoke: {
 				src: "transactionMachine",
-				input: ({ context: { wallet, worker, job } }) => ({
+				input: ({ context: { wallet, worker, job } }: { context: CreatePoolContext }) => ({
 					id: job.id,
 					transaction: job.transactionJson,
 					wallet,
@@ -403,10 +404,24 @@ export const createPoolMachine = setup({
 				onDone: [
 					{
 						target: "CONFIRMING",
+						guard: ({ event }) => !(event.output instanceof Error),
 						actions: assign(({ context, event }) =>
 							produce(context, (draft) => {
-								if (event.output.result) {
-									draft.transaction = event.output.result
+								const output = event.output as TransactionMachineOutput
+								if (!(output instanceof Error)) {
+									draft.transaction = output
+								}
+							})
+						)
+					},
+					{
+						target: "FAILED",
+						guard: ({ event }) => event.output instanceof Error,
+						actions: assign(({ context, event }) =>
+							produce(context, (draft) => {
+								const output = event.output as TransactionMachineOutput
+								if (output instanceof Error) {
+									draft.errors.push(output)
 								}
 							})
 						)
