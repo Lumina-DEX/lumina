@@ -1,0 +1,32 @@
+{
+	"name": "Mina alpha",
+	"timestamp": "2025-05-07T12:00:00+00:00",
+	"version": {
+		"major": 1,
+		"minor": 0,
+		"patch": 0
+	},
+	"keywords": ["uniswap", "default", "list"],
+	"tokens": [
+		{
+			"address": "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+			"poolAddress": "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
+			"chainId": "mina-devnet",
+			"tokenId": "wSHV2S4qX9jFsLjQo8r1BsMLH2ZRKsZx6EJd1sbozGPieEC4Jf",
+			"name": "Toka test token",
+			"symbol": "TOKA",
+			"decimals": 9,
+			"approved": true
+		},
+		{
+			"address": "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
+			"poolAddress": "B62qjWz1KNji4cf7ok2dur9iLPPrmy1DrpwhXP3iUbzCLjAWi6f2eHy",
+			"chainId": "zeko-devnet",
+			"tokenId": "wSHV2S4qX9jFsLjQo8r1BsMLH2ZRKsZx6EJd1sbozGPieEC4Jf",
+			"name": "Toka test token",
+			"symbol": "TOKA",
+			"decimals": 9,
+			"approved": true
+		}
+	]
+}

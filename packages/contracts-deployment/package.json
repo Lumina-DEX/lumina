@@ -1,0 +1,31 @@
+{
+	"name": "ui",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "next build --no-lint"
+	},
+	"dependencies": {
+		"@emotion/react": "^11.13.3",
+		"@emotion/styled": "^11.13.0",
+		"@lumina-dex/contracts": "workspace:^",
+		"@mui/material": "^6.1.2",
+		"coi-serviceworker": "^0.1.7",
+		"next": "14.2.3",
+		"o1js": "catalog:",
+		"react": "^18",
+		"react-currency-format": "github:mohitgupta8888/react-currency-format#4f365ec5005e23451a3b95da1a209b0025622b8d",
+		"react-dom": "^18",
+		"zustand": "^4.4.1"
+	},
+	"devDependencies": {
+		"@types/node": "^20",
+		"@types/react": "^18",
+		"@types/react-dom": "^18",
+		"autoprefixer": "^10.4.20",
+		"postcss": "^8.4.41",
+		"tailwindcss": "^3.4.10",
+		"typescript": "^5"
+	}
+}
