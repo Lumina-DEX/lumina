@@ -60,7 +60,7 @@ class TransactionMachineError extends Error {
 const fail = ({ event }: ActionArgs<TransactionMachineContext, ErrorActorEvent, EventObject>) => {
 	const error = event.error instanceof Error ? event.error : new TransactionMachineError(String(event.error))
 	logger.error(error)
-	return { error } as const
+	return { error }
 }
 
 export const transactionMachine = setup({

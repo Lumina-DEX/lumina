@@ -1,5 +1,5 @@
 ---
-"@lumina-dex/sdk": major
+"@lumina-dex/sdk": minor
 ---
 
-Fixes an issue with the SDK after an error on a transaction
+Catches transaction errors.
