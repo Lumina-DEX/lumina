@@ -20,6 +20,10 @@ tasks:
       - "@group(sources)"
     outputs:
       - dist/
+  typecheck:
+    command: tsc --noEmit
+    options:
+      runInCI: false
   schema-get-zeko:
     command: gql-tada generate schema 'https://testnet.zeko.io/graphql' --output @out(0)
     outputs:

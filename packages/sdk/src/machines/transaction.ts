@@ -1,6 +1,6 @@
 import type { ZkappCommand } from "@aurowallet/mina-provider"
 import type { Mina } from "o1js"
-import type { ActorRefFromLogic } from "xstate"
+import type { ActionArgs, ActorRefFromLogic, ErrorActorEvent, EventObject } from "xstate"
 import { assign, enqueueActions, fromPromise, setup } from "xstate"
 import { urls } from "../constants"
 import type { LuminaDexWorker } from "../dex/luminadex-worker"
@@ -17,7 +17,7 @@ export type Result = ReturnType<HashDb["createResult"]>
 
 type SentTransaction = { hash: string; zkAppId: string }
 
-type TransactionMachineOutput = { result: Result | null }
+export type TransactionMachineOutput = Result | Error
 
 export type TransactionMachineContext = {
 	id: string
@@ -28,9 +28,10 @@ export type TransactionMachineContext = {
 	savedTransaction: SavedTransaction | null
 	signedTransaction: ZkappCommand | null
 	sentTransaction: SentTransaction | null
-	result: TransactionMachineOutput["result"]
+	result: Result | null
 	db: HashDb
 	network: Networks
+	error: Error | null
 }
 
 export type TransactionMachineInput = {
@@ -48,6 +49,19 @@ type SendSignedTxInput = {
 }
 
 type WaitForTxInput = SentTransaction & { network: Networks; worker: LuminaDexWorker }
+
+class TransactionMachineError extends Error {
+	constructor(message = "An unknown transaction error occurred.") {
+		super(message)
+		this.name = this.constructor.name
+	}
+}
+
+const fail = ({ event }: ActionArgs<TransactionMachineContext, ErrorActorEvent, EventObject>) => {
+	const error = event.error instanceof Error ? event.error : new TransactionMachineError(String(event.error))
+	logger.error(error)
+	return { error }
+}
 
 export const transactionMachine = setup({
 	types: {
@@ -136,10 +150,11 @@ export const transactionMachine = setup({
 			sentTransaction: null,
 			result: null,
 			db: hashDb({ id, network, account, transaction }),
-			network
+			network,
+			error: null
 		}
 	},
-	output: ({ context: { result } }) => ({ result }),
+	output: ({ context: { result, error } }) => result ?? error ?? new TransactionMachineError("Unknown error"),
 	states: {
 		RESUMING: {
 			description: "Attempt to resume an unconfirmed transaction.",
@@ -155,11 +170,13 @@ export const transactionMachine = setup({
 						target: "WAITING",
 						guard: ({ event }) => event.output !== undefined,
 						actions: enqueueActions(({ enqueue, event }) => {
-							if (!event.output) throw new Error("No output transaction found")
-							enqueue.assign({ savedTransaction: event.output })
+							if (event.output) {
+								enqueue.assign({ savedTransaction: event.output })
+							}
 						})
 					}
-				]
+				],
+				onError: { target: "FAILED", actions: assign(fail) }
 			}
 		},
 		SIGNING: {
@@ -170,7 +187,8 @@ export const transactionMachine = setup({
 				onDone: {
 					target: "SENDING",
 					actions: assign({ signedTransaction: ({ event }) => event.output })
-				}
+				},
+				onError: { target: "FAILED", actions: assign(fail) }
 			}
 		},
 		SENDING: {
@@ -178,7 +196,7 @@ export const transactionMachine = setup({
 			invoke: {
 				src: "sendSignedTransaction",
 				input: ({ context: { signedTransaction, db, network, worker } }) => {
-					if (!signedTransaction) throw new Error("No signed transaction to send")
+					if (!signedTransaction) throw new TransactionMachineError("No signed transaction to send")
 					return { signedTransaction, db, worker, zeko: network.includes("zeko") }
 				},
 				onDone: [
@@ -195,7 +213,8 @@ export const transactionMachine = setup({
 							result: context.db.createResult({ hash: event.output.hash })
 						}))
 					}
-				]
+				],
+				onError: { target: "FAILED", actions: assign(fail) }
 			}
 		},
 		WAITING: {
@@ -204,7 +223,7 @@ export const transactionMachine = setup({
 				src: "waitForTransaction",
 				input: ({ context: { sentTransaction, worker, network } }) => {
 					if (sentTransaction) return { ...sentTransaction, worker, network }
-					throw new Error("No sent transaction was found.")
+					throw new TransactionMachineError("No sent transaction was found.")
 				},
 				onDone: {
 					target: "DONE",
@@ -213,9 +232,11 @@ export const transactionMachine = setup({
 						enqueue.assign({ result: db.createResult({ hash: event.output }) })
 						db.confirmTransaction()
 					})
-				}
+				},
+				onError: { target: "FAILED", actions: assign(fail) }
 			}
 		},
-		DONE: { type: "final" }
+		DONE: { type: "final" },
+		FAILED: { type: "final" }
 	}
 })
