@@ -1,5 +1,12 @@
 # @lumina-dex/sdk
 
+## 0.24.0
+
+### Minor Changes
+
+- 066a5b3: Catches transaction errors.
+- 45ca62c: Check if a token exists before the pool creation
+
 ## 0.23.0
 
 ### Minor Changes
