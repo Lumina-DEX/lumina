@@ -17,7 +17,11 @@ export type Result = ReturnType<HashDb["createResult"]>
 
 type SentTransaction = { hash: string; zkAppId: string }
 
-type TransactionMachineOutput = { result: Result | null }
+type TransactionMachineOutput = {
+	result: Result | null
+	success: boolean
+	error: Error | null
+}
 
 export type TransactionMachineContext = {
 	id: string
@@ -31,6 +35,7 @@ export type TransactionMachineContext = {
 	result: TransactionMachineOutput["result"]
 	db: HashDb
 	network: Networks
+	error: Error | null
 }
 
 export type TransactionMachineInput = {
@@ -136,10 +141,15 @@ export const transactionMachine = setup({
 			sentTransaction: null,
 			result: null,
 			db: hashDb({ id, network, account, transaction }),
-			network
+			network,
+			error: null
 		}
 	},
-	output: ({ context: { result } }) => ({ result }),
+	output: ({ context: { result, error } }) => ({
+		result,
+		success: !error,
+		error
+	}),
 	states: {
 		RESUMING: {
 			description: "Attempt to resume an unconfirmed transaction.",
@@ -160,7 +170,12 @@ export const transactionMachine = setup({
 						})
 					}
 				],
-				onError: "FAILED"
+				onError: {
+					target: "FAILED",
+					actions: assign({
+						error: ({ event }) => (event.error instanceof Error ? event.error : new Error(String(event.error)))
+					})
+				}
 			}
 		},
 		SIGNING: {
@@ -172,7 +187,12 @@ export const transactionMachine = setup({
 					target: "SENDING",
 					actions: assign({ signedTransaction: ({ event }) => event.output })
 				},
-				onError: "FAILED"
+				onError: {
+					target: "FAILED",
+					actions: assign({
+						error: ({ event }) => (event.error instanceof Error ? event.error : new Error(String(event.error)))
+					})
+				}
 			}
 		},
 		SENDING: {
@@ -198,7 +218,12 @@ export const transactionMachine = setup({
 						}))
 					}
 				],
-				onError: "FAILED"
+				onError: {
+					target: "FAILED",
+					actions: assign({
+						error: ({ event }) => (event.error instanceof Error ? event.error : new Error(String(event.error)))
+					})
+				}
 			}
 		},
 		WAITING: {
@@ -217,7 +242,12 @@ export const transactionMachine = setup({
 						db.confirmTransaction()
 					})
 				},
-				onError: "FAILED"
+				onError: {
+					target: "FAILED",
+					actions: assign({
+						error: ({ event }) => (event.error instanceof Error ? event.error : new Error(String(event.error)))
+					})
+				}
 			}
 		},
 		DONE: { type: "final" },
