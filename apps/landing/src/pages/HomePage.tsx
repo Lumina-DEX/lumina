@@ -69,7 +69,7 @@ function HomePage() {
 					}}
 				>
 					<div className="basis-3/5 px-16 max-sm:basis-4/5 max-sm:px-2">
-						<img src="/logo/logo2.png" loading="lazy" alt="" className="w-full h-full translate-y-[-32px]"></img>
+						<img src="/logo/logo2.png" loading="lazy" alt="" className="w-full h-full translate-y-[-32px]" />
 					</div>
 				</div>
 				<div
@@ -123,7 +123,7 @@ function HomePage() {
 									backgroundSize: "cover",
 									backgroundRepeat: "no-repeat"
 								}}
-							></div>
+							/>
 							{windowWidth <= 425 ? (
 								<div className="font-Trebuchet">
 									zkProofs enable private transactions
@@ -145,7 +145,7 @@ function HomePage() {
 									backgroundSize: "cover",
 									backgroundRepeat: "no-repeat"
 								}}
-							></div>
+							/>
 							{windowWidth <= 425 ? (
 								<div className="font-Trebuchet ">
 									Built-in KYC and permissioned <br /> liquidity pools
@@ -166,7 +166,7 @@ function HomePage() {
 									backgroundSize: "cover",
 									backgroundRepeat: "no-repeat"
 								}}
-							></div>
+							/>
 							{windowWidth <= 425 ? (
 								<div className="font-Trebuchet">
 									Lumina is the guiding light for TradFi <br /> and Web2 DeFi ambitions
@@ -191,14 +191,14 @@ function HomePage() {
 							<div className="flex items-center justify-center basis-1/2 px-2">
 								<div className="h-20 w-36 flex justify-center  items-center px-2 py-2  ">
 									<Link to={"https://www.bigbrain.holdings/"} target="_blank" className="w-full h-full">
-										<img src="/investors/big.png" loading="lazy" alt="Jump" className="w-full h-full"></img>
+										<img src="/investors/big.png" loading="lazy" alt="Jump" className="w-full h-full" />
 									</Link>
 								</div>
 							</div>
 							<div className="flex items-center justify-center basis-1/2 px-2">
 								<div className="h-20 w-36 flex justify-center  items-center px-2 py-2 ">
 									<Link to={"https://jumpcrypto.com/"} target="_blank" className="w-full h-full">
-										<img src="/investors/Jump.png" loading="lazy" alt="Jump" className="w-full h-full"></img>
+										<img src="/investors/Jump.png" loading="lazy" alt="Jump" className="w-full h-full" />
 									</Link>
 								</div>
 							</div>
@@ -207,14 +207,14 @@ function HomePage() {
 							<div className="flex items-center justify-center basis-1/2 px-2">
 								<div className="h-20 w-36 cursor-pointer flex justify-center  items-center px-2 py-2 ">
 									<Link to={"https://www.minafoundation.com/"} target="_blank" className="w-full h-full">
-										<img src="/investors/Mina.png" loading="lazy" alt="Mina" className="w-full h-full"></img>
+										<img src="/investors/Mina.png" loading="lazy" alt="Mina" className="w-full h-full" />
 									</Link>
 								</div>
 							</div>
 							<div className="flex items-center justify-center basis-1/2 px-2">
 								<div className="h-20 w-36 cursor-pointer flex justify-center  items-center px-2 py-2">
 									<Link to={"https://o1labs.org/"} target="_blank" className="w-full h-full">
-										<img src="/investors/O.png" loading="lazy" alt="Mina" className="w-full h-full"></img>
+										<img src="/investors/O.png" loading="lazy" alt="Mina" className="w-full h-full" />
 									</Link>
 								</div>
 							</div>
@@ -242,7 +242,7 @@ function HomePage() {
 										backgroundSize: "contain",
 										backgroundRepeat: "no-repeat"
 									}}
-								></div>
+								/>
 								<div className="font-Trebuchet">
 									<Link to="https://www.linkedin.com/in/evan-kereiakes/" target="_blank">
 										Evan Kereiakes
@@ -261,7 +261,7 @@ function HomePage() {
 										backgroundSize: "contain",
 										backgroundRepeat: "no-repeat"
 									}}
-								></div>
+								/>
 								<div className="font-Trebuchet">
 									<Link to="https://www.linkedin.com/in/sebastiengllmt/" target="_blank">
 										Sebastien Guillemot
@@ -282,7 +282,7 @@ function HomePage() {
 										backgroundSize: "contain",
 										backgroundRepeat: "no-repeat"
 									}}
-								></div>
+								/>
 								<div className="font-Trebuchet">
 									<Link to="https://www.linkedin.com/in/eddy-boughioul-aa40aaa9/" target="_blank">
 										Eddy Boughioul
@@ -302,7 +302,7 @@ function HomePage() {
 										backgroundRepeat: "no-repeat",
 										backgroundPosition: "center"
 									}}
-								></div>
+								/>
 								<div className="font-Trebuchet">
 									<Link to={"https://www.linkedin.com/in/kesujames/"} target="_blank">
 										Kesu James

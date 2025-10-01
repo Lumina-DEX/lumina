@@ -1,11 +1,11 @@
+import { useEffect, useState } from "react"
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom"
+import Header from "./components/Header"
 import Layout from "./components/Layout"
 import HomePage from "./pages/HomePage"
 import PrivacyPage from "./pages/PrivacyPage"
 // import DisclaimersPage from "./pages/DisclaimersPage";
 import SplashPage from "./pages/SplashPage"
-import Header from "./components/Header"
-import { useEffect, useState } from "react"
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom"
 import "./App.css"
 import HoloImg from "./assets/backgrounds/holo.png"
 import SpinnerImg from "./assets/images/spinner.svg"
@@ -81,7 +81,7 @@ function SignUp() {
 				height="100%"
 				src="https://5ee5af98.sibforms.com/serve/MUIFAFnJk1dGi9MIoIWEIXN_0u0BlTcO2kfbjQwZPN_7LbCAqa_g-R-BbzUtXKAuMRy2yWGqTUgUopFoWyfSK_JT1WDWGfk_uyLmWmkh5hgQ8BWOWmOry4j_h_dl144vs76TbJ9HjKhDWrDW50Bajy4JRRExaYxG7R_jTRIz4OBUj2xg0RJH9N77wZtHTsB-zLRanK9oSvs_4zx_"
 				allowFullScreen
-			></iframe>
+			/>
 		</div>
 	)
 }
@@ -96,7 +96,7 @@ function Contact() {
 				height="100%"
 				src="https://5ee5af98.sibforms.com/serve/MUIFAPDRmzxHJyaOtltyLdKJMhQXPYo3ZAMc3N2M2gkPdLb_8EIIE9kspJXyvV3iNNkIxIpOsaAv6hIRAi7iCmBTEv_u69T21nL3Q03M5FuLcp4P9kcgYCG0esHBnDW_b2s4azIIj88xUD2t9KBnxi_b2Gh9lMjQNPhh0D9gFd11jDkJTfrwFiBA_IA4DKlhFHKeSkkFQzViH6HU"
 				allowFullScreen
-			></iframe>
+			/>
 		</div>
 	)
 }
@@ -106,11 +106,14 @@ function App() {
 	const subDomain = host.replace(".luminadex.com", "")
 	if (subDomain === "signup") {
 		return <SignUp />
-	} else if (subDomain === "contact") {
+	}
+	if (subDomain === "contact") {
 		return <Contact />
-	} else if (subDomain === "disclaimers") {
+	}
+	if (subDomain === "disclaimers") {
 		return <Privacy />
-	} else if (subDomain === "getstarted") {
+	}
+	if (subDomain === "getstarted") {
 		return <Splash />
 	}
 	return <Landing />

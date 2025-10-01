@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom"
 import { Input } from "antd"
+import { Link } from "react-router-dom"
 
 function SplashPage() {
 	interface User {
@@ -57,7 +57,7 @@ function SplashPage() {
 		<div className="min-h-screen splash-background">
 			<div className="container flex flex-col mx-auto relative py-5 gap-y-16 max-sm:gap-y-6">
 				<div className="flex justify-center">
-					<img src="/logo/logo.png" loading="lazy" alt="logo" width="120px" height="200px"></img>
+					<img src="/logo/logo.png" loading="lazy" alt="logo" width="120px" height="200px" />
 				</div>
 				<div className="flex text-center justify-center font-Verdana text-zinc-700 text-4xl font-bold uppercase max-sm:text-2xl">
 					Enterprise Portal

@@ -1,9 +1,9 @@
-import React, { useState } from "react"
 import { Drawer } from "antd"
-import { Link } from "react-router-dom"
-import { FaTelegramPlane } from "react-icons/fa"
+import { useState } from "react"
 import { BiLogoMediumOld } from "react-icons/bi"
+import { FaTelegramPlane } from "react-icons/fa"
 import { SlClose } from "react-icons/sl"
+import { Link } from "react-router-dom"
 
 const Header = () => {
 	const [open, setOpen] = useState(false)
@@ -41,7 +41,7 @@ const Header = () => {
 								backgroundSize: "contain",
 								backgroundRepeat: "no-repeat"
 							}}
-						></div>
+						/>
 					</Link>
 					<Link to={"https://medium.com/luminadex"} onClick={onClose} target="_blank">
 						<div className="text-white text-3xl">
@@ -67,7 +67,7 @@ const Header = () => {
 						backgroundRepeat: "no-repeat"
 					}}
 					onClick={() => (window.location.href = "https://luminadex.com/")}
-				></div>
+				/>
 				<div onClick={showDrawer} className="w-full max-[1980px]:hidden max-md:flex justify-end">
 					<div
 						className="w-10 h-9 cursor-pointer"
@@ -76,7 +76,7 @@ const Header = () => {
 							backgroundSize: "contain",
 							backgroundRepeat: "no-repeat"
 						}}
-					></div>
+					/>
 				</div>
 
 				{leftMenu()}
@@ -94,7 +94,7 @@ const Header = () => {
 								backgroundSize: "contain",
 								backgroundRepeat: "no-repeat"
 							}}
-						></div>
+						/>
 					</Link>
 					<Link to={"https://medium.com/luminadex"} onClick={onClose} target="_blank">
 						<div className="text-white text-3xl">

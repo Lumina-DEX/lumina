@@ -1,8 +1,9 @@
-import React, { useState } from "react"
+import type React from "react"
+import { useState } from "react"
 import { AppContext } from "../../contexts/AppContext"
 import { LoadingContext } from "../../contexts/LoadingContext"
-import Header from "../Header"
 import Footer from "../Footer"
+import Header from "../Header"
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 	const [isLoading, setLoading] = useState(true)
