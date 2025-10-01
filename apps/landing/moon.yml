@@ -15,16 +15,23 @@ fileGroups:
     - biome.json
 
 tasks:
+  dev:
+    command: vite dev
+    preset: server
+  preview:
+    command: vite preview
+    deps: [build]
+    preset: server
   build:
     command: vite build
-    deps: [^:build]
+    deps: [build]
     inputs:
       - "@group(sources)"
     outputs:
       - dist/
   typecheck:
     command: tsc --noEmit
-    deps: [^:build]
+    deps: [build]
     inputs:
       - "@group(sources)"
   type-cf:
@@ -33,13 +40,9 @@ tasks:
       - wrangler.jsonc
     outputs:
       - worker-configuration.d.ts
-  dev:
-    command: vite
-    preset: server
-  preview:
-    command: vite preview
+  deploy:
+    command: wrangler deploy
     deps: [build]
-    preset: server
   lint:
     command: biome check --formatter-enabled=false
     inputs:

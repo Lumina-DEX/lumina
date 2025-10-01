@@ -1,5 +1,5 @@
 export default {
-	fetch(request, env) {
+	async fetch(request, env) {
 		return env.ASSETS.fetch(request)
 	}
 } satisfies ExportedHandler<Env>
