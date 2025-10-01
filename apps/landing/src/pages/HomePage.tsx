@@ -25,6 +25,7 @@ function HomePage() {
 			setWindowWidth(window.innerWidth)
 		}
 		window.addEventListener("resize", handleResize)
+		return () => window.removeEventListener("resize", handleResize)
 	}, [])
 
 	const trackRecord = (eventName: string, User: User) => {
