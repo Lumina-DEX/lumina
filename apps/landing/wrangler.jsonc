@@ -3,7 +3,7 @@
 	"name": "landing",
 	"compatibility_date": "2025-09-27",
 	"main": "worker.ts",
-	"workers_dev": true,
+	"preview_urls": true,
 	"routes": [{ "pattern": "luminadex.com", "custom_domain": true }],
 	"assets": {
 		"binding": "ASSETS",
