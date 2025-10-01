@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/thumbnail.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#351c75" />
+    <meta
+      name="description"
+      content="Lumina is a zero-knowledge, KYC-enabled, enterprise-ready DEX on Mina"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/thumbnail.png" />
+    <script type="text/javascript">
+    ;(function () {
+	window.sib = {
+		equeue: [],
+		client_key: "pr9z5cg0c3jrtwip8xgj7smd"
+	}
+	window.sendinblue = {}
+	for (
+		var j = ["track", "identify", "trackLink", "page"], i = 0;
+		i < j.length;
+		i++
+	) {
+		;(function (k) {
+			window.sendinblue[k] = function () {
+				var arg = Array.prototype.slice.call(arguments)
+				;(
+					window.sib[k] ||
+					function () {
+						var t = {}
+						t[k] = arg
+						window.sib.equeue.push(t)
+					}
+				)(arg[0], arg[1], arg[2], arg[3])
+			}
+		})(j[i])
+	}
+	var n = document.createElement("script"),
+		i = document.getElementsByTagName("script")[0]
+	;(n.type = "text/javascript"),
+		(n.id = "sendinblue-js"),
+		(n.async = !0),
+		(n.src =
+			"https://sibautomation.com/sa.js?key=" + window.sib.client_key),
+		i.parentNode.insertBefore(n, i),
+		window.sendinblue.page()
+})()
+    </script>
+    <title>Lumina</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

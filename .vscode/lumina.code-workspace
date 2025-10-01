@@ -20,6 +20,9 @@
         "path": "../packages/dex-ui",
       },
       {
+        "path": "../apps/landing",
+      },
+      {
         "path": "../packages/sdk-test-vue",
       },
       {

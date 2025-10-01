@@ -10,3 +10,4 @@ catalog:
   oxlint: ^1.16.0
   oxlint-tsgolint: ^0.2.0
   o1js: 2.4.0
+  wrangler: ^4.40.3
