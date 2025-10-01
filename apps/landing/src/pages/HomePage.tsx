@@ -58,6 +58,32 @@ function HomePage() {
 		}
 	}
 
+	const StartBuilding = () => (
+		<Link to={"https://sdk.luminadex.com"} target="_blank">
+			<Button
+				shape="round"
+				size={"large"}
+				className="font-bold bg-dark-purple text-white border-purple w-[11rem]"
+				onClick={() => brevoTrack("signup")}
+			>
+				Start Building
+			</Button>
+		</Link>
+	)
+
+	const StartSwapping = () => (
+		<Link to={"https://beta.luminadex.com"} target="_blank">
+			<Button
+				shape="round"
+				size={"large"}
+				onClick={() => brevoTrack("litepaper")}
+				className="font-bold text-dark-purple border-purple bg-white w-[11rem]"
+			>
+				Start Swapping
+			</Button>
+		</Link>
+	)
+
 	return (
 		<div className="w-full mt-16">
 			{/* section1 */}
@@ -81,32 +107,14 @@ function HomePage() {
 					}}
 				>
 					<div className="font-bold text-dark-purple text-3xl font-Verdana px-4">
-						The future of finance is in plain sight
+						The Future of Finance, Illuminated
 					</div>
 					<div className="text-dark-purple font-bold px-4 font-Trebuchet text-lg">
-						Lumina is a zero-knowledge, KYC-enabled, enterprise-ready DEX on Mina
+						Lumina is a zero-knowledge liquidity protocol for building DEXs on Mina and Zeko
 					</div>
 					<div className="flex flex-row gap-x-4 justify-center">
-						<Link to={"https://signup.luminadex.com"} target="_blank">
-							<Button
-								shape="round"
-								size={"large"}
-								className="font-bold bg-dark-purple text-white border-purple"
-								onClick={() => brevoTrack("signup")}
-							>
-								Sign Up
-							</Button>
-						</Link>
-						<Link to={"https://docsend.com/view/5tviuhs8cqditskh"} target="_blank">
-							<Button
-								shape="round"
-								size={"large"}
-								onClick={() => brevoTrack("litepaper")}
-								className="font-bold text-dark-purple border-purple bg-white"
-							>
-								Litepaper
-							</Button>
-						</Link>
+						<StartBuilding />
+						<StartSwapping />
 					</div>
 				</div>
 			</div>
@@ -224,8 +232,8 @@ function HomePage() {
 			</div>
 			<div className="py-4 text-xl font-Trebuchet bg-dark-purple text-white leading-10">
 				<div className="container mx-auto px-28 max-md:px-2 font-Trebuchet">
-					Lumina shines a new light on decentralized finance; inspired by permissioned venues for trading large asset
-					blocks while maintaining privacy, compliance, and auditability
+					Lumina is a Zero-Knowledge Markets Aggregator that shines a new light on decentralized finance; inspired by
+					permissioned venues for trading large asset blocks while maintaining privacy and compliance.
 				</div>
 			</div>
 			{/* section4 */}
@@ -257,17 +265,17 @@ function HomePage() {
 								<div
 									className="w-32 h-32 rounded-full shadow-pfp shadow-gray-500"
 									style={{
-										backgroundImage: "url(/builders/Sebastien.jpg)",
-										backgroundSize: "contain",
+										backgroundImage: "url(/builders/Emmanuel.jpg)",
+										backgroundSize: "cover",
 										backgroundRepeat: "no-repeat"
 									}}
 								/>
 								<div className="font-Trebuchet">
-									<Link to="https://www.linkedin.com/in/sebastiengllmt/" target="_blank">
-										Sebastien Guillemot
+									<Link to="https://www.linkedin.com/in/emmanuel-donnet/" target="_blank">
+										Emmanuel
 									</Link>
 									<br />
-									<span className="italic">Back-End</span>
+									<span className="italic">Full-Stack Engineer</span>
 								</div>
 							</div>
 						</div>
@@ -328,26 +336,18 @@ function HomePage() {
 
 				<div className="flex flex-row justify-center gap-6 text-dark-purple flex-wrap">
 					<div className="flex flex-col gap-y-4 items-center border-2 border-purple shadow-md shadow-blue-500/50 p-5 rounded-lg ">
-						<div className="font-bold">Builders & Community</div>
+						<div className="font-bold">Developers</div>
 						<div className="text-5xl cursor-pointer">
 							<GiWarPick />
 						</div>
-						<Link to={"https://signup.luminadex.com"} target="_blank">
-							<Button shape="round" size={"large"} className="font-bold bg-dark-purple text-white border-purple">
-								Sign Up
-							</Button>
-						</Link>
+						<StartBuilding />
 					</div>
 					<div className="flex flex-col gap-y-4 items-center border-2 border-purple shadow-md shadow-blue-500/50 p-5 rounded-lg ">
-						<div className="font-bold">Investors and Partners</div>
+						<div className="font-bold">Frontend Partners</div>
 						<div className="text-5xl cursor-pointer">
 							<FaHandshake />
 						</div>
-						<Link to={"https://contact.luminadex.com"} target="_blank">
-							<Button shape="round" size={"large"} className="font-bold text-dark-purple border-purple bg-white">
-								Contact
-							</Button>
-						</Link>
+						<StartSwapping />
 					</div>
 				</div>
 			</div>

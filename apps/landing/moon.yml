@@ -24,7 +24,6 @@ tasks:
     preset: server
   build:
     command: vite build
-    deps: [build]
     inputs:
       - "@group(sources)"
     outputs:
