@@ -42,6 +42,9 @@ tasks:
   deploy:
     command: wrangler deploy
     deps: [build]
+  deploy-preview:
+    command: wrangler versions upload
+    deps: [build]
   lint:
     command: biome check --formatter-enabled=false
     inputs:
