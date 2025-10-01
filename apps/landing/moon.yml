@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: application
+
+fileGroups:
+  sources:
+    - src/**/*
+    - public/**/*
+    - index.html
+    - vite.config.ts
+    - tailwind.config.js
+    - postcss.config.js
+    - package.json
+    - tsconfig.json
+    - biome.json
+
+tasks:
+  build:
+    command: vite build
+    deps: [^:build]
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - dist/
+  typecheck:
+    command: tsc --noEmit
+    deps: [^:build]
+    inputs:
+      - "@group(sources)"
+  type-cf:
+    command: wrangler types
+    inputs:
+      - wrangler.jsonc
+    outputs:
+      - worker-configuration.d.ts
+  dev:
+    command: vite
+    preset: server
+  preview:
+    command: vite preview
+    deps: [build]
+    preset: server
+  lint:
+    command: biome check --formatter-enabled=false
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome check --formatter-enabled=false --write
+    inputs:
+      - "@group(sources)"
