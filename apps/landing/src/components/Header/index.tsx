@@ -59,15 +59,16 @@ const Header = () => {
 	return (
 		<div className="fixed top-0 left-0 h-[64px] w-full z-[2] bg-dark-purple shadow-10 px-8 max-sm:px-4">
 			<div className="flex w-full justify-between h-full items-center">
-				<div
-					className="w-12 h-11 cursor-pointer max-md:hidden"
-					style={{
-						backgroundImage: "url(/logo/logo.png)",
-						backgroundSize: "contain",
-						backgroundRepeat: "no-repeat"
-					}}
-					onClick={() => (window.location.href = "https://luminadex.com/")}
-				/>
+				<Link to={"/"}>
+					<div
+						className="w-12 h-11 cursor-pointer max-md:hidden"
+						style={{
+							backgroundImage: "url(/logo/logo.png)",
+							backgroundSize: "contain",
+							backgroundRepeat: "no-repeat"
+						}}
+					/>
+				</Link>
 				<div onClick={showDrawer} className="w-full max-[1980px]:hidden max-md:flex justify-end">
 					<div
 						className="w-10 h-9 cursor-pointer"

@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom"
-
 function PrivacyPage() {
 	return (
 		<div className="w-full mt-16">
@@ -219,10 +217,7 @@ function PrivacyPage() {
 						<div className="text-3xl">Contact Us</div>
 						<div className="text-base font-Trebuchet">
 							If you have questions about this Privacy Policy or concerns about how we collect, use or protect your
-							personal information, please 
-							<Link to={"https://contact.luminadex.com"} target="_blank" className="underline">
-								contact us.
-							</Link>
+							personal information, please contact us.
 						</div>
 						<div className="text-base font-Trebuchet">Last Revised August 23, 2023</div>
 					</div>

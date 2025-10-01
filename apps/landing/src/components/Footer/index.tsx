@@ -7,15 +7,7 @@ const Footer = () => {
 				<div className=" flex flex-row flex-wrap items-center justify-between">
 					<div className="flex flex-row gap-4 justify-start items-center max-[425px]:justify-center w-72 max-[425px]:w-full">
 						<div className="flex items-center text-lg flex-row gap-3">
-							{/* <Link
-                to={"https://disclaimers.luminadex.com"}
-                target="_blank"
-                className="font-Trebuchet"
-              >
-                ICF disclaimer
-              </Link>
-              | */}
-							<Link to={"https://disclaimers.luminadex.com/privacy-policy"} target="_blank" className="font-Trebuchet">
+							<Link to={"/privacy-policy"} className="font-Trebuchet">
 								Privacy Policy
 							</Link>
 						</div>
