@@ -1,8 +1,16 @@
 import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
+import { useEffect } from "react"
 import Loading from "./Loading"
 
-const PoolCreationJob = ({ actor }: { id: string; actor: ActorRefFromLogic<CreatePoolMachine> }) => {
+const PoolCreationJob = ({
+	actor,
+	onLoadingChange
+}: {
+	id: string
+	actor: ActorRefFromLogic<CreatePoolMachine>
+	onLoadingChange?: (isLoading: boolean) => void
+}) => {
 	const poolState = useSelector(actor, (state) => ({
 		status: state.value,
 		context: state.context,
@@ -10,6 +18,10 @@ const PoolCreationJob = ({ actor }: { id: string; actor: ActorRefFromLogic<Creat
 		errors: state.context.errors,
 		isLoading: state.hasTag("loading")
 	}))
+
+	useEffect(() => {
+		onLoadingChange?.(poolState.isLoading)
+	}, [poolState.isLoading, onLoadingChange])
 
 	const getTokenNotExistsMessage = () => {
 		const messages = []
