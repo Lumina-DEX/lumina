@@ -76,7 +76,7 @@ const Liquidity = () => {
 				clearTimeout(debounceTimer.current)
 			}
 		}
-	}, [fromAmount, toAmount, pool])
+	}, [fromAmount, toAmount, pool, toDai])
 
 	const getLiquidityAmount = async () => {
 		Dex.send({
@@ -84,11 +84,11 @@ const Liquidity = () => {
 			settings: {
 				pool: pool.address,
 				tokenA: {
-					address: "MINA",
+					address: toDai ? "MINA" : token.address,
 					amount: fromAmount
 				},
 				tokenB: {
-					address: token.address,
+					address: !toDai ? "MINA" : token.address,
 					amount: toAmount
 				},
 				slippagePercent: slippagePercent
@@ -126,6 +126,11 @@ const Liquidity = () => {
 		lastEditedField.current = "to"
 	}
 
+	const changeOrder = () => {
+		setToDai(!toDai)
+		lastEditedField.current = "from"
+	}
+
 	return (
 		<div className="flex flex-row justify-center w-full ">
 			<div className="flex flex-col p-5 gap-5 items-center">
@@ -154,7 +159,7 @@ const Liquidity = () => {
 					)}
 				</div>
 				<div>
-					<button type="button" onClick={() => setToDai(!toDai)} className="w-8 bg-cyan-500 text-lg text-white rounded">
+					<button type="button" onClick={changeOrder} className="w-8 bg-cyan-500 text-lg text-white rounded">
 						&#8645;
 					</button>
 				</div>
