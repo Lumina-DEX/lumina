@@ -16,6 +16,7 @@ const Liquidity = () => {
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
+	const [toDai, setToDai] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
@@ -24,9 +25,9 @@ const Liquidity = () => {
 	const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
 	function updatePool(newPool: LuminaPool) {
-		lastEditedField.current = "from"
 		setPool(newPool)
 		setPoolAddress(newPool.address)
+		lastEditedField.current = "from"
 	}
 
 	useEffect(() => {
@@ -34,8 +35,8 @@ const Liquidity = () => {
 			const result = snapshot.context.dex.addLiquidity.calculated
 
 			if (result) {
-				const decimalsA = 9
-				const decimalsB = token.decimals
+				const decimalsA = toDai ? 9 : token.decimals
+				const decimalsB = toDai ? token.decimals : 9
 				const decimalsLiquidity = 9
 
 				const amountA = result.tokenA.amountIn / 10 ** decimalsA
@@ -53,7 +54,7 @@ const Liquidity = () => {
 			}
 		})
 		return subscription.unsubscribe
-	}, [Dex, token])
+	}, [Dex, toDai, token])
 
 	useEffect(() => {
 		if (debounceTimer.current) {
@@ -76,7 +77,7 @@ const Liquidity = () => {
 				clearTimeout(debounceTimer.current)
 			}
 		}
-	}, [fromAmount, toAmount, pool])
+	}, [fromAmount, toAmount, pool, toDai])
 
 	const getLiquidityAmount = async () => {
 		Dex.send({
@@ -84,11 +85,11 @@ const Liquidity = () => {
 			settings: {
 				pool: pool.address,
 				tokenA: {
-					address: "MINA",
+					address: toDai ? "MINA" : token.address,
 					amount: fromAmount
 				},
 				tokenB: {
-					address: token.address,
+					address: !toDai ? "MINA" : token.address,
 					amount: toAmount
 				},
 				slippagePercent: slippagePercent
@@ -126,6 +127,11 @@ const Liquidity = () => {
 		lastEditedField.current = "to"
 	}
 
+	const changeOrder = () => {
+		setToDai(!toDai)
+		lastEditedField.current = "from"
+	}
+
 	return (
 		<div className="flex flex-row justify-center w-full ">
 			<div className="flex flex-col p-5 gap-5 items-center">
@@ -147,8 +153,16 @@ const Liquidity = () => {
 						value={fromAmount}
 						onValueChange={({ value }) => setAmountA(value)}
 					/>
-
-					<span className="w-24 text-center">MINA</span>
+					{toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
+					)}
+				</div>
+				<div>
+					<button type="button" onClick={changeOrder} className="w-8 bg-cyan-500 text-lg text-white rounded">
+						&#8645;
+					</button>
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
@@ -159,7 +173,11 @@ const Liquidity = () => {
 						value={toAmount}
 						onValueChange={({ value }) => setAmountB(value)}
 					/>
-					<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
+					{!toDai ? (
+						<span className="w-24 text-center">MINA</span>
+					) : (
+						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
+					)}
 				</div>
 				<div>
 					Your token balance : <Balance token={token} />
