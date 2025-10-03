@@ -1,6 +1,6 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { useContext, useEffect, useState, useRef } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -63,8 +63,8 @@ const Liquidity = () => {
 
 		if (!pool || !lastEditedField.current) return
 
-		const fromAmountNum = parseFloat(fromAmount)
-		const toAmountNum = parseFloat(toAmount)
+		const fromAmountNum = Number.parseFloat(fromAmount)
+		const toAmountNum = Number.parseFloat(toAmount)
 
 		if (fromAmountNum > 0 || toAmountNum > 0) {
 			debounceTimer.current = setTimeout(() => {

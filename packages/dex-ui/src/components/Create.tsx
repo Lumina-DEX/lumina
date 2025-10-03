@@ -1,11 +1,10 @@
 "use client"
 import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
+import { Button } from "@mui/material"
 import { useContext, useState } from "react"
-import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
 import PoolCreationJob from "./PoolCreationJob"
-import { Button } from "@mui/material"
 
 const Create = () => {
 	const [tokenAddress, setTokenAddress] = useState("")
