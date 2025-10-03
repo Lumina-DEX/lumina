@@ -1,4 +1,3 @@
-// biome-ignore lint/suspicious/noDocumentImportInPage: <?>
 import Document, { Head, Html, Main, NextScript } from "next/document"
 
 export default class MyDocument extends Document {
