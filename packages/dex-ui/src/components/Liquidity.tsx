@@ -1,6 +1,6 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useRef } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -21,6 +21,9 @@ const Liquidity = () => {
 	const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
 
+	const lastEditedField = useRef<"from" | "to" | null>(null)
+	const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+
 	function updatePool(newPool: LuminaPool) {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
@@ -28,41 +31,66 @@ const Liquidity = () => {
 
 	useEffect(() => {
 		const subscription = Dex.subscribe((snapshot) => {
-			// simple logging
 			const result = snapshot.context.dex.addLiquidity.calculated
 
 			if (result) {
-				const from = result.tokenA.amountIn / 10 ** 9
-				const to = result.tokenB.amountIn / 10 ** 9
-				const liquidity = result.liquidity / 10 ** 9
-				setFromAmount(from.toFixed(2).toString())
-				setToAmount(to.toFixed(2).toString())
+				const decimalsA = toDai ? 9 : token.decimals
+				const decimalsB = toDai ? token.decimals : 9
+				const decimalsLiquidity = 9
+
+				const amountA = result.tokenA.amountIn / 10 ** decimalsA
+				const amountB = result.tokenB.amountIn / 10 ** decimalsB
+				const liquidity = result.liquidity / 10 ** decimalsLiquidity
+
+				if (lastEditedField.current === "from" && amountB > 0) {
+					setToAmount(amountB.toFixed(2).toString())
+				} else if (lastEditedField.current === "to" && amountA > 0) {
+					setFromAmount(amountA.toFixed(2).toString())
+				}
+
 				setLiquidityMinted(liquidity)
+				lastEditedField.current = null
 			}
 		})
 		return subscription.unsubscribe
-	}, [Dex])
+	}, [Dex, toDai, token])
+
+	useEffect(() => {
+		if (debounceTimer.current) {
+			clearTimeout(debounceTimer.current)
+		}
+
+		if (!pool || !lastEditedField.current) return
+
+		const fromAmountNum = parseFloat(fromAmount)
+		const toAmountNum = parseFloat(toAmount)
+
+		if (fromAmountNum > 0 || toAmountNum > 0) {
+			debounceTimer.current = setTimeout(() => {
+				calculateLiquidity()
+			}, 500)
+		}
+
+		return () => {
+			if (debounceTimer.current) {
+				clearTimeout(debounceTimer.current)
+			}
+		}
+	}, [fromAmount, toAmount, pool])
 
 	const getLiquidityAmount = async () => {
 		Dex.send({
 			type: "ChangeAddLiquiditySettings",
 			settings: {
-				// The pool address
 				pool: pool.address,
-
-				// Token A settings
 				tokenA: {
 					address: "MINA",
 					amount: fromAmount
 				},
-
-				// Token B settings
 				tokenB: {
-					address: token.address, // Native MINA token
+					address: token.address,
 					amount: toAmount
 				},
-
-				// Maximum allowed slippage in percentage
 				slippagePercent: slippagePercent
 			}
 		})
@@ -90,12 +118,12 @@ const Liquidity = () => {
 
 	const setAmountA = (value: string) => {
 		setFromAmount(value)
-		// setUpdateAmount(value);
+		lastEditedField.current = "from"
 	}
 
 	const setAmountB = (value: string) => {
 		setToAmount(value)
-		// setUpdateAmount(value);
+		lastEditedField.current = "to"
 	}
 
 	return (
@@ -154,7 +182,6 @@ const Liquidity = () => {
 				<div>
 					<span>Liquidity minted : {toFixedIfNecessary(liquidityMinted, 2)}</span>
 				</div>
-				<ButtonStatus onClick={calculateLiquidity} text={"Calculate Liquidity"} />
 				<ButtonStatus onClick={addLiquidity} text={"Add Liquidity"} />
 			</div>
 		</div>
