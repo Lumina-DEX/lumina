@@ -27,10 +27,10 @@ import {
 	UInt64
 } from "o1js"
 import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
+import { minaNetwork } from "../helpers/blockchain"
 import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
-import { minaNetwork } from "../helpers/blockchain"
 
 const logger = prefixedLogger("[DEX WORKER]")
 const measure = createMeasure(logger)

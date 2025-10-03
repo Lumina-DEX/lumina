@@ -5,10 +5,10 @@ import type { Client } from "urql"
 import { assertEvent, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
 import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
 import { FetchAccountBalanceQuery } from "../../graphql/mina"
+import { minaNetwork } from "../../helpers/blockchain"
 import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import type { AllTokenBalances, Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
-import { minaNetwork } from "../../helpers/blockchain"
 
 const logger = prefixedLogger("[WALLET]")
 
