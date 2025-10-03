@@ -5,11 +5,13 @@ import { useContext, useState } from "react"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
 import PoolCreationJob from "./PoolCreationJob"
+import { Button } from "@mui/material"
 
 const Create = () => {
 	const [tokenAddress, setTokenAddress] = useState("")
 	const { Dex } = useContext(LuminaContext)
 	const createPoolActor = useSelector(Dex, (state) => state.context.dex.createPool)
+	const [isLoading, setIsLoading] = useState(false)
 
 	const creatingPools = Object.entries(createPoolActor.pools)
 		.map(([poolId, p]) => {
@@ -30,8 +32,22 @@ const Create = () => {
 					<span>Token address :</span>{" "}
 					<input type="text" defaultValue={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)} />
 				</div>
-				<ButtonStatus onClick={createPool} text={"Create Pool"} />
-				{creatingPools && <PoolCreationJob key={creatingPools.id} id={creatingPools.id} actor={creatingPools.actor} />}
+				<Button
+					loading={isLoading}
+					variant="contained"
+					className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
+					onClick={createPool}
+				>
+					Create Pool
+				</Button>
+				{creatingPools && (
+					<PoolCreationJob
+						key={creatingPools.id}
+						onLoadingChange={setIsLoading}
+						id={creatingPools.id}
+						actor={creatingPools.actor}
+					/>
+				)}
 			</div>
 		</div>
 	)
