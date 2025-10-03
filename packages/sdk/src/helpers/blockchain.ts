@@ -44,7 +44,8 @@ export const minaNetwork = (network: SupportedNetwork) =>
 	Mina.Network({
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
 		mina: urls[network],
-		archive: archiveUrls[network]
+		archive: archiveUrls[network],
+		bypassTransactionLimits: network.includes("zeko") ? true : false
 	})
 
 const fetchEventsByBlockspace = async <T>({

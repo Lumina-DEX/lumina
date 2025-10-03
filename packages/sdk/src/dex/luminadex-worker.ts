@@ -30,6 +30,7 @@ import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
 import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
+import { minaNetwork } from "../helpers/blockchain"
 
 const logger = prefixedLogger("[DEX WORKER]")
 const measure = createMeasure(logger)
@@ -707,7 +708,7 @@ function getMerkle(): MerkleMap {
 const minaInstance = (networkUrl: NetworkUri) => {
 	workerState.send({ type: "SetNetwork", network: networkUrl })
 	const url = urls[networkUrl]
-	Mina.setActiveInstance(Mina.Network(url))
+	Mina.setActiveInstance(minaNetwork(networkUrl))
 	logger.success("Mina instance set", url)
 }
 

@@ -8,6 +8,7 @@ import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import type { AllTokenBalances, Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
+import { minaNetwork } from "../../helpers/blockchain"
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -177,9 +178,9 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 		},
 		actions: {
 			setWalletNetwork: enqueueActions(({ enqueue }, { network }: { network: Networks }) => {
-				const url = urls[network] ?? urls["mina:devnet"]
-				Mina.setActiveInstance(Mina.Network(url))
-				logger.success("Network set to", { network, url })
+				const currentNetwork = network ?? "mina:devnet"
+				Mina.setActiveInstance(minaNetwork(currentNetwork))
+				logger.success("Network set to", network)
 				enqueue.assign({ currentNetwork: network })
 				enqueue.emit({ type: "NetworkChanged", network })
 			})
