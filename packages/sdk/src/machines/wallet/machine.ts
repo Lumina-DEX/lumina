@@ -37,6 +37,58 @@ const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
 	return "mina:devnet" // Fallback to devnet
 }
 
+const fetchBalanceLogic = async (
+	input: FetchBalanceInput,
+	createMinaClient: (url: string) => Client
+): Promise<AllTokenBalances> => {
+	const limit = pLimit(10)
+	const publicKey = input.address
+	const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
+	const tokens = input.tokens
+		.filter((token) => token.symbol !== "MINA")
+		.map((token) => ({
+			symbol: token.symbol,
+			decimal: token.decimal,
+			tokenId:
+				"poolAddress" in token
+					? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
+					: token.tokenId,
+			publicKey
+		}))
+	const allTokens = [mina, ...tokens]
+
+	const queries = Object.fromEntries(
+		allTokens.map((token) => [
+			token.tokenId ?? "MINA",
+			limit(() =>
+				createMinaClient(urls[input.network])
+					.query(FetchAccountBalanceQuery, {
+						tokenId: token.tokenId,
+						publicKey
+					})
+					.toPromise()
+			)
+		])
+	)
+
+	const results = await Promise.all(Object.values(queries))
+
+	return Object.keys(queries).reduce(
+		(acc, tokenId, index) => {
+			const result = results[index]
+			const token = allTokens[index]
+			const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
+			const [layer, netType] = (input.network as Networks).split(":") as [NetworkLayer, ChainNetwork]
+			acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
+			return acc
+		},
+		{
+			mina: { mainnet: {}, devnet: {} },
+			zeko: { mainnet: {}, testnet: {} }
+		} as AllTokenBalances
+	)
+}
+
 export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (url: string) => Client }) =>
 	setup({
 		types: {
@@ -107,54 +159,9 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 			/**
 			 * Fetches the balance of the Mina wallet on given networks.
 			 */
-			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) => {
-				// Concurrency
-				const limit = pLimit(10)
-				const publicKey = input.address
-				const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
-				const tokens = input.tokens
-					.filter((token) => token.symbol !== "MINA")
-					.map((token) => {
-						return {
-							symbol: token.symbol,
-							decimal: token.decimal,
-							tokenId:
-								"poolAddress" in token
-									? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
-									: token.tokenId,
-							publicKey
-						}
-					})
-				const allTokens = [mina, ...tokens]
-				const queries = Object.fromEntries(
-					allTokens.map((token) => [
-						token.tokenId ?? "MINA",
-						limit(() =>
-							createMinaClient(urls[input.network])
-								.query(FetchAccountBalanceQuery, {
-									tokenId: token.tokenId,
-									publicKey
-								})
-								.toPromise()
-						)
-					])
-				)
-				const results = await Promise.all(Object.values(queries))
-				return Object.keys(queries).reduce(
-					(acc, tokenId, index) => {
-						const result = results[index]
-						const token = allTokens[index]
-						const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
-						const [layer, netType] = (input.network as Networks).split(":") as [NetworkLayer, ChainNetwork]
-						acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
-						return acc
-					},
-					{
-						mina: { mainnet: {}, devnet: {} },
-						zeko: { mainnet: {}, testnet: {} }
-					} as AllTokenBalances
-				)
-			}),
+			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) =>
+				fetchBalanceLogic(input, createMinaClient)
+			),
 			/**
 			 * Changes the network of the Mina wallet.
 			 */
@@ -298,7 +305,49 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 							actions: emit(({ event }) => ({ type: "NetworkChanged", network: event.network }))
 						}
 					],
-					FetchBalance: { target: "FETCHING_BALANCE" }
+					FetchBalance: {
+						actions: ({ context, event, self }) => {
+							fetchBalanceLogic(
+								{
+									address: context.account,
+									tokens: event.tokens,
+									network: event.network
+								},
+								createMinaClient
+							)
+								.then((balances) => {
+									self.send({
+										type: "BalanceFetched",
+										balances
+									})
+								})
+								.catch((error) => {
+									logger.error("Failed to fetch balance", error)
+								})
+						}
+					},
+					BalanceFetched: {
+						actions: assign({
+							balances: ({ context, event }) => ({
+								"mina:mainnet": {
+									...context.balances["mina:mainnet"],
+									...event.balances.mina.mainnet
+								},
+								"mina:devnet": {
+									...context.balances["mina:devnet"],
+									...event.balances.mina.devnet
+								},
+								"zeko:mainnet": {
+									...context.balances["zeko:mainnet"],
+									...event.balances.zeko.mainnet
+								},
+								"zeko:testnet": {
+									...context.balances["zeko:testnet"],
+									...event.balances.zeko.testnet
+								}
+							})
+						})
+					}
 				}
 			},
 			SWITCHING_NETWORK: {
