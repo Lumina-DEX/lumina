@@ -42,7 +42,7 @@ export type TransactionMachineInput = {
 }
 
 type SendSignedTxInput = {
-	zeko: boolean
+	network: Networks
 	signedTransaction: ZkappCommand
 	db: HashDb
 	worker: LuminaDexWorker
@@ -107,10 +107,11 @@ export const transactionMachine = setup({
 		}),
 		sendSignedTransaction: fromPromise<SentTransaction, SendSignedTxInput>(({ input }) => {
 			return act("sendSignedTransaction", async () => {
-				const { signedTransaction: zkappCommand, db, zeko, worker } = input
+				const { signedTransaction: zkappCommand, db, network, worker } = input
+				worker.minaInstance(network)
 				const { hash, zkAppId } = await worker.sendZkAppCommand(zkappCommand)
 				logger.success("Transaction sent", hash)
-				await db.saveSigned({ hash, zkAppId, confirmed: zeko, zkappCommand })
+				await db.saveSigned({ hash, zkAppId, confirmed: network.includes("zeko"), zkappCommand })
 				return { hash, zkAppId }
 			})
 		}),
@@ -197,7 +198,7 @@ export const transactionMachine = setup({
 				src: "sendSignedTransaction",
 				input: ({ context: { signedTransaction, db, network, worker } }) => {
 					if (!signedTransaction) throw new TransactionMachineError("No signed transaction to send")
-					return { signedTransaction, db, worker, zeko: network.includes("zeko") }
+					return { signedTransaction, db, worker, network }
 				},
 				onDone: [
 					{
