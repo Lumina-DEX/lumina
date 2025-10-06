@@ -1,5 +1,5 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
-import { produce } from "immer"
+import { enableMapSet, produce } from "immer"
 import { Mina } from "o1js"
 import type { Client } from "urql"
 import { assertEvent, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
@@ -9,6 +9,8 @@ import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import { fetchBalance } from "./actors"
 import type { Balance, CustomToken, WalletEmit, WalletEvent } from "./types"
+
+enableMapSet()
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -134,7 +136,11 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 					const id = crypto.randomUUID()
 					const input = { id, createMinaClient, address: context.account, tokens, network }
 					enqueue.spawnChild("fetchBalance", { id, input })
-					enqueue.assign({ lastUpdated: context.lastUpdated.set(JSON.stringify({ network, tokens }), Date.now()) })
+					enqueue.assign(
+						produce(context, (draft) => {
+							draft.lastUpdated.set(JSON.stringify({ network, tokens }), Date.now())
+						})
+					)
 				}
 			)
 		}
