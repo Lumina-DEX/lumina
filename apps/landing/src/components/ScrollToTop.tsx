@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom"
 const ScrollToTop = () => {
 	const { pathname, search, hash } = useLocation()
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Intended
 	useEffect(() => {
 		if (typeof window === "undefined") {
 			return

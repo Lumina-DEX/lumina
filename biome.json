@@ -34,7 +34,6 @@
 	"linter": {
 		"domains": {
 			"vue": "all",
-			"next": "recommended",
 			"react": "recommended"
 		},
 		"rules": {
