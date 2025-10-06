@@ -16,6 +16,23 @@ import {
 	tokens
 } from "./helper"
 
+//https://github.com/drizzle-team/drizzle-orm/issues/2479
+const BATCH_SIZE = 10
+
+const insertBatch = <TInsert, TReturning extends { all: () => TResult[] }, TResult>(
+	values: TInsert[],
+	queryFn: (batch: TInsert[]) => { returning: () => TReturning },
+	batchSize = BATCH_SIZE
+): TResult[] => {
+	const allReturned: TResult[] = []
+	for (let i = 0; i < values.length; i += batchSize) {
+		const batch = values.slice(i, i + batchSize)
+		const returned = queryFn(batch).returning().all()
+		allReturned.push(...returned)
+	}
+	return allReturned
+}
+
 export class TokenList extends DurableObject {
 	storage: DurableObjectStorage
 	db: DrizzleSqliteDODatabase<typeof schema>
@@ -51,14 +68,18 @@ export class TokenList extends DurableObject {
 		return false
 	}
 
-	async insertToken(token: Token | Token[]) {
+	async insertToken(token: Token | Token[]): Promise<Token[]> {
 		const toInsert = Array.isArray(token) ? token : [token]
-		return this.db.insert(tokens).values(toInsert).onConflictDoNothing().returning().all()
+		return this.db.transaction(() => {
+			return insertBatch(toInsert, (batch) => this.db.insert(tokens).values(batch).onConflictDoNothing())
+		})
 	}
 
-	async insertPool(pool: Pool | Pool[]) {
+	async insertPool(pool: Pool | Pool[]): Promise<Pool[]> {
 		const toInsert = Array.isArray(pool) ? pool : [pool]
-		return this.db.insert(pools).values(toInsert).onConflictDoNothing().returning().all()
+		return this.db.transaction(() => {
+			return insertBatch(toInsert, (batch) => this.db.insert(pools).values(batch).onConflictDoNothing())
+		})
 	}
 
 	/**

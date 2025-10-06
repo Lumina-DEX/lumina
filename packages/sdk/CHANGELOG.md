@@ -1,5 +1,12 @@
 # @lumina-dex/sdk
 
+## 0.25.0
+
+### Minor Changes
+
+- 1872fe2: Fix the pool creation with 2 fungible tokens
+  Fix concurrent balance fetching
+
 ## 0.24.0
 
 ### Minor Changes
