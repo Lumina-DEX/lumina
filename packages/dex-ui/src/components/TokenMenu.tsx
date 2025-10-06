@@ -56,7 +56,6 @@ const TokenMenu = ({ poolAddress, setPool, setToken }: TokenMenuProps) => {
 	}
 
 	useEffect(() => {
-		console.log(cdnList)
 		if (poolExist) {
 			setPool(poolExist)
 			setToken(poolExist.tokens[1])

@@ -17,7 +17,7 @@ const Swap = () => {
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [token, setToken] = useState<LuminaToken>(tokenA)
-	const [toDai, setToDai] = useState(true)
+	const [minaToToken, setminaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("")
 	// const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState(1)
@@ -40,7 +40,7 @@ const Swap = () => {
 					fromAmount: string
 					pool: LuminaPool
 					token: LuminaToken
-					toDai: boolean
+					minaToToken: boolean
 					slippagePercent: number
 				}) => {
 					if (!Number.parseFloat(params.fromAmount) || !params.token || !params.pool) return
@@ -50,10 +50,10 @@ const Swap = () => {
 						settings: {
 							pool: params.pool.address,
 							from: {
-								address: params.toDai ? "MINA" : params.token.address,
+								address: params.minaToToken ? "MINA" : params.token.address,
 								amount: params.fromAmount
 							},
-							to: params.toDai ? params.token.address : "MINA",
+							to: params.minaToToken ? params.token.address : "MINA",
 							slippagePercent: params.slippagePercent
 						}
 					})
@@ -65,8 +65,8 @@ const Swap = () => {
 
 	// Debounced change settings
 	useEffect(() => {
-		debouncedChangeSettings({ fromAmount, pool, token, toDai, slippagePercent })
-	}, [debouncedChangeSettings, fromAmount, token, pool, slippagePercent, toDai])
+		debouncedChangeSettings({ fromAmount, pool, token, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, token, pool, slippagePercent, minaToToken])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
@@ -89,14 +89,18 @@ const Swap = () => {
 						value={fromAmount}
 						onValueChange={({ value }) => setFromAmount(value)}
 					/>
-					{toDai ? (
+					{minaToToken ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
 						<TokenMenu poolAddress={poolAddress} setToken={setToken} setPool={updatePool} />
 					)}
 				</div>
 				<div>
-					<button type="button" onClick={() => setToDai(!toDai)} className="w-8 bg-cyan-500 text-lg text-white rounded">
+					<button
+						type="button"
+						onClick={() => setminaToToken(!minaToToken)}
+						className="w-8 bg-cyan-500 text-lg text-white rounded"
+					>
 						&#8645;
 					</button>
 				</div>
@@ -108,7 +112,7 @@ const Swap = () => {
 						placeholder="0.0"
 						value={format(toAmount)}
 					/>
-					{!toDai ? (
+					{!minaToToken ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
 						<TokenMenu poolAddress={poolAddress} setToken={setToken} setPool={updatePool} />
