@@ -1,19 +1,15 @@
 "use client"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Button } from "@mui/material"
-import { useContext, useEffect, useState } from "react"
+import { useContext } from "react"
 import { LuminaContext } from "./Layout"
 
 const ButtonStatus = ({ onClick, text }) => {
-	const [loading, setLoading] = useState(false)
 	const { Wallet, Dex } = useContext(LuminaContext)
 	const dexState = useSelector(Dex, (state) => state.value)
 	const walletState = useSelector(Wallet, (state) => state.value)
 
-	useEffect(() => {
-		const load = typeof dexState.dexSystem === "string"
-		setLoading(load)
-	}, [dexState])
+	const loading = typeof dexState.dexSystem === "string"
 	return (
 		<>
 			{!dexState?.contractSystem || dexState.contractSystem !== "READY" ? (

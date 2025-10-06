@@ -1,8 +1,8 @@
 "use client"
-import React, { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 const Loading = () => {
-	const [counter, setCounter] = React.useState(0)
+	const [counter, setCounter] = useState(0)
 
 	useEffect(() => {
 		setTimeout(() => setCounter(counter + 1), 1000)

@@ -1,26 +1,29 @@
 "use client"
-import type { ActorRefFromLogic, CreatePoolMachine } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Button } from "@mui/material"
 import { useContext, useState } from "react"
 import { LuminaContext } from "./Layout"
-import PoolCreationJob from "./PoolCreationJob"
+import Loading from "./Loading"
 
 const Create = () => {
-	const [tokenAddress, setTokenAddress] = useState("")
 	const { Dex } = useContext(LuminaContext)
-	const createPoolActor = useSelector(Dex, (state) => state.context.dex.createPool)
-	const [isLoading, setIsLoading] = useState(false)
+	const poolActorRef = useSelector(Dex, (state) => Object.values(state.context.dex.createPool.pools).at(-1))
+	const poolState = useSelector(poolActorRef, (state) => state)
+	const [tokenAddress, setTokenAddress] = useState("")
 
-	const creatingPools = Object.entries(createPoolActor.pools)
-		.map(([poolId, p]) => {
-			const poolActor = p as ActorRefFromLogic<CreatePoolMachine>
-			return { id: poolId, actor: poolActor }
-		})
-		.at(-1)
-
-	const createPool = async () => {
+	const createPool = () => {
 		Dex.send({ type: "DeployPool", settings: { tokenA: "MINA", tokenB: tokenAddress } })
+	}
+
+	const getTokenNotExistsMessage = () => {
+		const messages = []
+		if (!poolState.context.exists?.tokenA) {
+			messages.push(`Token A (${poolState.context.tokenA}) doesn't exist on the network.`)
+		}
+		if (!poolState.context.exists?.tokenB) {
+			messages.push(`Token B (${poolState.context.tokenB}) doesn't exist on the network.`)
+		}
+		return messages.join(" ")
 	}
 
 	return (
@@ -32,20 +35,39 @@ const Create = () => {
 					<input type="text" defaultValue={tokenAddress} onChange={(event) => setTokenAddress(event.target.value)} />
 				</div>
 				<Button
-					loading={isLoading}
+					loading={poolState?.hasTag("loading")}
 					variant="contained"
 					className="w-full bg-cyan-500 text-lg text-white p-1 rounded"
 					onClick={createPool}
 				>
 					Create Pool
 				</Button>
-				{creatingPools && (
-					<PoolCreationJob
-						key={creatingPools.id}
-						onLoadingChange={setIsLoading}
-						id={creatingPools.id}
-						actor={creatingPools.actor}
-					/>
+				{poolState && (
+					<div className="flex flex-row justify-center w-96">
+						<div className="flex flex-col items-center">
+							{(poolState.matches("RETRY") || poolState.matches("FAILED")) && (
+								<div className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+									<span className="text-red-500">An error occurred.</span>
+								</div>
+							)}
+
+							{poolState.matches("TOKEN_NOT_EXISTS") && (
+								<span className="w-96 text-red-500" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+									{getTokenNotExistsMessage()}
+								</span>
+							)}
+
+							{poolState.matches("POOL_ALREADY_EXISTS") && (
+								<span className="w-96" style={{ overflowWrap: "break-word", wordWrap: "break-word" }}>
+									A pool already exists for this token pair.
+								</span>
+							)}
+
+							{poolState.matches("COMPLETED") && <span className="text-green-500">Pool created successfully</span>}
+
+							{poolState.hasTag("loading") && <Loading />}
+						</div>
+					</div>
 				)}
 			</div>
 		</div>

@@ -1,7 +1,7 @@
 "use client"
 import type { Networks } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useCallback, useContext, useEffect } from "react"
+import { useContext, useEffect, useEffectEvent } from "react"
 import { LuminaContext } from "./Layout"
 import Menu from "./Menu"
 
@@ -12,13 +12,12 @@ const Account = () => {
 	const { Wallet } = useContext(LuminaContext)
 	const walletState = useSelector(Wallet, (state) => state.value)
 	const walletContext = useSelector(Wallet, (state) => state.context)
-
 	const balance = useSelector(
 		Wallet,
 		(state) => state.context.balances[state.context.currentNetwork]?.MINA?.balance || 0
 	)
 
-	const switchNetwork = async (newNetwork: Networks) => {
+	const switchNetwork = (newNetwork: Networks) => {
 		Wallet.send({ type: "RequestNetworkChange", network: newNetwork })
 	}
 
@@ -27,16 +26,18 @@ const Account = () => {
 		return `${text.substring(0, 4)}...${text.substring(text.length - 4, text.length)}`
 	}
 
-	const handleConnect = useCallback(() => {
-		console.log("connect")
+	const handleConnect = useEffectEvent(() => {
 		Wallet.send({ type: "Connect" })
-	}, [Wallet])
+	})
 
+	// Automatically connect if in INIT state
+	//TODO: https://github.com/biomejs/biome/issues/7631
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Remove when biome supports useEffectEvent
 	useEffect(() => {
-		if (walletState && walletState === "INIT") {
+		if (walletState === "INIT") {
 			handleConnect()
 		}
-	}, [walletState, handleConnect])
+	}, [])
 
 	return (
 		<div

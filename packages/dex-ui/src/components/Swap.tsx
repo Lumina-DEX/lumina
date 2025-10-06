@@ -1,6 +1,8 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { useCallback, useContext, useEffect, useState } from "react"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { debounce } from "@tanstack/react-pacer"
+import { useContext, useEffect, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -9,72 +11,50 @@ import { LuminaContext } from "./Layout"
 import TokenMenu from "./TokenMenu"
 
 const Swap = () => {
+	const { Dex } = useContext(LuminaContext)
+	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0)
+
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [token, setToken] = useState<LuminaToken>(tokenA)
-
-	function updateToken(newToken: LuminaToken) {
-		setToken(newToken)
-	}
+	const [toDai, setToDai] = useState(true)
+	const [fromAmount, setFromAmount] = useState("")
+	// const [toAmount, setToAmount] = useState("0.0")
+	const [slippagePercent, setSlippagePercent] = useState(1)
 
 	function updatePool(newPool: LuminaPool) {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
 	}
 
-	const { Dex } = useContext(LuminaContext)
-
-	const [toDai, setToDai] = useState(true)
-
-	const [fromAmount, setFromAmount] = useState("")
-
-	const [toAmount, setToAmount] = useState("0.0")
-
-	const [slippagePercent, setSlippagePercent] = useState<number>(1)
-
-	// Action handlers
-	const handleCalculateSwap = useCallback(
-		(amount: string) => {
-			Dex.send({
-				type: "ChangeSwapSettings",
-				settings: {
-					pool: pool.address,
-					from: {
-						address: toDai ? "MINA" : token.address,
-						amount: amount
-					},
-					to: toDai ? token.address : "MINA",
-					slippagePercent: slippagePercent
-				}
-			})
-		},
-		[Dex, pool, toDai, token, slippagePercent]
-	)
-
 	const swap = () => {
 		Dex.send({ type: "Swap" })
 	}
 
-	useEffect(() => {
-		const delayDebounceFn = setTimeout(() => {
-			if (Number.parseFloat(fromAmount) && token && pool) {
-				handleCalculateSwap(fromAmount)
-			}
-		}, 500)
-		return () => clearTimeout(delayDebounceFn)
-	}, [handleCalculateSwap, fromAmount, token, pool])
+	const format = (n: number) => n / 10 ** token.decimals
 
+	//Debounced change settings
 	useEffect(() => {
-		const subscription = Dex.subscribe((snapshot) => {
-			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
-			if (token) {
-				valTo = valTo / 10 ** token.decimals
-			}
-
-			setToAmount(valTo.toString())
-		})
-		return () => subscription.unsubscribe()
-	}, [Dex, token])
+		debounce(
+			() => {
+				if (Number.parseFloat(fromAmount) && token && pool) {
+					Dex.send({
+						type: "ChangeSwapSettings",
+						settings: {
+							pool: pool.address,
+							from: {
+								address: toDai ? "MINA" : token.address,
+								amount: fromAmount
+							},
+							to: toDai ? token.address : "MINA",
+							slippagePercent: slippagePercent
+						}
+					})
+				}
+			},
+			{ wait: 500 }
+		)()
+	}, [Dex, fromAmount, token, pool, slippagePercent, toDai])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
@@ -100,7 +80,7 @@ const Swap = () => {
 					{toDai ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
-						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
+						<TokenMenu poolAddress={poolAddress} setToken={setToken} setPool={updatePool} />
 					)}
 				</div>
 				<div>
@@ -114,13 +94,12 @@ const Swap = () => {
 						thousandSeparator={true}
 						decimalScale={2}
 						placeholder="0.0"
-						value={toAmount}
-						onValueChange={({ value }) => setToAmount(value)}
+						value={format(toAmount)}
 					/>
 					{!toDai ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
-						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
+						<TokenMenu poolAddress={poolAddress} setToken={setToken} setPool={updatePool} />
 					)}
 				</div>
 				{token?.address ? (
