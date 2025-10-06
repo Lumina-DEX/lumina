@@ -8,7 +8,7 @@ import { minaNetwork } from "../../helpers/blockchain"
 import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import { fetchBalance } from "./actors"
-import type { Balance, WalletEmit, WalletEvent } from "./types"
+import type { Balance, CustomToken, WalletEmit, WalletEvent } from "./types"
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -35,6 +35,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				account: string
 				currentNetwork: Networks
 				balances: Balance
+				lastUpdated: Map<string, number>
 			},
 			emitted: {} as WalletEmit,
 			events: {} as WalletEvent
@@ -124,14 +125,26 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				logger.success("Network set to", network)
 				enqueue.assign({ currentNetwork: network })
 				enqueue.emit({ type: "NetworkChanged", network })
-			})
+			}),
+			spawnBalanceUpdate: enqueueActions(
+				({ enqueue, context }, { tokens, network }: { tokens: CustomToken[]; network: Networks }) => {
+					const lastUpdated = context.lastUpdated.get(JSON.stringify({ network, tokens })) ?? 0
+					//If the balance was fetched less than 1 second ago, skip.
+					if (Date.now() - lastUpdated < 1_000) return
+					const id = crypto.randomUUID()
+					const input = { id, createMinaClient, address: context.account, tokens, network }
+					enqueue.spawnChild("fetchBalance", { id, input })
+					enqueue.assign({ lastUpdated: context.lastUpdated.set(JSON.stringify({ network, tokens }), Date.now()) })
+				}
+			)
 		}
 	}).createMachine({
 		id: "wallet",
 		context: {
 			account: "",
 			currentNetwork: "mina:devnet",
-			balances: emptyNetworkBalance()
+			balances: emptyNetworkBalance(),
+			lastUpdated: new Map()
 		},
 		initial: "INIT",
 		invoke: { src: "listenToWalletChange" },
@@ -141,24 +154,28 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				actions: emit({ type: "NoMinaWalletDetected" })
 			},
 			WalletExtensionChangedNetwork: {
-				target: ".FETCHING_BALANCE",
 				description:
 					"If the network is changed from the wallet extension. The NetworkChanged event will be sent by the setWalletNetwork action.",
 				guard: ({ context, event }) => context.currentNetwork !== event.network,
-				actions: {
-					type: "setWalletNetwork",
-					params: ({ event }) => ({ network: event.network })
-				}
+				actions: enqueueActions(({ enqueue, event }) => {
+					enqueue({ type: "setWalletNetwork", params: { network: event.network } })
+					enqueue({ type: "spawnBalanceUpdate", params: { network: event.network, tokens: [] } })
+				})
 			},
 			SetAccount: {
-				target: ".FETCHING_BALANCE",
 				description: "If the accounts are set from the wallet extension.",
-				actions: enqueueActions(({ enqueue, event }) => {
+				actions: enqueueActions(({ context, enqueue, event }) => {
 					enqueue.assign({ account: event.account })
 					enqueue.emit({ type: "AccountChanged", account: event.account })
+					enqueue({ type: "spawnBalanceUpdate", params: { network: context.currentNetwork, tokens: [] } })
 				})
 			},
 			Disconnect: { target: ".INIT", actions: assign({ account: "" }) },
+			FetchBalance: {
+				actions: enqueueActions(({ enqueue, event: { network, tokens } }) => {
+					enqueue({ type: "spawnBalanceUpdate", params: { network, tokens } })
+				})
+			},
 			FetchBalanceSuccess: {
 				actions: enqueueActions(({ enqueue, context, event }) => {
 					enqueue.assign(
@@ -188,11 +205,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 					src: "connectWallet",
 					onDone: {
 						actions: enqueueActions(({ enqueue, event }) => {
-							enqueue({
-								type: "setWalletNetwork",
-								params: { network: event.output.currentNetwork }
-							})
-							// This will target the FETCHING_BALANCE state
+							enqueue({ type: "setWalletNetwork", params: { network: event.output.currentNetwork } })
 							enqueue.raise({ type: "SetAccount", account: event.output.accounts[0] })
 						})
 					},
@@ -203,18 +216,6 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 						}
 					}
 				}
-			},
-			FETCHING_BALANCE: {
-				entry: enqueueActions(({ enqueue, context, event }) => {
-					const id = crypto.randomUUID()
-					const params =
-						event.type === "FetchBalance"
-							? { address: context.account, tokens: event.tokens, network: event.network }
-							: { address: context.account, tokens: [], network: context.currentNetwork }
-					const input = { id, createMinaClient, ...params }
-					enqueue.spawnChild("fetchBalance", { input })
-				}),
-				target: "READY"
 			},
 			READY: {
 				on: {
@@ -228,8 +229,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 							description: "If the network is already the same, emit directly.",
 							actions: emit(({ event }) => ({ type: "NetworkChanged", network: event.network }))
 						}
-					],
-					FetchBalance: { target: "FETCHING_BALANCE" }
+					]
 				}
 			},
 			SWITCHING_NETWORK: {
@@ -240,11 +240,11 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 						return { switchTo: event.network }
 					},
 					onDone: {
-						target: "FETCHING_BALANCE",
-						actions: {
-							type: "setWalletNetwork",
-							params: ({ event }) => ({ network: event.output.currentNetwork })
-						}
+						target: "READY",
+						actions: enqueueActions(({ enqueue, event }) => {
+							enqueue({ type: "setWalletNetwork", params: { network: event.output.currentNetwork } })
+							enqueue({ type: "spawnBalanceUpdate", params: { network: event.output.currentNetwork, tokens: [] } })
+						})
 					},
 					onError: {
 						target: "READY",
