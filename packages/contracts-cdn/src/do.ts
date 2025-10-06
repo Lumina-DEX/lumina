@@ -20,12 +20,13 @@ import {
 const BATCH_SIZE = 10
 
 const insertBatch = <TInsert, TReturning extends { all: () => TResult[] }, TResult>(
+	values: TInsert[],
 	queryFn: (batch: TInsert[]) => { returning: () => TReturning },
-	values: TInsert[]
+	batchSize = BATCH_SIZE
 ): TResult[] => {
 	const allReturned: TResult[] = []
-	for (let i = 0; i < values.length; i += BATCH_SIZE) {
-		const batch = values.slice(i, i + BATCH_SIZE)
+	for (let i = 0; i < values.length; i += batchSize) {
+		const batch = values.slice(i, i + batchSize)
 		const returned = queryFn(batch).returning().all()
 		allReturned.push(...returned)
 	}
@@ -70,14 +71,14 @@ export class TokenList extends DurableObject {
 	async insertToken(token: Token | Token[]): Promise<Token[]> {
 		const toInsert = Array.isArray(token) ? token : [token]
 		return this.db.transaction(() => {
-			return insertBatch((batch) => this.db.insert(tokens).values(batch).onConflictDoNothing(), toInsert)
+			return insertBatch(toInsert, (batch) => this.db.insert(tokens).values(batch).onConflictDoNothing())
 		})
 	}
 
 	async insertPool(pool: Pool | Pool[]): Promise<Pool[]> {
 		const toInsert = Array.isArray(pool) ? pool : [pool]
 		return this.db.transaction(() => {
-			return insertBatch((batch) => this.db.insert(pools).values(batch).onConflictDoNothing(), toInsert)
+			return insertBatch(toInsert, (batch) => this.db.insert(pools).values(batch).onConflictDoNothing())
 		})
 	}
 
