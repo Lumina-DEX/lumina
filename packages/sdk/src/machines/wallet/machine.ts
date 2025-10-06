@@ -210,6 +210,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				invoke: {
 					src: "connectWallet",
 					onDone: {
+						target: "READY",
 						actions: enqueueActions(({ enqueue, event }) => {
 							enqueue({ type: "setWalletNetwork", params: { network: event.output.currentNetwork } })
 							enqueue.raise({ type: "SetAccount", account: event.output.accounts[0] })
