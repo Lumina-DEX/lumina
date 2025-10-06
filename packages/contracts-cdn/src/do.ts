@@ -61,7 +61,6 @@ export class TokenList extends DurableObject {
 			for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
 				const batch = toInsert.slice(i, i + BATCH_SIZE)
 				const returned = this.db.insert(tokens).values(batch).onConflictDoNothing().returning().all()
-
 				allReturned.push(...returned)
 			}
 			return allReturned
@@ -75,7 +74,6 @@ export class TokenList extends DurableObject {
 			for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
 				const batch = toInsert.slice(i, i + BATCH_SIZE)
 				const returned = this.db.insert(pools).values(batch).onConflictDoNothing().returning().all()
-
 				allReturned.push(...returned)
 			}
 			return allReturned
