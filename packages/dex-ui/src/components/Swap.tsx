@@ -2,7 +2,7 @@
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
-import { useContext, useEffect, useMemo, useState } from "react"
+import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -22,10 +22,10 @@ const Swap = () => {
 	// const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState(1)
 
-	function updatePool(newPool: LuminaPool) {
+	const updatePool = useCallback((newPool: LuminaPool) => {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
-	}
+	}, [])
 
 	const swap = () => {
 		Dex.send({ type: "Swap" })

@@ -1,7 +1,7 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { debounce } from "@tanstack/react-pacer"
-import { useContext, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -23,11 +23,11 @@ const Liquidity = () => {
 
 	const lastEditedField = useRef<"from" | "to" | null>(null)
 
-	function updatePool(newPool: LuminaPool) {
+	const updatePool = useCallback((newPool: LuminaPool) => {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
 		lastEditedField.current = "from"
-	}
+	}, [])
 
 	const addLiquidity = () => {
 		Dex.send({ type: "AddLiquidity" })
