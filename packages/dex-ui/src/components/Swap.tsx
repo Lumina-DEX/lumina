@@ -2,7 +2,7 @@
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useMemo, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -33,28 +33,40 @@ const Swap = () => {
 
 	const format = (n: number) => n / 10 ** token.decimals
 
-	//Debounced change settings
-	useEffect(() => {
-		debounce(
-			() => {
-				if (Number.parseFloat(fromAmount) && token && pool) {
+	const debouncedChangeSettings = useMemo(
+		() =>
+			debounce(
+				(params: {
+					fromAmount: string
+					pool: LuminaPool
+					token: LuminaToken
+					toDai: boolean
+					slippagePercent: number
+				}) => {
+					if (!Number.parseFloat(params.fromAmount) || !params.token || !params.pool) return
+
 					Dex.send({
 						type: "ChangeSwapSettings",
 						settings: {
-							pool: pool.address,
+							pool: params.pool.address,
 							from: {
-								address: toDai ? "MINA" : token.address,
-								amount: fromAmount
+								address: params.toDai ? "MINA" : params.token.address,
+								amount: params.fromAmount
 							},
-							to: toDai ? token.address : "MINA",
-							slippagePercent: slippagePercent
+							to: params.toDai ? params.token.address : "MINA",
+							slippagePercent: params.slippagePercent
 						}
 					})
-				}
-			},
-			{ wait: 500 }
-		)()
-	}, [Dex, fromAmount, token, pool, slippagePercent, toDai])
+				},
+				{ wait: 500 }
+			),
+		[Dex]
+	)
+
+	// Debounced change settings
+	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, pool, token, toDai, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, token, pool, slippagePercent, toDai])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">

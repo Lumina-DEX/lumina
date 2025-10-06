@@ -1,7 +1,7 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { debounce } from "@tanstack/react-pacer"
-import { useContext, useEffect, useRef, useState } from "react"
+import { useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -79,34 +79,48 @@ const Liquidity = () => {
 		return subscription.unsubscribe
 	}, [Dex, minaToToken, token])
 
-	//Debounced change settings
-	useEffect(() => {
-		debounce(
-			() => {
-				const fromAmountNum = Number.parseFloat(fromAmount)
-				const toAmountNum = Number.parseFloat(toAmount)
-				if (!pool || !lastEditedField.current) return
-				if (fromAmountNum > 0 || toAmountNum > 0) {
+	const debouncedChangeSettings = useMemo(
+		() =>
+			debounce(
+				(params: {
+					fromAmount: string
+					toAmount: string
+					pool: LuminaPool
+					token: LuminaToken
+					minaToToken: boolean
+					slippagePercent: number
+				}) => {
+					const fromAmountNum = Number.parseFloat(params.fromAmount)
+					const toAmountNum = Number.parseFloat(params.toAmount)
+
+					if (!params.pool || !lastEditedField.current) return
+					if (fromAmountNum <= 0 && toAmountNum <= 0) return
+
 					Dex.send({
 						type: "ChangeAddLiquiditySettings",
 						settings: {
-							pool: pool.address,
+							pool: params.pool.address,
 							tokenA: {
-								address: minaToToken ? "MINA" : token.address,
-								amount: fromAmount
+								address: params.minaToToken ? "MINA" : params.token.address,
+								amount: params.fromAmount
 							},
 							tokenB: {
-								address: !minaToToken ? "MINA" : token.address,
-								amount: toAmount
+								address: !params.minaToToken ? "MINA" : params.token.address,
+								amount: params.toAmount
 							},
-							slippagePercent
+							slippagePercent: params.slippagePercent
 						}
 					})
-				}
-			},
-			{ wait: 500 }
-		)()
-	}, [Dex, fromAmount, toAmount, pool, token?.address, minaToToken, slippagePercent])
+				},
+				{ wait: 500 }
+			),
+		[Dex]
+	)
+
+	// Debounced change settings
+	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, toAmount, pool, token, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, toAmount, pool, token, minaToToken, slippagePercent])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">

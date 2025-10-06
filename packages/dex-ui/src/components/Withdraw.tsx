@@ -2,7 +2,7 @@
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useMemo, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka as poolAddress, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -29,20 +29,30 @@ const Withdraw = () => {
 		return (value / 10 ** 9).toFixed(2)
 	}
 
-	//Debounced change settings
-	useEffect(() => {
-		debounce(
-			() => {
-				if (Number.parseFloat(fromAmount)) {
+	const debouncedChangeSettings = useMemo(
+		() =>
+			debounce(
+				(params: { fromAmount: string; pool: LuminaPool; slippagePercent: number }) => {
+					if (!Number.parseFloat(params.fromAmount) || !params.pool) return
+
 					Dex.send({
 						type: "ChangeRemoveLiquiditySettings",
-						settings: { pool: pool.address, lpAmount: fromAmount, slippagePercent }
+						settings: {
+							pool: params.pool.address,
+							lpAmount: params.fromAmount,
+							slippagePercent: params.slippagePercent
+						}
 					})
-				}
-			},
-			{ wait: 500 }
-		)()
-	}, [Dex, fromAmount, slippagePercent, pool?.address])
+				},
+				{ wait: 500 }
+			),
+		[Dex]
+	)
+
+	// Debounced change settings
+	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, pool, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, slippagePercent, pool])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
