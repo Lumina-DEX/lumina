@@ -1,14 +1,14 @@
 import type { ChainInfoArgs, ProviderError } from "@aurowallet/mina-provider"
-import { Mina, PublicKey, TokenId } from "o1js"
-import pLimit from "p-limit"
+import { produce } from "immer"
+import { Mina } from "o1js"
 import type { Client } from "urql"
 import { assertEvent, assign, emit, enqueueActions, fromPromise, setup } from "xstate"
-import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
-import { FetchAccountBalanceQuery } from "../../graphql/mina"
+import { urls } from "../../constants"
 import { minaNetwork } from "../../helpers/blockchain"
 import { prefixedLogger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
-import type { AllTokenBalances, Balance, FetchBalanceInput, TokenBalances, WalletEmit, WalletEvent } from "./types"
+import { fetchBalance } from "./actors"
+import type { Balance, WalletEmit, WalletEvent } from "./types"
 
 const logger = prefixedLogger("[WALLET]")
 
@@ -22,71 +22,10 @@ const emptyNetworkBalance = (): Balance => ({
 	"zeko:mainnet": { MINA: { symbol: "MINA", balance: 0 } }
 })
 
-const toNumber = (n: unknown) => {
-	if (typeof n === "string") {
-		const t = Number.parseFloat(n)
-		return Number.isNaN(t) ? 0 : t
-	}
-	if (typeof n === "number") return n
-	return 0
-}
-
 const toNetwork = (networkId: ChainInfoArgs["networkID"]): Networks => {
 	if (Object.keys(urls).includes(networkId)) return networkId as Networks
 	logger.info("Unknown network, falling back to mina:devnet", networkId)
 	return "mina:devnet" // Fallback to devnet
-}
-
-const fetchBalanceLogic = async (
-	input: FetchBalanceInput,
-	createMinaClient: (url: string) => Client
-): Promise<AllTokenBalances> => {
-	const limit = pLimit(10)
-	const publicKey = input.address
-	const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
-	const tokens = input.tokens
-		.filter((token) => token.symbol !== "MINA")
-		.map((token) => ({
-			symbol: token.symbol,
-			decimal: token.decimal,
-			tokenId:
-				"poolAddress" in token
-					? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
-					: token.tokenId,
-			publicKey
-		}))
-	const allTokens = [mina, ...tokens]
-
-	const queries = Object.fromEntries(
-		allTokens.map((token) => [
-			token.tokenId ?? "MINA",
-			limit(() =>
-				createMinaClient(urls[input.network])
-					.query(FetchAccountBalanceQuery, {
-						tokenId: token.tokenId,
-						publicKey
-					})
-					.toPromise()
-			)
-		])
-	)
-
-	const results = await Promise.all(Object.values(queries))
-
-	return Object.keys(queries).reduce(
-		(acc, tokenId, index) => {
-			const result = results[index]
-			const token = allTokens[index]
-			const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
-			const [layer, netType] = (input.network as Networks).split(":") as [NetworkLayer, ChainNetwork]
-			acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
-			return acc
-		},
-		{
-			mina: { mainnet: {}, devnet: {} },
-			zeko: { mainnet: {}, testnet: {} }
-		} as AllTokenBalances
-	)
 }
 
 export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (url: string) => Client }) =>
@@ -101,6 +40,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 			events: {} as WalletEvent
 		},
 		actors: {
+			fetchBalance,
 			/**
 			 * Invoked on initialization to listen to Mina wallet changes.
 			 */
@@ -156,12 +96,6 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 					throw e
 				}
 			}),
-			/**
-			 * Fetches the balance of the Mina wallet on given networks.
-			 */
-			fetchBalance: fromPromise<TokenBalances, FetchBalanceInput>(async ({ input }) =>
-				fetchBalanceLogic(input, createMinaClient)
-			),
 			/**
 			 * Changes the network of the Mina wallet.
 			 */
@@ -224,7 +158,26 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 					enqueue.emit({ type: "AccountChanged", account: event.account })
 				})
 			},
-			Disconnect: { target: ".INIT", actions: assign({ account: "" }) }
+			Disconnect: { target: ".INIT", actions: assign({ account: "" }) },
+			FetchBalanceSuccess: {
+				actions: enqueueActions(({ enqueue, context, event }) => {
+					enqueue.assign(
+						produce(context, (draft) => {
+							Object.assign(draft.balances["mina:mainnet"], event.balances.mina.mainnet)
+							Object.assign(draft.balances["mina:devnet"], event.balances.mina.devnet)
+							Object.assign(draft.balances["zeko:mainnet"], event.balances.zeko.mainnet)
+							Object.assign(draft.balances["zeko:testnet"], event.balances.zeko.testnet)
+						})
+					)
+					enqueue.stopChild(event.id)
+				})
+			},
+			FetchBalanceFailure: {
+				actions: enqueueActions(({ enqueue, event }) => {
+					//TODO: We could retry more here.
+					enqueue.stopChild(event.id)
+				})
+			}
 		},
 		states: {
 			INIT: {
@@ -252,45 +205,16 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				}
 			},
 			FETCHING_BALANCE: {
-				invoke: {
-					src: "fetchBalance",
-					input: ({ context, event }) => {
-						if (event.type === "FetchBalance") {
-							return { address: context.account, tokens: event.tokens, network: event.network }
-						}
-						return { address: context.account, tokens: [], network: context.currentNetwork }
-					},
-					onDone: {
-						target: "READY",
-						actions: assign({
-							balances: ({ context, event }) => ({
-								"mina:mainnet": {
-									...context.balances["mina:mainnet"],
-									...event.output.mina.mainnet
-								},
-								"mina:devnet": {
-									...context.balances["mina:devnet"],
-									...event.output.mina.devnet
-								},
-								"zeko:mainnet": {
-									...context.balances["zeko:mainnet"],
-									...event.output.zeko.mainnet
-								},
-								"zeko:testnet": {
-									...context.balances["zeko:testnet"],
-									...event.output.zeko.testnet
-								}
-							})
-						})
-					},
-					onError: {
-						target: "FETCHING_BALANCE",
-						reenter: true,
-						actions: () => {
-							logger.error("`fetchBalance` actor failed, re-entering `FETCHING_BALANCE`.")
-						}
-					}
-				}
+				entry: enqueueActions(({ enqueue, context, event }) => {
+					const id = crypto.randomUUID()
+					const params =
+						event.type === "FetchBalance"
+							? { address: context.account, tokens: event.tokens, network: event.network }
+							: { address: context.account, tokens: [], network: context.currentNetwork }
+					const input = { id, createMinaClient, ...params }
+					enqueue.spawnChild("fetchBalance", { input })
+				}),
+				target: "READY"
 			},
 			READY: {
 				on: {
@@ -305,49 +229,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 							actions: emit(({ event }) => ({ type: "NetworkChanged", network: event.network }))
 						}
 					],
-					FetchBalance: {
-						actions: ({ context, event, self }) => {
-							fetchBalanceLogic(
-								{
-									address: context.account,
-									tokens: event.tokens,
-									network: event.network
-								},
-								createMinaClient
-							)
-								.then((balances) => {
-									self.send({
-										type: "BalanceFetched",
-										balances
-									})
-								})
-								.catch((error) => {
-									logger.error("Failed to fetch balance", error)
-								})
-						}
-					},
-					BalanceFetched: {
-						actions: assign({
-							balances: ({ context, event }) => ({
-								"mina:mainnet": {
-									...context.balances["mina:mainnet"],
-									...event.balances.mina.mainnet
-								},
-								"mina:devnet": {
-									...context.balances["mina:devnet"],
-									...event.balances.mina.devnet
-								},
-								"zeko:mainnet": {
-									...context.balances["zeko:mainnet"],
-									...event.balances.zeko.mainnet
-								},
-								"zeko:testnet": {
-									...context.balances["zeko:testnet"],
-									...event.balances.zeko.testnet
-								}
-							})
-						})
-					}
+					FetchBalance: { target: "FETCHING_BALANCE" }
 				}
 			},
 			SWITCHING_NETWORK: {
