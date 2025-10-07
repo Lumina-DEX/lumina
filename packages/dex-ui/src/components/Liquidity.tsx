@@ -1,6 +1,7 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { useContext, useEffect, useRef, useState } from "react"
+import { debounce } from "@tanstack/react-pacer"
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
 import { poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
@@ -9,108 +10,27 @@ import { LuminaContext } from "./Layout"
 import TokenMenu from "./TokenMenu"
 
 const Liquidity = () => {
-	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [token, setToken] = useState<LuminaToken>(tokenA)
-
 	const { Dex } = useContext(LuminaContext)
 
-	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [liquidityMinted, setLiquidityMinted] = useState(0)
+	const [token, setToken] = useState<LuminaToken>(tokenA)
 	const [pool, setPool] = useState<LuminaPool>()
-	const [toDai, setToDai] = useState(true)
+	const [poolAddress, setPoolAddress] = useState(poolToka)
+	const [minaToToken, setminaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
-	const [slippagePercent, setSlippagePercent] = useState<number>(1)
+	const [slippagePercent, setSlippagePercent] = useState(1)
 
 	const lastEditedField = useRef<"from" | "to" | null>(null)
-	const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
-	function updatePool(newPool: LuminaPool) {
+	const updatePool = useCallback((newPool: LuminaPool) => {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
 		lastEditedField.current = "from"
-	}
+	}, [])
 
-	useEffect(() => {
-		const subscription = Dex.subscribe((snapshot) => {
-			const result = snapshot.context.dex.addLiquidity.calculated
-
-			if (result) {
-				const decimalsA = toDai ? 9 : token.decimals
-				const decimalsB = toDai ? token.decimals : 9
-				const decimalsLiquidity = 9
-
-				const amountA = result.tokenA.amountIn / 10 ** decimalsA
-				const amountB = result.tokenB.amountIn / 10 ** decimalsB
-				const liquidity = result.liquidity / 10 ** decimalsLiquidity
-
-				if (lastEditedField.current === "from" && amountB > 0) {
-					setToAmount(amountB.toFixed(2).toString())
-				} else if (lastEditedField.current === "to" && amountA > 0) {
-					setFromAmount(amountA.toFixed(2).toString())
-				}
-
-				setLiquidityMinted(liquidity)
-				lastEditedField.current = null
-			}
-		})
-		return subscription.unsubscribe
-	}, [Dex, toDai, token])
-
-	useEffect(() => {
-		if (debounceTimer.current) {
-			clearTimeout(debounceTimer.current)
-		}
-
-		if (!pool || !lastEditedField.current) return
-
-		const fromAmountNum = Number.parseFloat(fromAmount)
-		const toAmountNum = Number.parseFloat(toAmount)
-
-		if (fromAmountNum > 0 || toAmountNum > 0) {
-			debounceTimer.current = setTimeout(() => {
-				calculateLiquidity()
-			}, 500)
-		}
-
-		return () => {
-			if (debounceTimer.current) {
-				clearTimeout(debounceTimer.current)
-			}
-		}
-	}, [fromAmount, toAmount, pool, toDai])
-
-	const getLiquidityAmount = async () => {
-		Dex.send({
-			type: "ChangeAddLiquiditySettings",
-			settings: {
-				pool: pool.address,
-				tokenA: {
-					address: toDai ? "MINA" : token.address,
-					amount: fromAmount
-				},
-				tokenB: {
-					address: !toDai ? "MINA" : token.address,
-					amount: toAmount
-				},
-				slippagePercent: slippagePercent
-			}
-		})
-	}
-
-	const addLiquidity = async () => {
-		try {
-			Dex.send({ type: "AddLiquidity" })
-		} catch (error) {
-			console.log("swap error", error)
-		}
-	}
-
-	const calculateLiquidity = async () => {
-		try {
-			await getLiquidityAmount()
-		} catch (error) {
-			console.log("swap error", error)
-		}
+	const addLiquidity = () => {
+		Dex.send({ type: "AddLiquidity" })
 	}
 
 	function toFixedIfNecessary(value, dp) {
@@ -128,9 +48,79 @@ const Liquidity = () => {
 	}
 
 	const changeOrder = () => {
-		setToDai(!toDai)
+		setminaToToken(!minaToToken)
 		lastEditedField.current = "from"
 	}
+
+	//TODO: Use use selector instead of subscribe.
+	useEffect(() => {
+		const subscription = Dex.subscribe((snapshot) => {
+			const result = snapshot.context.dex.addLiquidity.calculated
+
+			if (result) {
+				const decimalsA = minaToToken ? 9 : token.decimals
+				const decimalsB = minaToToken ? token.decimals : 9
+				const decimalsLiquidity = 9
+
+				const amountA = result.tokenA.amountIn / 10 ** decimalsA
+				const amountB = result.tokenB.amountIn / 10 ** decimalsB
+				const liquidity = result.liquidity / 10 ** decimalsLiquidity
+
+				if (lastEditedField.current === "from" && amountB > 0) {
+					setToAmount(amountB.toFixed(2).toString())
+				} else if (lastEditedField.current === "to" && amountA > 0) {
+					setFromAmount(amountA.toFixed(2).toString())
+				}
+
+				setLiquidityMinted(liquidity)
+				lastEditedField.current = null
+			}
+		})
+		return subscription.unsubscribe
+	}, [Dex, minaToToken, token])
+
+	const debouncedChangeSettings = useMemo(
+		() =>
+			debounce(
+				(params: {
+					fromAmount: string
+					toAmount: string
+					pool: LuminaPool
+					token: LuminaToken
+					minaToToken: boolean
+					slippagePercent: number
+				}) => {
+					const fromAmountNum = Number.parseFloat(params.fromAmount)
+					const toAmountNum = Number.parseFloat(params.toAmount)
+
+					if (!params.pool || !lastEditedField.current) return
+					if (fromAmountNum <= 0 && toAmountNum <= 0) return
+
+					Dex.send({
+						type: "ChangeAddLiquiditySettings",
+						settings: {
+							pool: params.pool.address,
+							tokenA: {
+								address: params.minaToToken ? "MINA" : params.token.address,
+								amount: params.fromAmount
+							},
+							tokenB: {
+								address: !params.minaToToken ? "MINA" : params.token.address,
+								amount: params.toAmount
+							},
+							slippagePercent: params.slippagePercent
+						}
+					})
+				},
+				{ wait: 500 }
+			),
+		[Dex]
+	)
+
+	// Debounced change settings
+	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, toAmount, pool, token, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, toAmount, pool, token, minaToToken, slippagePercent])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
@@ -153,7 +143,7 @@ const Liquidity = () => {
 						value={fromAmount}
 						onValueChange={({ value }) => setAmountA(value)}
 					/>
-					{toDai ? (
+					{minaToToken ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
 						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
@@ -173,7 +163,7 @@ const Liquidity = () => {
 						value={toAmount}
 						onValueChange={({ value }) => setAmountB(value)}
 					/>
-					{!toDai ? (
+					{!minaToToken ? (
 						<span className="w-24 text-center">MINA</span>
 					) : (
 						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />

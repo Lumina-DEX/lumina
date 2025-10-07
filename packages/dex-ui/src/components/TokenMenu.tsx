@@ -1,22 +1,18 @@
 "use client"
-import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
+import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { fetchPoolList } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Box, Modal } from "@mui/material"
-import { useCallback, useContext, useEffect, useState } from "react"
-import { Addresses } from "@/utils/addresses"
-import { minaTestnet } from "./Account"
+import { useQuery } from "@tanstack/react-query"
+import { useContext, useEffect, useState } from "react"
 import { LuminaContext } from "./Layout"
 
-const TokenMenu = ({
-	poolAddress,
-	setPool,
-	setToken
-}: {
+interface TokenMenuProps {
 	poolAddress: string
 	setPool: (pool: LuminaPool) => void
 	setToken: (token: LuminaToken) => void
-}) => {
-	const [cdnList, setCdnList] = useState<LuminaPool[]>([])
+}
+const TokenMenu = ({ poolAddress, setPool, setToken }: TokenMenuProps) => {
 	const { Wallet } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
 	const [current, setCurrent] = useState<LuminaPool | undefined>()
@@ -25,27 +21,13 @@ const TokenMenu = ({
 	const handleOpen = () => setOpen(true)
 	const handleClose = () => setOpen(false)
 
-	const getPools = useCallback(async () => {
-		const network: Networks = walletContext.currentNetwork || minaTestnet
-		const pools = await Addresses.getList(network)
-		setCdnList(pools)
+	const { data: cdnList } = useQuery({
+		queryKey: [walletContext.currentNetwork],
+		queryFn: () => fetchPoolList(walletContext.currentNetwork),
+		initialData: []
+	})
 
-		const poolExist = pools.find((z) => z.address === poolAddress)
-		if (poolExist) {
-			setPool(poolExist)
-			setToken(poolExist.tokens[1])
-			setCurrent(poolExist)
-		} else if (pools.length > 0) {
-			// si le pool n’existe pas sur ce network, on prend le premier
-			setPool(pools[0])
-			setToken(pools[0].tokens[1])
-			setCurrent(pools[0])
-		}
-	}, [walletContext.currentNetwork, poolAddress, setPool, setToken])
-
-	useEffect(() => {
-		getPools()
-	}, [getPools])
+	const poolExist = cdnList.find((z) => z.address === poolAddress)
 
 	const selectPool = (pool: LuminaPool) => {
 		setPool(pool)
@@ -72,6 +54,19 @@ const TokenMenu = ({
 		if (!text) return ""
 		return `${text.substring(0, 6)}...${text.substring(text.length - 6)}`
 	}
+
+	useEffect(() => {
+		if (poolExist) {
+			setPool(poolExist)
+			setToken(poolExist.tokens[1])
+			setCurrent(poolExist)
+		} else if (cdnList.length > 0) {
+			// If the pool doesn't exist on this network, we take the first one
+			setPool(cdnList[0])
+			setToken(cdnList[0].tokens[1])
+			setCurrent(cdnList[0])
+		}
+	}, [poolExist, cdnList, setPool, setToken])
 
 	return (
 		<div>

@@ -22,21 +22,9 @@ const Pool = () => {
 				<TabButton name="withdraw" tab={tab} setTab={setTab} />
 			</div>
 			<div className="p-2">
-				{tab === "add" && (
-					<div>
-						<Liquidity />
-					</div>
-				)}
-				{tab === "withdraw" && (
-					<div>
-						<Withdraw />
-					</div>
-				)}
-				{tab === "create" && (
-					<div>
-						<Create />
-					</div>
-				)}
+				{tab === "add" && <Liquidity />}
+				{tab === "withdraw" && <Withdraw />}
+				{tab === "create" && <Create />}
 			</div>
 		</div>
 	)
