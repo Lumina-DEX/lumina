@@ -15,13 +15,11 @@ function runFork(n: Field) {
     const child = fork(workerPath, { stdio: ["inherit", "inherit", "inherit", "ipc"] })
 
     child.once("message", (msg: any) => {
-      console.log("message", msg)
       if (msg?.ok) resolve(msg.proof)
       else reject(new Error(msg?.error ?? "unknown worker error"))
     })
     child.once("error", reject)
     child.once("exit", (code) => {
-      console.log("exit", code)
       if (code !== 0) {
         // si on n'a rien reçu, on rejette
         // (inutile si 'message' déjà traité)
@@ -58,5 +56,19 @@ describe("Worker", () => {
     await p1.verify()
     await p2.verify()
     await p3.verify()
+  }, 180_000)
+
+  it("Prove 3 in serial", async () => {
+    const n1 = Field(2)
+    const n2 = Field(3)
+    const n3 = Field(5)
+
+    const p1 = await Gt1.check(n1)
+    const p2 = await Gt1.check(n2)
+    const p3 = await Gt1.check(n3)
+
+    await p1.proof.verify()
+    await p2.proof.verify()
+    await p3.proof.verify()
   }, 180_000)
 })
