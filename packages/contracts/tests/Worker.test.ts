@@ -1,57 +1,62 @@
-import { allRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
-import { luminadexFactories } from "@lumina-dex/sdk"
-import { and, eq, TransactionRollbackError } from "drizzle-orm"
-import {
-  AccountUpdate,
-  Cache,
-  Encoding,
-  Encryption,
-  fetchAccount,
-  Field,
-  initializeBindings,
-  Mina,
-  PrivateKey,
-  Provable,
-  PublicKey
-} from "o1js"
-import { beforeAll, describe, expect, it } from "vitest"
-import { GreaterThanOne } from "./GreaterThanOne"
+import { describe, it, expect, beforeAll } from "vitest"
+import { fork } from "node:child_process"
+import { Field } from "o1js"
+import { fileURLToPath } from "node:url"
+import path from "node:path"
+import { Gt1 } from "../src/worker/Gt1"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+function runFork(n: Field) {
+  return new Promise((resolve, reject) => {
+    // On fork le worker ***compilé en JS***
+    const workerPath = path.resolve(__dirname, "../dist/index.js")
+    const child = fork(workerPath, { stdio: ["inherit", "inherit", "inherit", "ipc"] })
+
+    child.once("message", (msg: any) => {
+      console.log("message", msg)
+      if (msg?.ok) resolve(msg.proof)
+      else reject(new Error(msg?.error ?? "unknown worker error"))
+    })
+    child.once("error", reject)
+    child.once("exit", (code) => {
+      console.log("exit", code)
+      if (code !== 0) {
+        // si on n'a rien reçu, on rejette
+        // (inutile si 'message' déjà traité)
+      }
+    })
+
+    child.send({ n: n.toJSON() })
+  })
+}
 
 describe("Worker", () => {
-  let deployerAccount: Mina.TestPublicKey,
-    senderAccount: Mina.TestPublicKey,
-    deployerKey: PrivateKey,
-    zkGreaterAddress: PublicKey,
-    zkGreaterPrivateKey: PrivateKey,
-    zkGreater: GreaterThanOne,
-    Local: any
-
   beforeAll(async () => {
-    console.time("compile contract")
-    await GreaterThanOne.compile()
-    console.timeEnd("compile contract")
-
-    zkGreaterPrivateKey = PrivateKey.random()
-    zkGreaterAddress = zkGreaterPrivateKey.toPublicKey()
-    zkGreater = new GreaterThanOne(zkGreaterAddress)
-
-    Local = await Mina.LocalBlockchain({ proofsEnabled: true })
-    Mina.setActiveInstance(Local)
-    ;[deployerAccount, senderAccount] = Local.testAccounts
-    deployerKey = deployerAccount.key
-
-    const txn = await Mina.transaction(deployerAccount, async () => {
-      AccountUpdate.fundNewAccount(deployerAccount, 1)
-      await zkGreater.deploy()
-    })
-
-    await txn.prove()
-    await txn.sign([deployerKey, zkGreaterPrivateKey]).send()
+    console.time("compile gt1")
+    await Gt1.compile()
+    console.timeEnd("compile gt1")
   })
 
-  it("parrallel proof", async () => {
-    const txn = await Mina.transaction(deployerAccount, async () => {
-      await zkGreater.verifyGreaterThanOne(Field(2))
-    })
-  }, 300000)
+  it("No worker", async () => {
+    const proof = await Gt1.check(Field(2))
+    await proof.proof.verify()
+  }, 180_000)
+
+  it("Prove 3 in parrallel", async () => {
+    const n1 = Field(2)
+    const n2 = Field(3)
+    const n3 = Field(5)
+
+    const [proofJson1, proofJson2, proofJson3]: any = await Promise.all([runFork(n1), runFork(n2), runFork(n3)])
+
+    const p1 = await Gt1.Proof.fromJSON(proofJson1)
+    const p2 = await Gt1.Proof.fromJSON(proofJson2)
+    const p3 = await Gt1.Proof.fromJSON(proofJson3)
+
+    await p1.verify()
+    await p2.verify()
+    await p3.verify()
+  }, 180_000)
 })
