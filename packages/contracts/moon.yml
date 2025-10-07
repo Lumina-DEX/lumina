@@ -74,6 +74,9 @@ tasks:
   test-vk:
     extends: base-test
     args: VerificationKey
+  test-worker:
+    extends: base-test
+    args: Worker
   oxlint:
     command: oxlint --type-aware
     options:
