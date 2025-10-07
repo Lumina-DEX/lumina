@@ -11,7 +11,8 @@ import {
 	getMasterSigner,
 	getMerkle,
 	getNetwork,
-	getUniqueUserPairs
+	getUniqueUserPairs,
+	logger
 } from "../helpers"
 
 export const createPoolAndTransaction = async ({
@@ -25,7 +26,7 @@ export const createPoolAndTransaction = async ({
 	const Network = getNetwork(network)
 	Mina.setActiveInstance(Network)
 
-	console.log("data", { tokenA, tokenB, user, network })
+	logger.log("data", { tokenA, tokenB, user, network })
 	const { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 } = await createPoolKeys(db.drizzle)
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
@@ -35,7 +36,7 @@ export const createPoolAndTransaction = async ({
 	const masterSignerPublicKey = masterSignerPrivateKey.toPublicKey()
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
-		console.log("Starting db transaction")
+		logger.log("Starting db transaction")
 		// insert this new pool in database
 		const result = await txOrm
 			.insert(pool)
@@ -49,12 +50,12 @@ export const createPoolAndTransaction = async ({
 				status: "pending"
 			})
 			.returning({ insertedId: pool.id })
-		console.log("Inserted new pool into database", result)
+		logger.log("Inserted new pool into database", result)
 		const poolId = result[0].insertedId
 		const listPair = getUniqueUserPairs(users, poolId, newPoolPrivateKey.toBase58())
 		// insert the encrypted key of the pool in database
 		await txOrm.insert(tPoolKey).values(listPair)
-		// console.log("Inserted pool keys into database", listPair)
+		// logger.log("Inserted pool keys into database", listPair)
 		const signature = Signature.create(masterSignerPrivateKey, newPoolPublicKey.toFields())
 		const witness = merkle.getWitness(Poseidon.hash(masterSignerPublicKey.toFields()))
 		const factory = luminadexFactories[network]
@@ -96,7 +97,7 @@ export const createPoolAndTransaction = async ({
 				throw new Error(`Token ${token0.toBase58()} and ${token1.toBase58()} had already a pool`)
 			}
 		}
-		console.debug({ isMinaTokenPool })
+		logger.debug({ isMinaTokenPool })
 		console.time("prove")
 		const minaTx = await Mina.transaction(
 			{
@@ -104,11 +105,11 @@ export const createPoolAndTransaction = async ({
 				fee: getFee(network)
 			},
 			async () => {
-				console.log("Funding new account ...")
+				logger.log("Funding new account ...")
 				if (isMinaTokenPool) {
 					fundNewAccount(network, PublicKey.fromBase58(user), 4)
 					const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
-					console.log("Creating Mina token pool ...", token)
+					logger.log("Creating Mina token pool ...", token)
 					await zkFactory.createPool(
 						newPoolPublicKey,
 						token1,
@@ -117,11 +118,11 @@ export const createPoolAndTransaction = async ({
 						witness,
 						deployPoolRight
 					)
-					console.log("Mina token pool created successfully")
+					logger.log("Mina token pool created successfully")
 				}
 				if (!isMinaTokenPool) {
 					fundNewAccount(network, PublicKey.fromBase58(user), 5)
-					console.log("Creating non-Mina token pool ...")
+					logger.log("Creating non-Mina token pool ...")
 					await zkFactory.createPoolToken(
 						newPoolPublicKey,
 						token0,
@@ -134,11 +135,11 @@ export const createPoolAndTransaction = async ({
 				}
 			}
 		)
-		console.log("Signing ... ")
+		logger.log("Signing ... ")
 		minaTx.sign([newPoolPrivateKey])
-		console.log("Proving ...")
+		logger.log("Proving ...")
 		await minaTx.prove()
-		console.log("Done, returning transaction ...")
+		logger.log("Done, returning transaction ...")
 		console.timeEnd("prove")
 		return minaTx.toJSON()
 	})

@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
+import { logger } from "./helpers"
 import type { createPoolAndTransaction } from "./workers/logic"
 
 const connection = new IORedis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
@@ -31,20 +32,20 @@ const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof
 const createPoolQueueEvents = new QueueEvents("createPool", { connection })
 
 createPoolQueueEvents.on("waiting", ({ jobId }) => {
-	console.log(`A job with ID ${jobId} is waiting`)
+	logger.log(`A job with ID ${jobId} is waiting`)
 })
 
 createPoolQueueEvents.on("active", ({ jobId, prev }) => {
-	console.log(`Job ${jobId} is now active; previous status was ${prev}`)
+	logger.log(`Job ${jobId} is now active; previous status was ${prev}`)
 })
 
 createPoolQueueEvents.on("completed", ({ jobId }) => {
-	console.log(`${jobId} has completed and returned`)
+	logger.log(`${jobId} has completed and returned`)
 })
 
 createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-	console.error("queue failed", failedReason)
-	console.log(`${jobId} has failed with reason ${failedReason}`)
+	logger.error("queue failed", failedReason)
+	logger.log(`${jobId} has failed with reason ${failedReason}`)
 })
 
 export const queues = () => {
@@ -53,7 +54,7 @@ export const queues = () => {
 		createPoolQueueEvents,
 		worker,
 		[Symbol.dispose]: () => {
-			console.log("Disposing queues...")
+			logger.log("Disposing queues...")
 		}
 	}
 }

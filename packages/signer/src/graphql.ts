@@ -5,7 +5,7 @@ import { GraphQLError } from "graphql"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
-import { updateStatusAndCDN } from "./helpers"
+import { logger, updateStatusAndCDN } from "./helpers"
 
 type Builder = {
 	Context: Context
@@ -76,7 +76,7 @@ builder.mutationField("createPool", (t) =>
 			using q = queues()
 			const jobId = globalThis.crypto.randomUUID()
 			const job = await q.createPoolQueue.getJob(jobId)
-			console.log(`Job ID: ${jobId}, Exists: ${!!job}`)
+			logger.log(`Job ID: ${jobId}, Exists: ${!!job}`)
 			if (await job?.isCompleted()) return { id: jobId, status: "completed" }
 			if (job) return { id: jobId, status: "exists" }
 			await q.createPoolQueue.add("createPool", input, {
@@ -84,7 +84,7 @@ builder.mutationField("createPool", (t) =>
 				removeOnFail: true,
 				removeOnComplete: false
 			})
-			console.log(`Enqueued job with ID: ${jobId}`)
+			logger.log(`Enqueued job with ID: ${jobId}`)
 			return { id: jobId, status: "created" }
 		}
 	})
@@ -96,18 +96,18 @@ builder.subscriptionField("poolCreation", (t) =>
 		description: "Subscribe to pool creation events",
 		args: { jobId: t.arg.string({ required: true }) },
 		subscribe: async (_, args, { queues }) => {
-			console.log(`Subscribing to pool creation events for job ID: ${args.jobId}`)
+			logger.log(`Subscribing to pool creation events for job ID: ${args.jobId}`)
 			return new Repeater<JobResult>(async (push, stop) => {
 				using q = queues()
 				const job = await q.createPoolQueue.getJob(args.jobId)
 				if (!job) throw new GraphQLError(`Job with ID ${args.jobId} not found`)
 				if (await job.isCompleted()) {
-					console.log(`Job ID: ${args.jobId} already completed`)
+					logger.log(`Job ID: ${args.jobId} already completed`)
 					push({ status: "already_completed", ...job.returnvalue })
 					return stop()
 				}
 				const completed = q.createPoolQueueEvents.on("completed", async ({ jobId }) => {
-					console.log(`Repeater completed for job ID: ${jobId}`)
+					logger.log(`Repeater completed for job ID: ${jobId}`)
 					if (jobId !== args.jobId) return
 					const job = await q.createPoolQueue.getJob(jobId)
 					if (!job) return stop(new GraphQLError(`Job with ID ${jobId} not found`))
@@ -115,7 +115,7 @@ builder.subscriptionField("poolCreation", (t) =>
 					return stop()
 				})
 				const failed = q.createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-					console.error(`Repeater failed for job ID: ${jobId} with reason: ${failedReason}`)
+					logger.error(`Repeater failed for job ID: ${jobId} with reason: ${failedReason}`)
 					if (jobId !== args.jobId) return
 					return stop(new GraphQLError(`Job ${jobId} failed: ${failedReason}`))
 				})
@@ -137,12 +137,12 @@ builder.queryField("poolCreationJob", (t) =>
 			using q = queues()
 			const job = await q.createPoolQueue.getJob(jobId)
 			if (!job) {
-				console.error(`Job with ID ${jobId} not found`)
+				logger.error(`Job with ID ${jobId} not found`)
 				throw new GraphQLError(`Job with ID ${jobId} not found`)
 			}
 			const status = await job.getState()
 			const result = { status, ...job.returnvalue } as Partial<JobResult>
-			console.log(`Job ID: ${jobId}, Status: ${status}, Result: ${JSON.stringify(result)}`)
+			logger.log(`Job ID: ${jobId}, Status: ${status}, Result: ${JSON.stringify(result)}`)
 			return { status: "unknown", transactionJson: "", poolPublicKey: "", ...result }
 		}
 	})
@@ -158,23 +158,23 @@ builder.mutationField("confirmJob", (t) =>
 			using db = database()
 			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
 			if (data.length === 0) {
-				console.error(`No pool found for job ID ${jobId}`)
+				logger.error(`No pool found for job ID ${jobId}`)
 				throw new GraphQLError(`No pool found for job ID ${jobId}`)
 			}
 			const job = await q.createPoolQueue.getJob(jobId)
 			if (job) {
-				console.log(`Removing job with ID ${jobId} from the queue`)
+				logger.log(`Removing job with ID ${jobId} from the queue`)
 				await job.remove()
 			}
 			if (data[0].status === "confirmed") {
-				console.log(`Job for pool ${jobId} is already confirmed`)
+				logger.log(`Job for pool ${jobId} is already confirmed`)
 				return `Job for pool ${jobId} is already confirmed`
 			}
 			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
-			console.log(`Job for pool ${jobId} confirmed in the database`)
+			logger.log(`Job for pool ${jobId} confirmed in the database`)
 			const { network, publicKey: poolAddress } = data[0]
 			if (shouldUpdateCDN) {
-				console.log(`Updating CDN for pool ${poolAddress} on network ${network}`)
+				logger.log(`Updating CDN for pool ${poolAddress} on network ${network}`)
 				const result = await updateStatusAndCDN({ poolAddress, network })
 				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${result}`
 			}

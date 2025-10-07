@@ -1,11 +1,12 @@
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { relations } from "../drizzle/relations"
+import { logger } from "./helpers"
 
 export const getDb = () => {
 	try {
 		// /!\ Use prepare:false if using a transaction pool mode
-		console.log("Initializing database connection...")
+		logger.log("Initializing database connection...")
 		const client = postgres(process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/signer", {
 			prepare: false
 		})
@@ -14,12 +15,12 @@ export const getDb = () => {
 			drizzle: db,
 			client,
 			[Symbol.dispose]() {
-				console.log("Closing database connection...")
+				logger.log("Closing database connection...")
 				client.end()
 			}
 		}
 	} catch (error) {
-		console.error("Error connecting to the database:", error)
+		logger.error("Error connecting to the database:", error)
 		throw error
 	}
 }
