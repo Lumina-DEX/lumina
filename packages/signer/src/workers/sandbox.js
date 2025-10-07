@@ -10,19 +10,16 @@ let compiled = false
  */
 export default async function (job) {
 	try {
-		await job.log("Start processing job")
+		await job.log(`sandbox:job_started:${job.id}`)
 		if (!compiled) await compileContracts()
-		console.log("Contracts compiled")
+		await job.log("sandbox:compiled")
 		compiled = true
-		console.log("job id", job.id)
-		if (!job.id) {
-			throw new Error("No job id")
-		}
+		if (!job.id) throw new Error("No job id")
 		const result = await createPoolAndTransaction({
 			...job.data,
 			jobId: job.id
 		})
-		console.log("job end", job.id)
+		await job.log(`sandbox:job_completed:${job.id}`)
 		return result
 	} catch (error) {
 		console.error(error)

@@ -23,42 +23,37 @@ const worker = new BullMqWorker("createPool", processorUrl, {
 	concurrency
 })
 
-// TODO: Figure out if singletons can be used in some cases.
+const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
+	"createPool",
+	{ connection }
+)
+
+const createPoolQueueEvents = new QueueEvents("createPool", { connection })
+
+createPoolQueueEvents.on("waiting", ({ jobId }) => {
+	console.log(`A job with ID ${jobId} is waiting`)
+})
+
+createPoolQueueEvents.on("active", ({ jobId, prev }) => {
+	console.log(`Job ${jobId} is now active; previous status was ${prev}`)
+})
+
+createPoolQueueEvents.on("completed", ({ jobId }) => {
+	console.log(`${jobId} has completed and returned`)
+})
+
+createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
+	console.error("queue failed", failedReason)
+	console.log(`${jobId} has failed with reason ${failedReason}`)
+})
+
 export const queues = () => {
-	const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
-		"createPool",
-		{ connection }
-	)
-
-	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
-
-	createPoolQueueEvents.on("waiting", ({ jobId }) => {
-		console.log(`A job with ID ${jobId} is waiting`)
-	})
-
-	createPoolQueueEvents.on("active", ({ jobId, prev }) => {
-		console.log(`Job ${jobId} is now active; previous status was ${prev}`)
-	})
-
-	createPoolQueueEvents.on("completed", ({ jobId }) => {
-		console.log(`${jobId} has completed and returned`)
-	})
-
-	createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-		console.error("queue failed", failedReason)
-		console.log(`${jobId} has failed with reason ${failedReason}`)
-	})
-
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,
 		worker,
 		[Symbol.dispose]: () => {
-			console.log("Closing queues and worker")
-			try {
-				createPoolQueue.close()
-				createPoolQueueEvents.close()
-			} catch {}
+			console.log("Disposing queues...")
 		}
 	}
 }

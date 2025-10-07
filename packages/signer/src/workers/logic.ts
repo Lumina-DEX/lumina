@@ -36,7 +36,6 @@ export const createPoolAndTransaction = async ({
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		console.log("Starting db transaction")
-
 		// insert this new pool in database
 		const result = await txOrm
 			.insert(pool)
@@ -139,6 +138,7 @@ export const createPoolAndTransaction = async ({
 		minaTx.sign([newPoolPrivateKey])
 		console.log("Proving ...")
 		await minaTx.prove()
+		console.log("Done, returning transaction ...")
 		console.timeEnd("prove")
 		return minaTx.toJSON()
 	})
