@@ -5,7 +5,8 @@ import { GraphQLError } from "graphql"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
-import { logger, updateStatusAndCDN } from "./helpers"
+import { updateStatusAndCDN } from "./helpers/job"
+import { logger } from "./helpers/utils"
 
 type Builder = {
 	Context: Context

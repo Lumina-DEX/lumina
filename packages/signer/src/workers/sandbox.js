@@ -1,4 +1,4 @@
-import { compileContracts } from "../helpers"
+import { compileContracts } from "../helpers/job"
 import { createPoolAndTransaction } from "./logic"
 
 let compiled = false

@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { relations } from "../drizzle/relations"
-import { logger } from "./helpers"
+import { logger } from "./helpers/utils"
 
 export const getDb = () => {
 	try {

@@ -3,7 +3,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
-import { logger } from "./helpers"
+import { logger } from "./helpers/utils"
 import type { createPoolAndTransaction } from "./workers/logic"
 
 const connection = new IORedis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {

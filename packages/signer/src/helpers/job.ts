@@ -1,7 +1,7 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { allRight, deployPoolRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
-import { type ConsolaInstance, createConsola } from "consola"
+import type { ConsolaInstance } from "consola"
 import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
@@ -16,14 +16,13 @@ import {
 	PublicKey,
 	UInt64
 } from "o1js"
-import * as v from "valibot"
-import { pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
-import type { getDb } from "./db"
+import { pool, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
+import type { getDb } from "../db"
+import { getEnv, logger } from "./utils"
 
 type Drizzle = ReturnType<typeof getDb>["drizzle"]
 type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
 
-export const logger = createConsola().withTag("SIGNER")
 const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	const start = performance.now()
 	let done = false
@@ -35,18 +34,6 @@ const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	}
 }
 const time = createMeasure(logger)
-
-export const getEnv = () => {
-	const Schema = v.object({
-		DATABASE_URL: v.string(),
-		INFISICAL_ENVIRONMENT: v.string(),
-		INFISICAL_PROJECT_ID: v.string(),
-		INFISICAL_CLIENT_ID: v.string(),
-		INFISICAL_CLIENT_SECRET: v.string()
-	})
-	const env = v.parse(Schema, process.env)
-	return env
-}
 
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number

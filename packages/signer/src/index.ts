@@ -2,7 +2,7 @@ import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
-import { logger } from "./helpers"
+import { logger } from "./helpers/utils"
 import { queues } from "./queue"
 
 const Schema = v.object({
