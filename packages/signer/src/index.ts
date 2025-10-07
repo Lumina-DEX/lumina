@@ -2,6 +2,7 @@ import { createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
+import { logger } from "./helpers/utils"
 import { queues } from "./queue"
 
 const Schema = v.object({
@@ -56,11 +57,11 @@ const main = async () => {
 		idleTimeout: 0, // Wait indefinitely for SSE
 		port: 3001,
 		fetch: async (request) => {
-			console.log("Received request:", request.method, request.url)
+			logger.log("Received request:", request.method, request.url)
 			return yoga(request, { env })
 		}
 	})
-	console.info(`Server is running on ${new URL(yoga.graphqlEndpoint, `http://${server.hostname}:${server.port}`)}`)
+	logger.info(`Server is running on ${new URL(yoga.graphqlEndpoint, `http://${server.hostname}:${server.port}`)}`)
 }
 
 main()

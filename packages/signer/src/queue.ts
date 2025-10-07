@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
 import IORedis from "ioredis"
 import type { CreatePoolInputType } from "./graphql"
+import { logger } from "./helpers/utils"
 import type { createPoolAndTransaction } from "./workers/logic"
 
 const connection = new IORedis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
@@ -23,42 +24,37 @@ const worker = new BullMqWorker("createPool", processorUrl, {
 	concurrency
 })
 
-// TODO: Figure out if singletons can be used in some cases.
+const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
+	"createPool",
+	{ connection }
+)
+
+const createPoolQueueEvents = new QueueEvents("createPool", { connection })
+
+createPoolQueueEvents.on("waiting", ({ jobId }) => {
+	logger.log(`A job with ID ${jobId} is waiting`)
+})
+
+createPoolQueueEvents.on("active", ({ jobId, prev }) => {
+	logger.log(`Job ${jobId} is now active; previous status was ${prev}`)
+})
+
+createPoolQueueEvents.on("completed", ({ jobId }) => {
+	logger.log(`${jobId} has completed and returned`)
+})
+
+createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
+	logger.error("queue failed", failedReason)
+	logger.log(`${jobId} has failed with reason ${failedReason}`)
+})
+
 export const queues = () => {
-	const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
-		"createPool",
-		{ connection }
-	)
-
-	const createPoolQueueEvents = new QueueEvents("createPool", { connection })
-
-	createPoolQueueEvents.on("waiting", ({ jobId }) => {
-		console.log(`A job with ID ${jobId} is waiting`)
-	})
-
-	createPoolQueueEvents.on("active", ({ jobId, prev }) => {
-		console.log(`Job ${jobId} is now active; previous status was ${prev}`)
-	})
-
-	createPoolQueueEvents.on("completed", ({ jobId }) => {
-		console.log(`${jobId} has completed and returned`)
-	})
-
-	createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-		console.error("queue failed", failedReason)
-		console.log(`${jobId} has failed with reason ${failedReason}`)
-	})
-
 	return {
 		createPoolQueue,
 		createPoolQueueEvents,
 		worker,
 		[Symbol.dispose]: () => {
-			console.log("Closing queues and worker")
-			try {
-				createPoolQueue.close()
-				createPoolQueueEvents.close()
-			} catch {}
+			logger.log("Disposing queues...")
 		}
 	}
 }

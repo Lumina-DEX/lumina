@@ -527,6 +527,9 @@ importers:
       bullmq:
         specifier: ^5.53.2
         version: 5.53.2
+      consola:
+        specifier: ^3.4.0
+        version: 3.4.0
       drizzle-orm:
         specifier: beta
         version: 1.0.0-beta.1-860c2f2(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7)

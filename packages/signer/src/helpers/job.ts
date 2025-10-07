@@ -1,6 +1,7 @@
 import { InfisicalSDK } from "@infisical/sdk"
 import { allRight, deployPoolRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
+import type { ConsolaInstance } from "consola"
 import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
@@ -15,24 +16,24 @@ import {
 	PublicKey,
 	UInt64
 } from "o1js"
-import * as v from "valibot"
-import { pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
-import type { getDb } from "./db"
+import { pool, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
+import type { getDb } from "../db"
+import { getEnv, logger } from "./utils"
 
 type Drizzle = ReturnType<typeof getDb>["drizzle"]
 type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
 
-export const getEnv = () => {
-	const Schema = v.object({
-		DATABASE_URL: v.string(),
-		INFISICAL_ENVIRONMENT: v.string(),
-		INFISICAL_PROJECT_ID: v.string(),
-		INFISICAL_CLIENT_ID: v.string(),
-		INFISICAL_CLIENT_SECRET: v.string()
-	})
-	const env = v.parse(Schema, process.env)
-	return env
+const createMeasure = (l: ConsolaInstance) => (label: string) => {
+	const start = performance.now()
+	let done = false
+	return () => {
+		if (done) return
+		const end = performance.now()
+		l.warn(`${label}: ${end - start} ms`)
+		done = true
+	}
 }
+const time = createMeasure(logger)
 
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number
@@ -136,7 +137,7 @@ export const fundNewAccount = (network: Networks, feePayer: PublicKey, numberOfA
 		accountUpdate.balance.subInPlace(fee)
 		return accountUpdate
 	} catch (error) {
-		console.error("fund new account", error)
+		logger.error("fund new account", error)
 		return AccountUpdate.fundNewAccount(feePayer, numberOfAccounts)
 	}
 }
@@ -155,25 +156,25 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 }
 
 export const compileContracts = async () => {
-	console.log("Compiling contracts...")
+	logger.log("Compiling contracts...")
 	// setNumberOfWorkers(4)
-	console.time("compile")
+	const c = time("compile")
 	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
-	console.time("FungibleTokenAdmin")
+	const fta = time("FungibleTokenAdmin")
 	await FungibleTokenAdmin.compile(cache)
-	console.timeEnd("FungibleTokenAdmin")
+	fta()
 
-	console.time("FungibleToken")
+	const ft = time("FungibleToken")
 	await FungibleToken.compile(cache)
-	console.timeEnd("FungibleToken")
+	ft()
 
-	console.time("PoolFactory")
+	const pf = time("PoolFactory")
 	const vk = await PoolFactory.compile(cache)
-	console.timeEnd("PoolFactory")
+	pf()
 
-	console.log("factory vk hash", vk.verificationKey.hash.toBigInt())
-	console.timeEnd("compile")
+	logger.log("factory vk hash", vk.verificationKey.hash.toBigInt())
+	c()
 }
 
 export const updateStatusAndCDN = async ({ poolAddress, network }: { poolAddress: string; network: Networks }) => {
@@ -202,6 +203,6 @@ export const createPoolKeys = async (
 	const newPoolPublicKeyBase58 = newPoolPublicKey.toBase58()
 	const [exists] = await database.select().from(pool).where(eq(pool.publicKey, newPoolPublicKeyBase58))
 	if (exists) return createPoolKeys(database)
-	console.log("Generated new pool key:", newPoolPublicKeyBase58)
+	logger.log("Generated new pool key:", newPoolPublicKeyBase58)
 	return { newPoolPrivateKey, newPoolPublicKey, newPoolPublicKeyBase58 }
 }
