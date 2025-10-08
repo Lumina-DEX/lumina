@@ -43,7 +43,7 @@ export const compileContracts = async () => {
 	c()
 
 	isCompiled = true
-	console.log("✅ All contracts compiled successfully")
+	logger.log("✅ All contracts compiled successfully")
 }
 
 export const ensureCompiled = async () => {

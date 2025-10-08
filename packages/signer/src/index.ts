@@ -1,9 +1,9 @@
 import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
-import { schema } from "./graphql"
+import { type JobResult, schema } from "./graphql"
 import { logger } from "./helpers/utils"
-import { getJobQueue, type JobResult } from "./queue"
+import { getJobQueue } from "./queue"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
@@ -20,7 +20,7 @@ export type Env = typeof env
 export type Context = {
 	database: Database
 	jobQueue: JobQueue
-	pubsub: ReturnType<typeof createPubSub<Record<string, [JobResult]>>>
+	pubsub: ReturnType<typeof createPubSub<Record<string, [job: JobResult]>>>
 	env: Env
 	shouldUpdateCDN?: boolean
 }

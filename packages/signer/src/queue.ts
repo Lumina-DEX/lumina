@@ -23,7 +23,7 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 			status: "completed",
 			poolPublicKey: result.poolPublicKey,
 			transactionJson: result.transactionJson,
-			completedAt: Date.now()
+			completedAt: new Date()
 		} as const
 
 		jobs.set(jobId, jobResult)
@@ -36,7 +36,7 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 			status: "failed",
 			poolPublicKey: "",
 			transactionJson: "",
-			completedAt: Date.now()
+			completedAt: new Date()
 		} as const
 
 		jobs.set(jobId, jobResult)
@@ -76,7 +76,7 @@ const queuer = new Queuer<JobTask>(async (task) => await processJob(task))
 export const getJobQueue = (pubsub: PubSub<Record<string, [JobResult]>>) => {
 	return {
 		addJob: (jobId: string, data: CreatePoolInputType) => {
-			jobs.set(jobId, { status: "pending", poolPublicKey: "", transactionJson: "", completedAt: Date.now() })
+			jobs.set(jobId, { status: "pending", poolPublicKey: "", transactionJson: "", completedAt: new Date() })
 			queuer.addItem({ jobId, data, pubsub })
 		},
 		getJob: (jobId: string) => jobs.get(jobId),

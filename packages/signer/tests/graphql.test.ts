@@ -1,4 +1,6 @@
 import { like, or } from "drizzle-orm"
+import { graphql, type TadaDocumentNode } from "gql.tada"
+import { print } from "graphql"
 import { createPubSub, createYoga } from "graphql-yoga"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { pool } from "../drizzle/schema"
@@ -12,11 +14,6 @@ import { readSSEStream, streamContainsError } from "./sse"
 const TEST_RUN_ID = `test-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 const POOL_PREFIX = `pool-${TEST_RUN_ID}`
 const USER_PREFIX = `B62test-${TEST_RUN_ID}`
-
-// Syntax highlighting
-const gql = (strings: TemplateStringsArray, ...values: unknown[]) => {
-	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ""), "")
-}
 
 vi.mock("../src/helpers/utils", () => ({
 	logger: console
@@ -66,13 +63,31 @@ describe("GraphQL API", () => {
 	let jobQueue: () => ReturnType<typeof getJobQueue>
 	let pubsub: ReturnType<typeof createPubSub<Record<string, [JobResult]>>>
 
-	const query = async (q: string, variables?: Record<string, unknown>) => {
+	const query = async <TResult, TVariables>(
+		document: TadaDocumentNode<TResult, TVariables>,
+		variables?: TVariables
+	): Promise<{ data?: TResult; errors?: Array<{ message: string }> }> => {
 		const response = await yoga.fetch("http://localhost:4000/graphql", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ query: q, variables })
+			body: JSON.stringify({ query: print(document), variables })
 		})
 		return response.json()
+	}
+
+	const subscribe = async <TResult, TVariables>(
+		document: TadaDocumentNode<TResult, TVariables>,
+		variables?: TVariables
+	) => {
+		const response = await yoga.fetch("http://localhost:4000/graphql", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "text/event-stream"
+			},
+			body: JSON.stringify({ query: print(document), variables })
+		})
+		return response
 	}
 
 	beforeAll(() => {
@@ -109,9 +124,12 @@ describe("GraphQL API", () => {
 	describe("createPool mutation", () => {
 		it("creates new pool job", async () => {
 			const result = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
-					createPool(input: $input) { id status }
-				}`,
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
+					createPool(input: $input) { 
+						id,
+						status
+					 }
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-test123`,
@@ -122,8 +140,8 @@ describe("GraphQL API", () => {
 				}
 			)
 			expect(result.errors).toBeUndefined()
-			expect(result.data?.createPool.status).toBe("created")
-			expect(result.data?.createPool.id).toBeTruthy()
+			expect(result?.data?.createPool?.status).toBe("created")
+			expect(result?.data?.createPool?.id).toBeTruthy()
 		})
 
 		it("creates separate jobs for each request", async () => {
@@ -131,41 +149,44 @@ describe("GraphQL API", () => {
 				user: `${USER_PREFIX}-duplicate`,
 				tokenA: "B62tokenA",
 				tokenB: "B62tokenB",
-				network: "mina_devnet"
+				network: "mina_devnet" as const
 			}
 
 			const result1 = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
 					createPool(input: $input) { id status }
-				}`,
+				}`),
 				{ input }
 			)
 
-			const jobId1 = result1.data?.createPool.id
+			const jobId1 = result1.data?.createPool?.id
 
 			const result2 = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
-					createPool(input: $input) { id status }
-				}`,
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
+					createPool(input: $input) { 
+						id
+						status 
+					}
+				}`),
 				{ input }
 			)
 
-			const jobId2 = result2.data?.createPool.id
+			const jobId2 = result2.data?.createPool?.id
 
 			// Each request creates a new job with a unique ID
 			expect(jobId1).toBeTruthy()
 			expect(jobId2).toBeTruthy()
 			expect(jobId1).not.toBe(jobId2)
-			expect(result2.data?.createPool.status).toBe("created")
+			expect(result2.data?.createPool?.status).toBe("created")
 		})
 	})
 
 	describe("poolCreationJob query", () => {
 		it("returns error for non-existent job", async () => {
 			const result = await query(
-				gql`query GetJob($jobId: String!) {
-					poolCreationJob(jobId: $jobId) { status poolPublicKey transactionJson }
-				}`,
+				graphql(`query GetJob($jobId: String!) {
+					poolCreationJob(jobId: $jobId) { status }
+				}`),
 				{ jobId: "nonexistent" }
 			)
 
@@ -175,9 +196,12 @@ describe("GraphQL API", () => {
 
 		it("returns completed job with transaction", async () => {
 			const createResult = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
-					createPool(input: $input) { id status }
-				}`,
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
+					createPool(input: $input) { 
+						id
+						status
+					}
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-completed`,
@@ -188,32 +212,33 @@ describe("GraphQL API", () => {
 				}
 			)
 
-			const jobId = createResult.data?.createPool.id
+			const jobId = createResult.data?.createPool?.id as string
+			expect(jobId).toBeTruthy()
 			await new Promise((resolve) => setTimeout(resolve, 1000))
 
 			const result = await query(
-				gql`query GetJob($jobId: String!) {
+				graphql(`query GetJob($jobId: String!) {
 					poolCreationJob(jobId: $jobId) {
 						status
 						transactionJson
 						poolPublicKey
 					}
-				}`,
+				}`),
 				{ jobId }
 			)
 
-			expect(result.data?.poolCreationJob.status).toBe("completed")
-			expect(result.data?.poolCreationJob.transactionJson).toBeDefined()
-			expect(result.data?.poolCreationJob.poolPublicKey).toContain(POOL_PREFIX)
+			expect(result.data?.poolCreationJob?.status).toBe("completed")
+			expect(result.data?.poolCreationJob?.transactionJson).toBeDefined()
+			expect(result.data?.poolCreationJob?.poolPublicKey).toContain(POOL_PREFIX)
 		})
 	})
 
 	describe("confirmJob mutation", () => {
 		it("confirms job and removes from cache", async () => {
 			const createResult = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
 					createPool(input: $input) { id status }
-				}`,
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-confirm`,
@@ -224,13 +249,14 @@ describe("GraphQL API", () => {
 				}
 			)
 
-			const jobId = createResult.data?.createPool.id
+			const jobId = createResult.data?.createPool?.id as string
+			expect(jobId).toBeTruthy()
 			await new Promise((resolve) => setTimeout(resolve, 300))
 
 			using q = jobQueue()
 			expect(q.hasJob(jobId)).toBe(true)
 
-			const confirmResult = await query(gql`mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }`, {
+			const confirmResult = await query(graphql("mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }"), {
 				jobId
 			})
 
@@ -240,7 +266,7 @@ describe("GraphQL API", () => {
 		})
 
 		it("returns error for non-existent job", async () => {
-			const result = await query(gql`mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }`, {
+			const result = await query(graphql("mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }"), {
 				jobId: "nonexistent"
 			})
 
@@ -252,9 +278,9 @@ describe("GraphQL API", () => {
 	describe("full workflow", () => {
 		it("handles create → wait → confirm", async () => {
 			const createResult = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
 					createPool(input: $input) { id status }
-				}`,
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-workflow`,
@@ -265,7 +291,7 @@ describe("GraphQL API", () => {
 				}
 			)
 
-			const jobId = createResult.data?.createPool.id
+			const jobId = createResult.data?.createPool?.id as string
 			expect(jobId).toBeTruthy()
 
 			// Wait for job to complete
@@ -273,35 +299,37 @@ describe("GraphQL API", () => {
 
 			// Check job completed
 			const jobResult = await query(
-				gql`query GetJob($jobId: String!) {
+				graphql(`query GetJob($jobId: String!) {
 					poolCreationJob(jobId: $jobId) {
 						status
-						poolPublicKey
-						transactionJson
 					}
-				}`,
+				}`),
 				{ jobId }
 			)
 
-			expect(jobResult.data?.poolCreationJob.status).toBe("completed")
+			expect(jobResult.data?.poolCreationJob?.status).toBe("completed")
 
 			// Verify in cache
 			using q = jobQueue()
 			expect(q.hasJob(jobId)).toBe(true)
 
 			// Confirm job
-			const confirmResult = await query(gql`mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }`, {
-				jobId
-			})
+			const confirmResult = await query(
+				graphql(`mutation ConfirmJob($jobId: String!) 
+			{ confirmJob(jobId: $jobId) }`),
+				{ jobId }
+			)
 
 			expect(confirmResult.data?.confirmJob).toBeTruthy()
 			expect(typeof confirmResult.data?.confirmJob).toBe("string")
 			expect(q.hasJob(jobId)).toBe(false)
 
 			// Confirming again should fail
-			const confirmAgain = await query(gql`mutation ConfirmJob($jobId: String!) { confirmJob(jobId: $jobId) }`, {
-				jobId
-			})
+			const confirmAgain = await query(
+				graphql(`mutation ConfirmJob($jobId: String!)
+				 { confirmJob(jobId: $jobId) }`),
+				{ jobId }
+			)
 
 			expect(confirmAgain.errors).toBeUndefined()
 			expect(confirmAgain.data?.confirmJob).toContain("already confirmed")
@@ -317,9 +345,9 @@ describe("GraphQL API", () => {
 				[1, 2, 3].map(async (i) => {
 					// Fire the mutation
 					const createResult = await query(
-						gql`mutation CreatePool($input: CreatePoolInput!) {
+						graphql(`mutation CreatePool($input: CreatePoolInput!) {
 							createPool(input: $input) { id status }
-						}`,
+						}`),
 						{
 							input: {
 								user: `${USER_PREFIX}-sequential-${i}`,
@@ -330,11 +358,11 @@ describe("GraphQL API", () => {
 						}
 					)
 
-					const jobId = createResult.data?.createPool.id
+					const jobId = createResult.data?.createPool?.id
 					expect(jobId).toBeTruthy()
 
 					// Fire the subscription
-					const subscriptionQuery = gql`
+					const subscriptionQuery = graphql(`
 						subscription PoolCreation($jobId: String!) {
 							poolCreation(jobId: $jobId) {
 								status
@@ -343,19 +371,9 @@ describe("GraphQL API", () => {
 								completedAt
 							}
 						}
-					`
-
-					const response = await yoga.fetch("http://localhost:4000/graphql", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Accept: "text/event-stream"
-						},
-						body: JSON.stringify({
-							query: subscriptionQuery,
-							variables: { jobId }
-						})
-					})
+					`)
+					if (!jobId) throw new Error("jobId is undefined")
+					const response = await subscribe(subscriptionQuery, { jobId })
 
 					// Read the result
 					const result = await readSSEStream<JobResult>(response, "poolCreation")
@@ -363,7 +381,8 @@ describe("GraphQL API", () => {
 					expect(result?.status).toBe("completed")
 
 					if (result) {
-						results.push(result)
+						const revived = { ...result, completedAt: new Date(result.completedAt) }
+						results.push(revived)
 					}
 				})
 			)
@@ -372,11 +391,10 @@ describe("GraphQL API", () => {
 			expect(results).toHaveLength(3)
 
 			// Sort by completedAt timestamp
-			results.sort((a, b) => a.completedAt - b.completedAt)
-
+			results.sort((a, b) => a.completedAt.getTime() - b.completedAt.getTime())
 			// Check that each completion is ~100ms apart (allowing for some variance)
 			for (let i = 1; i < results.length; i++) {
-				const timeDiff = results[i].completedAt - results[i - 1].completedAt
+				const timeDiff = results[i].completedAt.getTime() - results[i - 1].completedAt.getTime()
 				// Allow 150-300ms range to account for execution overhead
 				expect(timeDiff).toBeGreaterThanOrEqual(100)
 				expect(timeDiff).toBeLessThanOrEqual(200)
@@ -386,9 +404,9 @@ describe("GraphQL API", () => {
 		it("subscribes to pool creation and receives completion event", async () => {
 			// Create a pool job first
 			const createResult = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
 					createPool(input: $input) { id status }
-				}`,
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-subscription`,
@@ -399,11 +417,11 @@ describe("GraphQL API", () => {
 				}
 			)
 
-			const jobId = createResult.data?.createPool.id
+			const jobId = createResult.data?.createPool?.id as string
 			expect(jobId).toBeTruthy()
 
 			// Subscribe to the job
-			const subscriptionQuery = gql`
+			const subscriptionQuery = graphql(`
 				subscription PoolCreation($jobId: String!) {
 					poolCreation(jobId: $jobId) {
 						status
@@ -411,19 +429,9 @@ describe("GraphQL API", () => {
 						transactionJson
 					}
 				}
-			`
+			`)
 
-			const response = await yoga.fetch("http://localhost:4000/graphql", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "text/event-stream"
-				},
-				body: JSON.stringify({
-					query: subscriptionQuery,
-					variables: { jobId }
-				})
-			})
+			const response = await subscribe(subscriptionQuery, { jobId })
 
 			expect(response.ok).toBe(true)
 			expect(response.headers.get("content-type")).toContain("text/event-stream")
@@ -439,7 +447,7 @@ describe("GraphQL API", () => {
 		})
 
 		it("returns error for non-existent job subscription", async () => {
-			const subscriptionQuery = gql`
+			const subscriptionQuery = graphql(`
 				subscription PoolCreation($jobId: String!) {
 					poolCreation(jobId: $jobId) {
 						status
@@ -447,19 +455,9 @@ describe("GraphQL API", () => {
 						transactionJson
 					}
 				}
-			`
+			`)
 
-			const response = await yoga.fetch("http://localhost:4000/graphql", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "text/event-stream"
-				},
-				body: JSON.stringify({
-					query: subscriptionQuery,
-					variables: { jobId: "nonexistent-subscription" }
-				})
-			})
+			const response = await subscribe(subscriptionQuery, { jobId: "nonexistent-subscription" })
 
 			expect(response.ok).toBe(true)
 
@@ -472,9 +470,9 @@ describe("GraphQL API", () => {
 		it("immediately returns completed job when subscribing to already completed job", async () => {
 			// Create and wait for job to complete
 			const createResult = await query(
-				gql`mutation CreatePool($input: CreatePoolInput!) {
+				graphql(`mutation CreatePool($input: CreatePoolInput!) {
 					createPool(input: $input) { id status }
-				}`,
+				}`),
 				{
 					input: {
 						user: `${USER_PREFIX}-subscription-completed`,
@@ -485,7 +483,8 @@ describe("GraphQL API", () => {
 				}
 			)
 
-			const jobId = createResult.data?.createPool.id
+			const jobId = createResult.data?.createPool?.id as string
+			expect(jobId).toBeTruthy()
 			await new Promise((resolve) => setTimeout(resolve, 300))
 
 			// Verify job is completed
@@ -494,7 +493,7 @@ describe("GraphQL API", () => {
 			expect(job?.status).toBe("completed")
 
 			// Now subscribe to the already completed job
-			const subscriptionQuery = gql`
+			const subscriptionQuery = graphql(`
 				subscription PoolCreation($jobId: String!) {
 					poolCreation(jobId: $jobId) {
 						status
@@ -502,19 +501,9 @@ describe("GraphQL API", () => {
 						transactionJson
 					}
 				}
-			`
+			`)
 
-			const response = await yoga.fetch("http://localhost:4000/graphql", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "text/event-stream"
-				},
-				body: JSON.stringify({
-					query: subscriptionQuery,
-					variables: { jobId }
-				})
-			})
+			const response = await subscribe(subscriptionQuery, { jobId })
 
 			expect(response.ok).toBe(true)
 

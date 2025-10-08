@@ -2,6 +2,7 @@ import type { Networks } from "@lumina-dex/sdk"
 import SchemaBuilder from "@pothos/core"
 import { eq } from "drizzle-orm"
 import { GraphQLError } from "graphql"
+import { DateTimeResolver } from "graphql-scalars"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
 import { pool } from "../drizzle/schema"
 import type { Context } from "."
@@ -9,10 +10,17 @@ import { updateStatusAndCDN } from "./helpers/job"
 import { logger } from "./helpers/utils"
 
 type Builder = {
+	Scalars: {
+		Date: {
+			Input: Date
+			Output: Date
+		}
+	}
 	Context: Context
 }
 
 const builder = new SchemaBuilder<Builder>({})
+builder.addScalarType("Date", DateTimeResolver)
 
 const fail = (message: string) => {
 	logger.error(message)
@@ -35,7 +43,7 @@ export interface JobResult {
 	status: "pending" | "completed" | "failed"
 	poolPublicKey: string
 	transactionJson: string
-	completedAt: number
+	completedAt: Date
 }
 
 const JobResult = builder.objectRef<JobResult>("JobResult").implement({
@@ -44,7 +52,7 @@ const JobResult = builder.objectRef<JobResult>("JobResult").implement({
 		status: t.exposeString("status", { nullable: false }),
 		poolPublicKey: t.exposeString("poolPublicKey", { nullable: false }),
 		transactionJson: t.exposeString("transactionJson", { nullable: false }),
-		completedAt: t.exposeFloat("completedAt", { nullable: false })
+		completedAt: t.field({ nullable: false, type: "Date", resolve: () => new Date() })
 	})
 })
 
@@ -164,10 +172,7 @@ builder.mutationField("confirmJob", (t) =>
 			using db = database()
 
 			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
-			if (data.length === 0) {
-				logger.error(`No pool found for job ID ${jobId}`)
-				throw new GraphQLError(`No pool found for job ID ${jobId}`)
-			}
+			if (data.length === 0) return fail(`No pool found for job ID ${jobId}`)
 
 			if (data[0].status === "confirmed") {
 				logger.log(`Job for pool ${jobId} is already confirmed`)
