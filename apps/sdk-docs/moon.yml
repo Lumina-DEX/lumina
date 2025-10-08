@@ -2,15 +2,16 @@
 
 layer: application
 
-dependsOn:
-  - contracts
-
 fileGroups:
   sources:
-    - src/**/*
-    - scripts/**/*
+    - .vitepress/**
+    - api/**
+    - dexes/**
+    - guides/**
+    - worker-configuration.d.ts
+    - worker.ts
     - package.json
-    - tsconfig.json
+    - wrangler.jsonc
 
 tasks:
   typecheck:
@@ -23,19 +24,13 @@ tasks:
   build:
     command: vitepress build
     inputs:
-      - docs/**/*
+      - "@group(sources)"
     outputs:
-      - docs/.vitepress/dist/
+      - .vitepress/dist/
   preview:
     command: vitepress preview
     deps: [build]
     preset: "server"
-  deploy:
-    command: wrangler deploy
-    deps: [build]
-  deploy-preview:
-    command: wrangler versions upload
-    deps: [build]
   type-cf:
     command: wrangler types
     inputs:
@@ -50,3 +45,9 @@ tasks:
     command: biome check --formatter-enabled=false --write
     inputs:
       - "@group(sources)"
+  deploy:
+    command: wrangler deploy
+    deps: [build]
+  deploy-preview:
+    command: wrangler versions upload
+    deps: [build]
