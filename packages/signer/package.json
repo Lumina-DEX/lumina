@@ -7,22 +7,23 @@
 		"@lumina-dex/contracts": "workspace:^",
 		"@lumina-dex/sdk": "workspace:^",
 		"@pothos/core": "^4.7.1",
-		"bullmq": "^5.53.2",
+		"@tanstack/pacer": "^0.15.4",
 		"consola": "^3.4.0",
 		"drizzle-orm": "beta",
 		"graphql": "^16.11.0",
 		"graphql-yoga": "^5.14.0",
-		"ioredis": "^5.6.1",
 		"o1js": "catalog:",
 		"postgres": "^3.4.7",
 		"valibot": "^1.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
+		"@graphql-tools/executor-http": "^3.0.4",
 		"concurrently": "^9.2.0",
 		"dotenv": "^17.2.0",
 		"drizzle-kit": "beta",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4"
-	}
+	},
+	"packageManager": "pnpm@10.17.0"
 }

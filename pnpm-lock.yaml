@@ -218,7 +218,7 @@ importers:
         version: 2.57.4
       drizzle-orm:
         specifier: beta
-        version: 1.0.0-beta.1-860c2f2(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7)
+        version: 1.0.0-beta.1-d21cc85(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7)
       graphql-request:
         specifier: 7.1.2
         version: 7.1.2(graphql@16.11.0)
@@ -240,7 +240,7 @@ importers:
         version: link:../sdk
       drizzle-kit:
         specifier: beta
-        version: 1.0.0-beta.1-860c2f2
+        version: 1.0.0-beta.1-d21cc85
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
@@ -524,24 +524,21 @@ importers:
       '@pothos/core':
         specifier: ^4.7.1
         version: 4.7.2(graphql@16.11.0)
-      bullmq:
-        specifier: ^5.53.2
-        version: 5.53.2
+      '@tanstack/pacer':
+        specifier: ^0.15.4
+        version: 0.15.4
       consola:
         specifier: ^3.4.0
         version: 3.4.0
       drizzle-orm:
         specifier: beta
-        version: 1.0.0-beta.1-860c2f2(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7)
+        version: 1.0.0-beta.1-d21cc85(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7)
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
       graphql-yoga:
         specifier: ^5.14.0
         version: 5.15.1(graphql@16.11.0)
-      ioredis:
-        specifier: ^5.6.1
-        version: 5.6.1
       o1js:
         specifier: 'catalog:'
         version: 2.4.0
@@ -555,6 +552,9 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.2.4
+      '@graphql-tools/executor-http':
+        specifier: ^3.0.4
+        version: 3.0.4(@types/node@22.10.0)(graphql@16.11.0)
       concurrently:
         specifier: ^9.2.0
         version: 9.2.0
@@ -563,7 +563,7 @@ importers:
         version: 17.2.0
       drizzle-kit:
         specifier: beta
-        version: 1.0.0-beta.1-860c2f2
+        version: 1.0.0-beta.1-d21cc85
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -2021,6 +2021,10 @@ packages:
     resolution: {integrity: sha512-xvUkOWXI8JsG2OOnqiI2tOkEc52wbmIqWORr7yGc8B8E53Oh1MMGGGck4mbR80s25LnHVzfNIiIlNkuDgZRuuA==}
     engines: {node: '>=18.0.0'}
 
+  '@envelop/core@5.3.2':
+    resolution: {integrity: sha512-06Mu7fmyKzk09P2i2kHpGfItqLLgCq7uO5/nX4fc/iHMplWPNuAx4iYR+WXUQoFHDnP6EUbceQNQ5iyeMz9f3g==}
+    engines: {node: '>=18.0.0'}
+
   '@envelop/instrumentation@1.0.0':
     resolution: {integrity: sha512-cxgkB66RQB95H3X27jlnxCRNTmPuSTgmBAq6/4n2Dtv4hsk4yz8FadA1ggmd0uZzvKqWD6CR+WFgTjhDqg7eyw==}
     engines: {node: '>=18.0.0'}
@@ -3101,6 +3105,22 @@ packages:
     peerDependencies:
       typescript: ^5.0.0
 
+  '@graphql-hive/signal@2.0.0':
+    resolution: {integrity: sha512-Pz8wB3K0iU6ae9S1fWfsmJX24CcGeTo6hE7T44ucmV/ALKRj+bxClmqrYcDT7v3f0d12Rh4FAXBb6gon+WkDpQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@graphql-tools/executor-common@1.0.2':
+    resolution: {integrity: sha512-CQGDXczd4x7v40axa/RyHPjgkMqodGbi94eBxeewuMdT1WPYop+efR4sW0BXv6AKT4e7pPABBn9LrAXj8TIlAg==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
+  '@graphql-tools/executor-http@3.0.4':
+    resolution: {integrity: sha512-S4d/FiHBxHWVG2iELP2zx23ESt7kpaW4oagFT8K+nezOkFL6TDvzuhPKSVhEq6A6G0qUUcKDHLJhcJ0ppmtCvw==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
   '@graphql-tools/executor@1.4.8':
     resolution: {integrity: sha512-eMFWo30+L8BPME5qhJ3b4WOEAMSIMdi41F0afp40RH9RWQWnJ9R9Tr6vq7CZzmlM8qxymEE4UMAnu2qG/5Jyqg==}
     engines: {node: '>=16.0.0'}
@@ -3121,6 +3141,12 @@ packages:
 
   '@graphql-tools/utils@10.9.0':
     resolution: {integrity: sha512-LzFlJHNajdohRM+0pHTwcF9tZ0q7z5iZW0lwnTNJp7O6GYFcSvCQE5ijTQcXVQ/5WQf3SHn+Gpr56TR5XHmPtg==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
+  '@graphql-tools/utils@10.9.1':
+    resolution: {integrity: sha512-B1wwkXk9UvU7LCBkPs8513WxOQ2H8Fo5p8HR1+Id9WmYE5+bd51vqN+MbrqvWczHCH2gwkREgHJN88tE0n1FCw==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
@@ -3639,36 +3665,6 @@ packages:
 
   '@moonrepo/core-windows-x64-msvc@1.40.3':
     resolution: {integrity: sha512-QU344CrhlJrhIbdFZj/FaMNVLdda84Cgzu/X/34oRMOTKNMLg6ZvrQyV10VqJGvbD+WUZBWZCIhbfZWQMHk/Tw==}
-    cpu: [x64]
-    os: [win32]
-
-  '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
-    resolution: {integrity: sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.3':
-    resolution: {integrity: sha512-mdzd3AVzYKuUmiWOQ8GNhl64/IoFGol569zNRdkLReh6LRLHOXxU4U8eq0JwaD8iFHdVGqSy4IjFL4reoWCDFw==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.3':
-    resolution: {integrity: sha512-YxQL+ax0XqBJDZiKimS2XQaf+2wDGVa1enVRGzEvLLVFeqa5kx2bWbtcSXgsxjQB7nRqqIGFIcLteF/sHeVtQg==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@msgpackr-extract/msgpackr-extract-linux-arm@3.0.3':
-    resolution: {integrity: sha512-fg0uy/dG/nZEXfYilKoRe7yALaNmHoYeIoJuJ7KJ+YyU2bvY8vPv27f7UKhGRpY6euFYqEVhxCFZgAUNQBM3nw==}
-    cpu: [arm]
-    os: [linux]
-
-  '@msgpackr-extract/msgpackr-extract-linux-x64@3.0.3':
-    resolution: {integrity: sha512-cvwNfbP07pKUfq1uH+S6KJ7dT9K8WOE4ZiAcsrSes+UY55E/0jLYc+vq+DO7jlmqRb5zAggExKm0H7O/CBaesg==}
-    cpu: [x64]
-    os: [linux]
-
-  '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
-    resolution: {integrity: sha512-x0fWaQtYp4E6sktbsdAqnehxDgEc/VwM7uLsRCYWaiGu0ykYdZPiS8zCWdnjHwyiumousxfBm4SO31eXqwEZhQ==}
     cpu: [x64]
     os: [win32]
 
@@ -5669,12 +5665,20 @@ packages:
     resolution: {integrity: sha512-ApcWxkrs1WmEMS2CaLLFUEem/49erT3sxIVjpzU5f6zmVcnijtDSrhoK2zVobOIikZJdH63jdAXOrvjf6eOUNQ==}
     engines: {node: '>=18.0.0'}
 
+  '@whatwg-node/fetch@0.10.11':
+    resolution: {integrity: sha512-eR8SYtf9Nem1Tnl0IWrY33qJ5wCtIWlt3Fs3c6V4aAaTFLtkEQErXu3SSZg/XCHrj9hXSJ8/8t+CdMk5Qec/ZA==}
+    engines: {node: '>=18.0.0'}
+
   '@whatwg-node/fetch@0.10.9':
     resolution: {integrity: sha512-2TaXKmjy53cybNtaAtzbPOzwIPkjXbzvZcimnaJxQwYXKSC8iYnWoZOyT4+CFt8w0KDieg5J5dIMNzUrW/UZ5g==}
     engines: {node: '>=18.0.0'}
 
   '@whatwg-node/node-fetch@0.7.22':
     resolution: {integrity: sha512-h4GGjGF2vH3kGJ/fEOeg9Xfu4ncoyRwFcjGIxr/5dTBgZNVwq888byIsZ+XXRDJnNnRlzVVVQDcqrZpY2yctGA==}
+    engines: {node: '>=18.0.0'}
+
+  '@whatwg-node/node-fetch@0.8.0':
+    resolution: {integrity: sha512-+z00GpWxKV/q8eMETwbdi80TcOoVEVZ4xSRkxYOZpn3kbV3nej5iViNzXVke/j3v4y1YpO5zMS/CVDIASvJnZQ==}
     engines: {node: '>=18.0.0'}
 
   '@whatwg-node/promise-helpers@1.3.2':
@@ -6007,9 +6011,6 @@ packages:
 
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
-
-  bullmq@5.53.2:
-    resolution: {integrity: sha512-xHgxrP/yNJHD7VCw1h+eRBh+2TCPBCM39uC9gCyksYc6ufcJP+HTZ/A2lzB2x7qMFWrvsX7tM40AT2BmdkYL/Q==}
 
   bun-types@1.2.23:
     resolution: {integrity: sha512-R9f0hKAZXgFU3mlrA0YpE/fiDvwV0FT9rORApt2aQVWSuJDzZOyB5QLc0N/4HF57CS8IXJ6+L5E4W1bW6NS2Aw==}
@@ -6354,10 +6355,6 @@ packages:
   crc32-stream@6.0.0:
     resolution: {integrity: sha512-piICUB6ei4IlTv1+653yq5+KoqfBYmj9bw6LqXoOneTMDXk5nM1qt12mFW1caG3LlJXEKW1Bp0WggEmIfQB34g==}
     engines: {node: '>= 14'}
-
-  cron-parser@4.9.0:
-    resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
-    engines: {node: '>=12.0.0'}
 
   croner@9.0.0:
     resolution: {integrity: sha512-onMB0OkDjkXunhdW9htFjEhqrD54+M94i6ackoUkjHKbRnXdyEyKRelp4nJ1kAz32+s27jP1FsebpJCVl0BsvA==}
@@ -6758,8 +6755,8 @@ packages:
     resolution: {integrity: sha512-EAP3OLYZXiW66HKMlhu6Gu0o7mzBVTWyMyuAAgT7dBtMX+W+pPJmIwyRUnTRQNyyFO4S7bAaa21rzIgo97Bg9A==}
     hasBin: true
 
-  drizzle-kit@1.0.0-beta.1-860c2f2:
-    resolution: {integrity: sha512-0+nj7O6wYI5bbaAMJnIW6qyvHCYSFsi+0hmHPSFOgJeNrNrgrAzJoGOhwzdR95I0skx8iIbA3+XnHhmriChcGg==}
+  drizzle-kit@1.0.0-beta.1-d21cc85:
+    resolution: {integrity: sha512-oraGoWUe3hJHKyd9u6L7k0hynNf44NMK4DgfuvT208XTQyco6tuRLEDvVBRpod+M4kr+fY94Xy8c/Id/0C+YhQ==}
     hasBin: true
 
   drizzle-orm@0.37.0:
@@ -6854,8 +6851,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-orm@1.0.0-beta.1-860c2f2:
-    resolution: {integrity: sha512-H7KeyaQjOegEav4jwP4Aaxh3TVayzZblsU2C3ChElY1eVMn742ka5NkMEMnpAYd+A1qWgLAVOV1R0moJBxzn4g==}
+  drizzle-orm@1.0.0-beta.1-d21cc85:
+    resolution: {integrity: sha512-m6h7LFb+42WkmZ3D+FPM1Zvt4SIOFjsI5FxZ2IIlme9/Wq5V9zezzeyz5HsNpWd6J+rvFfXbCkTzchq3bL2UWA==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -6868,6 +6865,9 @@ packages:
       '@planetscale/database': '>=1.13'
       '@prisma/client': '*'
       '@tidbcloud/serverless': '*'
+      '@tursodatabase/database': '>=0.2.1'
+      '@tursodatabase/database-common': '>=0.2.1'
+      '@tursodatabase/database-wasm': '>=0.2.1'
       '@types/better-sqlite3': '*'
       '@types/pg': '*'
       '@types/sql.js': '*'
@@ -6906,6 +6906,12 @@ packages:
       '@prisma/client':
         optional: true
       '@tidbcloud/serverless':
+        optional: true
+      '@tursodatabase/database':
+        optional: true
+      '@tursodatabase/database-common':
+        optional: true
+      '@tursodatabase/database-wasm':
         optional: true
       '@types/better-sqlite3':
         optional: true
@@ -8501,6 +8507,15 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
 
+  meros@1.3.2:
+    resolution: {integrity: sha512-Q3mobPbvEx7XbwhnC1J1r60+5H6EZyNccdzSz0eGexJRwouUtTZxPVRGdqKtxlpD84ScK4+tIGldkqDtCKdI0A==}
+    engines: {node: '>=13'}
+    peerDependencies:
+      '@types/node': '>=13'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   methods@1.1.2:
     resolution: {integrity: sha512-iclAHeNqNm68zFtnZ0e+1L2yUIdvzNoauKU4WBA3VvH/vPFieF7qfRlwUZU+DA9P9bPXIS90ulxoUoCH23sV2w==}
     engines: {node: '>= 0.6'}
@@ -8769,13 +8784,6 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  msgpackr-extract@3.0.3:
-    resolution: {integrity: sha512-P0efT1C9jIdVRefqjzOQ9Xml57zpOXnIuS+csaB4MdZbTdmGDLo8XhzBG1N7aO11gKDDkJvBLULeFTo46wwreA==}
-    hasBin: true
-
-  msgpackr@1.11.4:
-    resolution: {integrity: sha512-uaff7RG9VIC4jacFW9xzL3jc0iM32DNHe4jYVycBcjUePT/Klnfj7pqtWJt9khvDFizmjN2TlYniYmSS2LIaZg==}
-
   msw@2.6.8:
     resolution: {integrity: sha512-nxXxnH6WALZ9a7rsQp4HU2AaD4iGAiouMmE/MY4al7pXTibgA6OZOuKhmN2WBIM6w9qMKwRtX8p2iOb45B2M/Q==}
     engines: {node: '>=18'}
@@ -8863,9 +8871,6 @@ packages:
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
-  node-abort-controller@3.1.1:
-    resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
-
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
@@ -8893,10 +8898,6 @@ packages:
   node-forge@1.3.1:
     resolution: {integrity: sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==}
     engines: {node: '>= 6.13.0'}
-
-  node-gyp-build-optional-packages@5.2.2:
-    resolution: {integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==}
-    hasBin: true
 
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
@@ -14701,6 +14702,13 @@ snapshots:
       '@whatwg-node/promise-helpers': 1.3.2
       tslib: 2.8.1
 
+  '@envelop/core@5.3.2':
+    dependencies:
+      '@envelop/instrumentation': 1.0.0
+      '@envelop/types': 5.2.1
+      '@whatwg-node/promise-helpers': 1.3.2
+      tslib: 2.8.1
+
   '@envelop/instrumentation@1.0.0':
     dependencies:
       '@whatwg-node/promise-helpers': 1.3.2
@@ -15292,6 +15300,29 @@ snapshots:
       '@vue/language-core': 2.0.29(typescript@5.8.3)
       typescript: 5.8.3
 
+  '@graphql-hive/signal@2.0.0': {}
+
+  '@graphql-tools/executor-common@1.0.2(graphql@16.11.0)':
+    dependencies:
+      '@envelop/core': 5.3.2
+      '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
+      graphql: 16.11.0
+
+  '@graphql-tools/executor-http@3.0.4(@types/node@22.10.0)(graphql@16.11.0)':
+    dependencies:
+      '@graphql-hive/signal': 2.0.0
+      '@graphql-tools/executor-common': 1.0.2(graphql@16.11.0)
+      '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
+      '@repeaterjs/repeater': 3.0.6
+      '@whatwg-node/disposablestack': 0.0.6
+      '@whatwg-node/fetch': 0.10.11
+      '@whatwg-node/promise-helpers': 1.3.2
+      graphql: 16.11.0
+      meros: 1.3.2(@types/node@22.10.0)
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@types/node'
+
   '@graphql-tools/executor@1.4.8(graphql@16.11.0)':
     dependencies:
       '@graphql-tools/utils': 10.9.0(graphql@16.11.0)
@@ -15321,6 +15352,15 @@ snapshots:
       - supports-color
 
   '@graphql-tools/utils@10.9.0(graphql@16.11.0)':
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.11.0)
+      '@whatwg-node/promise-helpers': 1.3.2
+      cross-inspect: 1.0.1
+      dset: 3.1.4
+      graphql: 16.11.0
+      tslib: 2.8.1
+
+  '@graphql-tools/utils@10.9.1(graphql@16.11.0)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.11.0)
       '@whatwg-node/promise-helpers': 1.3.2
@@ -15814,24 +15854,6 @@ snapshots:
     optional: true
 
   '@moonrepo/core-windows-x64-msvc@1.40.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-linux-arm@3.0.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-linux-x64@3.0.3':
-    optional: true
-
-  '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
     optional: true
 
   '@mswjs/interceptors@0.37.3':
@@ -18368,12 +18390,24 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@whatwg-node/fetch@0.10.11':
+    dependencies:
+      '@whatwg-node/node-fetch': 0.8.0
+      urlpattern-polyfill: 10.1.0
+
   '@whatwg-node/fetch@0.10.9':
     dependencies:
       '@whatwg-node/node-fetch': 0.7.22
       urlpattern-polyfill: 10.1.0
 
   '@whatwg-node/node-fetch@0.7.22':
+    dependencies:
+      '@fastify/busboy': 3.1.1
+      '@whatwg-node/disposablestack': 0.0.6
+      '@whatwg-node/promise-helpers': 1.3.2
+      tslib: 2.8.1
+
+  '@whatwg-node/node-fetch@0.8.0':
     dependencies:
       '@fastify/busboy': 3.1.1
       '@whatwg-node/disposablestack': 0.0.6
@@ -18780,18 +18814,6 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  bullmq@5.53.2:
-    dependencies:
-      cron-parser: 4.9.0
-      ioredis: 5.6.1
-      msgpackr: 1.11.4
-      node-abort-controller: 3.1.1
-      semver: 7.7.2
-      tslib: 2.8.1
-      uuid: 9.0.1
-    transitivePeerDependencies:
-      - supports-color
-
   bun-types@1.2.23(@types/react@19.2.2):
     dependencies:
       '@types/node': 22.10.0
@@ -19133,10 +19155,6 @@ snapshots:
     dependencies:
       crc-32: 1.2.2
       readable-stream: 4.7.0
-
-  cron-parser@4.9.0:
-    dependencies:
-      luxon: 3.6.1
 
   croner@9.0.0: {}
 
@@ -19508,7 +19526,7 @@ snapshots:
       '@dprint/win32-arm64': 0.47.5
       '@dprint/win32-x64': 0.47.5
 
-  drizzle-kit@1.0.0-beta.1-860c2f2:
+  drizzle-kit@1.0.0-beta.1-d21cc85:
     dependencies:
       '@drizzle-team/brocli': 0.10.2
       '@esbuild-kit/esm-loader': 2.6.5
@@ -19527,7 +19545,7 @@ snapshots:
       react: 19.2.0
     optional: true
 
-  drizzle-orm@1.0.0-beta.1-860c2f2(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7):
+  drizzle-orm@1.0.0-beta.1-d21cc85(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(bun-types@1.2.23(@types/react@19.2.2))(postgres@3.4.7):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20241127.0
       '@libsql/client': 0.15.9
@@ -21260,7 +21278,8 @@ snapshots:
 
   lunr@2.3.9: {}
 
-  luxon@3.6.1: {}
+  luxon@3.6.1:
+    optional: true
 
   magic-string-ast@0.6.3:
     dependencies:
@@ -21436,6 +21455,10 @@ snapshots:
   merge-stream@2.0.0: {}
 
   merge2@1.4.1: {}
+
+  meros@1.3.2(@types/node@22.10.0):
+    optionalDependencies:
+      '@types/node': 22.10.0
 
   methods@1.1.2: {}
 
@@ -21812,22 +21835,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msgpackr-extract@3.0.3:
-    dependencies:
-      node-gyp-build-optional-packages: 5.2.2
-    optionalDependencies:
-      '@msgpackr-extract/msgpackr-extract-darwin-arm64': 3.0.3
-      '@msgpackr-extract/msgpackr-extract-darwin-x64': 3.0.3
-      '@msgpackr-extract/msgpackr-extract-linux-arm': 3.0.3
-      '@msgpackr-extract/msgpackr-extract-linux-arm64': 3.0.3
-      '@msgpackr-extract/msgpackr-extract-linux-x64': 3.0.3
-      '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.3
-    optional: true
-
-  msgpackr@1.11.4:
-    optionalDependencies:
-      msgpackr-extract: 3.0.3
-
   msw@2.6.8(@types/node@22.10.0)(typescript@5.8.3):
     dependencies:
       '@bundled-es-modules/cookie': 2.0.1
@@ -22017,8 +22024,6 @@ snapshots:
       lower-case: 2.0.2
       tslib: 2.8.1
 
-  node-abort-controller@3.1.1: {}
-
   node-addon-api@7.1.1: {}
 
   node-domexception@1.0.0: {}
@@ -22037,11 +22042,6 @@ snapshots:
     optional: true
 
   node-forge@1.3.1: {}
-
-  node-gyp-build-optional-packages@5.2.2:
-    dependencies:
-      detect-libc: 2.1.0
-    optional: true
 
   node-gyp-build@4.8.4: {}
 

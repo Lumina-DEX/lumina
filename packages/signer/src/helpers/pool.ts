@@ -12,8 +12,8 @@ import {
 	getMerkle,
 	getNetwork,
 	getUniqueUserPairs
-} from "../helpers/job"
-import { logger } from "../helpers/utils"
+} from "./job"
+import { logger } from "./utils"
 
 export const createPoolAndTransaction = async ({
 	tokenA,

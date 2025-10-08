@@ -1,9 +1,9 @@
-import { createYoga } from "graphql-yoga"
+import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
 import { logger } from "./helpers/utils"
-import { queues } from "./queue"
+import { getJobQueue, type JobResult } from "./queue"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
@@ -15,16 +15,20 @@ const Schema = v.object({
 const env = v.parse(Schema, process.env)
 
 export type Database = typeof getDb
-export type Queues = typeof queues
+export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
 	database: Database
-	queues: Queues
+	jobQueue: JobQueue
+	pubsub: ReturnType<typeof createPubSub<Record<string, [JobResult]>>>
 	env: Env
 	shouldUpdateCDN?: boolean
 }
 
 const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+
+const pubsub = createPubSub<Record<string, [JobResult]>>()
+const jobQueue = () => getJobQueue(pubsub)
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -39,7 +43,8 @@ export const yoga = createYoga<{ env: typeof env }>({
 		return {
 			env,
 			database: getDb,
-			queues,
+			jobQueue,
+			pubsub,
 			shouldUpdateCDN: commitHash !== "development"
 		} satisfies Context
 	},
