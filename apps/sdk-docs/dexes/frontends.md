@@ -1,3 +1,3 @@
 # Frontends using the SDK
 
-- [Luminadex](https://beta.luminadex.com) - A reference implementation of a Dex built with the SDK.
+- [LuminaDex](https://beta.luminadex.com) - A reference implementation of a Dex built with the SDK.
