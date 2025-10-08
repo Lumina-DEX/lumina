@@ -40,6 +40,11 @@ tasks:
   web:
     command: bun ./index.html
     preset: "server"
+  test:
+    command: vitest run
+    options:
+      cache: false
+      runInCI: false
   test-integration:
     command: vitest run --testTimeout=150000
     deps: ["^:build"]
