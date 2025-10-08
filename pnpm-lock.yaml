@@ -133,10 +133,6 @@ importers:
         version: 4.40.3(@cloudflare/workers-types@4.20241127.0)
 
   apps/sdk-docs:
-    dependencies:
-      '@lumina-dex/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
     devDependencies:
       vitepress:
         specifier: ^1.6.3

@@ -7,7 +7,7 @@
 	"preview_urls": true,
 	"observability": { "enabled": true },
 	"assets": {
-		"directory": "./docs/.vitepress/dist",
+		"directory": ".vitepress/dist",
 		"binding": "ASSETS",
 		"not_found_handling": "single-page-application"
 	}

@@ -17,9 +17,5 @@
 		"vitepress-plugin-llms": "^1.1.0",
 		"vitest": "^3.2.4",
 		"wrangler": "catalog:"
-	},
-	"packageManager": "pnpm@10.17.0",
-	"dependencies": {
-		"@lumina-dex/contracts": "workspace:*"
 	}
 }
