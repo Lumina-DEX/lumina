@@ -52,7 +52,7 @@ const JobResult = builder.objectRef<JobResult>("JobResult").implement({
 		status: t.exposeString("status", { nullable: false }),
 		poolPublicKey: t.exposeString("poolPublicKey", { nullable: false }),
 		transactionJson: t.exposeString("transactionJson", { nullable: false }),
-		completedAt: t.field({ nullable: false, type: "Date", resolve: () => new Date() })
+		completedAt: t.field({ nullable: false, type: "Date", resolve: ({ completedAt }) => completedAt ?? new Date() })
 	})
 })
 
@@ -92,13 +92,10 @@ builder.mutationField("createPool", (t) =>
 		resolve: async (_, { input }, { jobQueue }) => {
 			using q = jobQueue()
 			const id = globalThis.crypto.randomUUID()
-
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
-
 			q.addJob(id, input)
 			logger.log(`Job ${id} added to queue`)
-
 			return { id, status: "created" }
 		}
 	})
@@ -114,7 +111,6 @@ builder.subscriptionField("poolCreation", (t) =>
 
 			return new Repeater<JobResult>(async (push, stop) => {
 				using q = jobQueue()
-
 				const rfail = (message: string) => {
 					logger.error(message)
 					return stop(new GraphQLError(message))
@@ -127,17 +123,12 @@ builder.subscriptionField("poolCreation", (t) =>
 					push(job)
 					return stop()
 				}
-
-				const subscription = pubsub.subscribe(args.jobId)
-				for await (const result of subscription) {
+				for await (const result of pubsub.subscribe(args.jobId)) {
 					logger.log(`Job ${args.jobId} event:`, result)
-
 					if (result.status === "failed") return rfail(`Job ${args.jobId} failed: ${result.poolPublicKey}`)
-
 					push(result)
 					return stop()
 				}
-
 				await stop
 			})
 		},
@@ -152,7 +143,6 @@ builder.queryField("poolCreationJob", (t) =>
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { jobQueue }) => {
 			using q = jobQueue()
-
 			const job = q.getJob(jobId)
 			if (!job) return fail(`Job ${jobId} not found`)
 			if (job.status === "failed") return fail(`Job ${jobId} failed: ${job.poolPublicKey}`)
@@ -170,18 +160,17 @@ builder.mutationField("confirmJob", (t) =>
 		resolve: async (_, { jobId }, { database, jobQueue, shouldUpdateCDN }) => {
 			using q = jobQueue()
 			using db = database()
-
 			const data = await db.drizzle.select().from(pool).where(eq(pool.jobId, jobId))
 			if (data.length === 0) return fail(`No pool found for job ID ${jobId}`)
-
-			if (data[0].status === "confirmed") {
-				logger.log(`Job for pool ${jobId} is already confirmed`)
-				return `Job for pool ${jobId} is already confirmed`
-			}
-			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
-			logger.log(`Job for pool ${jobId} confirmed in the database`)
 			const { network, publicKey: poolAddress } = data[0]
 
+			if (data[0].status === "confirmed") {
+				logger.log(`Job ${jobId} for pool ${poolAddress} is already confirmed`)
+				return `Job for pool ${jobId} is already confirmed`
+			}
+
+			await db.drizzle.update(pool).set({ status: "confirmed" }).where(eq(pool.jobId, jobId))
+			logger.log(`Job for pool ${jobId} confirmed in the database`)
 			q.removeJob(jobId)
 			logger.log(`Job ${jobId} removed from cache`)
 
@@ -190,7 +179,7 @@ builder.mutationField("confirmJob", (t) =>
 				const result = await updateStatusAndCDN({ poolAddress, network })
 				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${result}`
 			}
-			return `Job for pool "${poolAddress}" confirmed`
+			return `Job ${jobId} for pool "${poolAddress}" confirmed`
 		}
 	})
 )

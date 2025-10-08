@@ -41,8 +41,9 @@ tasks:
     command: bun ./index.html
     preset: "server"
   test:
-    command: vitest run ./tests/graphql.test.ts
+    command: vitest run
     options:
+      cache: false
       runInCI: false
   test-integration:
     command: vitest run --testTimeout=150000
