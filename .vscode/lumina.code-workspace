@@ -23,6 +23,9 @@
         "path": "../apps/landing",
       },
       {
+        "path": "../apps/sdk-docs",
+      },
+      {
         "path": "../packages/sdk-test-vue",
       },
       {
