@@ -39,6 +39,7 @@ export default defineConfig({
 		nav: [
 			{ text: "Home", link: "/" },
 			{ text: "Getting Started", link: "/guide/getting-started" },
+			{ text: "Frontends", link: "/dexes/frontends" },
 			{ text: "API Reference", link: "/api/overview" }
 		],
 		logo: "/logo.png",
