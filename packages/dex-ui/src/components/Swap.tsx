@@ -9,6 +9,7 @@ import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
 import TokenMenu from "./TokenMenu"
+import PoolMenu from "./PoolMenu"
 
 const Swap = () => {
 	const { Dex } = useContext(LuminaContext)
@@ -16,12 +17,10 @@ const Swap = () => {
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
-	const [token, setToken] = useState<LuminaToken>(tokenA)
 	const [tokenIn, setTokenIn] = useState<LuminaToken>(mina)
 	const [tokenOut, setTokenOut] = useState<LuminaToken>(tokenA)
 	const [minaToToken, setminaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("")
-	// const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState(1)
 
 	const updatePool = useCallback((newPool: LuminaPool) => {
@@ -81,7 +80,7 @@ const Swap = () => {
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
-			<div className="flex flex-col p-5 gap-5  items-center">
+			<div className="flex flex-col p-3 gap-3  items-center">
 				<div className="text-xl">Swap</div>
 				<div>
 					<span>Slippage (%) :</span>
@@ -92,7 +91,7 @@ const Swap = () => {
 					/>
 				</div>
 				<div className="flex flex-row items-center">
-					Pool : <TokenMenu poolAddress={poolAddress} setToken={setTokenOut} setPool={updatePool} />
+					Pool : <PoolMenu poolAddress={poolAddress} setPool={updatePool} />
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
@@ -106,8 +105,9 @@ const Swap = () => {
 					<span className="w-24 text-center">{tokenIn ? tokenIn.symbol : "MINA"}</span>
 				</div>
 				{tokenIn?.address && (
-					<div>
-						<Balance token={tokenIn} /> {tokenIn.symbol}
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenIn} />
+						&nbsp;{tokenIn.symbol}
 					</div>
 				)}
 				<div>
@@ -130,8 +130,9 @@ const Swap = () => {
 					<span className="w-24 text-center">{tokenOut ? tokenOut.symbol : "Token"}</span>
 				</div>
 				{tokenOut?.address && (
-					<div>
-						<Balance token={tokenOut} /> {tokenOut.symbol}
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenOut} />
+						&nbsp;{tokenOut.symbol}
 					</div>
 				)}
 				<ButtonStatus onClick={swap} text={"Swap"} />
