@@ -8,7 +8,6 @@ import { poolToka, tokenA, mina } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
-import TokenMenu from "./TokenMenu"
 import PoolMenu from "./PoolMenu"
 
 const Swap = () => {
@@ -19,7 +18,7 @@ const Swap = () => {
 	const [pool, setPool] = useState<LuminaPool>()
 	const [tokenIn, setTokenIn] = useState<LuminaToken>(mina)
 	const [tokenOut, setTokenOut] = useState<LuminaToken>(tokenA)
-	const [minaToToken, setminaToToken] = useState(true)
+	const [minaToToken, setMinaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("")
 	const [slippagePercent, setSlippagePercent] = useState(1)
 
@@ -37,24 +36,18 @@ const Swap = () => {
 	const debouncedChangeSettings = useMemo(
 		() =>
 			debounce(
-				(params: {
-					fromAmount: string
-					pool: LuminaPool
-					tokenIn: LuminaToken
-					tokenOut: LuminaToken
-					slippagePercent: number
-				}) => {
-					if (!Number.parseFloat(params.fromAmount) || !params.tokenIn || !params.tokenOut || !params.pool) return
+				(params: { fromAmount: string; pool: LuminaPool; minaToToken: boolean; slippagePercent: number }) => {
+					if (!Number.parseFloat(params.fromAmount) || !params.pool) return
 
 					Dex.send({
 						type: "ChangeSwapSettings",
 						settings: {
 							pool: params.pool.address,
 							from: {
-								address: params.tokenIn.address,
+								address: params.minaToToken ? params.pool.tokens[0].address : params.pool.tokens[1].address,
 								amount: params.fromAmount
 							},
-							to: params.tokenOut.address,
+							to: params.minaToToken ? params.pool.tokens[1].address : params.pool.tokens[0].address,
 							slippagePercent: params.slippagePercent
 						}
 					})
@@ -66,17 +59,14 @@ const Swap = () => {
 
 	// Debounced change settings
 	useEffect(() => {
-		debouncedChangeSettings({ fromAmount, pool, tokenIn, tokenOut, slippagePercent })
-	}, [debouncedChangeSettings, fromAmount, tokenIn, tokenOut, pool, slippagePercent])
-
-	useEffect(() => {
 		if (pool) {
 			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
 			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
 			setTokenIn(tokenIn)
 			setTokenOut(tokenOut)
 		}
-	}, [pool, minaToToken])
+		debouncedChangeSettings({ fromAmount, pool, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, minaToToken, pool, slippagePercent])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
@@ -113,7 +103,7 @@ const Swap = () => {
 				<div>
 					<button
 						type="button"
-						onClick={() => setminaToToken(!minaToToken)}
+						onClick={() => setMinaToToken(!minaToToken)}
 						className="w-8 bg-cyan-500 text-lg text-white rounded"
 					>
 						&#8645;

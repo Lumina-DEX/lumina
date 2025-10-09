@@ -80,15 +80,6 @@ const Liquidity = () => {
 		return subscription.unsubscribe
 	}, [Dex, tokenA, tokenB])
 
-	useEffect(() => {
-		if (pool) {
-			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
-			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
-			setTokenA(tokenIn)
-			setTokenB(tokenOut)
-		}
-	}, [pool, minaToToken])
-
 	const debouncedChangeSettings = useMemo(
 		() =>
 			debounce(
@@ -110,11 +101,11 @@ const Liquidity = () => {
 						settings: {
 							pool: params.pool.address,
 							tokenA: {
-								address: minaToToken ? params.pool.tokens[0].address : params.pool.tokens[1].address,
+								address: params.minaToToken ? params.pool.tokens[0].address : params.pool.tokens[1].address,
 								amount: params.fromAmount
 							},
 							tokenB: {
-								address: minaToToken ? params.pool.tokens[1].address : params.pool.tokens[0].address,
+								address: params.minaToToken ? params.pool.tokens[1].address : params.pool.tokens[0].address,
 								amount: params.toAmount
 							},
 							slippagePercent: params.slippagePercent
@@ -128,6 +119,12 @@ const Liquidity = () => {
 
 	// Debounced change settings
 	useEffect(() => {
+		if (pool) {
+			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
+			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
+			setTokenA(tokenIn)
+			setTokenB(tokenOut)
+		}
 		debouncedChangeSettings({ fromAmount, toAmount, pool, minaToToken, slippagePercent })
 	}, [debouncedChangeSettings, fromAmount, toAmount, pool, minaToToken, slippagePercent])
 

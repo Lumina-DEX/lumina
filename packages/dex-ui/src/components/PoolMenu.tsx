@@ -30,14 +30,19 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 	const poolExist = cdnList.find((z) => z.address === poolAddress)
 
 	const selectPool = (pool: LuminaPool) => {
+		const newPool = getPoolInfo(pool)
+		setPool(newPool)
+		setCurrent(newPool)
+		setOpen(false)
+	}
+
+	const getPoolInfo = (pool: LuminaPool) => {
 		const clonePool = { ...pool }
 		// replace by MINA address
 		if (clonePool?.tokens[0].address === emptyAddress) {
 			clonePool.tokens[0].address = MINA_ADDRESS
 		}
-		setPool(clonePool)
-		setCurrent(pool)
-		setOpen(false)
+		return clonePool
 	}
 
 	const style = {
@@ -61,12 +66,14 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 
 	useEffect(() => {
 		if (poolExist) {
-			setPool(poolExist)
-			setCurrent(poolExist)
+			const newPool = getPoolInfo(poolExist)
+			setPool(newPool)
+			setCurrent(newPool)
 		} else if (cdnList.length > 0) {
 			// If the pool doesn't exist on this network, we take the first one
-			setPool(cdnList[0])
-			setCurrent(cdnList[0])
+			const newPool = getPoolInfo(cdnList[0])
+			setPool(newPool)
+			setCurrent(newPool)
 		}
 	}, [poolExist, cdnList, setPool])
 
