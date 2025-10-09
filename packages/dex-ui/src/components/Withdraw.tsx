@@ -81,10 +81,14 @@ const Withdraw = () => {
 					<span className="w-24 text-center">LUM</span>
 				</div>
 				<div>
-					<span>MINA out : {formatToken(toMina)}</span>
+					<span>
+						{pool ? pool.tokens[0].symbol : "MINA"} out : {formatToken(toMina)}
+					</span>
 				</div>
 				<div>
-					<span>Token out : {formatToken(toToken)}</span>
+					<span>
+						{pool ? pool.tokens[1].symbol : "Token"} out : {formatToken(toToken)}
+					</span>
 				</div>
 				<div>
 					Your liquidity balance : <Balance token={pool} />
