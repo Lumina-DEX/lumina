@@ -1,11 +1,12 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { fetchPoolList } from "@lumina-dex/sdk"
+import { fetchPoolList, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Box, Modal } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
 import { useContext, useEffect, useState } from "react"
 import { LuminaContext } from "./Layout"
+import { emptyAddress } from "@/utils/addresses"
 
 interface PoolMenuProps {
 	poolAddress: string
@@ -29,7 +30,12 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 	const poolExist = cdnList.find((z) => z.address === poolAddress)
 
 	const selectPool = (pool: LuminaPool) => {
-		setPool(pool)
+		const clonePool = { ...pool }
+		// replace by MINA address
+		if (clonePool?.tokens[0].address === emptyAddress) {
+			clonePool.tokens[0].address = MINA_ADDRESS
+		}
+		setPool(clonePool)
 		setCurrent(pool)
 		setOpen(false)
 	}
