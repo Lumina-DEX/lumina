@@ -515,8 +515,6 @@ const addLiquidity = async (args: AddLiquidity) => {
 	logger.debug({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool })
 	const supply = Math.trunc(args.supplyMin)
 	const userKey = PublicKey.fromBase58(args.user)
-	const token0Address = zkPoolToken0Key.toBase58()
-	const isMinaPool = token0Address === MINA_ADDRESS
 	logger.debug({ supply, userKey })
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
@@ -545,7 +543,8 @@ const addLiquidity = async (args: AddLiquidity) => {
 		supply: number
 	}) => {
 		logger.debug({ tokenA, tokenB, supply })
-		if (isMinaPool) {
+		const isMina = tokenA.address === MINA_ADDRESS || tokenB.address === MINA_ADDRESS
+		if (isMina) {
 			const mina = tokenA.address === MINA_ADDRESS ? tokenA : tokenB
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			if (supply > 0) {
@@ -560,6 +559,7 @@ const addLiquidity = async (args: AddLiquidity) => {
 			return zkPool.supplyFirstLiquidities(UInt64.from(mina.amount), UInt64.from(token.amount))
 		}
 
+		const token0Address = zkPoolToken0Key.toBase58()
 		const token0 = token0Address === tokenA.address ? tokenA : tokenB
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		if (supply > 0) {
@@ -602,7 +602,7 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	logger.info({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkToken0, zkToken1, zkPoolToken0Key })
 	const contracts = context().contracts
 	const token0Address = zkPoolToken0Key.toBase58()
-	const isMinaPool = token0Address === MINA_ADDRESS
+	const isMinaPool = args.tokenA.address === MINA_ADDRESS || args.tokenB.address === MINA_ADDRESS
 	const zkHolder = new contracts.PoolTokenHolder(poolKey, isMinaPool ? zkToken1Id : zkToken0Id)
 
 	const userKey = PublicKey.fromBase58(args.user)
