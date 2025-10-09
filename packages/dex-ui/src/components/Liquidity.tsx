@@ -3,17 +3,18 @@ import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
 import { debounce } from "@tanstack/react-pacer"
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
-import { poolToka, tokenA } from "@/utils/addresses"
+import { mina, poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
-import TokenMenu from "./TokenMenu"
+import PoolMenu from "./PoolMenu"
 
 const Liquidity = () => {
 	const { Dex } = useContext(LuminaContext)
 
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [token, setToken] = useState<LuminaToken>(tokenA)
+	const [tokenA, setTokenA] = useState<LuminaToken>(mina)
+	const [tokenB, setTokenB] = useState<LuminaToken>(tokenA)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [minaToToken, setminaToToken] = useState(true)
@@ -58,8 +59,8 @@ const Liquidity = () => {
 			const result = snapshot.context.dex.addLiquidity.calculated
 
 			if (result) {
-				const decimalsA = minaToToken ? 9 : token.decimals
-				const decimalsB = minaToToken ? token.decimals : 9
+				const decimalsA = tokenA.decimals
+				const decimalsB = tokenB.decimals
 				const decimalsLiquidity = 9
 
 				const amountA = result.tokenA.amountIn / 10 ** decimalsA
@@ -77,7 +78,16 @@ const Liquidity = () => {
 			}
 		})
 		return subscription.unsubscribe
-	}, [Dex, minaToToken, token])
+	}, [Dex, tokenA, tokenB])
+
+	useEffect(() => {
+		if (pool) {
+			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
+			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
+			setTokenA(tokenIn)
+			setTokenB(tokenOut)
+		}
+	}, [pool, minaToToken])
 
 	const debouncedChangeSettings = useMemo(
 		() =>
@@ -86,7 +96,6 @@ const Liquidity = () => {
 					fromAmount: string
 					toAmount: string
 					pool: LuminaPool
-					token: LuminaToken
 					minaToToken: boolean
 					slippagePercent: number
 				}) => {
@@ -101,11 +110,11 @@ const Liquidity = () => {
 						settings: {
 							pool: params.pool.address,
 							tokenA: {
-								address: params.minaToToken ? "MINA" : params.token.address,
+								address: minaToToken ? params.pool.tokens[0].address : params.pool.tokens[1].address,
 								amount: params.fromAmount
 							},
 							tokenB: {
-								address: !params.minaToToken ? "MINA" : params.token.address,
+								address: minaToToken ? params.pool.tokens[1].address : params.pool.tokens[0].address,
 								amount: params.toAmount
 							},
 							slippagePercent: params.slippagePercent
@@ -119,12 +128,12 @@ const Liquidity = () => {
 
 	// Debounced change settings
 	useEffect(() => {
-		debouncedChangeSettings({ fromAmount, toAmount, pool, token, minaToToken, slippagePercent })
-	}, [debouncedChangeSettings, fromAmount, toAmount, pool, token, minaToToken, slippagePercent])
+		debouncedChangeSettings({ fromAmount, toAmount, pool, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, toAmount, pool, minaToToken, slippagePercent])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
-			<div className="flex flex-col p-5 gap-5 items-center">
+			<div className="flex flex-col p-3 gap-3 items-center">
 				<div className="text-xl">Add liquidity</div>
 				<div>
 					<span>Slippage (%) :</span>
@@ -133,6 +142,9 @@ const Liquidity = () => {
 						defaultValue={slippagePercent}
 						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
 					/>
+				</div>
+				<div className="flex flex-row items-center">
+					Pool : <PoolMenu poolAddress={poolAddress} setPool={updatePool} />
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
@@ -143,12 +155,14 @@ const Liquidity = () => {
 						value={fromAmount}
 						onValueChange={({ value }) => setAmountA(value)}
 					/>
-					{minaToToken ? (
-						<span className="w-24 text-center">MINA</span>
-					) : (
-						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
-					)}
+					<span className="w-24 text-center">{tokenA ? tokenA.symbol : "MINA"}</span>
 				</div>
+				{tokenA?.address && (
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenA} />
+						&nbsp;{tokenA.symbol}
+					</div>
+				)}
 				<div>
 					<button type="button" onClick={changeOrder} className="w-8 bg-cyan-500 text-lg text-white rounded">
 						&#8645;
@@ -163,15 +177,14 @@ const Liquidity = () => {
 						value={toAmount}
 						onValueChange={({ value }) => setAmountB(value)}
 					/>
-					{!minaToToken ? (
-						<span className="w-24 text-center">MINA</span>
-					) : (
-						<TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={updatePool} />
-					)}
+					<span className="w-24 text-center">{tokenB ? tokenB.symbol : "Token"}</span>
 				</div>
-				<div>
-					Your token balance : <Balance token={token} />
-				</div>
+				{tokenB?.address && (
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenB} />
+						&nbsp;{tokenB.symbol}
+					</div>
+				)}
 				<div>
 					Your liquidity balance : <Balance token={pool} />
 				</div>
