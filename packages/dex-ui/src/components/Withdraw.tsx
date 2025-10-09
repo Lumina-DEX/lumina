@@ -8,10 +8,9 @@ import { poolToka as poolAddress, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
-import TokenMenu from "./TokenMenu"
+import PoolMenu from "./PoolMenu"
 
 const Withdraw = () => {
-	const [, setToken] = useState<LuminaToken>(tokenA)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [fromAmount, setFromAmount] = useState("")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
@@ -66,8 +65,8 @@ const Withdraw = () => {
 						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
 					/>
 				</div>
-				<div>
-					Pool : <TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+				<div className="flex flex-row items-center">
+					Pool : <PoolMenu poolAddress={poolAddress} setPool={setPool} />
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
