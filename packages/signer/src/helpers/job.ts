@@ -1,11 +1,9 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight, deployPoolRight, FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
-import type { ConsolaInstance } from "consola"
 import { and, eq } from "drizzle-orm"
 import {
 	AccountUpdate,
-	Cache,
 	Encoding,
 	Encryption,
 	Field,
@@ -22,18 +20,6 @@ import { getEnv, logger } from "./utils"
 
 type Drizzle = ReturnType<typeof getDb>["drizzle"]
 type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
-
-const createMeasure = (l: ConsolaInstance) => (label: string) => {
-	const start = performance.now()
-	let done = false
-	return () => {
-		if (done) return
-		const end = performance.now()
-		l.warn(`${label}: ${end - start} ms`)
-		done = true
-	}
-}
-const time = createMeasure(logger)
 
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number
@@ -153,28 +139,6 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 		networkId: network.includes("mainnet") ? "mainnet" : "testnet",
 		mina: urls[network]
 	})
-}
-
-export const compileContracts = async () => {
-	logger.log("Compiling contracts...")
-	// setNumberOfWorkers(4)
-	const c = time("compile")
-	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
-
-	const fta = time("FungibleTokenAdmin")
-	await FungibleTokenAdmin.compile(cache)
-	fta()
-
-	const ft = time("FungibleToken")
-	await FungibleToken.compile(cache)
-	ft()
-
-	const pf = time("PoolFactory")
-	const vk = await PoolFactory.compile(cache)
-	pf()
-
-	logger.log("factory vk hash", vk.verificationKey.hash.toBigInt())
-	c()
 }
 
 export const updateStatusAndCDN = async ({ poolAddress, network }: { poolAddress: string; network: Networks }) => {

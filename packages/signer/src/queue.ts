@@ -1,60 +1,92 @@
-import { dirname, join } from "node:path"
-import { fileURLToPath, pathToFileURL } from "node:url"
-import { Worker as BullMqWorker, Queue, QueueEvents } from "bullmq"
-import IORedis from "ioredis"
-import type { CreatePoolInputType } from "./graphql"
+import type { PubSub } from "graphql-yoga"
+import type { CreatePoolInputType, JobResult } from "./graphql"
+import { ensureCompiled } from "./helpers/contracts"
+import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
-import type { createPoolAndTransaction } from "./workers/logic"
 
-const connection = new IORedis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
-	maxRetriesPerRequest: null
-}).on("error", (e) => {
-	console.error("Redis connection error:", e)
-	throw e
-})
+type JobTask = {
+	jobId: string
+	data: CreatePoolInputType
+	pubsub: PubSub<Record<string, [JobResult]>>
+}
 
-const concurrency = 4
+// In-memory job cache
+const jobs = new Map<string, JobResult>()
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const file = join(__dirname, "workers", "sandbox.js")
-const processorUrl = pathToFileURL(file)
-const worker = new BullMqWorker("createPool", processorUrl, {
-	connection,
-	concurrency
-})
+const processJob = async ({ jobId, data, pubsub }: JobTask) => {
+	logger.log(`Processing job ${jobId}:`, Date.now())
 
-const createPoolQueue = new Queue<CreatePoolInputType, Awaited<ReturnType<typeof createPoolAndTransaction>>>(
-	"createPool",
-	{ connection }
-)
+	try {
+		await ensureCompiled()
+		const result = await createPoolAndTransaction({ ...data, jobId })
+		const jobResult = {
+			status: "completed",
+			poolPublicKey: result.poolPublicKey,
+			transactionJson: result.transactionJson,
+			completedAt: new Date()
+		} as const
 
-const createPoolQueueEvents = new QueueEvents("createPool", { connection })
+		jobs.set(jobId, jobResult)
+		pubsub.publish(jobId, jobResult)
+		logger.log(`✅ Job ${jobId} completed`)
+	} catch (error) {
+		logger.error(`❌ Job ${jobId} failed:`, error)
 
-createPoolQueueEvents.on("waiting", ({ jobId }) => {
-	logger.log(`A job with ID ${jobId} is waiting`)
-})
+		const jobResult = {
+			status: "failed",
+			poolPublicKey: "",
+			transactionJson: "",
+			completedAt: new Date()
+		} as const
 
-createPoolQueueEvents.on("active", ({ jobId, prev }) => {
-	logger.log(`Job ${jobId} is now active; previous status was ${prev}`)
-})
+		jobs.set(jobId, jobResult)
+		pubsub.publish(jobId, jobResult)
+	}
+}
 
-createPoolQueueEvents.on("completed", ({ jobId }) => {
-	logger.log(`${jobId} has completed and returned`)
-})
+type Worker<T> = (item: T) => Promise<void>
+class Queuer<T> {
+	#queue: Set<T> = new Set()
+	#processing = false
+	constructor(private worker: Worker<T>) {}
+	public addItem(item: T) {
+		this.#queue.add(item)
+		if (this.#processing) return
+		this.processQueue()
+	}
+	private async processQueue() {
+		this.#processing = true
+		while (this.#queue.size > 0) {
+			const item = this.#queue.values().next().value
+			if (!item) break
+			try {
+				await this.worker(item)
+			} catch (error) {
+				logger.error("Error processing queue item:", error)
+			} finally {
+				this.#queue.delete(item)
+			}
+		}
+		this.#processing = false
+	}
+}
 
-createPoolQueueEvents.on("failed", ({ jobId, failedReason }) => {
-	logger.error("queue failed", failedReason)
-	logger.log(`${jobId} has failed with reason ${failedReason}`)
-})
-
-export const queues = () => {
+// Serial processing, one job at a time
+const queuer = new Queuer<JobTask>(async (task) => await processJob(task))
+export const getJobQueue = (pubsub: PubSub<Record<string, [JobResult]>>) => {
 	return {
-		createPoolQueue,
-		createPoolQueueEvents,
-		worker,
+		addJob: (jobId: string, data: CreatePoolInputType) => {
+			jobs.set(jobId, { status: "pending", poolPublicKey: "", transactionJson: "", completedAt: new Date() })
+			queuer.addItem({ jobId, data, pubsub })
+		},
+		getJob: (jobId: string) => jobs.get(jobId),
+		hasJob: (jobId: string) => jobs.has(jobId),
+		removeJob: (jobId: string) => {
+			jobs.delete(jobId)
+			logger.log(`Removed job ${jobId} from cache`)
+		},
 		[Symbol.dispose]: () => {
-			logger.log("Disposing queues...")
+			logger.log("Disposing job queue...")
 		}
 	}
 }

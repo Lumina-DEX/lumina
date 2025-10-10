@@ -1,11 +1,13 @@
 {
-	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "sdk",
 	"compatibility_date": "2025-01-16",
-	"main": "docs/worker.ts",
+	"main": "worker.ts",
 	"routes": [{ "pattern": "sdk.luminadex.com", "custom_domain": true }],
+	"preview_urls": true,
+	"observability": { "enabled": true },
 	"assets": {
-		"directory": "./docs/.vitepress/dist",
+		"directory": ".vitepress/dist",
 		"binding": "ASSETS",
 		"not_found_handling": "single-page-application"
 	}

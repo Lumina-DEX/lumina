@@ -1,0 +1,21 @@
+{
+	"name": "@lumina-dex/sdk-docs",
+	"type": "module",
+	"sideEffects": false,
+	"private": true,
+	"author": {
+		"name": "Hebilicious"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Lumina-DEX/lumina.git",
+		"directory": "apps/sdk-docs"
+	},
+	"devDependencies": {
+		"vitepress": "^1.6.3",
+		"vitepress-plugin-d2": "^1.0.4",
+		"vitepress-plugin-llms": "^1.1.0",
+		"vitest": "^3.2.4",
+		"wrangler": "catalog:"
+	}
+}
