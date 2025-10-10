@@ -1,12 +1,12 @@
 "use client"
-import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import type { LuminaPool } from "@lumina-dex/sdk"
 import { fetchPoolList, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Box, Modal } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
-import { useContext, useEffect, useState } from "react"
-import { LuminaContext } from "./Layout"
+import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { emptyAddress } from "@/utils/addresses"
+import { LuminaContext } from "./Layout"
 
 interface PoolMenuProps {
 	poolAddress: string
@@ -27,23 +27,31 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 		initialData: []
 	})
 
-	const poolExist = cdnList.find((z) => z.address === poolAddress)
-
-	const selectPool = (pool: LuminaPool) => {
-		const newPool = getPoolInfo(pool)
-		setPool(newPool)
-		setCurrent(newPool)
-		setOpen(false)
-	}
-
-	const getPoolInfo = (pool: LuminaPool) => {
+	const getPoolInfo = useCallback((pool: LuminaPool) => {
 		const clonePool = { ...pool }
-		// replace by MINA address
+		// Remplacer par l'adresse MINA si nécessaire
 		if (clonePool?.tokens[0].address === emptyAddress) {
 			clonePool.tokens[0].address = MINA_ADDRESS
 		}
 		return clonePool
-	}
+	}, [])
+
+	const selectPool = useCallback(
+		(pool: LuminaPool) => {
+			const newPool = getPoolInfo(pool)
+			setPool(newPool)
+			setCurrent(newPool)
+			setOpen(false)
+		},
+		[getPoolInfo, setPool]
+	)
+
+	const trimText = useCallback((text: string) => {
+		if (!text) return ""
+		return `${text.substring(0, 6)}...${text.substring(text.length - 6)}`
+	}, [])
+
+	const poolExist = useMemo(() => cdnList.find((z) => z.address === poolAddress), [cdnList, poolAddress])
 
 	const style = {
 		position: "absolute" as const,
@@ -59,11 +67,6 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 		overflow: "auto"
 	}
 
-	const trimText = (text: string) => {
-		if (!text) return ""
-		return `${text.substring(0, 6)}...${text.substring(text.length - 6)}`
-	}
-
 	useEffect(() => {
 		if (poolExist) {
 			const newPool = getPoolInfo(poolExist)
@@ -75,7 +78,7 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 			setPool(newPool)
 			setCurrent(newPool)
 		}
-	}, [poolExist, cdnList, setPool])
+	}, [poolExist, cdnList, setPool, getPoolInfo])
 
 	const getName = (pool: LuminaPool) => {
 		return pool?.tokens[0].symbol + "/" + pool?.tokens[1].symbol

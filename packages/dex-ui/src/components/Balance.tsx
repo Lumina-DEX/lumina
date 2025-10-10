@@ -1,8 +1,8 @@
 "use client"
-import { MINA_ADDRESS, type LuminaPool, type LuminaToken } from "@lumina-dex/sdk"
+import { type LuminaPool, type LuminaToken, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { useContext, useEffect } from "react"
-import { emptyAddress, mina, toTokenId } from "@/utils/addresses"
+import { emptyAddress, toTokenId } from "@/utils/addresses"
 import { LuminaContext } from "./Layout"
 
 const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
