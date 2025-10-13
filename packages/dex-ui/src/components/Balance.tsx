@@ -1,17 +1,18 @@
 "use client"
-import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { type LuminaPool, type LuminaToken, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { useContext, useEffect } from "react"
-import { toTokenId } from "@/utils/addresses"
+import { emptyAddress, toTokenId } from "@/utils/addresses"
 import { LuminaContext } from "./Layout"
 
 const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
 	const { Wallet } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
-	const balance = useSelector(
-		Wallet,
-		(state) => state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
-	)
+	const balance = useSelector(Wallet, (state) => {
+		const tokenId =
+			token?.address === MINA_ADDRESS || token?.address === emptyAddress ? "MINA" : toTokenId(token?.address)
+		return state.context.balances[state.context.currentNetwork][tokenId]?.balance ?? 0
+	})
 
 	//Fetch balance on load and every 10 seconds
 	useEffect(() => {

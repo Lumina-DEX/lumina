@@ -1,17 +1,16 @@
 "use client"
-import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import type { LuminaPool } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
 import { useContext, useEffect, useMemo, useState } from "react"
 import CurrencyFormat from "react-currency-format"
-import { poolToka as poolAddress, tokenA } from "@/utils/addresses"
+import { poolToka as poolAddress } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
-import TokenMenu from "./TokenMenu"
+import PoolMenu from "./PoolMenu"
 
 const Withdraw = () => {
-	const [, setToken] = useState<LuminaToken>(tokenA)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [fromAmount, setFromAmount] = useState("")
 	const [slippagePercent, setSlippagePercent] = useState<number>(1)
@@ -66,8 +65,8 @@ const Withdraw = () => {
 						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
 					/>
 				</div>
-				<div>
-					Pool : <TokenMenu setToken={setToken} poolAddress={poolAddress} setPool={setPool} />
+				<div className="flex flex-row items-center">
+					Pool : <PoolMenu poolAddress={poolAddress} setPool={setPool} />
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
@@ -81,10 +80,14 @@ const Withdraw = () => {
 					<span className="w-24 text-center">LUM</span>
 				</div>
 				<div>
-					<span>MINA out : {formatToken(toMina)}</span>
+					<span>
+						{pool ? pool.tokens[0].symbol : "MINA"} out : {formatToken(toMina)}
+					</span>
 				</div>
 				<div>
-					<span>Token out : {formatToken(toToken)}</span>
+					<span>
+						{pool ? pool.tokens[1].symbol : "Token"} out : {formatToken(toToken)}
+					</span>
 				</div>
 				<div>
 					Your liquidity balance : <Balance token={pool} />
