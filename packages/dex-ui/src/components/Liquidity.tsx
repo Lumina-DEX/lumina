@@ -13,14 +13,15 @@ const Liquidity = () => {
 	const { Dex } = useContext(LuminaContext)
 
 	const [liquidityMinted, setLiquidityMinted] = useState(0)
-	const [tokenA, setTokenA] = useState<LuminaToken>(mina)
-	const [tokenB, setTokenB] = useState<LuminaToken>(tokenA)
 	const [pool, setPool] = useState<LuminaPool>()
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [minaToToken, setminaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("0.0")
 	const [toAmount, setToAmount] = useState("0.0")
 	const [slippagePercent, setSlippagePercent] = useState(1)
+
+	const tokenA = (minaToToken ? pool?.tokens[0] : pool?.tokens[1]) ?? mina
+	const tokenB = (minaToToken ? pool?.tokens[1] : pool?.tokens[0]) ?? tokenA
 
 	const lastEditedField = useRef<"from" | "to" | null>(null)
 
@@ -121,15 +122,6 @@ const Liquidity = () => {
 	useEffect(() => {
 		debouncedChangeSettings({ fromAmount, toAmount, pool, minaToToken, slippagePercent })
 	}, [debouncedChangeSettings, fromAmount, toAmount, pool, minaToToken, slippagePercent])
-
-	useEffect(() => {
-		if (pool) {
-			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
-			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
-			setTokenA(tokenIn)
-			setTokenB(tokenOut)
-		}
-	}, [pool, minaToToken])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">

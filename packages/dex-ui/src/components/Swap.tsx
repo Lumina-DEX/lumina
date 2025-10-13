@@ -16,11 +16,12 @@ const Swap = () => {
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
-	const [tokenIn, setTokenIn] = useState<LuminaToken>(mina)
-	const [tokenOut, setTokenOut] = useState<LuminaToken>(tokenA)
 	const [minaToToken, setMinaToToken] = useState(true)
 	const [fromAmount, setFromAmount] = useState("")
 	const [slippagePercent, setSlippagePercent] = useState(1)
+
+	const tokenIn = (minaToToken ? pool?.tokens[0] : pool?.tokens[1]) ?? mina
+	const tokenOut = (minaToToken ? pool?.tokens[1] : pool?.tokens[0]) ?? tokenA
 
 	const updatePool = useCallback((newPool: LuminaPool) => {
 		setPool(newPool)
@@ -61,15 +62,6 @@ const Swap = () => {
 	useEffect(() => {
 		debouncedChangeSettings({ fromAmount, pool, minaToToken, slippagePercent })
 	}, [debouncedChangeSettings, fromAmount, minaToToken, pool, slippagePercent])
-
-	useEffect(() => {
-		if (pool) {
-			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
-			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
-			setTokenIn(tokenIn)
-			setTokenOut(tokenOut)
-		}
-	}, [pool, minaToToken])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
