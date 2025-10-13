@@ -59,14 +59,17 @@ const Swap = () => {
 
 	// Debounced change settings
 	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, pool, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, minaToToken, pool, slippagePercent])
+
+	useEffect(() => {
 		if (pool) {
 			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
 			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
 			setTokenIn(tokenIn)
 			setTokenOut(tokenOut)
 		}
-		debouncedChangeSettings({ fromAmount, pool, minaToToken, slippagePercent })
-	}, [debouncedChangeSettings, fromAmount, minaToToken, pool, slippagePercent])
+	}, [pool, minaToToken])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">

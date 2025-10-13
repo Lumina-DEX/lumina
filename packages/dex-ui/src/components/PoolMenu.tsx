@@ -29,7 +29,6 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 
 	const getPoolInfo = useCallback((pool: LuminaPool) => {
 		const clonePool = { ...pool }
-		// Remplacer par l'adresse MINA si nécessaire
 		if (clonePool?.tokens[0].address === emptyAddress) {
 			clonePool.tokens[0].address = MINA_ADDRESS
 		}

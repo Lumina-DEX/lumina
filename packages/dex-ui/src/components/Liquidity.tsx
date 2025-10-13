@@ -119,14 +119,17 @@ const Liquidity = () => {
 
 	// Debounced change settings
 	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, toAmount, pool, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, toAmount, pool, minaToToken, slippagePercent])
+
+	useEffect(() => {
 		if (pool) {
 			const tokenIn = minaToToken ? pool.tokens[0] : pool.tokens[1]
 			const tokenOut = minaToToken ? pool.tokens[1] : pool.tokens[0]
 			setTokenA(tokenIn)
 			setTokenB(tokenOut)
 		}
-		debouncedChangeSettings({ fromAmount, toAmount, pool, minaToToken, slippagePercent })
-	}, [debouncedChangeSettings, fromAmount, toAmount, pool, minaToToken, slippagePercent])
+	}, [pool, minaToToken])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
