@@ -96,25 +96,23 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 			>
 				<Box sx={style}>
 					<div className="flex flex-col">
-						{cdnList
-							?.filter((x) => x.tokens[0].address === emptyAddress || x.tokens[0].address === MINA_ADDRESS)
-							.map((x) => (
-								<button
-									type="button"
-									key={x.address}
-									onClick={() => selectPool(x)}
-									className="flex flex-col bg-blue-100 p-3 text-left"
-									style={{ borderBottom: "1px solid black" }}
-								>
-									<span title={getName(x)}>{getName(x)}</span>
-									<span className="text-sm" title={x.tokens[1].address}>
-										Address : {trimText(x.tokens[1].address)}
-									</span>
-									<span className="text-sm" title={x.address}>
-										Pool : {trimText(x.address)}
-									</span>
-								</button>
-							))}
+						{cdnList?.map((x) => (
+							<button
+								type="button"
+								key={x.address}
+								onClick={() => selectPool(x)}
+								className="flex flex-col bg-blue-100 p-3 text-left"
+								style={{ borderBottom: "1px solid black" }}
+							>
+								<span title={getName(x)}>{getName(x)}</span>
+								<span className="text-sm" title={x.tokens[1].address}>
+									Address : {trimText(x.tokens[1].address)}
+								</span>
+								<span className="text-sm" title={x.address}>
+									Pool : {trimText(x.address)}
+								</span>
+							</button>
+						))}
 					</div>
 				</Box>
 			</Modal>
