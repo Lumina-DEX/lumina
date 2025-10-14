@@ -22,7 +22,7 @@ describe("Check verification key", () => {
     await FungibleToken.compile(cache)
     const vkFactory = await PoolFactory.compile(cache)
     expect(vkFactory.verificationKey.hash.toBigInt()).toEqual(
-      27167892114307946311220801481226808399786469908061512252307744174796385756329n
+      21155315920244513361696679354690742153476743044380974966337181307650568441726n
     )
     const vkPool = await Pool.compile(cache)
     expect(vkPool.verificationKey.hash.toBigInt()).toEqual(contractHash.toBigInt())

@@ -251,7 +251,7 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     const amountToken1 = await poolTokenZ.subWithdrawLiquidity(
       sender,
       liquidityAmount,
-      amountToken,
+      amountToken1Min,
       reserveToken1Min,
       supplyMax
     )
