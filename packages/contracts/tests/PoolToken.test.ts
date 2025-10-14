@@ -351,6 +351,111 @@ describe("Pool Factory Token", () => {
     console.log("mina after", minaUserAfter.toBigInt())
   })
 
+  it("withdraw liquidity after swap", async () => {
+    let amt = UInt64.from(50 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
+      AccountUpdate.fundNewAccount(senderAccount, 1)
+      await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
+    })
+    await txn.prove()
+    await txn.sign([senderKey]).send()
+
+    const reserveIn = Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
+    const reserveOut = Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
+    let amountIn = UInt64.from(5 * 10 ** 9)
+
+    const balanceMin = reserveOut.sub(reserveOut.div(100))
+    const balanceMax = reserveIn.add(reserveIn.div(100))
+
+    const protocol = await zkApp.getProtocol()
+    const txn2 = await Mina.transaction(senderAccount, async () => {
+      AccountUpdate.fundNewAccount(senderAccount, 1)
+      await tokenHolder.swapFromTokenToToken(protocol, UInt64.from(5), amountIn, UInt64.from(1), balanceMax, balanceMin)
+      await zkToken0.approveAccountUpdate(tokenHolder.self)
+    })
+    console.log("swap from token", txn2.toPretty())
+    console.log("swap from token au", txn2.transaction.accountUpdates.length)
+    await txn2.prove()
+    await txn2.sign([senderKey]).send()
+
+    const supply = await Mina.getBalance(zkPoolAddress, zkPool.deriveTokenId())
+
+    const balPool0 = await Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
+    const balPool1 = await Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
+
+    await Mina.getBalance(senderAccount, zkToken0.deriveTokenId())
+    await Mina.getBalance(senderAccount, zkToken1.deriveTokenId())
+    await Mina.getBalance(senderAccount, zkPool.deriveTokenId())
+
+    const liquityOut = UInt64.from(1 * 10 ** 9)
+    const amountMinaOut = mulDiv(liquityOut, balPool0, supply)
+    const amountTokenOut = mulDiv(liquityOut, balPool1, supply)
+    await fetchAccount({ publicKey: senderAccount })
+    await fetchAccount({ publicKey: senderAccount })
+    txn = await Mina.transaction(senderAccount, async () => {
+      await tokenHolder.withdrawLiquidityToken(liquityOut, amountMinaOut, amountTokenOut, balPool0, balPool1, supply)
+      await zkToken0.approveAccountUpdate(tokenHolder.self)
+    })
+    console.log("Withdraw liquidity token", txn.toPretty())
+
+    await txn.prove()
+    await txn.sign([senderKey]).send()
+  })
+
+  it("withdraw liquidity after swap token 1", async () => {
+    let amt = UInt64.from(50 * 10 ** 9)
+    let amtToken = UInt64.from(50 * 10 ** 9)
+    let txn = await Mina.transaction(senderAccount, async () => {
+      AccountUpdate.fundNewAccount(senderAccount, 1)
+      await zkPool.supplyFirstLiquiditiesToken(amt, amtToken)
+    })
+    await txn.prove()
+    await txn.sign([senderKey]).send()
+
+    const reserveIn = Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
+    const reserveOut = Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
+    let amountIn = UInt64.from(5 * 10 ** 9)
+
+    const balanceMin = reserveOut.sub(reserveOut.div(100))
+    const balanceMax = reserveIn.add(reserveIn.div(100))
+
+    const protocol = await zkApp.getProtocol()
+    const tokenHolder2 = new PoolTokenHolder(zkPoolAddress, zkToken1.deriveTokenId())
+    const txn2 = await Mina.transaction(senderAccount, async () => {
+      AccountUpdate.fundNewAccount(senderAccount, 1)
+      await tokenHolder2.swapFromTokenToToken(
+        protocol,
+        UInt64.from(5),
+        amountIn,
+        UInt64.from(1),
+        balanceMax,
+        balanceMin
+      )
+      await zkToken1.approveAccountUpdate(tokenHolder2.self)
+    })
+    console.log("swap from token", txn2.toPretty())
+    console.log("swap from token au", txn2.transaction.accountUpdates.length)
+    await txn2.prove()
+    await txn2.sign([senderKey]).send()
+
+    const supply = await Mina.getBalance(zkPoolAddress, zkPool.deriveTokenId())
+
+    const balPool0 = await Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
+    const balPool1 = await Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
+
+    const liquityOut = UInt64.from(1 * 10 ** 9)
+    const amountMinaOut = mulDiv(liquityOut, balPool0, supply)
+    const amountTokenOut = mulDiv(liquityOut, balPool1, supply)
+    txn = await Mina.transaction(senderAccount, async () => {
+      await tokenHolder.withdrawLiquidityToken(liquityOut, amountMinaOut, amountTokenOut, balPool0, balPool1, supply)
+      await zkToken0.approveAccountUpdate(tokenHolder.self)
+    })
+
+    await txn.prove()
+    await txn.sign([senderKey]).send()
+  })
+
   it("add second liquidity", async () => {
     const amt = UInt64.from(10 * 10 ** 9)
     const amtToken = UInt64.from(50 * 10 ** 9)
