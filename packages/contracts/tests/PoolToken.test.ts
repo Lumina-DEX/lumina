@@ -374,8 +374,6 @@ describe("Pool Factory Token", () => {
       await tokenHolder.swapFromTokenToToken(protocol, UInt64.from(5), amountIn, UInt64.from(1), balanceMax, balanceMin)
       await zkToken0.approveAccountUpdate(tokenHolder.self)
     })
-    console.log("swap from token", txn2.toPretty())
-    console.log("swap from token au", txn2.transaction.accountUpdates.length)
     await txn2.prove()
     await txn2.sign([senderKey]).send()
 
@@ -383,10 +381,6 @@ describe("Pool Factory Token", () => {
 
     const balPool0 = await Mina.getBalance(zkPoolAddress, zkToken0.deriveTokenId())
     const balPool1 = await Mina.getBalance(zkPoolAddress, zkToken1.deriveTokenId())
-
-    await Mina.getBalance(senderAccount, zkToken0.deriveTokenId())
-    await Mina.getBalance(senderAccount, zkToken1.deriveTokenId())
-    await Mina.getBalance(senderAccount, zkPool.deriveTokenId())
 
     const liquityOut = UInt64.from(1 * 10 ** 9)
     const amountMinaOut = mulDiv(liquityOut, balPool0, supply)
@@ -397,7 +391,6 @@ describe("Pool Factory Token", () => {
       await tokenHolder.withdrawLiquidityToken(liquityOut, amountMinaOut, amountTokenOut, balPool0, balPool1, supply)
       await zkToken0.approveAccountUpdate(tokenHolder.self)
     })
-    console.log("Withdraw liquidity token", txn.toPretty())
 
     await txn.prove()
     await txn.sign([senderKey]).send()
@@ -434,8 +427,6 @@ describe("Pool Factory Token", () => {
       )
       await zkToken1.approveAccountUpdate(tokenHolder2.self)
     })
-    console.log("swap from token", txn2.toPretty())
-    console.log("swap from token au", txn2.transaction.accountUpdates.length)
     await txn2.prove()
     await txn2.sign([senderKey]).send()
 
