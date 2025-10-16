@@ -1,5 +1,11 @@
 # @lumina-dex/contracts
 
+## 0.9.0
+
+### Minor Changes
+
+- d0af852: Fix an issue with withdraw liquidity for pool token/token
+
 ## 0.8.0
 
 ### Minor Changes

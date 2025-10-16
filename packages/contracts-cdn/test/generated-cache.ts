@@ -55,4 +55,4 @@ export const cache = [
 	"wrap-vk-poolfactory",
 	"wrap-vk-pooltokenholder"
 ].join()
-export const version = "0.8.0"
+export const version = "0.9.0"
