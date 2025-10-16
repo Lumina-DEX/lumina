@@ -57,3 +57,10 @@ jobs:
     if: ${{ contains(needs.release.outputs.published, '"@lumina-dex/contracts"') }}
     uses: ./.github/workflows/cdn.yaml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
     secrets: inherit
+
+  deploy-signer:
+    name: Deploy the signer if a new version of the contracts was published
+    needs: [release]
+    if: ${{ contains(needs.release.outputs.published, '"@lumina-dex/contracts"') }}
+    uses: ./.github/workflows/pool-signer-deploy.yaml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+    secrets: inherit
