@@ -1,10 +1,10 @@
+import { createServer } from "node:http"
 import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { type JobResult, schema } from "./graphql"
 import { logger } from "./helpers/utils"
 import { getJobQueue } from "./queue"
-import { createServer } from "http"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
