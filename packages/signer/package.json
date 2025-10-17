@@ -11,9 +11,10 @@
 		"drizzle-orm": "beta",
 		"graphql": "^16.11.0",
 		"graphql-scalars": "^1.24.2",
-		"graphql-yoga": "^5.14.0",
+		"graphql-yoga": "^5.15.1",
 		"o1js": "catalog:",
 		"postgres": "^3.4.7",
+		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.52.0",
 		"valibot": "^1.0.0"
 	},
 	"devDependencies": {
@@ -21,7 +22,7 @@
 		"dotenv": "^17.2.0",
 		"drizzle-kit": "beta",
 		"gql.tada": "^1.8.10",
-		"tsup": "^8.5.0",
+		"tsdown": "^0.15.2",
 		"tsx": "^4.20.6",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4"

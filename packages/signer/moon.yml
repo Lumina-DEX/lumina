@@ -25,7 +25,7 @@ tasks:
     preset: "server"
 
   build:
-    command: tsup
+    command: tsdown
     deps: ["^:build"]
     outputs:
       - dist/**
@@ -42,7 +42,7 @@ tasks:
     preset: "server"
 
   web:
-    command: npx serve index.html
+    command: bun index.html
     preset: "server"
 
   test:
@@ -59,7 +59,7 @@ tasks:
       - "@group(tests)"
 
   schema:
-    command: tsx graphql/printSchema.ts
+    command: bun run graphql/printSchema.ts
     inputs:
       - src/graphql.ts
     outputs:
@@ -73,7 +73,7 @@ tasks:
 
   db-migrate:
     description: Run migrations. This leverages the DATABASE_URL env variable.
-    command: tsx scripts/migrate.ts
+    command: bun run scripts/migrate.ts
     options:
       cache: false
 
