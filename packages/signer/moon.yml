@@ -43,6 +43,8 @@ tasks:
 
   web:
     command: bun ./index.html
+    env:
+      BUN_PORT: "3000"
     preset: "server"
 
   test:
