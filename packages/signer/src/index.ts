@@ -58,8 +58,8 @@ export const yoga = createYoga<{ env: typeof env }>({
 	]
 })
 
-// --- Server configuration (Dokku provides PORT automatically) ---
-const port = Number(process.env.PORT || 3001)
+// --- Server configuration ---
+const port = Number(3001)
 const hostname = "0.0.0.0"
 
 // --- Create the HTTP server ---

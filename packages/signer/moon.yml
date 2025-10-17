@@ -37,7 +37,8 @@ tasks:
 
   start:
     description: This is the production command run in the Dockerfile.
-    command: node dist/index.js
+    deps: ["build"]
+    command: node --env-file=.env  dist/index.js
     preset: "server"
 
   web:
