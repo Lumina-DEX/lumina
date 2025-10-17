@@ -59,7 +59,7 @@ tasks:
       - "@group(tests)"
 
   schema:
-    command: tsx src/graphql/printSchema.ts
+    command: tsx graphql/printSchema.ts
     inputs:
       - src/graphql.ts
     outputs:
