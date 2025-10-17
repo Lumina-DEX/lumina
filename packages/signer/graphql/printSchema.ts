@@ -1,8 +1,8 @@
+import { writeFile } from "node:fs/promises"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { lexicographicSortSchema, printSchema } from "graphql"
 import { schema } from "../src/graphql"
-import { writeFile } from "node:fs/promises"
-import { fileURLToPath } from "node:url"
-import { dirname, join } from "node:path"
 
 // Resolve the current directory (Node equivalent of import.meta.dir)
 const __filename = fileURLToPath(import.meta.url)
