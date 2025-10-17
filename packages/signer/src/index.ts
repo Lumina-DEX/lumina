@@ -4,6 +4,7 @@ import { getDb } from "./db"
 import { type JobResult, schema } from "./graphql"
 import { logger } from "./helpers/utils"
 import { getJobQueue } from "./queue"
+import { createServer } from "http"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
@@ -57,16 +58,43 @@ export const yoga = createYoga<{ env: typeof env }>({
 	]
 })
 
-const main = async () => {
-	const server = Bun.serve({
-		idleTimeout: 0, // Wait indefinitely for SSE
-		port: 3001,
-		fetch: async (request) => {
-			logger.log("Received request:", request.method, request.url)
-			return yoga(request, { env })
+// --- Server configuration (Dokku provides PORT automatically) ---
+const port = Number(process.env.PORT || 3001)
+const hostname = "0.0.0.0"
+
+// --- Create the HTTP server ---
+const server = createServer((req, res) => {
+	// Simple health check endpoint for Dokku and NGINX
+	if (req.url === "/health") {
+		res.statusCode = 200
+		res.setHeader("Content-Type", "application/json; charset=utf-8")
+		res.end(JSON.stringify({ status: "ok", revision: commitHash }))
+		return
+	}
+
+	// Optional: log every request (you can disable this if too verbose)
+	logger.log("Received request:", req.method, req.url)
+
+	// Pass all other requests to GraphQL Yoga
+	yoga(req, res, { env })
+})
+
+// --- Start the server ---
+server.listen(port, hostname, () => {
+	logger.info(`🚀 Server running at http://localhost:${port}${yoga.graphqlEndpoint} (rev: ${commitHash})`)
+})
+
+// --- Graceful shutdown (Dokku sends SIGTERM before stopping the container) ---
+const shutdown = (signal: string) => {
+	logger.info(`Received ${signal}, shutting down...`)
+	server.close((err) => {
+		if (err) {
+			logger.error("Error during server close:", err)
+			process.exit(1)
 		}
+		process.exit(0)
 	})
-	logger.info(`Server is running on ${new URL(yoga.graphqlEndpoint, `http://${server.hostname}:${server.port}`)}`)
 }
 
-main()
+process.on("SIGINT", () => shutdown("SIGINT"))
+process.on("SIGTERM", () => shutdown("SIGTERM"))

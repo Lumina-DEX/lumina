@@ -50,4 +50,4 @@ COPY --from=build /root/.proto /root/.proto
 COPY --from=build /app /app
 EXPOSE 3001
 WORKDIR /app/packages/signer
-CMD ["bun", "run", "src/index.ts"]
+CMD ["node", "dist/index.js"]
