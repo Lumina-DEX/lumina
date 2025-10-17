@@ -42,7 +42,7 @@ tasks:
     preset: "server"
 
   web:
-    command: bun index.html
+    command: bun ./index.html
     preset: "server"
 
   test:
