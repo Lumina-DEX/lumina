@@ -83,7 +83,7 @@ tasks:
 
   db-seed:
     description: Seed the database with initial data.
-    command: tsx scripts/seed.ts
+    command: bun run scripts/seed.ts
     options:
       cache: false
 
