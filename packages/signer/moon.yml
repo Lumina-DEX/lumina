@@ -20,7 +20,7 @@ fileGroups:
 
 tasks:
   dev:
-    command: tsx watch src/index.ts
+    command: node --watch --env-file=.env --import tsx src/index.ts
     deps: ["^:build", "services-start"]
     preset: "server"
 
