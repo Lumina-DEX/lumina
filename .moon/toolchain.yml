@@ -6,7 +6,7 @@ unstable_javascript:
   dedupeOnLockfileChange: false
 
 unstable_node:
-  version: 24.5.0
+  version: 25.0.0
 
 unstable_pnpm:
   version: 10.17.0

@@ -4,5 +4,5 @@ export default defineConfig({
 	entry: { index: "src/node.ts" },
 	outDir: "dist",
 	format: ["esm"],
-	target: "node20"
+	target: "node25"
 })
