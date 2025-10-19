@@ -20,25 +20,26 @@ fileGroups:
 
 tasks:
   dev:
-    command: node --watch --env-file=.env --import tsx src/index.ts
+    command: node --watch --env-file=.env --experimental-strip-types src/node.ts
     deps: ["^:build", "services-start"]
     preset: "server"
+
+  dev-bun:
+    command: bun run --watch src/bun.ts
+    extends: dev
 
   build:
     command: tsdown
     deps: ["^:build"]
+    inputs:
+      - "@group(sources)"
     outputs:
       - dist/**
-
-  dev-uws:
-    command: tsx src/uws.ts
-    deps: ["^:build"]
-    preset: "server"
 
   start:
     description: This is the production command run in the Dockerfile.
     deps: ["build"]
-    command: node --env-file=.env  dist/index.js
+    command: node dist/index.js
     preset: "server"
 
   web:
@@ -69,7 +70,7 @@ tasks:
 
   db-generate:
     description: Generate migrations files after a schema change.
-    command: npx drizzle-kit generate
+    command: drizzle-kit generate
     options:
       cache: false
 
@@ -80,7 +81,7 @@ tasks:
       cache: false
 
   db-studio:
-    command: npx drizzle-kit studio
+    command: drizzle-kit studio
     preset: "server"
 
   db-seed:
@@ -106,7 +107,7 @@ tasks:
 
   all:
     command: noop
-    deps: [services-start, start, web]
+    deps: [services-start, dev, web]
     preset: "server"
 
   lint:
