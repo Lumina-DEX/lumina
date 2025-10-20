@@ -20,31 +20,30 @@ fileGroups:
 
 tasks:
   dev:
-    command: node --watch --env-file=.env --import tsx src/index.ts
+    command: node --watch --env-file=.env --experimental-strip-types src/node.ts
     deps: ["^:build", "services-start"]
     preset: "server"
+
+  dev-bun:
+    command: bun run --watch src/bun.ts
+    extends: dev
 
   build:
     command: tsdown
     deps: ["^:build"]
+    inputs:
+      - "@group(sources)"
     outputs:
       - dist/**
-
-  dev-uws:
-    command: tsx src/uws.ts
-    deps: ["^:build"]
-    preset: "server"
 
   start:
     description: This is the production command run in the Dockerfile.
     deps: ["build"]
-    command: node --env-file=.env  dist/index.js
+    command: node dist/index.js
     preset: "server"
 
   web:
     command: bun ./index.html
-    env:
-      BUN_PORT: "3000"
     preset: "server"
 
   test:
@@ -106,7 +105,7 @@ tasks:
 
   all:
     command: noop
-    deps: [services-start, start, web]
+    deps: [services-start, dev, web]
     preset: "server"
 
   lint:
