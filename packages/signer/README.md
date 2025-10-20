@@ -4,7 +4,7 @@ Server-side proof generation service for pool creation.
 
 ## Tech Stack
 
-- **TypeScript**: Bun runtime
+- **TypeScript**: node runtime
 - **Database**: Drizzle ORM + PostgreSQL (Supabase)
 - **Queue**: TanStack Pacer (in-memory, serial processing)
 - **GraphQL**: Pothos + GraphQL Yoga (with built-in PubSub)

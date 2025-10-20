@@ -11,7 +11,7 @@
 		"drizzle-orm": "beta",
 		"graphql": "^16.11.0",
 		"graphql-scalars": "^1.24.2",
-		"graphql-yoga": "^5.14.0",
+		"graphql-yoga": "^5.15.1",
 		"o1js": "catalog:",
 		"postgres": "^3.4.7",
 		"valibot": "^1.0.0"
@@ -21,6 +21,8 @@
 		"dotenv": "^17.2.0",
 		"drizzle-kit": "beta",
 		"gql.tada": "^1.8.10",
+		"tsdown": "^0.15.2",
+		"tsx": "^4.20.6",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.4"
 	}
