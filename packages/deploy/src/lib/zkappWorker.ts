@@ -19,18 +19,19 @@ import {
 console.log("Load Web Worker.")
 
 import {
-	PoolFactory,
-	Pool,
-	PoolTokenHolder,
-	FungibleToken,
-	FungibleTokenAdmin,
-	Faucet,
-	MultisigInfo,
+	allRight,
+	deployPoolRight,
 	Multisig,
+	MultisigInfo,
 	SignatureInfo,
-	SignatureRight,
-	UpdateAccountInfo
-} from "../../../contracts/build/src/index"
+	UpdateAccountInfo,
+	type Faucet,
+	type FungibleToken,
+	type FungibleTokenAdmin,
+	type Pool,
+	type PoolFactory,
+	type PoolTokenHolder
+} from "@lumina-dex/contracts"
 import { fetchFiles, readCache } from "./cache"
 
 type Transaction = Awaited<ReturnType<typeof Mina.transaction>>
@@ -89,7 +90,7 @@ const functions = {
 
 	loadContract: async (args: {}) => {
 		const { PoolFactory, Pool, PoolTokenHolder, FungibleToken, FungibleTokenAdmin, Faucet } = await import(
-			"../../../contracts/build/src/index"
+			"@lumina-dex/contracts"
 		)
 		// @ts-ignore
 		state.PoolMina = Pool
@@ -166,7 +167,7 @@ const functions = {
 		const tokenKey = PublicKey.fromBase58(args.tokenX)
 		const userKey = PublicKey.fromBase58(args.user)
 
-		const deployRight = SignatureRight.canDeployPool()
+		const deployRight = deployPoolRight
 		const signerPk = PrivateKey.fromBase58("EKE9dyeMmvz6deCC2jD9rBk7d8bG6ZDqVno8wRe8tAbQDussfBYi")
 		const user1 = signerPk.toPublicKey()
 		const merkle = getMerkle()
@@ -497,8 +498,6 @@ const functions = {
 		await fetchAccount({ publicKey: state.zkFactory.address })
 		await fetchAccount({ publicKey })
 
-		const allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-		const deployRight = SignatureRight.canDeployPool()
 		const merkle = getMerkle()
 
 		const signer1 = PublicKey.fromBase58(args.user1)
@@ -510,7 +509,12 @@ const functions = {
 		// we set allright by default, maybe it can be different
 		const newUser = PublicKey.fromBase58(args.newUser)
 		const deadlineSlot = UInt32.from(args.deadlineSlot)
-		const info = new UpdateAccountInfo({ oldUser: PublicKey.fromBase58(args.oldUser), newUser, deadlineSlot })
+		const info = new UpdateAccountInfo({
+			oldUser: PublicKey.fromBase58(args.oldUser),
+			newUser,
+			deadlineSlot,
+			right: allRight
+		})
 		const multi = new MultisigInfo({ approvedUpgrader: merkle.getRoot(), messageHash: info.hash(), deadlineSlot })
 
 		const info1 = new SignatureInfo({
@@ -560,17 +564,18 @@ export function getMerkle(): MerkleMap {
 	const externalSigner2 = PublicKey.fromBase58("B62qpLxXFg4rmhce762uiJjNRnp5Bzc9PnCEAcraeaMkVWkPi7kgsWV")
 	const externalSigner3 = PublicKey.fromBase58("B62qipa4xp6pQKqAm5qoviGoHyKaurHvLZiWf3djDNgrzdERm6AowSQ")
 
-	const allRight = new SignatureRight(Bool(true), Bool(true), Bool(true), Bool(true), Bool(true), Bool(true))
-	const deployRight = SignatureRight.canDeployPool()
+	const allRightHash = Poseidon.hash(allRight.toFields())
+	const deployRightHash = Poseidon.hash(deployPoolRight.toFields())
+
 	const merkle = new MerkleMap()
-	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer1Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer2Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(signer3Public.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRight.hash())
-	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRight.hash())
-	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRight.hash())
+	merkle.set(Poseidon.hash(ownerPublic.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(signer1Public.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(signer2Public.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(signer3Public.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(approvedSignerPublic.toFields()), deployRightHash)
+	merkle.set(Poseidon.hash(externalSigner1.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(externalSigner2.toFields()), allRightHash)
+	merkle.set(Poseidon.hash(externalSigner3.toFields()), allRightHash)
 
 	return merkle
 }
