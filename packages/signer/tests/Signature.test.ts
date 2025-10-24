@@ -16,7 +16,7 @@ import * as v from "valibot"
 import { describe, expect, it } from "vitest"
 import { pool, signerMerkle, signerMerkleNetworks, poolKey as tPoolKey } from "../drizzle/schema"
 import { getDb } from "../src/db"
-import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers"
+import { encryptedKeyToField, getMasterSigner, getMerkle, getNetwork } from "../src/helpers/job"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),

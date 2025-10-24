@@ -47,25 +47,6 @@ tasks:
       - "schema-get-mina"
       - "schema-get-mina-archive"
       - "schema-get-pool-signer"
-  docs-dev:
-    command: vitepress dev docs
-    preset: "server"
-  docs-build:
-    command: vitepress build docs
-    inputs:
-      - docs/**/*
-    outputs:
-      - docs/.vitepress/dist/
-  docs-preview:
-    command: vitepress preview docs
-    deps: [docs-build]
-    preset: "server"
-  docs-deploy:
-    command: wrangler deploy
-    deps: [build]
-  docs-deploy-preview:
-    command: wrangler versions upload
-    deps: [build]
   lint:
     command: biome check --formatter-enabled=false
     inputs:

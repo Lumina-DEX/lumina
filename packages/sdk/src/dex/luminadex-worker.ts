@@ -27,6 +27,7 @@ import {
 	UInt64
 } from "o1js"
 import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
+import { minaNetwork } from "../helpers/blockchain"
 import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import { fetchZippedContracts, readCache } from "./cache"
@@ -158,15 +159,29 @@ const getZkTokenFromPool = async (pool: string) => {
 	const contracts = context().contracts
 
 	const zkPool = new contracts.Pool(poolKey)
-	const zkPoolTokenKey = await zkPool.token1.fetch()
-	if (!zkPoolTokenKey) throw new Error("ZKPool Token Key not found")
+	const zkPoolToken0Key = await zkPool.token0.fetch()
+	const zkPoolToken1Key = await zkPool.token1.fetch()
+	if (!zkPoolToken0Key) throw new Error("ZKPool Token0 Key not found")
+	if (!zkPoolToken1Key) throw new Error("ZKPool Token1 Key not found")
 
-	const zkToken = new contracts.FungibleToken(zkPoolTokenKey)
+	const zkToken0 = new contracts.FungibleToken(zkPoolToken0Key)
+	const zkToken1 = new contracts.FungibleToken(zkPoolToken1Key)
 
 	const zkPoolTokenId = zkPool.deriveTokenId()
-	const zkTokenId = zkToken.deriveTokenId()
+	const zkToken0Id = zkToken0.deriveTokenId()
+	const zkToken1Id = zkToken1.deriveTokenId()
 
-	return { zkTokenId, zkToken, poolKey, zkPool, zkPoolTokenKey, zkPoolTokenId }
+	return {
+		zkToken0Id,
+		zkToken1Id,
+		zkToken0,
+		zkToken1,
+		poolKey,
+		zkPool,
+		zkPoolToken0Key,
+		zkPoolToken1Key,
+		zkPoolTokenId
+	}
 }
 
 /**
@@ -414,8 +429,8 @@ export interface SwapArgs {
 
 const swap = async (args: SwapArgs) => {
 	logger.start("Swap", args)
-	const { poolKey, zkTokenId, zkToken } = await getZkTokenFromPool(args.pool)
-	logger.debug({ poolKey, zkTokenId, zkToken })
+	const { poolKey, zkToken0Id, zkToken0, zkToken1Id, zkToken1, zkPoolToken1Key } = await getZkTokenFromPool(args.pool)
+	logger.debug({ poolKey, zkToken0Id, zkToken0, zkToken1Id, zkToken1, zkPoolToken1Key })
 	const contracts = context().contracts
 
 	const userKey = PublicKey.fromBase58(args.user)
@@ -423,17 +438,19 @@ const swap = async (args: SwapArgs) => {
 	logger.debug({ userKey, TAX_RECEIVER })
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
-		fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken1Id }),
 		fetchAccount({ publicKey: userKey }),
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId })
+		fetchAccount({ publicKey: userKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken1Id })
 	])
 
 	const [acc, accFront, accProtocol] = await Promise.all([
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
-		fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken1Id }),
+		fetchAccount({ publicKey: TAX_RECEIVER, tokenId: zkToken1Id }),
 		fetchAccount({
 			publicKey: await getLuminaAddress(args.factory),
-			tokenId: zkTokenId
+			tokenId: zkToken1Id
 		})
 	])
 
@@ -460,10 +477,19 @@ const swap = async (args: SwapArgs) => {
 			await zkPool.swapFromTokenToMina(...swapArgList)
 		} else {
 			fundNewAccount(userKey, total)
-			const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
+			const token1Address = zkPoolToken1Key.toBase58()
+			const toToken1 = args.to === token1Address
+			const zkToken = toToken1 ? zkToken1Id : zkToken0Id
+			const zkPoolHolder = new contracts.PoolTokenHolder(poolKey, zkToken)
 			logger.debug({ zkPoolHolder })
-			await zkPoolHolder[args.from === MINA_ADDRESS ? "swapFromMinaToToken" : "swapFromTokenToToken"](...swapArgList)
-			await zkToken.approveAccountUpdate(zkPoolHolder.self)
+			const fromMina = args.from === MINA_ADDRESS
+			await zkPoolHolder[fromMina ? "swapFromMinaToToken" : "swapFromTokenToToken"](...swapArgList)
+
+			if (toToken1) {
+				await zkToken1.approveAccountUpdate(zkPoolHolder.self)
+			} else {
+				await zkToken0.approveAccountUpdate(zkPoolHolder.self)
+			}
 		}
 	})
 
@@ -484,17 +510,20 @@ export interface AddLiquidity {
 }
 const addLiquidity = async (args: AddLiquidity) => {
 	logger.start("Add liquidity", args)
-	const { poolKey, zkTokenId, zkPoolTokenId, zkPoolTokenKey, zkPool } = await getZkTokenFromPool(args.pool)
-	logger.debug({ poolKey, zkTokenId, zkPoolTokenId, zkPoolTokenKey, zkPool })
+	const { poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool } =
+		await getZkTokenFromPool(args.pool)
+	logger.debug({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool })
 	const supply = Math.trunc(args.supplyMin)
 	const userKey = PublicKey.fromBase58(args.user)
 	logger.debug({ supply, userKey })
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
-		fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken1Id }),
 		fetchAccount({ publicKey: poolKey, tokenId: zkPoolTokenId }),
 		fetchAccount({ publicKey: userKey }),
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken1Id }),
 		fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	])
 	const acc = await fetchAccount({
@@ -530,9 +559,9 @@ const addLiquidity = async (args: AddLiquidity) => {
 			return zkPool.supplyFirstLiquidities(UInt64.from(mina.amount), UInt64.from(token.amount))
 		}
 
-		const tokenZero = zkPool.token0.getAndRequireEquals().toBase58()
-		const token0 = tokenZero === tokenA.address ? tokenA : tokenB
-		const token1 = tokenZero === tokenA.address ? tokenB : tokenA
+		const token0Address = zkPoolToken0Key.toBase58()
+		const token0 = token0Address === tokenA.address ? tokenA : tokenB
+		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		if (supply > 0) {
 			return zkPool.supplyLiquidityToken(
 				UInt64.from(Math.trunc(token0.amount)),
@@ -568,19 +597,25 @@ export interface WithdrawLiquidity {
 
 const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	logger.info("Withdraw liquidity", args)
-	const { poolKey, zkTokenId, zkPoolTokenId, zkToken } = await getZkTokenFromPool(args.pool)
-	logger.info({ poolKey, zkTokenId, zkPoolTokenId, zkToken })
+	const { poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkToken0, zkToken1, zkPoolToken0Key } =
+		await getZkTokenFromPool(args.pool)
+	logger.info({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkToken0, zkToken1, zkPoolToken0Key })
 	const contracts = context().contracts
-	const zkHolder = new contracts.PoolTokenHolder(poolKey, zkTokenId)
+	const token0Address = zkPoolToken0Key.toBase58()
+	const isMinaPool = args.tokenA.address === MINA_ADDRESS || args.tokenB.address === MINA_ADDRESS
+	const zkHolder = new contracts.PoolTokenHolder(poolKey, isMinaPool ? zkToken1Id : zkToken0Id)
 
 	const userKey = PublicKey.fromBase58(args.user)
 	logger.info({ userKey })
 	// Fetch all relevant accounts in parallel
 	await Promise.all([
 		fetchAccount({ publicKey: poolKey }),
-		fetchAccount({ publicKey: poolKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkToken1Id }),
+		fetchAccount({ publicKey: poolKey, tokenId: zkPoolTokenId }),
 		fetchAccount({ publicKey: userKey }),
-		fetchAccount({ publicKey: userKey, tokenId: zkTokenId }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken0Id }),
+		fetchAccount({ publicKey: userKey, tokenId: zkToken1Id }),
 		fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	])
 
@@ -599,8 +634,7 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 		liquidity: number
 		supply: number
 	}) => {
-		const isMina = tokenA.address === MINA_ADDRESS || tokenB.address === MINA_ADDRESS
-		if (isMina) {
+		if (isMinaPool) {
 			const mina = tokenA.address === MINA_ADDRESS ? tokenA : tokenB
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			return zkHolder.withdrawLiquidity(
@@ -613,9 +647,8 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 			)
 		}
 
-		const tokenZero = zkHolder.token0.getAndRequireEquals().toBase58()
-		const token0 = tokenZero === tokenA.address ? tokenA : tokenB
-		const token1 = tokenZero === tokenA.address ? tokenB : tokenA
+		const token0 = token0Address === tokenA.address ? tokenA : tokenB
+		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		return zkHolder.withdrawLiquidityToken(
 			UInt64.from(liquidity),
 			UInt64.from(Math.trunc(token0.amount)),
@@ -633,7 +666,11 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 			liquidity,
 			supply
 		})
-		await zkToken.approveAccountUpdate(zkHolder.self)
+		if (isMinaPool) {
+			await zkToken1.approveAccountUpdate(zkHolder.self)
+		} else {
+			await zkToken0.approveAccountUpdate(zkHolder.self)
+		}
 	})
 	logger.info("Transaction", transaction)
 	return await proveTransaction(transaction)
@@ -707,7 +744,7 @@ function getMerkle(): MerkleMap {
 const minaInstance = (networkUrl: NetworkUri) => {
 	workerState.send({ type: "SetNetwork", network: networkUrl })
 	const url = urls[networkUrl]
-	Mina.setActiveInstance(Mina.Network(url))
+	Mina.setActiveInstance(minaNetwork(networkUrl))
 	logger.success("Mina instance set", url)
 }
 

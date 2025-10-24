@@ -33,7 +33,8 @@
 	"formatter": { "enabled": false },
 	"linter": {
 		"domains": {
-			"vue": "all"
+			"vue": "all",
+			"react": "recommended"
 		},
 		"rules": {
 			"correctness": {

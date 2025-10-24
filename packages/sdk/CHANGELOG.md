@@ -1,5 +1,24 @@
 # @lumina-dex/sdk
 
+## 0.26.0
+
+### Minor Changes
+
+- d0af852: Fix an issue with withdraw liquidity for pool token/token
+
+### Patch Changes
+
+- f990132: Add support of pool token/token to swap and manage liquidities
+- Updated dependencies [d0af852]
+  - @lumina-dex/contracts@0.9.0
+
+## 0.25.0
+
+### Minor Changes
+
+- 1872fe2: Fix the pool creation with 2 fungible tokens
+  Fix concurrent balance fetching
+
 ## 0.24.0
 
 ### Minor Changes

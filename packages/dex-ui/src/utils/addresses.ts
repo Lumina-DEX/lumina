@@ -1,7 +1,8 @@
-import { fetchPoolList, type LuminaPool, type LuminaToken, type Networks } from "@lumina-dex/sdk"
+import { type LuminaToken, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { PublicKey, TokenId } from "o1js"
 export const poolToka = "B62qjGGHziBe9brhAC4zkvQa2dyN7nisKnAhKC7rasGFtW31GiuTZoY"
 export const toka = "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha"
+export const emptyAddress = "B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG"
 
 export const tokenA: LuminaToken = {
 	address: toka,
@@ -11,23 +12,12 @@ export const tokenA: LuminaToken = {
 	decimals: 9
 }
 
-// export const poolWeth = "B62qphnhqrRW6DFFR39onHNKnBcoB9Gqi3M8Emytg26nwZWUYXR1itw";
-
-// biome-ignore lint/complexity/noStaticOnlyClass: <Addresses>
-export class Addresses {
-	private static listFromCDN: LuminaPool[] = []
-	private static currentNetworkCDN = "mina:devnet"
-
-	public static async getList(network: Networks) {
-		if (Addresses.currentNetworkCDN === network && Addresses.listFromCDN.length) {
-			return Addresses.listFromCDN
-		}
-		const data = await fetchPoolList(network)
-		console.log("list from cdn", data)
-		Addresses.listFromCDN = data
-		Addresses.currentNetworkCDN = network
-		return Addresses.listFromCDN
-	}
+export const mina: LuminaToken = {
+	address: MINA_ADDRESS,
+	chainId: "mina:devnet",
+	tokenId: "0",
+	symbol: "MINA",
+	decimals: 9
 }
 
 export function toTokenId(address: string): string {

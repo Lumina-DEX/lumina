@@ -1,44 +1,42 @@
 "use client"
-import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import { type LuminaPool, type LuminaToken, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useCallback, useContext, useEffect } from "react"
-import { toTokenId } from "@/utils/addresses"
+import { useContext, useEffect } from "react"
+import { emptyAddress, toTokenId } from "@/utils/addresses"
 import { LuminaContext } from "./Layout"
 
 const Balance = ({ token }: { token: LuminaToken | LuminaPool }) => {
 	const { Wallet } = useContext(LuminaContext)
 	const walletContext = useSelector(Wallet, (state) => state.context)
-	const balance = useSelector(
-		Wallet,
-		(state) => state.context.balances[state.context.currentNetwork][toTokenId(token?.address)]?.balance ?? 0
-	)
+	const balance = useSelector(Wallet, (state) => {
+		const tokenId =
+			token?.address === MINA_ADDRESS || token?.address === emptyAddress ? "MINA" : toTokenId(token?.address)
+		return state.context.balances[state.context.currentNetwork][tokenId]?.balance ?? 0
+	})
 
-	const getBalance = useCallback(() => {
-		if (token?.address) {
-			const tokenId = toTokenId(token.address)
-			const data = {
-				address: token.address,
-				decimal: "decimals" in token ? 10 ** token.decimals : 10 ** 9,
-				tokenId: tokenId,
-				symbol: "symbol" in token ? token.symbol : "LUM"
-			}
-
-			Wallet.send({
-				type: "FetchBalance",
-				network: walletContext.currentNetwork,
-				tokens: [data]
-			})
-		}
-	}, [token, walletContext.currentNetwork, Wallet])
-
+	//Fetch balance on load and every 10 seconds
 	useEffect(() => {
-		getBalance()
-		const intervalID = setInterval(() => {
-			getBalance()
-		}, 10_000)
-
+		const fetchBalance = () => {
+			if (token?.address) {
+				Wallet.send({
+					type: "FetchBalance",
+					network: walletContext.currentNetwork,
+					tokens: [
+						{
+							address: token.address,
+							decimal: "decimals" in token ? 10 ** token.decimals : 10 ** 9,
+							tokenId: toTokenId(token.address),
+							symbol: "symbol" in token ? token.symbol : "LUM"
+						}
+					]
+				})
+			}
+		}
+		fetchBalance()
+		const intervalID = setInterval(fetchBalance, 10_000)
 		return () => clearInterval(intervalID)
-	}, [getBalance])
+	}, [Wallet, token, walletContext.currentNetwork])
+
 	return <span>{balance.toFixed(2).toString()}</span>
 }
 

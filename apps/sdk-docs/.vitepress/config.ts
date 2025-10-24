@@ -1,0 +1,99 @@
+import { defineConfig } from "vitepress"
+import d2Plugin from "vitepress-plugin-d2"
+import { type Config, Theme } from "vitepress-plugin-d2/dist/config"
+import llmstxt from "vitepress-plugin-llms"
+
+// https://vitepress.dev/reference/site-config
+export default defineConfig({
+	title: "LuminaDex SDK",
+	description: "SDK for interacting with the Lumina DEX on the Mina blockchain",
+	vite: {
+		plugins: [llmstxt()]
+	},
+	markdown: {
+		config: (md) => {
+			md.use(d2Plugin, {
+				scale: 1,
+				padding: 16,
+				theme: Theme.NEUTRAL_DEFAULT,
+				darkTheme: Theme.DARK_MUAVE,
+				sketch: true
+			} satisfies Config)
+		}
+	},
+	head: [
+		["link", { rel: "icon", type: "image/png", href: "/favicon-96x96.png", sizes: "96x96" }],
+		["link", { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
+		["link", { rel: "shortcut icon", href: "/favicon.ico" }],
+		["link", { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" }],
+		["link", { rel: "manifest", href: "/site.webmanifest" }]
+	],
+	themeConfig: {
+		// https://vitepress.dev/reference/default-theme-config
+		search: {
+			provider: "local",
+			options: {
+				detailedView: true
+			}
+		},
+		nav: [
+			{ text: "Home", link: "/" },
+			{ text: "Getting Started", link: "/guide/getting-started" },
+			{ text: "Frontends", link: "/dexes/frontends" },
+			{ text: "API Reference", link: "/api/overview" }
+		],
+		logo: "/logo.png",
+		sidebar: {
+			"/guide/": [
+				{
+					text: "Introduction",
+					items: [
+						{ text: "Getting Started", link: "/guide/getting-started" },
+						{ text: "Core Concepts", link: "/guide/core-concepts" }
+					]
+				},
+				{
+					text: "Framework Integration",
+					items: [
+						{ text: "React Integration", link: "/guide/react-integration" },
+						{ text: "Vue Integration", link: "/guide/vue-integration" }
+					]
+				},
+				{
+					text: "Features",
+					items: [
+						{ text: "Wallet Connection", link: "/guide/wallet-connection" },
+						{ text: "Swapping Tokens", link: "/guide/swapping-tokens" },
+						{ text: "Managing Liquidity", link: "/guide/managing-liquidity" },
+						{ text: "Server-Side Pool Creation", link: "/guide/pool-creation" },
+						{ text: "Fetching Data", link: "/guide/fetching-data" },
+						{ text: "Transaction Tracking", link: "/guide/transaction-tracking" }
+					]
+				}
+			],
+			"/api/": [
+				{
+					text: "API Reference",
+					items: [
+						{ text: "Overview", link: "/api/overview" },
+						{ text: "Wallet Machine", link: "/api/wallet-machine" },
+						{ text: "Dex Machine", link: "/api/dex-machine" },
+						{ text: "Transaction Machine", link: "/api/transaction-machine" },
+						{ text: "Create Pool Machine", link: "/api/create-pool-machine" },
+						{ text: "Helper Functions", link: "/api/helpers" }
+					]
+				}
+			]
+		},
+
+		socialLinks: [{ icon: "github", link: "https://github.com/Lumina-DEX/lumina/tree/main/packages/sdk" }],
+		editLink: {
+			text: "Edit this page on GitHub",
+			pattern: "https://github.com/Lumina-DEX/lumina/edit/main/packages/sdk/docs/:path"
+		},
+		footer: {
+			message: "Released under the MIT License.",
+			copyright: "Copyright © 2025-present Lumina DEX"
+		}
+	}
+})

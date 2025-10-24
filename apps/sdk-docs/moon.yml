@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../../.moon/cache/schemas/project.json
+
+layer: application
+
+fileGroups:
+  sources:
+    - .vitepress/**
+    - api/**
+    - dexes/**
+    - guides/**
+    - worker-configuration.d.ts
+    - worker.ts
+    - package.json
+    - wrangler.jsonc
+
+tasks:
+  typecheck:
+    command: tsc --noEmit
+    options:
+      runInCI: false
+  dev:
+    command: vitepress dev
+    preset: "server"
+  build:
+    command: vitepress build
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - .vitepress/dist/
+  preview:
+    command: vitepress preview
+    deps: [build]
+    preset: "server"
+  type-cf:
+    command: wrangler types
+    inputs:
+      - wrangler.jsonc
+    outputs:
+      - worker-configuration.d.ts
+  lint:
+    command: biome check --formatter-enabled=false
+    inputs:
+      - "@group(sources)"
+  lint-fix:
+    command: biome check --formatter-enabled=false --write
+    inputs:
+      - "@group(sources)"
+  deploy:
+    command: wrangler deploy
+    deps: [build]
+  deploy-preview:
+    command: wrangler versions upload
+    deps: [build]

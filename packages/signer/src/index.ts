@@ -1,8 +1,8 @@
-import { createYoga } from "graphql-yoga"
+import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
-import { schema } from "./graphql"
-import { queues } from "./queue"
+import { type JobResult, schema } from "./graphql"
+import { getJobQueue } from "./queue"
 
 const Schema = v.object({
 	DATABASE_URL: v.string(),
@@ -11,19 +11,23 @@ const Schema = v.object({
 	INFISICAL_CLIENT_ID: v.string(),
 	INFISICAL_CLIENT_SECRET: v.string()
 })
-const env = v.parse(Schema, process.env)
+export const env = v.parse(Schema, process.env)
 
 export type Database = typeof getDb
-export type Queues = typeof queues
+export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
 	database: Database
-	queues: Queues
+	jobQueue: JobQueue
+	pubsub: ReturnType<typeof createPubSub<Record<string, [job: JobResult]>>>
 	env: Env
 	shouldUpdateCDN?: boolean
 }
 
-const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+export const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+
+const pubsub = createPubSub<Record<string, [JobResult]>>()
+const jobQueue = () => getJobQueue(pubsub)
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -38,7 +42,8 @@ export const yoga = createYoga<{ env: typeof env }>({
 		return {
 			env,
 			database: getDb,
-			queues,
+			jobQueue,
+			pubsub,
 			shouldUpdateCDN: commitHash !== "development"
 		} satisfies Context
 	},
@@ -50,17 +55,3 @@ export const yoga = createYoga<{ env: typeof env }>({
 		}
 	]
 })
-
-const main = async () => {
-	const server = Bun.serve({
-		idleTimeout: 0, // Wait indefinitely for SSE
-		port: 3001,
-		fetch: async (request) => {
-			console.log("Received request:", request.method, request.url)
-			return yoga(request, { env })
-		}
-	})
-	console.info(`Server is running on ${new URL(yoga.graphqlEndpoint, `http://${server.hostname}:${server.port}`)}`)
-}
-
-main()

@@ -1,84 +1,71 @@
 "use client"
 import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
-import { useCallback, useContext, useEffect, useState } from "react"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { debounce } from "@tanstack/react-pacer"
+import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import CurrencyFormat from "react-currency-format"
-import { poolToka, tokenA } from "@/utils/addresses"
+import { mina, poolToka, tokenA } from "@/utils/addresses"
 import Balance from "./Balance"
 import ButtonStatus from "./ButtonStatus"
 import { LuminaContext } from "./Layout"
-import TokenMenu from "./TokenMenu"
+import PoolMenu from "./PoolMenu"
 
 const Swap = () => {
+	const { Dex } = useContext(LuminaContext)
+	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0)
+
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
-	const [token, setToken] = useState<LuminaToken>(tokenA)
+	const [minaToToken, setMinaToToken] = useState(true)
+	const [fromAmount, setFromAmount] = useState("")
+	const [slippagePercent, setSlippagePercent] = useState(1)
 
-	function updateToken(newToken: LuminaToken) {
-		setToken(newToken)
-	}
+	const tokenIn = (minaToToken ? pool?.tokens[0] : pool?.tokens[1]) ?? mina
+	const tokenOut = (minaToToken ? pool?.tokens[1] : pool?.tokens[0]) ?? tokenA
 
-	function updatePool(newPool: LuminaPool) {
+	const updatePool = useCallback((newPool: LuminaPool) => {
 		setPool(newPool)
 		setPoolAddress(newPool.address)
-	}
-
-	const { Dex } = useContext(LuminaContext)
-
-	const [toDai, setToDai] = useState(true)
-
-	const [fromAmount, setFromAmount] = useState("")
-
-	const [toAmount, setToAmount] = useState("0.0")
-
-	const [slippagePercent, setSlippagePercent] = useState<number>(1)
-
-	// Action handlers
-	const handleCalculateSwap = useCallback(
-		(amount: string) => {
-			Dex.send({
-				type: "ChangeSwapSettings",
-				settings: {
-					pool: pool.address,
-					from: {
-						address: toDai ? "MINA" : token.address,
-						amount: amount
-					},
-					to: toDai ? token.address : "MINA",
-					slippagePercent: slippagePercent
-				}
-			})
-		},
-		[Dex, pool, toDai, token, slippagePercent]
-	)
+	}, [])
 
 	const swap = () => {
 		Dex.send({ type: "Swap" })
 	}
 
-	useEffect(() => {
-		const delayDebounceFn = setTimeout(() => {
-			if (Number.parseFloat(fromAmount) && token && pool) {
-				handleCalculateSwap(fromAmount)
-			}
-		}, 500)
-		return () => clearTimeout(delayDebounceFn)
-	}, [handleCalculateSwap, fromAmount, token, pool])
+	const format = (n: number) => n / 10 ** tokenOut.decimals
 
-	useEffect(() => {
-		const subscription = Dex.subscribe((snapshot) => {
-			let valTo = snapshot.context.dex.swap.calculated?.amountOut || 0
-			if (token) {
-				valTo = valTo / 10 ** token.decimals
-			}
+	const debouncedChangeSettings = useMemo(
+		() =>
+			debounce(
+				(params: { fromAmount: string; pool: LuminaPool; minaToToken: boolean; slippagePercent: number }) => {
+					if (!Number.parseFloat(params.fromAmount) || !params.pool) return
 
-			setToAmount(valTo.toString())
-		})
-		return () => subscription.unsubscribe()
-	}, [Dex, token])
+					Dex.send({
+						type: "ChangeSwapSettings",
+						settings: {
+							pool: params.pool.address,
+							from: {
+								address: params.minaToToken ? params.pool.tokens[0].address : params.pool.tokens[1].address,
+								amount: params.fromAmount
+							},
+							to: params.minaToToken ? params.pool.tokens[1].address : params.pool.tokens[0].address,
+							slippagePercent: params.slippagePercent
+						}
+					})
+				},
+				{ wait: 500 }
+			),
+		[Dex]
+	)
+
+	// Debounced change settings
+	useEffect(() => {
+		debouncedChangeSettings({ fromAmount, pool, minaToToken, slippagePercent })
+	}, [debouncedChangeSettings, fromAmount, minaToToken, pool, slippagePercent])
 
 	return (
 		<div className="flex flex-row justify-center w-full ">
-			<div className="flex flex-col p-5 gap-5  items-center">
+			<div className="flex flex-col p-3 gap-3  items-center">
 				<div className="text-xl">Swap</div>
 				<div>
 					<span>Slippage (%) :</span>
@@ -87,6 +74,9 @@ const Swap = () => {
 						defaultValue={slippagePercent}
 						onChange={(event) => setSlippagePercent(event.target.valueAsNumber)}
 					/>
+				</div>
+				<div className="flex flex-row items-center">
+					Pool : <PoolMenu poolAddress={poolAddress} setPool={updatePool} />
 				</div>
 				<div className="flex flex-row w-full">
 					<CurrencyFormat
@@ -97,14 +87,20 @@ const Swap = () => {
 						value={fromAmount}
 						onValueChange={({ value }) => setFromAmount(value)}
 					/>
-					{toDai ? (
-						<span className="w-24 text-center">MINA</span>
-					) : (
-						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
-					)}
+					<span className="w-24 text-center">{tokenIn ? tokenIn.symbol : "MINA"}</span>
 				</div>
+				{tokenIn?.address && (
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenIn} />
+						&nbsp;{tokenIn.symbol}
+					</div>
+				)}
 				<div>
-					<button type="button" onClick={() => setToDai(!toDai)} className="w-8 bg-cyan-500 text-lg text-white rounded">
+					<button
+						type="button"
+						onClick={() => setMinaToToken(!minaToToken)}
+						className="w-8 bg-cyan-500 text-lg text-white rounded"
+					>
 						&#8645;
 					</button>
 				</div>
@@ -114,21 +110,15 @@ const Swap = () => {
 						thousandSeparator={true}
 						decimalScale={2}
 						placeholder="0.0"
-						value={toAmount}
-						onValueChange={({ value }) => setToAmount(value)}
+						value={format(toAmount)}
 					/>
-					{!toDai ? (
-						<span className="w-24 text-center">MINA</span>
-					) : (
-						<TokenMenu poolAddress={poolAddress} setToken={updateToken} setPool={updatePool} />
-					)}
+					<span className="w-24 text-center">{tokenOut ? tokenOut.symbol : "Token"}</span>
 				</div>
-				{token?.address ? (
-					<div>
-						Your token balance : <Balance token={token} />
+				{tokenOut?.address && (
+					<div className="flex  w-full flex-row justify-start text-xs">
+						<Balance token={tokenOut} />
+						&nbsp;{tokenOut.symbol}
 					</div>
-				) : (
-					<div />
 				)}
 				<ButtonStatus onClick={swap} text={"Swap"} />
 			</div>

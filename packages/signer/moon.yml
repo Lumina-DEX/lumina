@@ -20,77 +20,100 @@ fileGroups:
 
 tasks:
   dev:
-    command: bun run --watch src/index.ts
+    command: node --watch --env-file=.env --experimental-strip-types src/node.ts
     deps: ["^:build", "services-start"]
     preset: "server"
+
+  dev-bun:
+    command: bun run --watch src/bun.ts
+    extends: dev
+
   build:
-    description: |
-      This is empty as Building with bullMQ Worker is impossible.
-      No build tools seems to support it.
-      That means we have to copy everything into the production Docker layer.
+    command: tsdown
     deps: ["^:build"]
-  dev-uws:
-    command: tsx src/uws.ts
-    deps: ["^:build"]
-    preset: "server"
+    inputs:
+      - "@group(sources)"
+    outputs:
+      - dist/**
+
   start:
     description: This is the production command run in the Dockerfile.
-    command: bun run src/index.ts
+    deps: ["build"]
+    command: node dist/index.js
     preset: "server"
+
   web:
     command: bun ./index.html
     preset: "server"
+
+  test:
+    command: vitest run
+    options:
+      cache: false
+      runInCI: false
+
   test-integration:
     command: vitest run --testTimeout=150000
     deps: ["^:build"]
     inputs:
       - "@group(sources)"
       - "@group(tests)"
+
   schema:
     command: bun run graphql/printSchema.ts
     inputs:
       - src/graphql.ts
     outputs:
       - graphql/schema.graphql
+
   db-generate:
     description: Generate migrations files after a schema change.
-    command: drizzle-kit generate
+    command: npx drizzle-kit generate
     options:
       cache: false
+
   db-migrate:
     description: Run migrations. This leverages the DATABASE_URL env variable.
     command: bun run scripts/migrate.ts
     options:
       cache: false
+
   db-studio:
-    command: drizzle-kit studio
+    command: npx drizzle-kit studio
     preset: "server"
+
   db-seed:
     description: Seed the database with initial data.
     command: bun run scripts/seed.ts
     options:
       cache: false
+
   services-start:
     command: docker compose up -d
     options:
       cache: false
+
   services-stop:
     command: docker compose down
     options:
       cache: false
+
   services-reset:
     script: docker compose down -v && docker compose up -d && moon signer:db-migrate && moon signer:db-seed
     options:
       cache: false
+
   all:
     command: noop
-    deps: [services-start, start, web]
+    deps: [services-start, dev, web]
     preset: "server"
+
   lint:
     command: biome check --formatter-enabled=false
     inputs:
       - "@group(sources)"
       - "@group(tests)"
+
   lint-fix:
     command: biome check --formatter-enabled=false --write
     inputs:

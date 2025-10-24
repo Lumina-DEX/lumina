@@ -1,8 +1,14 @@
+import { PublicKey, TokenId } from "o1js"
+import pLimit from "p-limit"
+import type { Client } from "urql"
 import type { ActorRefFromLogic, EventObject } from "xstate"
+import { type ChainNetwork, type NetworkLayer, urls } from "../../constants"
+import { createMinaClient } from "../../graphql/clients"
+import { FetchAccountBalanceQuery } from "../../graphql/mina"
 import { logger } from "../../helpers/debug"
 import { fromCallback } from "../../helpers/xstate"
 import type { createWalletMachine } from "./machine"
-import type { WalletEmit } from "./types"
+import type { AllTokenBalances, FetchBalanceInput, Networks, WalletEmit, WalletEvent } from "./types"
 
 export type WalletActorRef = ActorRefFromLogic<ReturnType<typeof createWalletMachine>>
 
@@ -36,3 +42,87 @@ export const detectWalletChange = fromCallback<EventObject, WalletEmit, { wallet
 		}
 	}
 )
+
+/**
+ * Fetches the balance of the Mina wallet on given networks.
+ */
+export const fetchBalance = fromCallback<
+	WalletEvent,
+	WalletEvent,
+	FetchBalanceInput & { id: string; createMinaClient: (url: string) => Client },
+	WalletEmit
+>(({ sendBack, input }) => {
+	const { id, ...params } = input
+	const fetching = async () => {
+		try {
+			const balances = await fetchBalanceLogic(params, createMinaClient)
+			sendBack({ type: "FetchBalanceSuccess", id, balances })
+		} catch (error) {
+			logger.error("fetchBalanceLogic error:", error)
+			sendBack({ type: "FetchBalanceFailure", id })
+		}
+	}
+	fetching()
+	return () => {}
+})
+
+const fetchBalanceLogic = async (
+	input: FetchBalanceInput,
+	createMinaClient: (url: string) => Client
+): Promise<AllTokenBalances> => {
+	const limit = pLimit(10)
+	const publicKey = input.address
+	const mina = { symbol: "MINA", decimal: 1e9, tokenId: null, publicKey }
+	const tokens = input.tokens
+		.filter((token) => token.symbol !== "MINA")
+		.map((token) => ({
+			symbol: token.symbol,
+			decimal: token.decimal,
+			tokenId:
+				"poolAddress" in token
+					? TokenId.toBase58(TokenId.derive(PublicKey.fromBase58(token.poolAddress)))
+					: token.tokenId,
+			publicKey
+		}))
+	const allTokens = [mina, ...tokens]
+
+	const queries = Object.fromEntries(
+		allTokens.map((token) => [
+			token.tokenId ?? "MINA",
+			limit(() =>
+				createMinaClient(urls[input.network])
+					.query(FetchAccountBalanceQuery, {
+						tokenId: token.tokenId,
+						publicKey
+					})
+					.toPromise()
+			)
+		])
+	)
+
+	const results = await Promise.all(Object.values(queries))
+
+	return Object.keys(queries).reduce(
+		(acc, tokenId, index) => {
+			const result = results[index]
+			const token = allTokens[index]
+			const balance = toNumber(result.data?.account?.balance?.total) / token.decimal
+			const [layer, netType] = (input.network as Networks).split(":") as [NetworkLayer, ChainNetwork]
+			acc[layer][netType][tokenId] = { balance, symbol: token.symbol }
+			return acc
+		},
+		{
+			mina: { mainnet: {}, devnet: {} },
+			zeko: { mainnet: {}, testnet: {} }
+		} as AllTokenBalances
+	)
+}
+
+const toNumber = (n: unknown) => {
+	if (typeof n === "string") {
+		const t = Number.parseFloat(n)
+		return Number.isNaN(t) ? 0 : t
+	}
+	if (typeof n === "number") return n
+	return 0
+}

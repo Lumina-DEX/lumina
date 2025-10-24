@@ -1,25 +1,15 @@
-# Pool CreationService
+# Pool Creation Service
 
-Pool CreationService that can generate a proof server side.
+Server-side proof generation service for pool creation.
 
-Tech stack :
+## Tech Stack
 
-- Typescript
-  - Bun
-  - pnpm
-- SQL:
-  - Drizzle ORM
-  - PostgreSQL (Supabase)
-- Queues:
-  - BullMQ
-  - Redis
-- Graphql:
-  - Pothos
-  - Graphql Yoga
-- Secrets Management:
-  - Infisical
-
-This is deployed on a Hetzner server using Dokku.
+- **TypeScript**: node runtime
+- **Database**: Drizzle ORM + PostgreSQL (Supabase)
+- **Queue**: TanStack Pacer (in-memory, serial processing)
+- **GraphQL**: Pothos + GraphQL Yoga (with built-in PubSub)
+- **Secrets**: Infisical
+- **Deployment**: Dokku on Hetzner
 
 ## Installation
 
@@ -37,16 +27,13 @@ Create an .env file base on .env.example
 
 ### PostgreSQL (Local Development)
 
-Start the PostgreSQL and Redis services using Docker Compose:
+Start the PostgreSQL service using Docker Compose:
 
 ```bash
 docker-compose up -d
 ```
 
-This will start:
-
-- PostgreSQL on port 5432 (database: `signer`, user: `postgres`, password: `postgres`)
-- Redis on port 6379
+This starts PostgreSQL on port 5432 (database: `signer`, user: `postgres`, password: `postgres`).
 
 Create and migrate the database:
 
@@ -54,7 +41,7 @@ Create and migrate the database:
 moon signer:db-migrate && moon signer:db-seed
 ```
 
-The application expects a `DATABASE_URL` environment variable. For local development, use:
+The application expects a `DATABASE_URL` environment variable. For local development:
 
 ```
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/signer"
@@ -68,21 +55,11 @@ For production, use Supabase:
 2. Get your database URL from Project Settings > Database
 3. Set the `DATABASE_URL` environment variable to your Supabase connection string
 
-### Redis
+## Development
 
-Redis is included in the docker-compose.yml file and will start automatically with `docker-compose up -d`.
+Start the development environment:
 
-For standalone Redis, you can also run:
-
-```bash
-docker run -p 6379:6379 -d redis:8.0.2
-```
-
-## Server
-
-To start the development environment:
-
-1. **Start services** (PostgreSQL and Redis):
+1. **Start PostgreSQL**:
    ```bash
    moon signer:services-start
    ```
@@ -92,9 +69,9 @@ To start the development environment:
    moon signer:db-migrate && moon signer:db-seed
    ```
 
-3. **Start the server** in development mode:
+3. **Start the server**:
    ```bash
-   moon signer-dev
+   moon signer:dev
    ```
 
 Or run everything at once:
@@ -103,14 +80,14 @@ Or run everything at once:
 moon signer:all
 ```
 
+The server compiles o1js contracts once at startup, then processes pool creation jobs serially as they arrive.
+
 Use the GraphQL playground at http://localhost:3001/graphql to test the API.
-Refer to index.html to see usage client side.
-The SDK includes a state machine that models the API usage.
 
 **Available scripts:**
 
-- `moon signer:services-start` - Start PostgreSQL and Redis containers
-- `moon signer:services-stop` - Stop all containers
+- `moon signer:services-start` - Start PostgreSQL container
+- `moon signer:services-stop` - Stop containers
 - `moon signer:dev` - Start server in watch mode
 - `moon signer:all` - Start services, server, and web interface
 
@@ -123,20 +100,16 @@ include a CI pipeline to automate the deployment process with Pulumi
 
 ### Docker
 
-To run locally the service and redis with docker:
-
 Build the docker image from the root of the monorepo:
 
 ```bash
 docker build -t luminadex-signer -f packages/signer/Dockerfile .
 ```
 
-Create network and run redis and the signer service:
+Create network and run the services:
 
 ```bash
 docker network create lumina-net
-
-docker run -d --name redis-server --network lumina-net -p 6379:6379 redis:8.0.2
 
 docker run -d --name postgres-server --network lumina-net -p 5432:5432 \
   -e POSTGRES_DB=signer \
@@ -144,40 +117,34 @@ docker run -d --name postgres-server --network lumina-net -p 5432:5432 \
   -e POSTGRES_PASSWORD=postgres \
   postgres:17-alpine
 
-docker run --rm -it --network lumina-net -p 3000:3000\
-  -e REDIS_HOST=redis-server\
-  -e REDIS_PORT=6379\
-  -e DATABASE_URL=postgresql://postgres:postgres@postgres-server:5432/signer\
+docker run --rm -it --network lumina-net -p 3001:3001 \
+  -e DATABASE_URL=postgresql://postgres:postgres@postgres-server:5432/signer \
+  -e INFISICAL_ENVIRONMENT=your_environment \
+  -e INFISICAL_PROJECT_ID=your_project_id \
+  -e INFISICAL_CLIENT_ID=your_client_id \
+  -e INFISICAL_CLIENT_SECRET=your_client_secret \
   luminadex-signer
 ```
 
-Clean-up :
+Clean-up:
 
 ```bash
-# Stop and remove the redis container
-docker stop redis-server && docker rm redis-server
-
-# Remove the network
+docker stop postgres-server && docker rm postgres-server
 docker network rm lumina-net
 ```
 
 ### Dokku
 
-Here are the full instructions to deploy the app with Dokku.
-Note that once the CI is set, git operations will automaticall deploy the app.
+Deploy the app with Dokku:
 
 ```bash
 # Create the Dokku app
 dokku apps:create pool-signer
-# Install the Redis plugin
-dokku plugin:install https://github.com/dokku/dokku-redis.git --name redis
-# Create a Redis service for the app
-dokku redis:create bullmq-pool-signer
-# Link the Redis service to the app
-dokku redis:link bullmq-pool-signer pool-signer
+
 # Set the Dockerfile path
 dokku builder-dockerfile:set pool-signer dockerfile-path packages/signer/Dockerfile
-# Set the build attempt to use the Dockerfile
+
+# Set the build to use Dockerfile
 dokku config:set pool-signer DOKKU_BUILD_ATTEMPT=dockerfile
 ```
 

@@ -20,6 +20,12 @@
         "path": "../packages/dex-ui",
       },
       {
+        "path": "../apps/landing",
+      },
+      {
+        "path": "../apps/sdk-docs",
+      },
+      {
         "path": "../packages/sdk-test-vue",
       },
       {
