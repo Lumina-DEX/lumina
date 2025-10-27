@@ -114,7 +114,6 @@ const DeployFactoryInput = builder.inputRef<DeployFactoryInputType>("DeployFacto
 	})
 })
 
-// Helper pour déterminer le type de job
 const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
 	return "deployer" in data
 }
@@ -225,7 +224,6 @@ builder.subscriptionField("factoryDeployment", (t) =>
 				const job = q.getJob(args.jobId)
 				if (!job) return rfail(`Factory deployment job ${args.jobId} not found`)
 
-				// Vérifier que c'est bien un job de factory
 				if (!isFactoryJob(job.data)) {
 					return rfail(`Job ${args.jobId} is not a factory deployment job`)
 				}
@@ -259,7 +257,6 @@ builder.queryField("factoryDeploymentJob", (t) =>
 			const job = q.getJob(jobId)
 			if (!job) return fail(`Factory deployment job ${jobId} not found`)
 
-			// Vérifier que c'est bien un job de factory
 			if (!isFactoryJob(job.data)) {
 				return fail(`Job ${jobId} is not a factory deployment job`)
 			}
@@ -314,7 +311,6 @@ builder.mutationField("confirmFactoryJob", (t) =>
 			using q = jobQueue()
 			using db = database()
 
-			// Récupérer la factory via le jobId
 			const data = await db.drizzle.select().from(factory).where(eq(factory.jobId, jobId))
 
 			if (data.length === 0) return fail(`No factory found for job ID ${jobId}`)

@@ -5,7 +5,6 @@ import { createPoolAndTransaction } from "./helpers/pool"
 import { deployFactoryAndTransaction } from "./helpers/factory"
 import { logger } from "./helpers/utils"
 
-// Union type pour les résultats de jobs
 type AnyJobResult = JobResult | FactoryJobResult
 
 type JobTask = {
@@ -17,7 +16,6 @@ type JobTask = {
 // In-memory job cache
 const jobs = new Map<string, AnyJobResult>()
 
-// Type guard pour déterminer le type de job
 const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
 	return "deployer" in data
 }
@@ -33,7 +31,6 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 		await ensureCompiled()
 
 		if (isFactoryJob(data)) {
-			// Traiter le déploiement de factory
 			logger.log(`Processing factory deployment job ${jobId}`)
 			const result = await deployFactoryAndTransaction({ ...data, jobId })
 			const jobResult: FactoryJobResult = {
@@ -47,7 +44,6 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 			pubsub.publish(jobId, jobResult)
 			logger.log(`✅ Factory deployment job ${jobId} completed`)
 		} else if (isPoolJob(data)) {
-			// Traiter la création de pool
 			logger.log(`Processing pool creation job ${jobId}`)
 			const result = await createPoolAndTransaction({ ...data, jobId })
 			const jobResult: JobResult = {
@@ -66,7 +62,6 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 	} catch (error) {
 		logger.error(`❌ Job ${jobId} failed:`, error)
 
-		// Créer le bon type de résultat d'erreur selon le type de job
 		let jobResult: AnyJobResult
 		if (isFactoryJob(data)) {
 			jobResult = {
@@ -122,7 +117,6 @@ const queuer = new Queuer<JobTask>(async (task) => await processJob(task))
 export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 	return {
 		addJob: (jobId: string, data: CreatePoolInputType | DeployFactoryInputType) => {
-			// Initialiser le job avec le bon type
 			if (isFactoryJob(data)) {
 				jobs.set(jobId, {
 					status: "pending",
