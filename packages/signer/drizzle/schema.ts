@@ -64,6 +64,7 @@ export const factory = pgTable("Factory", {
 	createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 	publicKey: text("public_key").notNull(),
 	user: text("user").notNull(),
+	jobId: text("job_id").notNull(),
 	network: text("network", { enum: networkEnums })
 		.notNull()
 		.references(() => dbNetworks.network)

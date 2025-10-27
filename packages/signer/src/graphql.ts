@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm"
 import { GraphQLError } from "graphql"
 import { DateTimeResolver } from "graphql-scalars"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
-import { pool } from "../drizzle/schema"
+import { factory, pool } from "../drizzle/schema"
 import type { Context } from "."
 import { updateStatusAndCDN } from "./helpers/job"
 import { logger } from "./helpers/utils"
@@ -32,7 +32,7 @@ interface Job {
 	status: string
 }
 const Job = builder.objectRef<Job>("Job").implement({
-	description: "A job representing a pool creation task",
+	description: "A job representing a task",
 	fields: (t) => ({
 		id: t.exposeString("id"),
 		status: t.exposeString("status")
@@ -51,6 +51,23 @@ const JobResult = builder.objectRef<JobResult>("JobResult").implement({
 	fields: (t) => ({
 		status: t.exposeString("status", { nullable: false }),
 		poolPublicKey: t.exposeString("poolPublicKey", { nullable: false }),
+		transactionJson: t.exposeString("transactionJson", { nullable: false }),
+		completedAt: t.field({ nullable: false, type: "Date", resolve: ({ completedAt }) => completedAt ?? new Date() })
+	})
+})
+
+export interface FactoryJobResult {
+	status: "pending" | "completed" | "failed"
+	factoryPublicKey: string
+	transactionJson: string
+	completedAt: Date
+}
+
+const FactoryJobResult = builder.objectRef<FactoryJobResult>("FactoryJobResult").implement({
+	description: "A factory deployment job result represented in JSON format",
+	fields: (t) => ({
+		status: t.exposeString("status", { nullable: false }),
+		factoryPublicKey: t.exposeString("factoryPublicKey", { nullable: false }),
 		transactionJson: t.exposeString("transactionJson", { nullable: false }),
 		completedAt: t.field({ nullable: false, type: "Date", resolve: ({ completedAt }) => completedAt ?? new Date() })
 	})
@@ -84,6 +101,26 @@ const CreatePoolInput = builder.inputRef<CreatePoolInputType>("CreatePoolInput")
 	})
 })
 
+export type DeployFactoryInputType = {
+	deployer: string
+	network: Networks
+}
+
+const DeployFactoryInput = builder.inputRef<DeployFactoryInputType>("DeployFactoryInput").implement({
+	description: "Input type for deploying a factory",
+	fields: (t) => ({
+		deployer: t.string({ required: true }),
+		network: t.field({ type: NetworkEnum, required: true })
+	})
+})
+
+// Helper pour déterminer le type de job
+const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
+	return "deployer" in data
+}
+
+// ==================== POOL MUTATIONS ====================
+
 builder.mutationField("createPool", (t) =>
 	t.field({
 		type: Job,
@@ -95,7 +132,7 @@ builder.mutationField("createPool", (t) =>
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
 			q.addJob(id, input)
-			logger.log(`Job ${id} added to queue`)
+			logger.log(`Pool creation job ${id} added to queue`)
 			return { id, status: "created" }
 		}
 	})
@@ -107,7 +144,7 @@ builder.subscriptionField("poolCreation", (t) =>
 		description: "Subscribe to pool creation events",
 		args: { jobId: t.arg.string({ required: true }) },
 		subscribe: async (_, args, { jobQueue, pubsub }) => {
-			logger.log(`Subscribing to job ${args.jobId}`)
+			logger.log(`Subscribing to pool creation job ${args.jobId}`)
 
 			return new Repeater<JobResult>(async (push, stop) => {
 				using q = jobQueue()
@@ -152,10 +189,94 @@ builder.queryField("poolCreationJob", (t) =>
 	})
 )
 
+// ==================== FACTORY MUTATIONS ====================
+
+builder.mutationField("deployFactory", (t) =>
+	t.field({
+		type: Job,
+		description: "Deploy a new factory",
+		args: { input: t.arg({ type: DeployFactoryInput, required: true }) },
+		resolve: async (_, { input }, { jobQueue }) => {
+			using q = jobQueue()
+			const id = globalThis.crypto.randomUUID()
+			const job = q.getJob(id)
+			if (job) return { id, status: job.status }
+			q.addJob(id, input)
+			logger.log(`Factory deployment job ${id} added to queue`)
+			return { id, status: "created" }
+		}
+	})
+)
+
+builder.subscriptionField("factoryDeployment", (t) =>
+	t.field({
+		type: FactoryJobResult,
+		description: "Subscribe to factory deployment events",
+		args: { jobId: t.arg.string({ required: true }) },
+		subscribe: async (_, args, { jobQueue, pubsub }) => {
+			logger.log(`Subscribing to factory deployment job ${args.jobId}`)
+
+			return new Repeater<FactoryJobResult>(async (push, stop) => {
+				using q = jobQueue()
+				const rfail = (message: string) => {
+					logger.error(message)
+					return stop(new GraphQLError(message))
+				}
+				const job = q.getJob(args.jobId)
+				if (!job) return rfail(`Factory deployment job ${args.jobId} not found`)
+
+				// Vérifier que c'est bien un job de factory
+				if (!isFactoryJob(job.data)) {
+					return rfail(`Job ${args.jobId} is not a factory deployment job`)
+				}
+
+				if (job.status === "failed") return rfail(`Factory deployment job ${args.jobId} failed`)
+				if (job.status === "completed") {
+					logger.log(`Factory deployment job ${args.jobId} already completed`)
+					push(job as FactoryJobResult)
+					return stop()
+				}
+				for await (const result of pubsub.subscribe(args.jobId)) {
+					logger.log(`Factory deployment job ${args.jobId} event:`, result)
+					if (result.status === "failed") return rfail(`Factory deployment job ${args.jobId} failed`)
+					push(result as FactoryJobResult)
+					return stop()
+				}
+				await stop
+			})
+		},
+		resolve: (transaction) => transaction
+	})
+)
+
+builder.queryField("factoryDeploymentJob", (t) =>
+	t.field({
+		type: FactoryJobResult,
+		description: "Get the factory deployment job",
+		args: { jobId: t.arg.string({ required: true }) },
+		resolve: async (_, { jobId }, { jobQueue }) => {
+			using q = jobQueue()
+			const job = q.getJob(jobId)
+			if (!job) return fail(`Factory deployment job ${jobId} not found`)
+
+			// Vérifier que c'est bien un job de factory
+			if (!isFactoryJob(job.data)) {
+				return fail(`Job ${jobId} is not a factory deployment job`)
+			}
+
+			if (job.status === "failed") return fail(`Factory deployment job ${jobId} failed`)
+			logger.log(`Factory deployment job ${jobId} found:`, job)
+			return job as FactoryJobResult
+		}
+	})
+)
+
+// ==================== CONFIRM MUTATIONS ====================
+
 builder.mutationField("confirmJob", (t) =>
 	t.field({
 		type: "String",
-		description: "Confirm a job with a given jobId",
+		description: "Confirm a pool job with a given jobId",
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { database, jobQueue, shouldUpdateCDN }) => {
 			using q = jobQueue()
@@ -180,6 +301,30 @@ builder.mutationField("confirmJob", (t) =>
 				return `Job for pool "${poolAddress}" confirmed and CDN updated: ${result}`
 			}
 			return `Job ${jobId} for pool "${poolAddress}" confirmed`
+		}
+	})
+)
+
+builder.mutationField("confirmFactoryJob", (t) =>
+	t.field({
+		type: "String",
+		description: "Confirm a factory deployment job with a given jobId",
+		args: { jobId: t.arg.string({ required: true }) },
+		resolve: async (_, { jobId }, { database, jobQueue }) => {
+			using q = jobQueue()
+			using db = database()
+
+			// Récupérer la factory via le jobId
+			const data = await db.drizzle.select().from(factory).where(eq(factory.jobId, jobId))
+
+			if (data.length === 0) return fail(`No factory found for job ID ${jobId}`)
+			const { network, publicKey: factoryAddress } = data[0]
+
+			logger.log(`Factory deployment job ${jobId} confirmed for factory ${factoryAddress}`)
+			q.removeJob(jobId)
+			logger.log(`Factory deployment job ${jobId} removed from cache`)
+
+			return `Factory deployment job ${jobId} for factory "${factoryAddress}" on network ${network} confirmed`
 		}
 	})
 )

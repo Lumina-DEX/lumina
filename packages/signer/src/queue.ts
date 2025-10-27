@@ -1,12 +1,12 @@
 import type { PubSub } from "graphql-yoga"
-import type { CreatePoolInputType, JobResult } from "./graphql"
+import type { CreatePoolInputType, DeployFactoryInput, JobResult } from "./graphql"
 import { ensureCompiled } from "./helpers/contracts"
 import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
 
 type JobTask = {
 	jobId: string
-	data: CreatePoolInputType
+	data: CreatePoolInputType | DeployFactoryInput
 	pubsub: PubSub<Record<string, [JobResult]>>
 }
 

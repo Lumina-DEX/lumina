@@ -14,7 +14,7 @@ import {
 	PublicKey,
 	UInt64
 } from "o1js"
-import { pool, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
+import { pool, signerMerkle, signerMerkleNetworks, poolKey } from "../../drizzle/schema"
 import type { getDb } from "../db"
 import { getEnv, logger } from "./utils"
 
@@ -24,6 +24,8 @@ type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number
 }
+
+type NewPoolKey = typeof poolKey.$inferInsert
 
 // list of different approved user to sign
 
@@ -58,7 +60,7 @@ export async function getMerkle(database: Drizzle, network: Networks): Promise<[
 	return [merkle, users]
 }
 
-export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key: string) {
+export function getUniqueUserPairs(users: NewSignerMerkle[], id: number, key: string, isFactory = false) {
 	const pairs = []
 
 	for (let i = 0; i < users.length; i++) {
@@ -71,13 +73,18 @@ export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key
 			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB.publicKey))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
-			const poolKeyRow = {
-				poolId: poolId,
+			poolKey.$inferInsert
+			let poolKeyRow: NewPoolKey = {
 				signer1Id: userA.id,
 				signer2Id: userB.id,
 				generatedPublic1: encryptAPub,
 				generatedPublic2: encryptBPub,
 				encryptedKey: encrypted_key
+			}
+			if (isFactory) {
+				poolKeyRow.factoryId = id
+			} else {
+				poolKeyRow.poolId = id
 			}
 			pairs.push(poolKeyRow)
 		}

@@ -1,0 +1,1 @@
+ALTER TABLE "Factory" ADD COLUMN "job_id" text NOT NULL;
