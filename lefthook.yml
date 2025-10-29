@@ -20,7 +20,7 @@
 pre-commit:
   parallel: true
   jobs:
-    - run: node_modules/.bin/dprint fmt --allow-no-files {staged_files}
+    - run: npx dprint fmt --allow-no-files {staged_files}
       stage_fixed: true
 #
 #     - name: rubocop

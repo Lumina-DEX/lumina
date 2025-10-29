@@ -1,10 +1,10 @@
 import type { Networks } from "@lumina-dex/sdk"
 import SchemaBuilder from "@pothos/core"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { GraphQLError } from "graphql"
 import { DateTimeResolver } from "graphql-scalars"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
-import { factory, pool } from "../drizzle/schema"
+import { factory, pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import type { Context } from "."
 import { updateStatusAndCDN } from "./helpers/job"
 import { logger } from "./helpers/utils"
@@ -26,6 +26,16 @@ const fail = (message: string) => {
 	logger.error(message)
 	throw new GraphQLError(message)
 }
+
+// ==================== ADMIN AUTH ====================
+
+const checkAdminAuth = (context: Context) => {
+	if (!context.isAdmin) {
+		throw new GraphQLError("Unauthorized: Admin access required")
+	}
+}
+
+// ==================== JOB TYPES ====================
 
 interface Job {
 	id: string
@@ -73,6 +83,44 @@ const FactoryJobResult = builder.objectRef<FactoryJobResult>("FactoryJobResult")
 	})
 })
 
+// ==================== SIGNER TYPES ====================
+
+type SignerMerkleType = typeof signerMerkle.$inferSelect
+type SignerNetworkType = typeof signerMerkleNetworks.$inferSelect
+
+const Signer = builder.objectRef<SignerMerkleType>("Signer").implement({
+	description: "A signer in the merkle tree",
+	fields: (t) => ({
+		id: t.exposeInt("id"),
+		publicKey: t.exposeString("publicKey"),
+		createdAt: t.field({
+			type: "Date",
+			resolve: (signer) => signer.createdAt
+		})
+	})
+})
+
+const SignerNetwork = builder.objectRef<SignerNetworkType & { signer: SignerMerkleType }>("SignerNetwork").implement({
+	description: "A signer's network configuration",
+	fields: (t) => ({
+		id: t.exposeInt("id"),
+		signerId: t.exposeInt("signerId"),
+		network: t.exposeString("network"),
+		permission: t.exposeInt("permission"),
+		active: t.exposeBoolean("active"),
+		createdAt: t.field({
+			type: "Date",
+			resolve: (signerNetwork) => signerNetwork.createdAt
+		}),
+		signer: t.field({
+			type: Signer,
+			resolve: (signerNetwork) => signerNetwork.signer
+		})
+	})
+})
+
+// ==================== NETWORK ENUM ====================
+
 const NetworkType = {
 	mina_mainnet: "mina:mainnet",
 	mina_devnet: "mina:devnet",
@@ -83,6 +131,8 @@ const NetworkType = {
 const NetworkEnum = builder.enumType("Network", {
 	values: Object.fromEntries(Object.entries(NetworkType).map(([name, value]) => [name, { value }]))
 })
+
+// ==================== POOL/FACTORY INPUT TYPES ====================
 
 export type CreatePoolInputType = {
 	user: string
@@ -114,9 +164,294 @@ const DeployFactoryInput = builder.inputRef<DeployFactoryInputType>("DeployFacto
 	})
 })
 
+// ==================== SIGNER INPUT TYPES ====================
+
+const CreateSignerInput = builder.inputType("CreateSignerInput", {
+	fields: (t) => ({
+		publicKey: t.string({ required: true })
+	})
+})
+
+const UpdateSignerInput = builder.inputType("UpdateSignerInput", {
+	fields: (t) => ({
+		publicKey: t.string({ required: false })
+	})
+})
+
+const CreateSignerNetworkInput = builder.inputType("CreateSignerNetworkInput", {
+	fields: (t) => ({
+		signerId: t.int({ required: true }),
+		network: t.field({ type: NetworkEnum, required: true }),
+		permission: t.int({ required: true }),
+		active: t.boolean({ required: false })
+	})
+})
+
+const UpdateSignerNetworkInput = builder.inputType("UpdateSignerNetworkInput", {
+	fields: (t) => ({
+		permission: t.int({ required: false }),
+		active: t.boolean({ required: false })
+	})
+})
+
 const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
 	return "deployer" in data
 }
+
+// ==================== SIGNER QUERIES ====================
+
+builder.queryField("signers", (t) =>
+	t.field({
+		type: [Signer],
+		description: "Get all signers (Admin only)",
+		resolve: async (_, __, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+			const signers = await db.drizzle.select().from(signerMerkle)
+			logger.log(`Retrieved ${signers.length} signers`)
+			return signers
+		}
+	})
+)
+
+builder.queryField("signer", (t) =>
+	t.field({
+		type: Signer,
+		description: "Get a signer by ID (Admin only)",
+		args: {
+			id: t.arg.int({ required: true })
+		},
+		resolve: async (_, { id }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+			const result = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, id))
+			if (!result[0]) throw new GraphQLError(`Signer with ID ${id} not found`)
+			logger.log(`Retrieved signer ${id}`)
+			return result[0]
+		}
+	})
+)
+
+builder.queryField("signersByNetwork", (t) =>
+	t.field({
+		type: [SignerNetwork],
+		description: "Get all signers for a specific network (Admin only)",
+		args: {
+			network: t.arg({ type: NetworkEnum, required: true }),
+			activeOnly: t.arg.boolean({ required: false })
+		},
+		resolve: async (_, { network, activeOnly }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			const conditions = [eq(signerMerkleNetworks.network, network)]
+			if (activeOnly) {
+				conditions.push(eq(signerMerkleNetworks.active, true))
+			}
+
+			const result = await db.drizzle
+				.select()
+				.from(signerMerkleNetworks)
+				.innerJoin(signerMerkle, eq(signerMerkleNetworks.signerId, signerMerkle.id))
+				.where(and(...conditions))
+
+			const signerNetworks = result.map((row) => ({
+				...row.SignerMerkleNetwork,
+				signer: row.SignerMerkle
+			}))
+
+			logger.log(`Retrieved ${signerNetworks.length} signers for network ${network}`)
+			return signerNetworks
+		}
+	})
+)
+
+// ==================== SIGNER MUTATIONS ====================
+
+builder.mutationField("createSigner", (t) =>
+	t.field({
+		type: Signer,
+		description: "Create a new signer (Admin only)",
+		args: {
+			input: t.arg({ type: CreateSignerInput, required: true })
+		},
+		resolve: async (_, { input }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if signer already exists
+			const existing = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.publicKey, input.publicKey))
+
+			if (existing.length > 0) {
+				throw new GraphQLError(`Signer with public key ${input.publicKey} already exists`)
+			}
+
+			const result = await db.drizzle.insert(signerMerkle).values(input).returning()
+			logger.log(`Created signer ${result[0].id}`)
+			return result[0]
+		}
+	})
+)
+
+builder.mutationField("updateSigner", (t) =>
+	t.field({
+		type: Signer,
+		description: "Update a signer (Admin only)",
+		args: {
+			id: t.arg.int({ required: true }),
+			input: t.arg({ type: UpdateSignerInput, required: true })
+		},
+		resolve: async (_, { id, input }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if signer exists
+			const existing = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, id))
+			if (!existing[0]) {
+				throw new GraphQLError(`Signer with ID ${id} not found`)
+			}
+
+			const result = await db.drizzle.update(signerMerkle).set(input).where(eq(signerMerkle.id, id)).returning()
+			logger.log(`Updated signer ${id}`)
+			return result[0]
+		}
+	})
+)
+
+builder.mutationField("deleteSigner", (t) =>
+	t.field({
+		type: "Boolean",
+		description: "Delete a signer (Admin only)",
+		args: {
+			id: t.arg.int({ required: true })
+		},
+		resolve: async (_, { id }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if signer exists
+			const existing = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, id))
+			if (!existing[0]) {
+				throw new GraphQLError(`Signer with ID ${id} not found`)
+			}
+
+			await db.drizzle.delete(signerMerkle).where(eq(signerMerkle.id, id))
+			logger.log(`Deleted signer ${id}`)
+			return true
+		}
+	})
+)
+
+builder.mutationField("createSignerNetwork", (t) =>
+	t.field({
+		type: SignerNetwork,
+		description: "Add a signer to a network (Admin only)",
+		args: {
+			input: t.arg({ type: CreateSignerNetworkInput, required: true })
+		},
+		resolve: async (_, { input }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if signer exists
+			const signerExists = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, input.signerId))
+			if (!signerExists[0]) {
+				throw new GraphQLError(`Signer with ID ${input.signerId} not found`)
+			}
+
+			// Check if signer is already on this network
+			const existing = await db.drizzle
+				.select()
+				.from(signerMerkleNetworks)
+				.where(and(eq(signerMerkleNetworks.signerId, input.signerId), eq(signerMerkleNetworks.network, input.network)))
+
+			if (existing.length > 0) {
+				throw new GraphQLError(`Signer ${input.signerId} is already configured for network ${input.network}`)
+			}
+
+			const result = await db.drizzle
+				.insert(signerMerkleNetworks)
+				.values({
+					...input,
+					active: input.active ?? true
+				})
+				.returning()
+
+			const signer = signerExists[0]
+			logger.log(`Added signer ${input.signerId} to network ${input.network}`)
+			return { ...result[0], signer }
+		}
+	})
+)
+
+builder.mutationField("updateSignerNetwork", (t) =>
+	t.field({
+		type: SignerNetwork,
+		description: "Update a signer's network configuration (Admin only)",
+		args: {
+			signerId: t.arg.int({ required: true }),
+			network: t.arg({ type: NetworkEnum, required: true }),
+			input: t.arg({ type: UpdateSignerNetworkInput, required: true })
+		},
+		resolve: async (_, { signerId, network, input }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if configuration exists
+			const existing = await db.drizzle
+				.select()
+				.from(signerMerkleNetworks)
+				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
+
+			if (!existing[0]) {
+				throw new GraphQLError(`Signer ${signerId} configuration not found for network ${network}`)
+			}
+
+			const result = await db.drizzle
+				.update(signerMerkleNetworks)
+				.set(input)
+				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
+				.returning()
+
+			const signer = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, signerId))
+
+			logger.log(`Updated signer ${signerId} configuration for network ${network}`)
+			return { ...result[0], signer: signer[0] }
+		}
+	})
+)
+
+builder.mutationField("deleteSignerNetwork", (t) =>
+	t.field({
+		type: "Boolean",
+		description: "Remove a signer from a network (Admin only)",
+		args: {
+			signerId: t.arg.int({ required: true }),
+			network: t.arg({ type: NetworkEnum, required: true })
+		},
+		resolve: async (_, { signerId, network }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Check if configuration exists
+			const existing = await db.drizzle
+				.select()
+				.from(signerMerkleNetworks)
+				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
+
+			if (!existing[0]) {
+				throw new GraphQLError(`Signer ${signerId} configuration not found for network ${network}`)
+			}
+
+			await db.drizzle
+				.delete(signerMerkleNetworks)
+				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
+
+			logger.log(`Removed signer ${signerId} from network ${network}`)
+			return true
+		}
+	})
+)
 
 // ==================== POOL MUTATIONS ====================
 
