@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm"
 import { GraphQLError } from "graphql"
 import { DateTimeResolver } from "graphql-scalars"
 import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from "graphql-yoga"
-import { factory, pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
+import { factory, multisig, pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import type { Context } from "."
 import { updateStatusAndCDN } from "./helpers/job"
 import { logger } from "./helpers/utils"
@@ -622,6 +622,170 @@ builder.mutationField("confirmFactoryJob", (t) =>
 			logger.log(`Factory deployment job ${jobId} removed from cache`)
 
 			return `Factory deployment job ${jobId} for factory "${factoryAddress}" on network ${network} confirmed`
+		}
+	})
+)
+
+// ==================== MULTISIG TYPES ====================
+
+type MultisigType = typeof multisig.$inferSelect
+
+const Multisig = builder.objectRef<MultisigType & { signer?: SignerMerkleType }>("Multisig").implement({
+	description: "A multisig transaction",
+	fields: (t) => ({
+		id: t.exposeInt("id"),
+		signerId: t.exposeInt("signerId"),
+		signature: t.exposeString("signature"),
+		data: t.exposeString("data"),
+		network: t.exposeString("network"),
+		deadline: t.exposeInt("deadline"),
+		createdAt: t.field({
+			type: "Date",
+			resolve: (multisig) => multisig.createdAt
+		}),
+		signer: t.field({
+			type: Signer,
+			nullable: true,
+			resolve: (multisig) => multisig.signer
+		})
+	})
+})
+
+// ==================== MULTISIG INPUT TYPES ====================
+
+const CreateMultisigInput = builder.inputType("CreateMultisigInput", {
+	fields: (t) => ({
+		signerId: t.int({ required: true }),
+		signature: t.string({ required: true }),
+		data: t.string({ required: true }),
+		network: t.field({ type: NetworkEnum, required: true }),
+		deadline: t.int({ required: true })
+	})
+})
+
+// ==================== MULTISIG QUERIES ====================
+
+builder.queryField("multisigs", (t) =>
+	t.field({
+		type: [Multisig],
+		description: "Get all multisigs with optional network filter (Admin only)",
+		args: {
+			network: t.arg({
+				type: NetworkEnum,
+				required: false,
+				description: "Filter multisigs by network"
+			})
+		},
+		resolve: async (_, { network }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Construire la requête de base avec jointure sur signer
+			const baseQuery = db.drizzle
+				.select({
+					multisig: multisig,
+					signer: signerMerkle
+				})
+				.from(multisig)
+				.leftJoin(signerMerkle, eq(multisig.signerId, signerMerkle.id))
+
+			const multisigData = network ? await baseQuery.where(eq(multisig.network, network)) : await baseQuery
+
+			const multisigs = multisigData.map((row) => ({
+				...row.multisig,
+				signer: row.signer ?? undefined
+			}))
+
+			logger.log(`Retrieved ${multisigs.length} multisigs${network ? ` for network ${network}` : ""}`)
+			return multisigs
+		}
+	})
+)
+
+builder.queryField("multisig", (t) =>
+	t.field({
+		type: Multisig,
+		description: "Get a multisig by ID (Admin only)",
+		args: {
+			id: t.arg.int({ required: true })
+		},
+		resolve: async (_, { id }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			const multisigData = await db.drizzle
+				.select({
+					multisig: multisig,
+					signer: signerMerkle
+				})
+				.from(multisig)
+				.leftJoin(signerMerkle, eq(multisig.signerId, signerMerkle.id))
+				.where(eq(multisig.id, id))
+
+			if (multisigData.length === 0) {
+				throw new GraphQLError(`Multisig with ID ${id} not found`)
+			}
+
+			const result = {
+				...multisigData[0].multisig,
+				signer: multisigData[0].signer ?? undefined
+			}
+
+			logger.log(`Retrieved multisig ${id}`)
+			return result
+		}
+	})
+)
+
+// ==================== MULTISIG MUTATIONS ====================
+
+builder.mutationField("createMultisig", (t) =>
+	t.field({
+		type: Multisig,
+		description: "Create a new multisig transaction (Admin only)",
+		args: {
+			input: t.arg({ type: CreateMultisigInput, required: true })
+		},
+		resolve: async (_, { input }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Vérifier que le signer existe
+			const signerExists = await db.drizzle.select().from(signerMerkle).where(eq(signerMerkle.id, input.signerId))
+
+			if (signerExists.length === 0) {
+				throw new GraphQLError(`Signer with ID ${input.signerId} not found`)
+			}
+
+			// Vérifier que le network existe
+			const networkExists = await db.drizzle
+				.select()
+				.from(signerMerkleNetworks)
+				.where(eq(signerMerkleNetworks.network, input.network))
+
+			if (networkExists.length === 0) {
+				throw new GraphQLError(`Network ${input.network} not found`)
+			}
+
+			// Créer le multisig
+			const result = await db.drizzle
+				.insert(multisig)
+				.values({
+					signerId: input.signerId,
+					signature: input.signature,
+					data: input.data,
+					network: input.network,
+					deadline: input.deadline
+				})
+				.returning()
+
+			logger.log(`Created multisig ${result[0].id}`)
+
+			// Retourner avec le signer
+			return {
+				...result[0],
+				signer: signerExists[0]
+			}
 		}
 	})
 )
