@@ -88,7 +88,7 @@ const FactoryJobResult = builder.objectRef<FactoryJobResult>("FactoryJobResult")
 type SignerMerkleType = typeof signerMerkle.$inferSelect
 type SignerNetworkType = typeof signerMerkleNetworks.$inferSelect
 type SignerWithNetworks = SignerMerkleType & {
-	networks: SignerNetworkType[]
+	networks?: SignerNetworkType[]
 }
 
 const SignerNetwork = builder.objectRef<SignerNetworkType>("SignerNetwork").implement({
@@ -118,7 +118,8 @@ const Signer = builder.objectRef<SignerWithNetworks>("Signer").implement({
 		networks: t.field({
 			type: [SignerNetwork],
 			description: "Network configurations for this signer",
-			resolve: (signer) => signer.networks
+			nullable: true,
+			resolve: (signer) => signer.networks || []
 		})
 	})
 })
@@ -231,7 +232,7 @@ builder.queryField("signers", (t) =>
 				}
 
 				if (row.network) {
-					signersMap.get(row.signer.id)!.networks.push(row.network)
+					signersMap.get(row.signer.id)!.networks?.push(row.network)
 				}
 			}
 
@@ -273,7 +274,7 @@ builder.queryField("signer", (t) =>
 				networks: signerData.filter((row) => row.network !== null).map((row) => row.network!)
 			}
 
-			logger.log(`Retrieved signer ${id} with ${signer.networks.length} networks`)
+			logger.log(`Retrieved signer ${id} with ${signer.networks?.length} networks`)
 			return signer
 		}
 	})
