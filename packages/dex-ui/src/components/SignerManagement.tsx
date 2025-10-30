@@ -2,11 +2,12 @@ import { useState, useEffect } from "react"
 
 // Types
 type Network = "mina_mainnet" | "mina_devnet" | "zeko_mainnet" | "zeko_testnet"
+type NetworkValue = "mina:mainnet" | "mina:devnet" | "zeko:mainnet" | "zeko:testnet"
 
 interface SignerNetwork {
 	id: number
 	signerId: number
-	network: Network
+	network: NetworkValue // Changed: Le serveur retourne avec ":"
 	permission: number
 	active: boolean
 	createdAt: Date
@@ -17,6 +18,15 @@ interface Signer {
 	publicKey: string
 	createdAt: Date
 	networks?: SignerNetwork[]
+}
+
+// Conversion functions entre les deux formats
+const networkValueToEnum = (value: NetworkValue): Network => {
+	return value.replace(":", "_") as Network
+}
+
+const networkEnumToValue = (enumValue: Network): NetworkValue => {
+	return enumValue.replace("_", ":") as NetworkValue
 }
 
 // GraphQL Client
@@ -98,11 +108,11 @@ const QUERIES = {
 
 // Main Component
 export default function SignerManagement() {
-	const [apiKey, setApiKey] = useState("")
-	const [endpoint, setEndpoint] = useState("https://your-api.com/graphql")
+	const [apiKey, setApiKey] = useState("7810")
+	const [endpoint, setEndpoint] = useState("http://localhost:3001/graphql")
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [signers, setSigners] = useState<Signer[]>([])
-	const [selectedNetwork, setSelectedNetwork] = useState<Network | "">("")
+	const [selectedNetwork, setSelectedNetwork] = useState<Network | "">("mina_mainnet")
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState("")
 
@@ -112,6 +122,9 @@ export default function SignerManagement() {
 	const [showEditNetwork, setShowEditNetwork] = useState(false)
 	const [selectedSigner, setSelectedSigner] = useState<Signer | null>(null)
 	const [selectedSignerNetwork, setSelectedSignerNetwork] = useState<SignerNetwork | null>(null)
+
+	// Editing permission state
+	const [editingPermission, setEditingPermission] = useState<{ networkId: number; value: number } | null>(null)
 
 	// Initialize client when API key changes
 	useEffect(() => {
@@ -180,13 +193,16 @@ export default function SignerManagement() {
 	}
 
 	// Update network configuration
-	const updateNetwork = async (signerId: number, network: Network, permission?: number, active?: boolean) => {
+	const updateNetwork = async (signerId: number, network: NetworkValue, permission?: number, active?: boolean) => {
 		if (!client) return
 
 		try {
+			// Convert network value to enum format for GraphQL
+			const networkEnum = networkValueToEnum(network)
+
 			await client.query(QUERIES.UPDATE_SIGNER_NETWORK, {
 				signerId,
-				network,
+				network: networkEnum,
 				input: {
 					...(permission !== undefined && { permission }),
 					...(active !== undefined && { active })
@@ -204,8 +220,19 @@ export default function SignerManagement() {
 		await updateNetwork(signerNetwork.signerId, signerNetwork.network, undefined, !signerNetwork.active)
 	}
 
+	// Update permission inline
+	const updatePermissionInline = async (signerNetwork: SignerNetwork, newPermission: number) => {
+		if (newPermission === signerNetwork.permission) {
+			setEditingPermission(null)
+			return
+		}
+
+		await updateNetwork(signerNetwork.signerId, signerNetwork.network, newPermission, undefined)
+		setEditingPermission(null)
+	}
+
 	return (
-		<div className="min-h-screen bg-gray-50 p-8">
+		<div className="flex-1 bg-gray-50 p-8">
 			<div className="max-w-7xl mx-auto">
 				<h1 className="text-3xl font-bold text-gray-900 mb-8">Signer Management</h1>
 
@@ -270,7 +297,7 @@ export default function SignerManagement() {
 						)}
 
 						{/* Signers List */}
-						<div className="bg-white rounded-lg shadow overflow-hidden">
+						<div className="bg-white rounded-lg shadow overflow-auto max-h-[600px]">
 							{loading ? (
 								<div className="p-8 text-center text-gray-500">Loading...</div>
 							) : signers.length === 0 ? (
@@ -307,11 +334,61 @@ export default function SignerManagement() {
 																{signer.networks.map((network) => (
 																	<div
 																		key={network.id}
-																		className="flex items-center justify-between bg-gray-50 p-2 rounded"
+																		className="flex items-center justify-between bg-gray-50 p-3 rounded"
 																	>
-																		<div className="flex items-center gap-3">
-																			<span className="text-sm font-medium text-gray-700">{network.network}</span>
-																			<span className="text-xs text-gray-500">Permission: {network.permission}</span>
+																		<div className="flex items-center gap-3 flex-1">
+																			<span className="text-sm font-medium text-gray-700 min-w-[120px]">
+																				{network.network}
+																			</span>
+
+																			{/* Inline Permission Editor */}
+																			{editingPermission?.networkId === network.id ? (
+																				<div className="flex items-center gap-2">
+																					<input
+																						type="number"
+																						value={editingPermission.value}
+																						onChange={(e) =>
+																							setEditingPermission({
+																								networkId: network.id,
+																								value: parseInt(e.target.value) || 0
+																							})
+																						}
+																						className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+																						min="0"
+																						autoFocus
+																					/>
+																					<button
+																						onClick={() => updatePermissionInline(network, editingPermission.value)}
+																						className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+																					>
+																						Save
+																					</button>
+																					<button
+																						onClick={() => setEditingPermission(null)}
+																						className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+																					>
+																						Cancel
+																					</button>
+																				</div>
+																			) : (
+																				<div className="flex items-center gap-2">
+																					<span className="text-xs text-gray-500">
+																						Permission: {network.permission}
+																					</span>
+																					<button
+																						onClick={() =>
+																							setEditingPermission({
+																								networkId: network.id,
+																								value: network.permission
+																							})
+																						}
+																						className="text-xs text-blue-600 hover:text-blue-800"
+																					>
+																						✏️
+																					</button>
+																				</div>
+																			)}
+
 																			<span
 																				className={`px-2 py-1 text-xs rounded ${
 																					network.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -320,7 +397,7 @@ export default function SignerManagement() {
 																				{network.active ? "Active" : "Inactive"}
 																			</span>
 																		</div>
-																		<div className="flex gap-2">
+																		<div className="flex gap-2 ml-3">
 																			<button
 																				onClick={() => {
 																					setSelectedSignerNetwork(network)
@@ -475,7 +552,7 @@ function AddNetworkForm({
 	}
 
 	// Get available networks (not already configured)
-	const configuredNetworks = signer.networks?.map((n) => n.network) || []
+	const configuredNetworks = signer.networks?.map((n) => networkValueToEnum(n.network)) || []
 	const availableNetworks: Network[] = ["mina_mainnet", "mina_devnet", "zeko_mainnet", "zeko_testnet"].filter(
 		(n) => !configuredNetworks.includes(n as Network)
 	) as Network[]
@@ -502,7 +579,7 @@ function AddNetworkForm({
 				>
 					{availableNetworks.map((net) => (
 						<option key={net} value={net}>
-							{net}
+							{networkEnumToValue(net)}
 						</option>
 					))}
 				</select>

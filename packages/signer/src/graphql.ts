@@ -407,7 +407,7 @@ builder.mutationField("updateSignerNetwork", (t) =>
 
 			const result = await db.drizzle
 				.update(signerMerkleNetworks)
-				.set({ active: input.active, permission: input.permission })
+				.set(input)
 				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
 				.returning()
 
