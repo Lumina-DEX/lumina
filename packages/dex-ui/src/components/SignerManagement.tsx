@@ -1,13 +1,13 @@
+import { Networks } from "@lumina-dex/sdk"
 import { useState, useEffect } from "react"
 
 // Types
-type Network = "mina_mainnet" | "mina_devnet" | "zeko_mainnet" | "zeko_testnet"
-type NetworkValue = "mina:mainnet" | "mina:devnet" | "zeko:mainnet" | "zeko:testnet"
+type NetworkEnum = "mina_mainnet" | "mina_devnet" | "zeko_mainnet" | "zeko_testnet"
 
 interface SignerNetwork {
 	id: number
 	signerId: number
-	network: NetworkValue // Changed: Le serveur retourne avec ":"
+	network: Networks
 	permission: number
 	active: boolean
 	createdAt: Date
@@ -20,13 +20,12 @@ interface Signer {
 	networks?: SignerNetwork[]
 }
 
-// Conversion functions entre les deux formats
-const networkValueToEnum = (value: NetworkValue): Network => {
-	return value.replace(":", "_") as Network
+const networkValueToEnum = (value: Networks): NetworkEnum => {
+	return value.replace(":", "_") as NetworkEnum
 }
 
-const networkEnumToValue = (enumValue: Network): NetworkValue => {
-	return enumValue.replace("_", ":") as NetworkValue
+const networkEnumToValue = (enumValue: NetworkEnum): Networks => {
+	return enumValue.replace("_", ":") as Networks
 }
 
 // GraphQL Client
@@ -112,7 +111,7 @@ export default function SignerManagement() {
 	const [endpoint, setEndpoint] = useState("http://localhost:3001/graphql")
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [signers, setSigners] = useState<Signer[]>([])
-	const [selectedNetwork, setSelectedNetwork] = useState<Network | "">("mina_mainnet")
+	const [selectedNetwork, setSelectedNetwork] = useState<NetworkEnum | "">("mina_mainnet")
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState("")
 
@@ -173,7 +172,7 @@ export default function SignerManagement() {
 	}
 
 	// Add network to signer
-	const addNetwork = async (signerId: number, network: Network, permission: number) => {
+	const addNetwork = async (signerId: number, network: NetworkEnum, permission: number) => {
 		if (!client) return
 
 		try {
@@ -193,7 +192,7 @@ export default function SignerManagement() {
 	}
 
 	// Update network configuration
-	const updateNetwork = async (signerId: number, network: NetworkValue, permission?: number, active?: boolean) => {
+	const updateNetwork = async (signerId: number, network: Networks, permission?: number, active?: boolean) => {
 		if (!client) return
 
 		try {
@@ -272,7 +271,7 @@ export default function SignerManagement() {
 									<label className="text-sm font-medium text-gray-700">Filter by Network:</label>
 									<select
 										value={selectedNetwork}
-										onChange={(e) => setSelectedNetwork(e.target.value as Network | "")}
+										onChange={(e) => setSelectedNetwork(e.target.value as NetworkEnum | "")}
 										className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 									>
 										<option value="">All Networks</option>
@@ -540,10 +539,10 @@ function AddNetworkForm({
 	onCancel
 }: {
 	signer: Signer
-	onSubmit: (network: Network, permission: number) => void
+	onSubmit: (network: NetworkEnum, permission: number) => void
 	onCancel: () => void
 }) {
-	const [network, setNetwork] = useState<Network>("mina_mainnet")
+	const [network, setNetwork] = useState<NetworkEnum>("mina_mainnet")
 	const [permission, setPermission] = useState(0)
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -553,9 +552,9 @@ function AddNetworkForm({
 
 	// Get available networks (not already configured)
 	const configuredNetworks = signer.networks?.map((n) => networkValueToEnum(n.network)) || []
-	const availableNetworks: Network[] = ["mina_mainnet", "mina_devnet", "zeko_mainnet", "zeko_testnet"].filter(
-		(n) => !configuredNetworks.includes(n as Network)
-	) as Network[]
+	const availableNetworks: NetworkEnum[] = ["mina_mainnet", "mina_devnet", "zeko_mainnet", "zeko_testnet"].filter(
+		(n) => !configuredNetworks.includes(n as NetworkEnum)
+	) as NetworkEnum[]
 
 	if (availableNetworks.length === 0) {
 		return (
@@ -574,7 +573,7 @@ function AddNetworkForm({
 				<label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
 				<select
 					value={network}
-					onChange={(e) => setNetwork(e.target.value as Network)}
+					onChange={(e) => setNetwork(e.target.value as NetworkEnum)}
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 				>
 					{availableNetworks.map((net) => (
