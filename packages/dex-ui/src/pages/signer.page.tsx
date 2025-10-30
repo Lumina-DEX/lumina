@@ -1,5 +1,6 @@
 "use client"
-import SignerManagement from "@/components/SignerManagement"
+
+import SignerManagement from "@/components/signer-management/SignerManagement"
 
 const Signer = () => {
 	return (
