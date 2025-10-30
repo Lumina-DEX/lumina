@@ -209,7 +209,14 @@ builder.queryField("signers", (t) =>
 	t.field({
 		type: [Signer],
 		description: "Get all signers with their network permissions (Admin only)",
-		resolve: async (_, __, context) => {
+		args: {
+			network: t.arg({
+				type: NetworkEnum,
+				required: false,
+				description: "Filter signers by network"
+			})
+		},
+		resolve: async (_, { network }, context) => {
 			checkAdminAuth(context)
 			using db = context.database()
 
@@ -220,6 +227,7 @@ builder.queryField("signers", (t) =>
 				})
 				.from(signerMerkle)
 				.leftJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
+				.where(network ? eq(signerMerkleNetworks.network, network) : undefined)
 
 			const signersMap = new Map<number, SignerWithNetworks>()
 
@@ -237,7 +245,7 @@ builder.queryField("signers", (t) =>
 			}
 
 			const signers = Array.from(signersMap.values())
-			logger.log(`Retrieved ${signers.length} signers with their networks`)
+			logger.log(`Retrieved ${signers.length} signers${network ? ` for network ${network}` : ""} with their networks`)
 			return signers
 		}
 	})
@@ -399,7 +407,7 @@ builder.mutationField("updateSignerNetwork", (t) =>
 
 			const result = await db.drizzle
 				.update(signerMerkleNetworks)
-				.set(input)
+				.set({ active: input.active, permission: input.permission })
 				.where(and(eq(signerMerkleNetworks.signerId, signerId), eq(signerMerkleNetworks.network, network)))
 				.returning()
 
