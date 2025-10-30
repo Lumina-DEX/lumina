@@ -3,10 +3,10 @@ import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
 interface FilterBarProps {
 	selectedNetwork: NetworkEnum | ""
 	onNetworkChange: (network: NetworkEnum | "") => void
-	onCreateSigner: () => void
+	onCreate: () => void
 }
 
-export function FilterBar({ selectedNetwork, onNetworkChange, onCreateSigner }: FilterBarProps) {
+export function FilterBar({ selectedNetwork, onNetworkChange, onCreate }: FilterBarProps) {
 	return (
 		<div className="bg-white rounded-lg shadow p-6 mb-6">
 			<div className="flex flex-wrap items-center justify-between gap-4">
@@ -26,10 +26,10 @@ export function FilterBar({ selectedNetwork, onNetworkChange, onCreateSigner }: 
 					</select>
 				</div>
 				<button
-					onClick={onCreateSigner}
+					onClick={onCreate}
 					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
 				>
-					Add New Signer
+					Add New
 				</button>
 			</div>
 		</div>

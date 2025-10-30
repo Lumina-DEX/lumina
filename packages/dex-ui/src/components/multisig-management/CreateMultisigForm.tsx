@@ -1,5 +1,5 @@
+import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
 import { useState, useEffect } from "react"
-import { NetworkEnum, NETWORK_OPTIONS, networkEnumToValue } from "./multisig-types"
 
 interface Signer {
 	id: number

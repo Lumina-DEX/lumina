@@ -5,7 +5,9 @@ import { Multisig } from "@/models/multisig"
 import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
 import { MULTISIG_QUERIES } from "@/models/queries"
 import { GraphQLClient } from "@/utils/graphql-client"
-import { Modal } from "@mui/material"
+import { Modal } from "../Modal"
+import { ApiConfiguration } from "../ApiConfiguration"
+import { FilterBar } from "../FilterBar"
 
 interface Signer {
 	id: number
@@ -108,60 +110,21 @@ export default function MultisigManagement() {
 				<h1 className="text-3xl font-bold text-gray-900 mb-8">Multisig Management</h1>
 
 				{/* API Configuration */}
-				<div className="bg-white rounded-lg shadow p-6 mb-6">
-					<h2 className="text-xl font-semibold mb-4">API Configuration</h2>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">API Endpoint</label>
-							<input
-								type="text"
-								value={endpoint}
-								onChange={(e) => setEndpoint(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="https://your-api.com/graphql"
-							/>
-						</div>
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-							<input
-								type="password"
-								value={apiKey}
-								onChange={(e) => setApiKey(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Enter your API key"
-							/>
-						</div>
-					</div>
-				</div>
+				<ApiConfiguration
+					endpoint={endpoint}
+					apiKey={apiKey}
+					onEndpointChange={setEndpoint}
+					onApiKeyChange={setApiKey}
+				/>
 
 				{/* Filters and Actions */}
 				{client && (
 					<>
-						<div className="bg-white rounded-lg shadow p-6 mb-6">
-							<div className="flex flex-wrap items-center justify-between gap-4">
-								<div className="flex items-center gap-4">
-									<label className="text-sm font-medium text-gray-700">Filter by Network:</label>
-									<select
-										value={selectedNetwork}
-										onChange={(e) => setSelectedNetwork(e.target.value as NetworkEnum | "")}
-										className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-									>
-										<option value="">All Networks</option>
-										{NETWORK_OPTIONS.map((opt) => (
-											<option key={opt.value} value={opt.value}>
-												{opt.label}
-											</option>
-										))}
-									</select>
-								</div>
-								<button
-									onClick={() => setShowCreateModal(true)}
-									className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-								>
-									Add Multisig
-								</button>
-							</div>
-						</div>
+						<FilterBar
+							selectedNetwork={selectedNetwork}
+							onNetworkChange={setSelectedNetwork}
+							onCreate={() => setShowCreateModal(true)}
+						/>
 
 						{/* Error Message */}
 						{error && (

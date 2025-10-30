@@ -8,7 +8,7 @@ import { ApiConfiguration } from "../ApiConfiguration"
 import { AddNetworkForm } from "./AddNetworkForm"
 import { CreateSignerForm } from "./CreateSignerForm"
 import { EditNetworkForm } from "./EditNetworkForm"
-import { FilterBar } from "./FilterBar"
+import { FilterBar } from "../FilterBar"
 import { SignersTable } from "./SignersTable"
 import { SIGNER_QUERIES } from "@/models/queries"
 
@@ -160,7 +160,7 @@ export default function SignerManagement() {
 						<FilterBar
 							selectedNetwork={selectedNetwork}
 							onNetworkChange={setSelectedNetwork}
-							onCreateSigner={() => setShowCreateSigner(true)}
+							onCreate={() => setShowCreateSigner(true)}
 						/>
 
 						{error && (
