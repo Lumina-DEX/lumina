@@ -8,11 +8,7 @@ import { GraphQLClient } from "@/utils/graphql-client"
 import { Modal } from "../Modal"
 import { ApiConfiguration } from "../ApiConfiguration"
 import { FilterBar } from "../FilterBar"
-
-interface Signer {
-	id: number
-	publicKey: string
-}
+import { Signer } from "@/models/signer"
 
 export default function MultisigManagement() {
 	const [apiKey, setApiKey] = useState("7810")
@@ -143,6 +139,7 @@ export default function MultisigManagement() {
 					<Modal onClose={() => setShowCreateModal(false)} title="Create Multisig Transaction">
 						<CreateMultisigForm
 							signers={signers}
+							client={client!}
 							onSubmit={createMultisig}
 							onCancel={() => setShowCreateModal(false)}
 						/>
