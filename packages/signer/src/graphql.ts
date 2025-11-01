@@ -159,13 +159,19 @@ const CreatePoolInput = builder.inputRef<CreatePoolInputType>("CreatePoolInput")
 export type DeployFactoryInputType = {
 	deployer: string
 	network: Networks
+	protocol: string
+	delegator: string
+	data: string
 }
 
 const DeployFactoryInput = builder.inputRef<DeployFactoryInputType>("DeployFactoryInput").implement({
 	description: "Input type for deploying a factory",
 	fields: (t) => ({
 		deployer: t.string({ required: true }),
-		network: t.field({ type: NetworkEnum, required: true })
+		network: t.field({ type: NetworkEnum, required: true }),
+		protocol: t.string({ required: true }),
+		delegator: t.string({ required: true }),
+		data: t.string({ required: true })
 	})
 })
 

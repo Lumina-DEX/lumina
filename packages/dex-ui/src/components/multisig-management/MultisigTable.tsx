@@ -36,15 +36,13 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 						</th>
 						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
 						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
-						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
 					</tr>
 				</thead>
 				<tbody className="bg-white divide-y divide-gray-200">
 					{multisigs.map((multisig) => (
 						<tr key={multisig.id}>
 							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{multisig.id}</td>
-							<td className="px-6 py-4 whitespace-nowrap text-sm">
+							<td className="px-6 py-4  text-sm">
 								<div className="flex flex-col">
 									<span className="text-gray-900 font-medium">ID: {multisig.signerId}</span>
 									{multisig.signer && (
@@ -58,29 +56,16 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 								</span>
 							</td>
 							<td className="px-6 py-4 text-sm">
-								<div className="max-w-xs truncate font-mono text-xs" title={multisig.signature}>
+								<div className="max-w-xs break-words whitespace-normal font-mono text-xs" title={multisig.signature}>
 									{multisig.signature}
 								</div>
 							</td>
 							<td className="px-6 py-4 text-sm">
-								<div className="max-w-xs truncate font-mono text-xs" title={multisig.data}>
+								<div className="max-w-xs break-words whitespace-normal font-mono text-xs" title={multisig.data}>
 									{multisig.data}
 								</div>
 							</td>
 							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDeadline(multisig.deadline)}</td>
-							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(multisig.createdAt)}</td>
-							<td className="px-6 py-4 whitespace-nowrap text-sm">
-								<button
-									onClick={() => {
-										if (window.confirm("Are you sure you want to delete this multisig?")) {
-											onDelete(multisig.id)
-										}
-									}}
-									className="text-red-600 hover:text-red-800"
-								>
-									Delete
-								</button>
-							</td>
 						</tr>
 					))}
 				</tbody>
