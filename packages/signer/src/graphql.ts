@@ -788,6 +788,33 @@ builder.mutationField("createMultisig", (t) =>
 	})
 )
 
+builder.mutationField("deleteMultisig", (t) =>
+	t.field({
+		type: "String",
+		description: "Delete a multisig transaction (Admin only)",
+		args: {
+			id: t.arg.int({ required: true })
+		},
+		resolve: async (_, { id }, context) => {
+			checkAdminAuth(context)
+			using db = context.database()
+
+			// Vérifier que le multisig existe
+			const existing = await db.drizzle.select().from(multisig).where(eq(multisig.id, id))
+
+			if (existing.length === 0) {
+				throw new GraphQLError(`Multisig with ID ${id} not found`)
+			}
+
+			// Supprimer le multisig
+			await db.drizzle.delete(multisig).where(eq(multisig.id, id))
+
+			logger.log(`Deleted multisig ${id}`)
+			return `Multisig ${id} deleted successfully`
+		}
+	})
+)
+
 builder.queryType()
 builder.mutationType()
 builder.subscriptionType()

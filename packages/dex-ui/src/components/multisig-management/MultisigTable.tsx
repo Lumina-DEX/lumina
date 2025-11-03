@@ -36,6 +36,8 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 						</th>
 						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
 						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
+						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+						<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
 					</tr>
 				</thead>
 				<tbody className="bg-white divide-y divide-gray-200">
@@ -67,7 +69,28 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 									{multisig.data}
 								</div>
 							</td>
-							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDeadline(multisig.deadline)}</td>
+							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+								<div className="max-w-xs break-words whitespace-normal font-mono text-xs">
+									{formatDeadline(multisig.deadline)}
+								</div>
+							</td>
+							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+								<div className="max-w-xs break-words whitespace-normal font-mono text-xs">
+									{formatDate(multisig.createdAt)}
+								</div>
+							</td>
+							<td className="px-6 py-4 whitespace-nowrap text-sm">
+								<button
+									onClick={() => {
+										if (window.confirm("Are you sure you want to delete this multisig?")) {
+											onDelete(multisig.id)
+										}
+									}}
+									className="text-red-600 hover:text-red-800"
+								>
+									Delete
+								</button>
+							</td>
 						</tr>
 					))}
 				</tbody>
