@@ -52,7 +52,7 @@ export function SignersTable({
 						<tr key={signer.id}>
 							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{signer.id}</td>
 							<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-								{signer.publicKey.slice(0, 20)}...
+								{signer.publicKey.slice(0, 10)}...{signer.publicKey.slice(-10)}
 							</td>
 							<td className="px-6 py-4">
 								{signer.networks && signer.networks.length > 0 ? (

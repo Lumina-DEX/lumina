@@ -46,7 +46,9 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 								<div className="flex flex-col">
 									<span className="text-gray-900 font-medium">ID: {multisig.signerId}</span>
 									{multisig.signer && (
-										<span className="text-gray-500 font-mono text-xs">{multisig.signer.publicKey.slice(0, 15)}...</span>
+										<span className="text-gray-500 font-mono text-xs">
+											{multisig.signer.publicKey.slice(0, 10)}...{multisig.signer.publicKey.slice(-10)}
+										</span>
 									)}
 								</div>
 							</td>
