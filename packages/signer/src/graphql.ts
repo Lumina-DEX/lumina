@@ -206,7 +206,7 @@ const UpdateSignerNetworkInput = builder.inputType("UpdateSignerNetworkInput", {
 })
 
 const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
-	return "deployer" in data
+	return data && "deployer" in data
 }
 
 // ==================== SIGNER QUERIES ====================
@@ -530,10 +530,6 @@ builder.subscriptionField("factoryDeployment", (t) =>
 				}
 				const job = q.getJob(args.jobId)
 				if (!job) return rfail(`Factory deployment job ${args.jobId} not found`)
-
-				if (!isFactoryJob(job.data)) {
-					return rfail(`Job ${args.jobId} is not a factory deployment job`)
-				}
 
 				if (job.status === "failed") return rfail(`Factory deployment job ${args.jobId} failed`)
 				if (job.status === "completed") {

@@ -1,5 +1,5 @@
 import { allRight, Multisig, MultisigInfo, PoolFactory, SignatureInfo, UpdateSignerData } from "@lumina-dex/contracts"
-import { Mina, Poseidon, PrivateKey, PublicKey, Signature, UInt32 } from "o1js"
+import { Field, Mina, Poseidon, PrivateKey, PublicKey, Signature, UInt32 } from "o1js"
 import { getDb } from "@/db"
 import { factory, multisig, poolKey, signerMerkle } from "../../drizzle/schema"
 import type { DeployFactoryInputType } from "../graphql"
@@ -55,8 +55,13 @@ export const deployFactoryAndTransaction = async ({
 	logger.log(`Found ${signatures.length} signatures for factory deployment`)
 
 	// Parse UpdateSignerData from the first signature to get messageHash
-	const updateSignerJson: UpdateSignerData = JSON.parse(data)
-	const messageHash = updateSignerJson.hash()
+	const updateSignerJson: { oldRoot: string; newRoot: string; deadlineSlot: number } = JSON.parse(data)
+	const updateSigner = new UpdateSignerData({
+		oldRoot: Field(updateSignerJson.oldRoot),
+		newRoot: Field(updateSignerJson.newRoot),
+		deadlineSlot: UInt32.from(updateSignerJson.deadlineSlot)
+	})
+	const messageHash = updateSigner.hash()
 	const deadlineSlot = UInt32.from(signatures[0].deadline)
 
 	// Create MultisigInfo
@@ -99,7 +104,7 @@ export const deployFactoryAndTransaction = async ({
 
 		// Store encrypted factory private key in poolKey table using double encryption
 		// getUniqueUserPairs(users, id, key, isFactory)
-		const listPair = getUniqueUserPairs(users, factoryId, factoryPrivateKey.toBase58(), true)
+		const listPair = getUniqueUserPairs(users, factoryId!, factoryPrivateKey.toBase58(), true)
 		await txOrm.insert(poolKey).values(listPair)
 		logger.log("Stored encrypted factory private key")
 

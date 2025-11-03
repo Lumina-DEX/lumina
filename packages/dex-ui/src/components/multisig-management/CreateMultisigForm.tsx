@@ -1,18 +1,18 @@
 import { NetworkEnum, networkEnumToValue, NETWORK_OPTIONS } from "@/models/network-type"
-import { MULTISIG_QUERIES, SIGNER_QUERIES } from "@/models/queries"
+import { SIGNER_QUERIES } from "@/models/queries"
 import { Signer } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
 import {
-	getAuroAccounts,
-	connectAuroWallet,
 	getSlotFromTimestamp,
 	UpdateSignerData,
 	hashUpdateSignerData,
 	signWithAuro,
-	serializeUpdateSignerData
+	serializeUpdateSignerData,
+	buildMerkleRoot
 } from "@/utils/multisig"
-import { Field } from "o1js"
-import { useState, useEffect } from "react"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { useState, useEffect, useContext, useEffectEvent } from "react"
+import { LuminaContext } from "../Layout"
 
 interface CreateMultisigFormProps {
 	signers: Signer[]
@@ -28,15 +28,16 @@ interface CreateMultisigFormProps {
 }
 
 export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: CreateMultisigFormProps) {
-	const [signerId, setSignerId] = useState<number>(signers[0]?.id || 0)
 	const [network, setNetwork] = useState<NetworkEnum>("mina_mainnet")
 	const [deadlineDate, setDeadlineDate] = useState("")
 	const [oldRoot, setOldRoot] = useState<string>("0") // Field.empty() = Field(0)
 	const [merkleRoot, setMerkleRoot] = useState<string>("")
-	const [connectedWallet, setConnectedWallet] = useState<string | null>(null)
 	const [isGenerating, setIsGenerating] = useState(false)
 	const [networkSigners, setNetworkSigners] = useState<Signer[]>([])
 	const [error, setError] = useState<string>("")
+	const { Wallet } = useContext(LuminaContext)
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const walletContext = useSelector(Wallet, (state) => state.context)
 
 	// Set default date to 1 day from now
 	useEffect(() => {
@@ -46,11 +47,6 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 		setDeadlineDate(dateStr)
 	}, [])
 
-	// Check if AuroWallet is connected
-	useEffect(() => {
-		checkWalletConnection()
-	}, [])
-
 	// Fetch signers and calculate merkle root when network changes
 	useEffect(() => {
 		if (network) {
@@ -58,26 +54,9 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 		}
 	}, [network])
 
-	const checkWalletConnection = async () => {
-		try {
-			const accounts = await getAuroAccounts()
-			if (accounts.length > 0) {
-				setConnectedWallet(accounts[0])
-			}
-		} catch (error) {
-			console.error("Failed to check wallet connection:", error)
-		}
-	}
-
-	const handleConnectWallet = async () => {
-		try {
-			setError("")
-			const account = await connectAuroWallet()
-			setConnectedWallet(account)
-		} catch (error) {
-			setError(error instanceof Error ? error.message : "Failed to connect wallet")
-		}
-	}
+	const handleConnectWallet = useEffectEvent(() => {
+		Wallet.send({ type: "Connect" })
+	})
 
 	const fetchNetworkSigners = async (selectedNetwork: NetworkEnum) => {
 		try {
@@ -99,12 +78,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 				})
 
 			if (activeSigners.length > 0) {
-				// Pour l'instant, on simule un root
-				// Dans la réalité, le backend devrait calculer et retourner le merkle root
-				const rootHash = `0x${Array(64)
-					.fill(0)
-					.map(() => Math.floor(Math.random() * 16).toString(16))
-					.join("")}`
+				const rootHash = buildMerkleRoot(activeSigners)
 				setMerkleRoot(rootHash)
 			} else {
 				setMerkleRoot("")
@@ -117,7 +91,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 	}
 
 	const handleGenerateSignature = async () => {
-		if (!connectedWallet) {
+		if (walletState === "INIT") {
 			setError("Please connect your wallet first")
 			return
 		}
@@ -153,11 +127,11 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 			const fieldsToSign = await hashUpdateSignerData(updateData)
 
 			// Sign with AuroWallet
-			const { signature, publicKey } = await signWithAuro(fieldsToSign)
+			const signature = await signWithAuro(fieldsToSign)
 			console.log("signature", signature)
 
 			// Find signer ID from public key
-			const signer = signers.find((s) => s.publicKey === publicKey)
+			const signer = signers.find((s) => s.publicKey === walletContext.account)
 			if (!signer) {
 				throw new Error("Connected wallet public key does not match any signer")
 			}
@@ -201,12 +175,12 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 			{/* Wallet Connection */}
 			<div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
 				<label className="block text-sm font-medium text-gray-700 mb-2">Wallet Connection</label>
-				{connectedWallet ? (
+				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<div className="w-2 h-2 bg-green-500 rounded-full"></div>
 							<span className="text-sm font-mono text-gray-700">
-								{connectedWallet.slice(0, 8)}...{connectedWallet.slice(-6)}
+								{walletContext.account.slice(0, 8)}...{walletContext.account.slice(-6)}
 							</span>
 						</div>
 						<span className="text-xs text-green-600 font-medium">Connected</span>
@@ -318,7 +292,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 				</button>
 				<button
 					onClick={handleGenerateSignature}
-					disabled={!connectedWallet || !merkleRoot || isGenerating}
+					disabled={walletState !== "READY" || !merkleRoot || isGenerating}
 					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
 				>
 					{isGenerating ? "Generating..." : "Generate & Sign"}

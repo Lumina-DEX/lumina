@@ -83,7 +83,9 @@ export function getUniqueUserPairs(users: NewSignerMerkle[], id: number, key: st
 			}
 			if (isFactory) {
 				poolKeyRow.factoryId = id
+				poolKeyRow.poolId = null
 			} else {
+				poolKeyRow.factoryId = null
 				poolKeyRow.poolId = id
 			}
 			pairs.push(poolKeyRow)

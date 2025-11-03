@@ -3,15 +3,16 @@ import { MULTISIG_QUERIES, SIGNER_QUERIES, FACTORY_QUERIES } from "@/models/quer
 import { Signer } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
 import {
-	getAuroAccounts,
-	connectAuroWallet,
 	getSlotFromTimestamp,
 	UpdateSignerData,
 	hashUpdateSignerData,
 	signWithAuro,
-	serializeUpdateSignerData
+	serializeUpdateSignerData,
+	buildMerkleRoot
 } from "@/utils/multisig"
-import { useState, useEffect } from "react"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { useState, useEffect, useContext, useEffectEvent } from "react"
+import { LuminaContext } from "../Layout"
 
 interface DeployFactoryFormProps {
 	signers: Signer[]
@@ -27,10 +28,12 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 	const [merkleRoot, setMerkleRoot] = useState<string>("")
 	const [protocol, setProtocol] = useState<string>("")
 	const [delegator, setDelegator] = useState<string>("")
-	const [connectedWallet, setConnectedWallet] = useState<string | null>(null)
 	const [isDeploying, setIsDeploying] = useState(false)
 	const [networkSigners, setNetworkSigners] = useState<Signer[]>([])
 	const [error, setError] = useState<string>("")
+	const { Wallet } = useContext(LuminaContext)
+	const walletState = useSelector(Wallet, (state) => state.value)
+	const walletContext = useSelector(Wallet, (state) => state.context)
 
 	// Set default date to 1 day from now
 	useEffect(() => {
@@ -40,11 +43,6 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 		setDeadlineDate(dateStr)
 	}, [])
 
-	// Check if AuroWallet is connected
-	useEffect(() => {
-		checkWalletConnection()
-	}, [])
-
 	// Fetch signers and calculate merkle root when network changes
 	useEffect(() => {
 		if (network) {
@@ -52,26 +50,9 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 		}
 	}, [network])
 
-	const checkWalletConnection = async () => {
-		try {
-			const accounts = await getAuroAccounts()
-			if (accounts.length > 0) {
-				setConnectedWallet(accounts[0])
-			}
-		} catch (error) {
-			console.error("Failed to check wallet connection:", error)
-		}
-	}
-
-	const handleConnectWallet = async () => {
-		try {
-			setError("")
-			const account = await connectAuroWallet()
-			setConnectedWallet(account)
-		} catch (error) {
-			setError(error instanceof Error ? error.message : "Failed to connect wallet")
-		}
-	}
+	const handleConnectWallet = useEffectEvent(() => {
+		Wallet.send({ type: "Connect" })
+	})
 
 	const fetchNetworkSigners = async (selectedNetwork: NetworkEnum) => {
 		try {
@@ -93,12 +74,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 				})
 
 			if (activeSigners.length > 0) {
-				// Pour l'instant, on simule un root
-				// Dans la réalité, le backend devrait calculer et retourner le merkle root
-				const rootHash = `0x${Array(64)
-					.fill(0)
-					.map(() => Math.floor(Math.random() * 16).toString(16))
-					.join("")}`
+				const rootHash = buildMerkleRoot(activeSigners)
 				setMerkleRoot(rootHash)
 			} else {
 				setMerkleRoot("")
@@ -111,7 +87,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 	}
 
 	const validateInputs = (): boolean => {
-		if (!connectedWallet) {
+		if (walletState === "INIT") {
 			setError("Please connect your wallet first")
 			return false
 		}
@@ -177,10 +153,10 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 			const fieldsToSign = await hashUpdateSignerData(updateData)
 
 			// Sign with AuroWallet
-			const { signature, publicKey } = await signWithAuro(fieldsToSign)
+			const signature = await signWithAuro(fieldsToSign)
 
 			// Find signer ID from public key
-			const signer = signers.find((s) => s.publicKey === publicKey)
+			const signer = signers.find((s) => s.publicKey === walletContext.account)
 			if (!signer) {
 				throw new Error("Connected wallet public key does not match any signer")
 			}
@@ -209,7 +185,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 				FACTORY_QUERIES.DEPLOY_FACTORY,
 				{
 					input: {
-						deployer: connectedWallet,
+						deployer: walletContext.account,
 						network,
 						protocol,
 						delegator,
@@ -250,12 +226,12 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 			{/* Wallet Connection */}
 			<div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
 				<label className="block text-sm font-medium text-gray-700 mb-2">Deployer Wallet</label>
-				{connectedWallet ? (
+				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<div className="w-2 h-2 bg-green-500 rounded-full"></div>
 							<span className="text-sm font-mono text-gray-700">
-								{connectedWallet.slice(0, 8)}...{connectedWallet.slice(-6)}
+								{walletContext.account.slice(0, 8)}...{walletContext.account.slice(-6)}
 							</span>
 						</div>
 						<span className="text-xs text-green-600 font-medium">Connected</span>
@@ -398,7 +374,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 				</button>
 				<button
 					onClick={handleDeployFactory}
-					disabled={!connectedWallet || !merkleRoot || isDeploying}
+					disabled={walletState !== "READY" || !merkleRoot || isDeploying}
 					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
 				>
 					{isDeploying ? "Deploying..." : "Deploy Factory"}
