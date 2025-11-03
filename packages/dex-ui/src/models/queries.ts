@@ -98,3 +98,34 @@ export const SIGNER_QUERIES = {
 		}
 	`
 }
+
+export const FACTORY_QUERIES = {
+	DEPLOY_FACTORY: `
+		mutation DeployFactory($input: DeployFactoryInput!) {
+			deployFactory(input: $input) {
+				id
+				status
+			}
+		}
+	`,
+	GET_FACTORY_JOB: `
+		query GetFactoryJob($jobId: String!) {
+			factoryDeploymentJob(jobId: $jobId) {
+				status
+				factoryPublicKey
+				transactionJson
+				completedAt
+			}
+		}
+	`,
+	SUBSCRIBE_FACTORY_DEPLOYMENT: `
+		subscription FactoryDeployment($jobId: String!) {
+			factoryDeployment(jobId: $jobId) {
+				status
+				factoryPublicKey
+				transactionJson
+				completedAt
+			}
+		}
+	`
+}
