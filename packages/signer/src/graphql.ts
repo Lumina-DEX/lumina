@@ -560,10 +560,6 @@ builder.queryField("factoryDeploymentJob", (t) =>
 			const job = q.getJob(jobId)
 			if (!job) return fail(`Factory deployment job ${jobId} not found`)
 
-			if (!isFactoryJob(job.data)) {
-				return fail(`Job ${jobId} is not a factory deployment job`)
-			}
-
 			if (job.status === "failed") return fail(`Factory deployment job ${jobId} failed`)
 			logger.log(`Factory deployment job ${jobId} found:`, job)
 			return job as FactoryJobResult

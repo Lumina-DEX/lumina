@@ -54,6 +54,16 @@ export const deployFactoryAndTransaction = async ({
 
 	logger.log(`Found ${signatures.length} signatures for factory deployment`)
 
+	const byUser = new Map<string, (typeof signatures)[number]>()
+	for (const s of signatures) {
+		if (!byUser.has(s.signerPublicKey)) byUser.set(s.signerPublicKey, s)
+		if (byUser.size === 2) break
+	}
+	const twoDistinct = Array.from(byUser.values())
+	if (twoDistinct.length < 2) {
+		throw new Error("Need signatures from 2 distinct users")
+	}
+
 	// Parse UpdateSignerData from the first signature to get messageHash
 	const updateSignerJson: { oldRoot: string; newRoot: string; deadlineSlot: number } = JSON.parse(data)
 	const updateSigner = new UpdateSignerData({
@@ -72,15 +82,15 @@ export const deployFactoryAndTransaction = async ({
 	})
 
 	// Create SignatureInfo array from database signatures
-	const signatureInfoArray: SignatureInfo[] = signatures.map((sig) => {
+	const signatureInfoArray: SignatureInfo[] = twoDistinct.map((sig) => {
 		const userPublicKey = PublicKey.fromBase58(sig.signerPublicKey)
 		const signature = Signature.fromBase58(sig.signature)
 		const witness = merkle.getWitness(Poseidon.hash(userPublicKey.toFields()))
 
 		return new SignatureInfo({
 			user: userPublicKey,
-			witness: witness,
-			signature: signature,
+			witness,
+			signature,
 			right: allRight
 		})
 	})
