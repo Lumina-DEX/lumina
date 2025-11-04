@@ -1,4 +1,4 @@
-import { Field, MerkleMap, Mina, Poseidon, PublicKey } from "o1js"
+import { Field, MerkleMap, Mina, Poseidon, PublicKey, Struct, UInt32 } from "o1js"
 
 declare global {
 	interface Window {
@@ -31,6 +31,35 @@ const NETWORK_CONSTANTS = {
 	}
 }
 
+class UpdateSignerInfo extends Struct({
+	// old signer root
+	oldRoot: Field,
+	// new signer root
+	newRoot: Field,
+	// deadline to use this signature
+	deadlineSlot: UInt32
+}) {
+	constructor(value: {
+		oldRoot: Field
+		newRoot: Field
+		deadlineSlot: UInt32
+	}) {
+		super(value)
+	}
+
+	/**
+	 * Data use to create the signature
+	 * @returns array of field of all parameters
+	 */
+	toFields(): Field[] {
+		return UpdateSignerInfo.toFields(this)
+	}
+
+	hash(): Field {
+		return Poseidon.hashWithPrefix("UpdateSigner", this.toFields())
+	}
+}
+
 export interface UpdateSignerData {
 	oldRoot: string
 	newRoot: string
@@ -43,16 +72,15 @@ export function getSlotFromTimestamp(timestamp: number, network: keyof typeof NE
 	return slotCalculated
 }
 
-export async function hashUpdateSignerData(data: UpdateSignerData): Promise<string[]> {
-	const oldRootField = data.oldRoot === "" ? Field.from(0) : Field.from(data.oldRoot)
-	const newRootField = Field.from(data.newRoot)
-	const deadlineSlotField = Field.from(data.deadlineSlot)
+export function hashUpdateSignerData(data: UpdateSignerData): string[] {
+	const updateSigner = new UpdateSignerInfo({
+		oldRoot: Field.from(data.oldRoot),
+		newRoot: Field.from(data.newRoot),
+		deadlineSlot: UInt32.from(data.deadlineSlot)
+	})
 
-	// Structure: [oldRoot, newRoot, deadlineSlot]
-	const fields = [oldRootField, newRootField, deadlineSlotField]
-
-	// Return fields as strings pour signature
-	return fields.map((f) => f.toString())
+	// return an array to sign
+	return updateSigner.toFields().map((f) => f.toString())
 }
 
 export function serializeUpdateSignerData(data: UpdateSignerData): string {

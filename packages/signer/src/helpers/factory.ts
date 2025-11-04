@@ -72,7 +72,7 @@ export const deployFactoryAndTransaction = async ({
 		deadlineSlot: UInt32.from(updateSignerJson.deadlineSlot)
 	})
 	const messageHash = updateSigner.hash()
-	const deadlineSlot = UInt32.from(signatures[0].deadline)
+	const deadlineSlot = UInt32.from(updateSignerJson.deadlineSlot)
 
 	// Create MultisigInfo
 	const multi = new MultisigInfo({

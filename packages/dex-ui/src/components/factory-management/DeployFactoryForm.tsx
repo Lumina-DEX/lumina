@@ -26,8 +26,8 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 	const [deadlineDate, setDeadlineDate] = useState("")
 	const [oldRoot, setOldRoot] = useState<string>("0")
 	const [merkleRoot, setMerkleRoot] = useState<string>("")
-	const [protocol, setProtocol] = useState<string>("")
-	const [delegator, setDelegator] = useState<string>("")
+	const [protocol, setProtocol] = useState<string>("B62qpBKidvBH2YEWCwwkzLMFoBWa2fZknj6K5YWdqF5wAiLgoTExh42")
+	const [delegator, setDelegator] = useState<string>("B62qmibKL59uByUjbWmXYBPLhhs5GbUYSBWGThsEqkHkdNcU7FCdfYy")
 	const [isDeploying, setIsDeploying] = useState(false)
 	const [networkSigners, setNetworkSigners] = useState<Signer[]>([])
 	const [error, setError] = useState<string>("")
@@ -150,7 +150,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 			}
 
 			// Hash the data to get fields to sign
-			const fieldsToSign = await hashUpdateSignerData(updateData)
+			const fieldsToSign = hashUpdateSignerData(updateData)
 
 			// Sign with AuroWallet
 			const signature = await signWithAuro(fieldsToSign)

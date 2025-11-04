@@ -13,6 +13,7 @@ import {
 import { useSelector } from "@lumina-dex/sdk/react"
 import { useState, useEffect, useContext, useEffectEvent } from "react"
 import { LuminaContext } from "../Layout"
+import { Field, PublicKey, Signature } from "o1js"
 
 interface CreateMultisigFormProps {
 	signers: Signer[]
@@ -124,12 +125,19 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 			}
 
 			// Hash the data to get fields to sign
-			const fieldsToSign = await hashUpdateSignerData(updateData)
+			const fieldsToSign = hashUpdateSignerData(updateData)
 
 			// Sign with AuroWallet
 			const signature = await signWithAuro(fieldsToSign)
 			console.log("signature", signature)
 
+			const signMina = Signature.fromBase58(signature)
+			const result = signMina.verify(
+				PublicKey.fromBase58(walletContext.account),
+				fieldsToSign.map((f) => Field(f))
+			)
+
+			console.log("Signature verification result:", result.toString())
 			// Find signer ID from public key
 			const signer = signers.find((s) => s.publicKey === walletContext.account)
 			if (!signer) {
