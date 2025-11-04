@@ -130,7 +130,7 @@ export const deployFactoryAndTransaction = async ({
 			},
 			async () => {
 				logger.log("Funding new account for factory ...")
-				fundNewAccount(network, PublicKey.fromBase58(deployer), 4)
+				fundNewAccount(network, PublicKey.fromBase58(deployer), 1)
 
 				logger.log("Deploying factory ...")
 				await zkFactory.deploy({

@@ -8,6 +8,15 @@ declare global {
 				signature: string
 			}>
 			getAccounts: () => Promise<string[]>
+			sendTransaction: (args: {
+				transaction: string
+				feePayer?: {
+					fee?: number
+					memo?: string
+				}
+			}) => Promise<{
+				hash: string
+			}>
 		}
 	}
 }
@@ -114,4 +123,41 @@ export function buildMerkleRoot(signers: { publicKey: string; permission: number
 	})
 
 	return merkle.getRoot().toString()
+}
+
+export async function sendTransactionWithAuro(transactionJSON: string): Promise<string> {
+	if (!window.mina) {
+		throw new Error("AuroWallet is not installed")
+	}
+
+	try {
+		const result = await window.mina.sendTransaction({
+			transaction: transactionJSON,
+			feePayer: {
+				fee: 0.1, // 0.1 MINA fee
+				memo: "Factory Deployment"
+			}
+		})
+
+		return result.hash
+	} catch (error) {
+		console.error("Failed to send transaction:", error)
+		throw error
+	}
+}
+
+export async function waitForTransaction(hash: string, maxAttempts = 60): Promise<boolean> {
+	// Poll pour vérifier si la transaction est confirmée
+	// Dans un vrai système, vous devriez utiliser l'API du réseau
+	for (let i = 0; i < maxAttempts; i++) {
+		await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds
+
+		// TODO: Implémenter la vérification réelle avec l'API du réseau
+		// Pour l'instant, on simule une confirmation après 30 secondes
+		if (i > 6) {
+			return true
+		}
+	}
+
+	return false
 }

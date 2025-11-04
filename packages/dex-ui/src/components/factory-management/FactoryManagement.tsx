@@ -5,6 +5,7 @@ import { SIGNER_QUERIES, FACTORY_QUERIES } from "@/models/queries"
 import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
 import { Modal } from "../Modal"
 import { DeployFactoryForm } from "./DeployFactoryForm"
+import { sendTransactionWithAuro } from "@/utils/multisig"
 
 interface FactoryJob {
 	id: string
@@ -52,6 +53,12 @@ export default function FactoryManagement() {
 			fetchSigners()
 		}
 	}, [client])
+
+	useEffect(() => {
+		if (currentJob?.transactionJson) {
+			sendTransactionWithAuro(currentJob.transactionJson).then()
+		}
+	}, [currentJob])
 
 	const handleDeploySuccess = (jobId: string) => {
 		setCurrentJob({ id: jobId, status: "created" })

@@ -149,38 +149,10 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 				deadlineSlot
 			}
 
-			// Hash the data to get fields to sign
-			const fieldsToSign = hashUpdateSignerData(updateData)
-
-			// Sign with AuroWallet
-			const signature = await signWithAuro(fieldsToSign)
-
-			// Find signer ID from public key
-			const signer = signers.find((s) => s.publicKey === walletContext.account)
-			if (!signer) {
-				throw new Error("Connected wallet public key does not match any signer")
-			}
-
 			// Serialize data for storage
 			const serializedData = serializeUpdateSignerData(updateData)
 
-			// 1. Create the multisig signature in database
-			const multisigResponse = await client.query<{ createMultisig: { id: number } }>(
-				MULTISIG_QUERIES.CREATE_MULTISIG,
-				{
-					input: {
-						signerId: signer.id,
-						signature,
-						data: serializedData,
-						network,
-						deadline: Math.floor(deadlineTimestamp / 1000)
-					}
-				}
-			)
-
-			console.log("Multisig created:", multisigResponse.createMultisig.id)
-
-			// 2. Deploy the factory
+			// Deploy the factory
 			const factoryResponse = await client.query<{ deployFactory: { id: string; status: string } }>(
 				FACTORY_QUERIES.DEPLOY_FACTORY,
 				{
