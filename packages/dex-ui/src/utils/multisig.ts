@@ -1,4 +1,4 @@
-import { Field, MerkleMap, Poseidon, PublicKey } from "o1js"
+import { Field, MerkleMap, Mina, Poseidon, PublicKey } from "o1js"
 
 declare global {
 	interface Window {
@@ -14,19 +14,19 @@ declare global {
 
 const NETWORK_CONSTANTS = {
 	"mina:mainnet": {
-		genesisTimestamp: 1615939200000, // March 17, 2021
+		genesisTimestamp: 1717545600000, // "2024-06-04T16:00:00.000000-08:00"
 		slotTime: 180000 // 3 min in ms
 	},
 	"mina:devnet": {
-		genesisTimestamp: 1615939200000,
+		genesisTimestamp: 1712696400000, // "2024-04-09T13:00:00.000000-08:00"
 		slotTime: 180000
 	},
 	"zeko:mainnet": {
-		genesisTimestamp: 1615939200000,
+		genesisTimestamp: 1762246260891, // "2025-11-04T08:51:00.891794Z"
 		slotTime: 180000
 	},
 	"zeko:testnet": {
-		genesisTimestamp: 1615939200000,
+		genesisTimestamp: 1762246260891, // "2025-11-04T08:51:00.891794Z"
 		slotTime: 180000
 	}
 }

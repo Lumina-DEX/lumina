@@ -29,6 +29,7 @@ export default function Layout({ children }) {
 	const displayTextWallet = useSelector(Wallet, (state) => state.value)
 	const dexContext = useSelector(Dex, ({ context: { dex } }) => dex)
 	const walletContext = useSelector(Wallet, (state) => state.context)
+	const showDebug = localStorage.getItem("debug") === "true"
 
 	const DebugText = ({ children }) => (
 		<pre
@@ -49,7 +50,7 @@ export default function Layout({ children }) {
 						<Account />
 						<div className="flex flex-row w-screen p-5 items-center justify-center">{children}</div>
 					</div>
-					{process.env.NODE_ENV === "development" && (
+					{showDebug && (
 						<aside>
 							<div
 								className={styles.start}
