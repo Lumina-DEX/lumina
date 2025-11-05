@@ -1,11 +1,10 @@
 import { allRight, Multisig, MultisigInfo, PoolFactory, SignatureInfo, UpdateSignerData } from "@lumina-dex/contracts"
+import { and, eq } from "drizzle-orm"
 import { Field, Mina, Poseidon, PrivateKey, PublicKey, Signature, UInt32 } from "o1js"
 import { getDb } from "@/db"
 import { factory, multisig, poolKey, signerMerkle } from "../../drizzle/schema"
 import type { DeployFactoryInputType } from "../graphql"
-import { and, eq, sql } from "drizzle-orm"
-import { encryptedKeyToField, fundNewAccount, getFee, getMerkle, getNetwork, getUniqueUserPairs } from "./job"
-import { Encoding, Encryption } from "o1js"
+import { fundNewAccount, getFee, getMerkle, getNetwork, getUniqueUserPairs } from "./job"
 import { logger } from "./utils"
 
 export const deployFactoryAndTransaction = async ({

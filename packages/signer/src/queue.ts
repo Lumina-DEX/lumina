@@ -1,8 +1,8 @@
 import type { PubSub } from "graphql-yoga"
 import type { CreatePoolInputType, DeployFactoryInputType, FactoryJobResult, JobResult } from "./graphql"
 import { ensureCompiled } from "./helpers/contracts"
-import { createPoolAndTransaction } from "./helpers/pool"
 import { deployFactoryAndTransaction } from "./helpers/factory"
+import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
 
 type AnyJobResult = JobResult | FactoryJobResult

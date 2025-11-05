@@ -14,7 +14,7 @@ import {
 	PublicKey,
 	UInt64
 } from "o1js"
-import { pool, signerMerkle, signerMerkleNetworks, poolKey } from "../../drizzle/schema"
+import { pool, poolKey, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
 import type { getDb } from "../db"
 import { getEnv, logger } from "./utils"
 
@@ -74,7 +74,7 @@ export function getUniqueUserPairs(users: NewSignerMerkle[], id: number, key: st
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
 			poolKey.$inferInsert
-			let poolKeyRow: NewPoolKey = {
+			const poolKeyRow: NewPoolKey = {
 				signer1Id: userA.id,
 				signer2Id: userB.id,
 				generatedPublic1: encryptAPub,
