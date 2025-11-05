@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { Multisig } from "@/models/multisig"
 import type { NetworkEnum } from "@/models/network-type"
 import { MULTISIG_QUERIES } from "@/models/queries"
@@ -31,7 +31,7 @@ export default function MultisigManagement() {
 	}, [apiKey, endpoint])
 
 	// Fetch multisigs
-	const fetchMultisigs = async () => {
+	const fetchMultisigs = useCallback(async () => {
 		if (!client) return
 
 		setLoading(true)
@@ -46,10 +46,10 @@ export default function MultisigManagement() {
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [client, selectedNetwork])
 
 	// Fetch signers (for the create form)
-	const fetchSigners = async () => {
+	const fetchSigners = useCallback(async () => {
 		if (!client) return
 
 		try {
@@ -58,7 +58,7 @@ export default function MultisigManagement() {
 		} catch (err) {
 			console.error("Failed to fetch signers:", err)
 		}
-	}
+	}, [client])
 
 	useEffect(() => {
 		if (client && selectedNetwork) {

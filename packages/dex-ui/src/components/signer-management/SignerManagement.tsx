@@ -1,5 +1,5 @@
 import type { Networks } from "@lumina-dex/sdk"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { type NetworkEnum, networkValueToEnum } from "@/models/network-type"
 import { SIGNER_QUERIES } from "@/models/queries"
 import type { Signer, SignerNetwork } from "@/models/signer"
@@ -39,7 +39,7 @@ export default function SignerManagement() {
 	}, [apiKey, endpoint])
 
 	// Fetch signers
-	const fetchSigners = async () => {
+	const fetchSigners = useCallback(async () => {
 		if (!client) return
 
 		setLoading(true)
@@ -54,7 +54,7 @@ export default function SignerManagement() {
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [client, selectedNetwork])
 
 	useEffect(() => {
 		if (client && selectedNetwork) {

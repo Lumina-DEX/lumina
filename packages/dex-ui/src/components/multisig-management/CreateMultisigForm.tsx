@@ -1,6 +1,6 @@
 import { useSelector } from "@lumina-dex/sdk/react"
 import { Field, PublicKey, Signature } from "o1js"
-import { useContext, useEffect, useEffectEvent, useState } from "react"
+import { useCallback, useContext, useEffect, useEffectEvent, useState } from "react"
 import { NETWORK_OPTIONS, type NetworkEnum, networkEnumToValue } from "@/models/network-type"
 import { SIGNER_QUERIES } from "@/models/queries"
 import type { Signer } from "@/models/signer"
@@ -48,48 +48,51 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 		setDeadlineDate(dateStr)
 	}, [])
 
+	const handleConnectWallet = useEffectEvent(() => {
+		Wallet.send({ type: "Connect" })
+	})
+
+	const fetchNetworkSigners = useCallback(
+		async (selectedNetwork: NetworkEnum) => {
+			try {
+				const data = await client.query<{ signers: Signer[] }>(SIGNER_QUERIES.GET_SIGNERS, {
+					network: selectedNetwork
+				})
+
+				setNetworkSigners(data.signers)
+
+				// Calculate merkle root from active signers
+				const activeSigners = data.signers
+					.filter((s) => s.networks?.some((n) => n.active))
+					.map((s) => {
+						const networkData = s.networks?.find((n) => n.network === networkEnumToValue(selectedNetwork))
+						return {
+							publicKey: s.publicKey,
+							permission: networkData?.permission || 0
+						}
+					})
+
+				if (activeSigners.length > 0) {
+					const rootHash = buildMerkleRoot(activeSigners)
+					setMerkleRoot(rootHash)
+				} else {
+					setMerkleRoot("")
+					setError("No active signers found for this network")
+				}
+			} catch (error) {
+				console.error("Failed to fetch network signers:", error)
+				setError("Failed to fetch signers for network")
+			}
+		},
+		[client]
+	)
+
 	// Fetch signers and calculate merkle root when network changes
 	useEffect(() => {
 		if (network) {
 			fetchNetworkSigners(network)
 		}
-	}, [network])
-
-	const handleConnectWallet = useEffectEvent(() => {
-		Wallet.send({ type: "Connect" })
-	})
-
-	const fetchNetworkSigners = async (selectedNetwork: NetworkEnum) => {
-		try {
-			const data = await client.query<{ signers: Signer[] }>(SIGNER_QUERIES.GET_SIGNERS, {
-				network: selectedNetwork
-			})
-
-			setNetworkSigners(data.signers)
-
-			// Calculate merkle root from active signers
-			const activeSigners = data.signers
-				.filter((s) => s.networks?.some((n) => n.active))
-				.map((s) => {
-					const networkData = s.networks?.find((n) => n.network === networkEnumToValue(selectedNetwork))
-					return {
-						publicKey: s.publicKey,
-						permission: networkData?.permission || 0
-					}
-				})
-
-			if (activeSigners.length > 0) {
-				const rootHash = buildMerkleRoot(activeSigners)
-				setMerkleRoot(rootHash)
-			} else {
-				setMerkleRoot("")
-				setError("No active signers found for this network")
-			}
-		} catch (error) {
-			console.error("Failed to fetch network signers:", error)
-			setError("Failed to fetch signers for network")
-		}
-	}
+	}, [network, fetchNetworkSigners])
 
 	const handleGenerateSignature = async () => {
 		if (walletState === "INIT") {
@@ -167,7 +170,11 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 		return (
 			<div>
 				<p className="text-gray-600 mb-4">No signers available. Please create a signer first.</p>
-				<button onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+				<button
+					type="button"
+					onClick={onCancel}
+					className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+				>
 					Close
 				</button>
 			</div>
@@ -195,6 +202,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 					</div>
 				) : (
 					<button
+						type="button"
 						onClick={handleConnectWallet}
 						className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
 					>
@@ -299,6 +307,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 					Cancel
 				</button>
 				<button
+					type="button"
 					onClick={handleGenerateSignature}
 					disabled={walletState !== "READY" || !merkleRoot || isGenerating}
 					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"

@@ -1,5 +1,5 @@
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useContext, useEffect, useEffectEvent, useState } from "react"
+import { useCallback, useContext, useEffect, useEffectEvent, useState } from "react"
 import { NETWORK_OPTIONS, type NetworkEnum, networkEnumToValue } from "@/models/network-type"
 import { FACTORY_QUERIES, SIGNER_QUERIES } from "@/models/queries"
 import type { Signer } from "@/models/signer"
@@ -45,37 +45,40 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 		Wallet.send({ type: "Connect" })
 	})
 
-	const fetchNetworkSigners = async (selectedNetwork: NetworkEnum) => {
-		try {
-			const data = await client.query<{ signers: Signer[] }>(SIGNER_QUERIES.GET_SIGNERS, {
-				network: selectedNetwork
-			})
-
-			setNetworkSigners(data.signers)
-
-			// Calculate merkle root from active signers
-			const activeSigners = data.signers
-				.filter((s) => s.networks?.some((n) => n.active))
-				.map((s) => {
-					const networkData = s.networks?.find((n) => n.network === networkEnumToValue(selectedNetwork))
-					return {
-						publicKey: s.publicKey,
-						permission: networkData?.permission || 0
-					}
+	const fetchNetworkSigners = useCallback(
+		async (selectedNetwork: NetworkEnum) => {
+			try {
+				const data = await client.query<{ signers: Signer[] }>(SIGNER_QUERIES.GET_SIGNERS, {
+					network: selectedNetwork
 				})
 
-			if (activeSigners.length > 0) {
-				const rootHash = buildMerkleRoot(activeSigners)
-				setMerkleRoot(rootHash)
-			} else {
-				setMerkleRoot("")
-				setError("No active signers found for this network")
+				setNetworkSigners(data.signers)
+
+				// Calculate merkle root from active signers
+				const activeSigners = data.signers
+					.filter((s) => s.networks?.some((n) => n.active))
+					.map((s) => {
+						const networkData = s.networks?.find((n) => n.network === networkEnumToValue(selectedNetwork))
+						return {
+							publicKey: s.publicKey,
+							permission: networkData?.permission || 0
+						}
+					})
+
+				if (activeSigners.length > 0) {
+					const rootHash = buildMerkleRoot(activeSigners)
+					setMerkleRoot(rootHash)
+				} else {
+					setMerkleRoot("")
+					setError("No active signers found for this network")
+				}
+			} catch (error) {
+				console.error("Failed to fetch network signers:", error)
+				setError("Failed to fetch signers for network")
 			}
-		} catch (error) {
-			console.error("Failed to fetch network signers:", error)
-			setError("Failed to fetch signers for network")
-		}
-	}
+		},
+		[client]
+	)
 
 	// Fetch signers and calculate merkle root when network changes
 	useEffect(() => {
@@ -212,6 +215,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 					</div>
 				) : (
 					<button
+						type="button"
 						onClick={handleConnectWallet}
 						className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
 					>
@@ -347,6 +351,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 					Cancel
 				</button>
 				<button
+					type="button"
 					onClick={handleDeployFactory}
 					disabled={walletState !== "READY" || !merkleRoot || isDeploying}
 					className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"

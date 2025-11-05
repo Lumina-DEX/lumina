@@ -1,13 +1,13 @@
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useContext, useEffect, useState } from "react"
+import { useCallback, useContext, useEffect, useState } from "react"
 import { FACTORY_QUERIES, SIGNER_QUERIES } from "@/models/queries"
 import type { Signer } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
 import { sendTransactionWithAuro } from "@/utils/multisig"
+import { ApiConfiguration } from "../ApiConfiguration"
 import { LuminaContext } from "../Layout"
 import { Modal } from "../Modal"
 import { DeployFactoryForm } from "./DeployFactoryForm"
-import { ApiConfiguration } from "../ApiConfiguration"
 
 interface FactoryJob {
 	id: string
@@ -42,7 +42,7 @@ export default function FactoryManagement() {
 	}, [apiKey, endpoint])
 
 	// Fetch signers
-	const fetchSigners = async () => {
+	const fetchSigners = useCallback(async () => {
 		if (!client) return
 
 		try {
@@ -51,7 +51,7 @@ export default function FactoryManagement() {
 		} catch (err) {
 			console.error("Failed to fetch signers:", err)
 		}
-	}
+	}, [client])
 
 	useEffect(() => {
 		if (client) {
@@ -182,14 +182,6 @@ export default function FactoryManagement() {
 												className="text-sm font-mono text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
 											>
 												{hash.slice(0, 10)}...{hash.slice(-8)}
-												<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-													/>
-												</svg>
 											</a>
 										</div>
 									)}
