@@ -1,4 +1,4 @@
-import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
+import { NETWORK_OPTIONS, type NetworkEnum } from "@/models/network-type"
 
 interface FilterBarProps {
 	selectedNetwork: NetworkEnum | ""

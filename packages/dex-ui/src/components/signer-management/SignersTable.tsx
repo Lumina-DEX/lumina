@@ -1,4 +1,4 @@
-import { Signer, SignerNetwork } from "@/models/signer"
+import type { Signer, SignerNetwork } from "@/models/signer"
 import { NetworkRow } from "./NetworkRow"
 
 interface SignersTableProps {

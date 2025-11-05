@@ -1,12 +1,12 @@
-import { useState, useEffect, useContext } from "react"
+import { useSelector } from "@lumina-dex/sdk/react"
+import { useContext, useEffect, useState } from "react"
+import { FACTORY_QUERIES, SIGNER_QUERIES } from "@/models/queries"
+import type { Signer } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
-import { Signer } from "@/models/signer"
-import { SIGNER_QUERIES, FACTORY_QUERIES } from "@/models/queries"
-import { Modal } from "../Modal"
-import { DeployFactoryForm } from "./DeployFactoryForm"
 import { sendTransactionWithAuro } from "@/utils/multisig"
 import { LuminaContext } from "../Layout"
-import { useSelector } from "@lumina-dex/sdk/react"
+import { Modal } from "../Modal"
+import { DeployFactoryForm } from "./DeployFactoryForm"
 
 interface FactoryJob {
 	id: string

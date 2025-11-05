@@ -1,19 +1,19 @@
-import { NetworkEnum, networkEnumToValue, NETWORK_OPTIONS } from "@/models/network-type"
-import { SIGNER_QUERIES } from "@/models/queries"
-import { Signer } from "@/models/signer"
-import { GraphQLClient } from "@/utils/graphql-client"
-import {
-	getSlotFromTimestamp,
-	UpdateSignerData,
-	hashUpdateSignerData,
-	signWithAuro,
-	serializeUpdateSignerData,
-	buildMerkleRoot
-} from "@/utils/multisig"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useState, useEffect, useContext, useEffectEvent } from "react"
-import { LuminaContext } from "../Layout"
 import { Field, PublicKey, Signature } from "o1js"
+import { useContext, useEffect, useEffectEvent, useState } from "react"
+import { NETWORK_OPTIONS, type NetworkEnum, networkEnumToValue } from "@/models/network-type"
+import { SIGNER_QUERIES } from "@/models/queries"
+import type { Signer } from "@/models/signer"
+import type { GraphQLClient } from "@/utils/graphql-client"
+import {
+	buildMerkleRoot,
+	getSlotFromTimestamp,
+	hashUpdateSignerData,
+	serializeUpdateSignerData,
+	signWithAuro,
+	type UpdateSignerData
+} from "@/utils/multisig"
+import { LuminaContext } from "../Layout"
 
 interface CreateMultisigFormProps {
 	signers: Signer[]
@@ -186,7 +186,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+							<div className="w-2 h-2 bg-green-500 rounded-full" />
 							<span className="text-sm font-mono text-gray-700">
 								{walletContext.account.slice(0, 8)}...{walletContext.account.slice(-6)}
 							</span>

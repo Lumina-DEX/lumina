@@ -1,4 +1,4 @@
-import { Networks } from "@lumina-dex/sdk"
+import type { Networks } from "@lumina-dex/sdk"
 
 export type NetworkEnum = "mina_mainnet" | "mina_devnet" | "zeko_mainnet" | "zeko_testnet"
 

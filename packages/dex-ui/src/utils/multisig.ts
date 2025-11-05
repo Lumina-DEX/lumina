@@ -1,4 +1,4 @@
-import { Field, MerkleMap, Mina, Poseidon, PublicKey, Struct, UInt32 } from "o1js"
+import { Field, MerkleMap, Poseidon, PublicKey, Struct, UInt32 } from "o1js"
 
 declare global {
 	interface Window {

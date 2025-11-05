@@ -1,4 +1,4 @@
-import { SignerNetwork } from "@/models/signer"
+import type { SignerNetwork } from "@/models/signer"
 
 interface NetworkRowProps {
 	network: SignerNetwork
@@ -34,7 +34,7 @@ export function NetworkRow({
 						<input
 							type="number"
 							value={editingValue}
-							onChange={(e) => onPermissionChange(parseInt(e.target.value) || 0)}
+							onChange={(e) => onPermissionChange(Number.parseInt(e.target.value) || 0)}
 							className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
 							min="0"
 							autoFocus

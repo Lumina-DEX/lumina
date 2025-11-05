@@ -1,4 +1,4 @@
-import { Networks } from "@lumina-dex/sdk"
+import type { Networks } from "@lumina-dex/sdk"
 
 export interface Multisig {
 	id: number

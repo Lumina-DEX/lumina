@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react"
-import { MultisigTable } from "./MultisigTable"
-import { CreateMultisigForm } from "./CreateMultisigForm"
-import { Multisig } from "@/models/multisig"
-import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
+import { useEffect, useState } from "react"
+import type { Multisig } from "@/models/multisig"
+import type { NetworkEnum } from "@/models/network-type"
 import { MULTISIG_QUERIES } from "@/models/queries"
+import type { Signer } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
-import { Modal } from "../Modal"
 import { ApiConfiguration } from "../ApiConfiguration"
 import { FilterBar } from "../FilterBar"
-import { Signer } from "@/models/signer"
+import { Modal } from "../Modal"
+import { CreateMultisigForm } from "./CreateMultisigForm"
+import { MultisigTable } from "./MultisigTable"
 
 export default function MultisigManagement() {
 	const [apiKey, setApiKey] = useState("7810")

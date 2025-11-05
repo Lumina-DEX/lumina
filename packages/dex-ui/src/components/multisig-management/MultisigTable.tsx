@@ -1,4 +1,4 @@
-import { Multisig } from "@/models/multisig"
+import type { Multisig } from "@/models/multisig"
 
 interface MultisigTableProps {
 	multisigs: Multisig[]

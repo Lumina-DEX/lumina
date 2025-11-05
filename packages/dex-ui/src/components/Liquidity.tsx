@@ -1,5 +1,5 @@
 "use client"
-import type { LuminaPool, LuminaToken } from "@lumina-dex/sdk"
+import type { LuminaPool } from "@lumina-dex/sdk"
 import { debounce } from "@tanstack/react-pacer"
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"

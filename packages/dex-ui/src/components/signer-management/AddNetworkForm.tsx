@@ -1,6 +1,6 @@
-import { NETWORK_OPTIONS, NetworkEnum, networkValueToEnum } from "@/models/network-type"
-import { Signer } from "@/models/signer"
 import { useState } from "react"
+import { NETWORK_OPTIONS, type NetworkEnum, networkValueToEnum } from "@/models/network-type"
+import type { Signer } from "@/models/signer"
 
 interface AddNetworkFormProps {
 	signer: Signer
@@ -53,7 +53,7 @@ export function AddNetworkForm({ signer, onSubmit, onCancel }: AddNetworkFormPro
 				<input
 					type="number"
 					value={permission}
-					onChange={(e) => setPermission(parseInt(e.target.value))}
+					onChange={(e) => setPermission(Number.parseInt(e.target.value))}
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 					placeholder="0"
 					min="0"

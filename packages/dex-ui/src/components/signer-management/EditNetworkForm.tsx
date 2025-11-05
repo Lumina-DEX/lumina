@@ -1,5 +1,5 @@
-import { SignerNetwork } from "@/models/signer"
 import { useState } from "react"
+import type { SignerNetwork } from "@/models/signer"
 
 interface EditNetworkFormProps {
 	signerNetwork: SignerNetwork
@@ -32,7 +32,7 @@ export function EditNetworkForm({ signerNetwork, onSubmit, onCancel }: EditNetwo
 				<input
 					type="number"
 					value={permission}
-					onChange={(e) => setPermission(parseInt(e.target.value))}
+					onChange={(e) => setPermission(Number.parseInt(e.target.value))}
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 					min="0"
 					required

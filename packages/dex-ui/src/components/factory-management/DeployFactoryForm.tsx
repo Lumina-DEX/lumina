@@ -1,17 +1,15 @@
-import { NetworkEnum, networkEnumToValue, NETWORK_OPTIONS } from "@/models/network-type"
-import { MULTISIG_QUERIES, SIGNER_QUERIES, FACTORY_QUERIES } from "@/models/queries"
-import { Signer } from "@/models/signer"
-import { GraphQLClient } from "@/utils/graphql-client"
-import {
-	getSlotFromTimestamp,
-	UpdateSignerData,
-	hashUpdateSignerData,
-	signWithAuro,
-	serializeUpdateSignerData,
-	buildMerkleRoot
-} from "@/utils/multisig"
 import { useSelector } from "@lumina-dex/sdk/react"
-import { useState, useEffect, useContext, useEffectEvent } from "react"
+import { useContext, useEffect, useEffectEvent, useState } from "react"
+import { NETWORK_OPTIONS, type NetworkEnum, networkEnumToValue } from "@/models/network-type"
+import { FACTORY_QUERIES, SIGNER_QUERIES } from "@/models/queries"
+import type { Signer } from "@/models/signer"
+import type { GraphQLClient } from "@/utils/graphql-client"
+import {
+	buildMerkleRoot,
+	getSlotFromTimestamp,
+	serializeUpdateSignerData,
+	type UpdateSignerData
+} from "@/utils/multisig"
 import { LuminaContext } from "../Layout"
 
 interface DeployFactoryFormProps {
@@ -201,7 +199,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+							<div className="w-2 h-2 bg-green-500 rounded-full" />
 							<span className="text-sm font-mono text-gray-700">
 								{walletContext.account.slice(0, 8)}...{walletContext.account.slice(-6)}
 							</span>

@@ -1,16 +1,16 @@
-import { NetworkEnum, networkValueToEnum } from "@/models/network-type"
-import { Signer, SignerNetwork } from "@/models/signer"
+import type { Networks } from "@lumina-dex/sdk"
+import { useEffect, useState } from "react"
+import { type NetworkEnum, networkValueToEnum } from "@/models/network-type"
+import { SIGNER_QUERIES } from "@/models/queries"
+import type { Signer, SignerNetwork } from "@/models/signer"
 import { GraphQLClient } from "@/utils/graphql-client"
-import { Networks } from "@lumina-dex/sdk"
-import { Modal } from "../Modal"
-import { useState, useEffect } from "react"
 import { ApiConfiguration } from "../ApiConfiguration"
+import { FilterBar } from "../FilterBar"
+import { Modal } from "../Modal"
 import { AddNetworkForm } from "./AddNetworkForm"
 import { CreateSignerForm } from "./CreateSignerForm"
 import { EditNetworkForm } from "./EditNetworkForm"
-import { FilterBar } from "../FilterBar"
 import { SignersTable } from "./SignersTable"
-import { SIGNER_QUERIES } from "@/models/queries"
 
 export default function SignerManagement() {
 	const [apiKey, setApiKey] = useState("7810")
