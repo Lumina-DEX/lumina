@@ -25,7 +25,11 @@ export function AddNetworkForm({ signer, onSubmit, onCancel }: AddNetworkFormPro
 		return (
 			<div>
 				<p className="text-gray-600 mb-4">All networks are already configured for this signer.</p>
-				<button onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+				<button
+					type="button"
+					onClick={onCancel}
+					className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+				>
 					Close
 				</button>
 			</div>
@@ -35,7 +39,7 @@ export function AddNetworkForm({ signer, onSubmit, onCancel }: AddNetworkFormPro
 	return (
 		<form onSubmit={handleSubmit}>
 			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Network</span>
 				<select
 					value={network}
 					onChange={(e) => setNetwork(e.target.value as NetworkEnum)}
@@ -49,7 +53,7 @@ export function AddNetworkForm({ signer, onSubmit, onCancel }: AddNetworkFormPro
 				</select>
 			</div>
 			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Permission Level</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Permission Level</span>
 				<input
 					type="number"
 					value={permission}

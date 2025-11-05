@@ -7,6 +7,7 @@ import { sendTransactionWithAuro } from "@/utils/multisig"
 import { LuminaContext } from "../Layout"
 import { Modal } from "../Modal"
 import { DeployFactoryForm } from "./DeployFactoryForm"
+import { ApiConfiguration } from "../ApiConfiguration"
 
 interface FactoryJob {
 	id: string
@@ -56,7 +57,7 @@ export default function FactoryManagement() {
 		if (client) {
 			fetchSigners()
 		}
-	}, [client])
+	}, [client, fetchSigners])
 
 	useEffect(() => {
 		if (currentJob?.status === "completed" && currentJob?.transactionJson) {
@@ -116,28 +117,12 @@ export default function FactoryManagement() {
 				{/* API Configuration */}
 				<div className="bg-white rounded-lg shadow p-6 mb-6">
 					<h2 className="text-xl font-semibold mb-4">API Configuration</h2>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">API Endpoint</label>
-							<input
-								type="text"
-								value={endpoint}
-								onChange={(e) => setEndpoint(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="https://your-api.com/graphql"
-							/>
-						</div>
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-							<input
-								type="password"
-								value={apiKey}
-								onChange={(e) => setApiKey(e.target.value)}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Enter your API key"
-							/>
-						</div>
-					</div>
+					<ApiConfiguration
+						endpoint={endpoint}
+						apiKey={apiKey}
+						onEndpointChange={setEndpoint}
+						onApiKeyChange={setApiKey}
+					/>
 				</div>
 
 				{/* Deploy Action */}
@@ -150,6 +135,7 @@ export default function FactoryManagement() {
 									<p className="text-sm text-gray-600">Deploy a new factory contract with multisig authorization</p>
 								</div>
 								<button
+									type="button"
 									onClick={() => setShowDeployModal(true)}
 									className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
 								>

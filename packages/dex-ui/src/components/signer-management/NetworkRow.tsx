@@ -37,15 +37,16 @@ export function NetworkRow({
 							onChange={(e) => onPermissionChange(Number.parseInt(e.target.value) || 0)}
 							className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
 							min="0"
-							autoFocus
 						/>
 						<button
+							type="button"
 							onClick={onSavePermission}
 							className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
 						>
 							Save
 						</button>
 						<button
+							type="button"
 							onClick={onCancelEdit}
 							className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
 						>
@@ -55,7 +56,7 @@ export function NetworkRow({
 				) : (
 					<div className="flex items-center gap-2">
 						<span className="text-xs text-gray-500">Permission: {network.permission}</span>
-						<button onClick={onEditPermission} className="text-xs text-blue-600 hover:text-blue-800">
+						<button onClick={onEditPermission} type="button" className="text-xs text-blue-600 hover:text-blue-800">
 							✏️
 						</button>
 					</div>
@@ -70,10 +71,10 @@ export function NetworkRow({
 				</span>
 			</div>
 			<div className="flex gap-2 ml-3">
-				<button onClick={onEdit} className="text-blue-600 hover:text-blue-800 text-sm">
+				<button type="button" onClick={onEdit} className="text-blue-600 hover:text-blue-800 text-sm">
 					Edit
 				</button>
-				<button onClick={onToggleActive} className="text-gray-600 hover:text-gray-800 text-sm">
+				<button onClick={onToggleActive} type="button" className="text-gray-600 hover:text-gray-800 text-sm">
 					{network.active ? "Deactivate" : "Activate"}
 				</button>
 			</div>

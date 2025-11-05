@@ -17,7 +17,7 @@ export function CreateSignerForm({ onSubmit, onCancel }: CreateSignerFormProps) 
 	return (
 		<form onSubmit={handleSubmit}>
 			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Public Key</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Public Key</span>
 				<input
 					type="text"
 					value={publicKey}

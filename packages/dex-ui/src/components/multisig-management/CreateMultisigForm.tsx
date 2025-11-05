@@ -182,7 +182,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 
 			{/* Wallet Connection */}
 			<div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Wallet Connection</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Wallet Connection</span>
 				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 
 			{/* Network Selection */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Network</span>
 				<select
 					value={network}
 					onChange={(e) => setNetwork(e.target.value as NetworkEnum)}
@@ -222,10 +222,10 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 
 			{/* Old Merkle Root */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">
+				<span className="block text-sm font-medium text-gray-700 mb-2">
 					Old Merkle Root
 					<span className="text-xs text-gray-500 ml-2">(Default: Field.empty() = 0)</span>
-				</label>
+				</span>
 				<input
 					type="text"
 					value={oldRoot}
@@ -238,7 +238,7 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 
 			{/* New Merkle Root Display */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">New Merkle Root</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">New Merkle Root</span>
 				<div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
 					{merkleRoot ? (
 						<span className="text-xs font-mono text-gray-700 break-all">{merkleRoot}</span>
@@ -258,10 +258,10 @@ export function CreateMultisigForm({ signers, client, onSubmit, onCancel }: Crea
 
 			{/* Deadline Date Selection */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">
+				<span className="block text-sm font-medium text-gray-700 mb-2">
 					Deadline Date
 					<span className="text-xs text-gray-500 ml-2">(UTC 00:00)</span>
-				</label>
+				</span>
 				<input
 					type="date"
 					value={deadlineDate}

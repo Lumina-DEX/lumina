@@ -19,7 +19,7 @@ export function EditNetworkForm({ signerNetwork, onSubmit, onCancel }: EditNetwo
 	return (
 		<form onSubmit={handleSubmit}>
 			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Network</span>
 				<input
 					type="text"
 					value={signerNetwork.network}
@@ -28,9 +28,10 @@ export function EditNetworkForm({ signerNetwork, onSubmit, onCancel }: EditNetwo
 				/>
 			</div>
 			<div className="mb-4">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Permission Level</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Permission Level</span>
 				<input
 					type="number"
+					name="permission"
 					value={permission}
 					onChange={(e) => setPermission(Number.parseInt(e.target.value))}
 					className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -39,7 +40,7 @@ export function EditNetworkForm({ signerNetwork, onSubmit, onCancel }: EditNetwo
 				/>
 			</div>
 			<div className="mb-4">
-				<label className="flex items-center">
+				<span className="flex items-center">
 					<input
 						type="checkbox"
 						checked={active}
@@ -47,7 +48,7 @@ export function EditNetworkForm({ signerNetwork, onSubmit, onCancel }: EditNetwo
 						className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
 					/>
 					<span className="text-sm font-medium text-gray-700">Active</span>
-				</label>
+				</span>
 			</div>
 			<div className="flex justify-end gap-3">
 				<button

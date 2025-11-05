@@ -41,13 +41,6 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 		setDeadlineDate(dateStr)
 	}, [])
 
-	// Fetch signers and calculate merkle root when network changes
-	useEffect(() => {
-		if (network) {
-			fetchNetworkSigners(network)
-		}
-	}, [network])
-
 	const handleConnectWallet = useEffectEvent(() => {
 		Wallet.send({ type: "Connect" })
 	})
@@ -83,6 +76,13 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 			setError("Failed to fetch signers for network")
 		}
 	}
+
+	// Fetch signers and calculate merkle root when network changes
+	useEffect(() => {
+		if (network) {
+			fetchNetworkSigners(network)
+		}
+	}, [network, fetchNetworkSigners])
 
 	const validateInputs = (): boolean => {
 		if (walletState === "INIT") {
@@ -180,7 +180,11 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 		return (
 			<div>
 				<p className="text-gray-600 mb-4">No signers available. Please create a signer first.</p>
-				<button onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+				<button
+					onClick={onCancel}
+					type="button"
+					className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+				>
 					Close
 				</button>
 			</div>
@@ -195,7 +199,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 			{/* Wallet Connection */}
 			<div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-				<label className="block text-sm font-medium text-gray-700 mb-2">Deployer Wallet</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Deployer Wallet</span>
 				{walletState === "READY" ? (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
@@ -218,7 +222,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 			{/* Network Selection */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Network</span>
 				<select
 					value={network}
 					onChange={(e) => setNetwork(e.target.value as NetworkEnum)}
@@ -235,7 +239,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 			{/* Protocol Address */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">Protocol Address</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Protocol Address</span>
 				<input
 					type="text"
 					value={protocol}
@@ -249,7 +253,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 			{/* Delegator Address */}
 			<div>
-				<label className="block text-sm font-medium text-gray-700 mb-2">Delegator Address</label>
+				<span className="block text-sm font-medium text-gray-700 mb-2">Delegator Address</span>
 				<input
 					type="text"
 					value={delegator}
@@ -266,10 +270,10 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 				{/* Old Merkle Root */}
 				<div className="mb-4">
-					<label className="block text-sm font-medium text-gray-700 mb-2">
+					<span className="block text-sm font-medium text-gray-700 mb-2">
 						Old Merkle Root
 						<span className="text-xs text-gray-500 ml-2">(Default: Field.empty() = 0)</span>
-					</label>
+					</span>
 					<input
 						type="text"
 						value={oldRoot}
@@ -281,7 +285,7 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 				{/* New Merkle Root Display */}
 				<div className="mb-4">
-					<label className="block text-sm font-medium text-gray-700 mb-2">New Merkle Root</label>
+					<span className="block text-sm font-medium text-gray-700 mb-2">New Merkle Root</span>
 					<div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md">
 						{merkleRoot ? (
 							<span className="text-xs font-mono text-gray-700 break-all">{merkleRoot}</span>
@@ -302,10 +306,10 @@ export function DeployFactoryForm({ signers, client, onSuccess, onCancel }: Depl
 
 				{/* Deadline Date Selection */}
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-2">
+					<span className="block text-sm font-medium text-gray-700 mb-2">
 						Deadline Date
 						<span className="text-xs text-gray-500 ml-2">(UTC 00:00)</span>
-					</label>
+					</span>
 					<input
 						type="date"
 						value={deadlineDate}

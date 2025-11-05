@@ -57,10 +57,10 @@ export default function SignerManagement() {
 	}
 
 	useEffect(() => {
-		if (client) {
+		if (client && selectedNetwork) {
 			fetchSigners()
 		}
-	}, [client, selectedNetwork])
+	}, [client, selectedNetwork, fetchSigners])
 
 	// Create signer
 	const createSigner = async (publicKey: string) => {

@@ -81,6 +81,7 @@ export function MultisigTable({ multisigs, loading, onDelete }: MultisigTablePro
 							</td>
 							<td className="px-6 py-4 whitespace-nowrap text-sm">
 								<button
+									type="button"
 									onClick={() => {
 										if (window.confirm("Are you sure you want to delete this multisig?")) {
 											onDelete(multisig.id)

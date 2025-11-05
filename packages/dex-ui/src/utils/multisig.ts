@@ -145,19 +145,3 @@ export async function sendTransactionWithAuro(transactionJSON: string): Promise<
 		throw error
 	}
 }
-
-export async function waitForTransaction(hash: string, maxAttempts = 60): Promise<boolean> {
-	// Poll pour vérifier si la transaction est confirmée
-	// Dans un vrai système, vous devriez utiliser l'API du réseau
-	for (let i = 0; i < maxAttempts; i++) {
-		await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds
-
-		// TODO: Implémenter la vérification réelle avec l'API du réseau
-		// Pour l'instant, on simule une confirmation après 30 secondes
-		if (i > 6) {
-			return true
-		}
-	}
-
-	return false
-}

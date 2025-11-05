@@ -11,7 +11,7 @@ export function FilterBar({ selectedNetwork, onNetworkChange, onCreate }: Filter
 		<div className="bg-white rounded-lg shadow p-6 mb-6">
 			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-4">
-					<label className="text-sm font-medium text-gray-700">Filter by Network:</label>
+					<span className="text-sm font-medium text-gray-700">Filter by Network:</span>
 					<select
 						value={selectedNetwork}
 						onChange={(e) => onNetworkChange(e.target.value as NetworkEnum | "")}

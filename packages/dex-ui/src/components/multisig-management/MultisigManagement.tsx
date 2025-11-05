@@ -61,11 +61,11 @@ export default function MultisigManagement() {
 	}
 
 	useEffect(() => {
-		if (client) {
+		if (client && selectedNetwork) {
 			fetchMultisigs()
 			fetchSigners()
 		}
-	}, [client, selectedNetwork])
+	}, [client, selectedNetwork, fetchMultisigs, fetchSigners])
 
 	// Create multisig
 	const createMultisig = async (input: {

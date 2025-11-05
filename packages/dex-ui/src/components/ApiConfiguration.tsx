@@ -11,7 +11,7 @@ export function ApiConfiguration({ endpoint, apiKey, onEndpointChange, onApiKeyC
 			<h2 className="text-xl font-semibold mb-4">API Configuration</h2>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-2">API Endpoint</label>
+					<span className="block text-sm font-medium text-gray-700 mb-2">API Endpoint</span>
 					<input
 						type="text"
 						value={endpoint}
@@ -21,7 +21,7 @@ export function ApiConfiguration({ endpoint, apiKey, onEndpointChange, onApiKeyC
 					/>
 				</div>
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+					<span className="block text-sm font-medium text-gray-700 mb-2">API Key</span>
 					<input
 						type="password"
 						value={apiKey}
