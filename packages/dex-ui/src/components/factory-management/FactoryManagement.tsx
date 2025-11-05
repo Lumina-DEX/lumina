@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { GraphQLClient } from "@/utils/graphql-client"
 import { Signer } from "@/models/signer"
 import { SIGNER_QUERIES, FACTORY_QUERIES } from "@/models/queries"
-import { NetworkEnum, NETWORK_OPTIONS } from "@/models/network-type"
 import { Modal } from "../Modal"
 import { DeployFactoryForm } from "./DeployFactoryForm"
 import { sendTransactionWithAuro } from "@/utils/multisig"
+import { LuminaContext } from "../Layout"
+import { useSelector } from "@lumina-dex/sdk/react"
 
 interface FactoryJob {
 	id: string
@@ -21,6 +22,9 @@ export default function FactoryManagement() {
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [signers, setSigners] = useState<Signer[]>([])
 	const [error, setError] = useState("")
+	const [hash, setHash] = useState("")
+	const { Wallet } = useContext(LuminaContext)
+	const walletContext = useSelector(Wallet, (state) => state.context)
 
 	// Modal state
 	const [showDeployModal, setShowDeployModal] = useState(false)
@@ -56,7 +60,7 @@ export default function FactoryManagement() {
 
 	useEffect(() => {
 		if (currentJob?.transactionJson) {
-			sendTransactionWithAuro(currentJob.transactionJson).then()
+			sendTransactionWithAuro(currentJob.transactionJson).then((x) => setHash(x))
 		}
 	}, [currentJob])
 
@@ -65,6 +69,18 @@ export default function FactoryManagement() {
 		setShowDeployModal(false)
 		setShowJobStatus(true)
 		pollJobStatus(jobId)
+	}
+
+	function getTransactionScanUrl(hash: string): string {
+		const scanUrls: Record<string, string> = {
+			"mina:mainnet": `https://minascan.io/mainnet/tx/${hash}`,
+			"mina:devnet": `https://minascan.io/devnet/tx/${hash}`,
+			"zeko:mainnet": `https://zeko-scan.io/mainnet/tx/${hash}`,
+			"zeko:testnet": `https://zeko-scan.io/testnet/tx/${hash}`
+		}
+		const network = walletContext.currentNetwork || "mina:mainnet"
+
+		return scanUrls[network]
 	}
 
 	const pollJobStatus = async (jobId: string) => {
@@ -82,6 +98,7 @@ export default function FactoryManagement() {
 					clearInterval(interval)
 				}
 			} catch (err) {
+				setCurrentJob({ ...currentJob, status: "failed" })
 				console.error("Failed to poll job status:", err)
 				clearInterval(interval)
 			}
@@ -169,6 +186,27 @@ export default function FactoryManagement() {
 											{currentJob.status}
 										</span>
 									</div>
+									{hash && (
+										<div className="flex items-center justify-between">
+											<span className="text-sm font-medium text-gray-700">Transaction:</span>
+											<a
+												href={getTransactionScanUrl(hash)}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="text-sm font-mono text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+											>
+												{hash.slice(0, 10)}...{hash.slice(-8)}
+												<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														strokeWidth={2}
+														d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+													/>
+												</svg>
+											</a>
+										</div>
+									)}
 									{currentJob.factoryPublicKey && (
 										<div className="flex items-center justify-between">
 											<span className="text-sm font-medium text-gray-700">Factory Address:</span>
@@ -177,7 +215,7 @@ export default function FactoryManagement() {
 									)}
 									{currentJob.status === "completed" && (
 										<div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
-											<p className="text-sm text-green-800 font-medium">✓ Factory deployed successfully!</p>
+											<p className="text-sm text-green-800 font-medium">✓ Factory generated!</p>
 										</div>
 									)}
 									{currentJob.status === "failed" && (
