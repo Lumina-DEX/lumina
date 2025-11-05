@@ -59,7 +59,7 @@ export default function FactoryManagement() {
 	}, [client])
 
 	useEffect(() => {
-		if (currentJob?.transactionJson) {
+		if (currentJob?.status === "completed" && currentJob?.transactionJson) {
 			sendTransactionWithAuro(currentJob.transactionJson).then((x) => setHash(x))
 		}
 	}, [currentJob])
