@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight, deployPoolRight } from "@lumina-dex/contracts"
+import { allRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -43,8 +43,6 @@ export async function getMerkle(database: Drizzle, network: Networks): Promise<[
 		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
 		.where(and(eq(signerMerkleNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
-	const _allRightHash = Poseidon.hash(allRight.toFields())
-	const _deployRightHash = Poseidon.hash(deployPoolRight.toFields())
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {

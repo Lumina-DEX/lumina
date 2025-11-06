@@ -1,8 +1,8 @@
-import { allRight, Multisig, MultisigInfo, PoolFactory, SignatureInfo, UpdateSignerData } from "@lumina-dex/contracts"
+import { Multisig, MultisigInfo, PoolFactory, SignatureInfo, UpdateSignerData } from "@lumina-dex/contracts"
 import { and, eq } from "drizzle-orm"
 import { Field, Mina, Poseidon, PrivateKey, PublicKey, Signature, UInt32 } from "o1js"
 import { getDb } from "@/db"
-import { factory, multisig, poolKey, signerMerkle } from "../../drizzle/schema"
+import { factory, multisig, poolKey, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
 import type { DeployFactoryInputType } from "../graphql"
 import { fundNewAccount, getFee, getMerkle, getNetwork, getUniqueUserPairs } from "./job"
 import { logger } from "./utils"
@@ -41,10 +41,15 @@ export const deployFactoryAndTransaction = async ({
 			signature: multisig.signature,
 			data: multisig.data,
 			deadline: multisig.deadline,
-			signerPublicKey: signerMerkle.publicKey
+			signerPublicKey: signerMerkle.publicKey,
+			right: signerMerkleNetworks.permission
 		})
 		.from(multisig)
 		.innerJoin(signerMerkle, eq(multisig.signerId, signerMerkle.id))
+		.innerJoin(
+			signerMerkleNetworks,
+			and(eq(signerMerkle.id, signerMerkleNetworks.signerId), eq(signerMerkleNetworks.network, network))
+		)
 		.where(and(eq(multisig.network, network), eq(multisig.data, data)))
 
 	if (signatures.length < 2) {
@@ -90,7 +95,7 @@ export const deployFactoryAndTransaction = async ({
 			user: userPublicKey,
 			witness,
 			signature,
-			right: allRight
+			right: Field(sig.right)
 		})
 	})
 
@@ -135,8 +140,8 @@ export const deployFactoryAndTransaction = async ({
 				await zkFactory.deploy({
 					symbol: "FAC",
 					src: "https://luminadex.com/",
-					protocol: PublicKey.fromBase58(protocol), // TODO: Set proper protocol address from config
-					delegator: PublicKey.fromBase58(delegator), // TODO: Set proper delegator address from config
+					protocol: PublicKey.fromBase58(protocol),
+					delegator: PublicKey.fromBase58(delegator),
 					approvedSigner: root,
 					multisig: new Multisig({ info: multi, signatures: signatureInfoArray })
 				})
