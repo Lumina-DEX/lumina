@@ -2,14 +2,13 @@ import { Cache, Mina } from "o1js"
 import { describe, expect, it } from "vitest"
 
 import {
-  contractHash,
-  contractHolderHash,
   FungibleToken,
   FungibleTokenAdmin,
   Pool,
   PoolFactory,
   PoolTokenHolder
 } from "../dist"
+import { poolHashTestnet, poolTokenHolderHashTestnet } from "../src/pool/VerificationKey"
 
 const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
@@ -25,8 +24,8 @@ describe("Check verification key", () => {
       21155315920244513361696679354690742153476743044380974966337181307650568441726n
     )
     const vkPool = await Pool.compile(cache)
-    expect(vkPool.verificationKey.hash.toBigInt()).toEqual(contractHash.toBigInt())
+    expect(vkPool.verificationKey.hash.toBigInt()).toEqual(poolHashTestnet.toBigInt())
     const vkPoolHolder = await PoolTokenHolder.compile(cache)
-    expect(vkPoolHolder.verificationKey.hash.toBigInt()).toEqual(contractHolderHash.toBigInt())
+    expect(vkPoolHolder.verificationKey.hash.toBigInt()).toEqual(poolTokenHolderHashTestnet.toBigInt())
   }, 600000)
 })
