@@ -28,7 +28,7 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 	logger.log(`Processing job ${jobId}:`, Date.now())
 
 	try {
-		await ensureCompiled()
+		await ensureCompiled(data.network)
 
 		if (isFactoryJob(data)) {
 			logger.log(`Processing factory deployment job ${jobId}`)

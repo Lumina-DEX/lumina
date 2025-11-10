@@ -1,7 +1,21 @@
-import { FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
+import {
+	FungibleToken,
+	FungibleTokenAdmin,
+	poolDataMainnet,
+	poolDataTestnet,
+	PoolFactory,
+	poolHashMainnet,
+	poolHashTestnet,
+	poolTokenHolderDataMainnet,
+	poolTokenHolderDataTestnet,
+	poolTokenHolderHashMainnet,
+	poolTokenHolderHashTestnet
+} from "@lumina-dex/contracts"
 import type { ConsolaInstance } from "consola"
-import { Cache } from "o1js"
+import { Cache, Mina, VerificationKey } from "o1js"
 import { logger } from "./utils"
+import { Networks } from "@lumina-dex/sdk"
+import { getNetwork } from "./job"
 
 const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	const start = performance.now()
@@ -16,13 +30,32 @@ const createMeasure = (l: ConsolaInstance) => (label: string) => {
 const time = createMeasure(logger)
 
 let isCompiled = false
+let isCompiledMainnet = false
 
-export const compileContracts = async () => {
-	if (isCompiled) {
+export const compileContracts = async (network: Networks) => {
+	const isMainnet = network.includes("mainnet")
+	if ((!isCompiled && !isMainnet) || (!isCompiledMainnet && isMainnet)) {
 		logger.log("Contracts already compiled, skipping...")
 		return
 	}
-	logger.log("Compiling contracts...")
+	Mina.setActiveInstance(getNetwork(network))
+
+	if (isMainnet) {
+		logger.log("Compiling contracts for mainnet...")
+		PoolFactory.vkPool = new VerificationKey({ data: poolDataMainnet, hash: poolHashMainnet })
+		PoolFactory.vkPoolTokenHolder = new VerificationKey({
+			data: poolTokenHolderDataMainnet,
+			hash: poolTokenHolderHashMainnet
+		})
+	} else {
+		logger.log("Compiling contracts for testnet/devnet...")
+		PoolFactory.vkPool = new VerificationKey({ data: poolDataTestnet, hash: poolHashTestnet })
+		PoolFactory.vkPoolTokenHolder = new VerificationKey({
+			data: poolTokenHolderDataTestnet,
+			hash: poolTokenHolderHashTestnet
+		})
+	}
+
 	// setNumberOfWorkers(4)
 	const c = time("compile")
 	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
@@ -42,13 +75,21 @@ export const compileContracts = async () => {
 	logger.log("factory vk hash", vk.verificationKey.hash.toBigInt())
 	c()
 
-	isCompiled = true
+	if (isMainnet) {
+		// todo find a solution to compile once by network
+		isCompiledMainnet = true
+		isCompiled = false
+	} else {
+		isCompiledMainnet = false
+		isCompiled = true
+	}
 	logger.log("✅ All contracts compiled successfully")
 }
 
-export const ensureCompiled = async () => {
-	if (!isCompiled) {
+export const ensureCompiled = async (network: Networks) => {
+	const isMainnet = network.includes("mainnet")
+	if ((!isCompiled && !isMainnet) || (!isCompiledMainnet && isMainnet)) {
 		logger.error("Contracts were not compiled.")
-		await compileContracts()
+		await compileContracts(network)
 	}
 }

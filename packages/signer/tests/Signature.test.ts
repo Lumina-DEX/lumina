@@ -68,7 +68,7 @@ describe("Signature", () => {
 	}, 300000)
 
 	it("fetch secret", async () => {
-		const secret = await getMasterSigner()
+		const secret = await getMasterSigner("mina:devnet")
 		expect(secret).toBeDefined()
 	})
 

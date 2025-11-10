@@ -3,10 +3,10 @@ import { graphql, type TadaDocumentNode } from "gql.tada"
 import { print } from "graphql"
 import { createPubSub, createYoga } from "graphql-yoga"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
-import { pool } from "../drizzle/schema"
+import { factory, pool } from "../drizzle/schema"
 import type { Context } from "../src"
 import { getDb } from "../src/db"
-import type { CreatePoolInputType, JobResult } from "../src/graphql"
+import type { CreatePoolInputType, DeployFactoryInputType, JobResult } from "../src/graphql"
 import { schema } from "../src/graphql"
 import { getJobQueue } from "../src/queue"
 import { readSSEStream, streamContainsError } from "./sse"
@@ -52,6 +52,32 @@ vi.mock("../src/helpers/pool", () => ({
 			console.log("Inserted pool record into database")
 			return {
 				poolPublicKey,
+				transactionJson: JSON.stringify({ hash: `tx-${jobId}` })
+			}
+		}
+	)
+}))
+
+vi.mock("../src/helpers/factory", () => ({
+	deployFactoryAndTransaction: vi.fn(
+		async ({ deployer, network, protocol, delegator, data, jobId }: DeployFactoryInputType & { jobId: string }) => {
+			console.log(`Mock called for job ${jobId} at ${new Date().toISOString()}`)
+			await new Promise((resolve) => setTimeout(resolve, 100))
+
+			const factoryPublicKey = `${POOL_PREFIX}-${jobId}`
+
+			// Insert into actual database like the real worker does
+			console.log("Using real database to insert pool record")
+			using db = getDb()
+			await db.drizzle.insert(factory).values({
+				publicKey: factoryPublicKey,
+				user: deployer,
+				network,
+				jobId
+			})
+			console.log("Inserted pool record into database")
+			return {
+				factoryPublicKey,
 				transactionJson: JSON.stringify({ hash: `tx-${jobId}` })
 			}
 		}
