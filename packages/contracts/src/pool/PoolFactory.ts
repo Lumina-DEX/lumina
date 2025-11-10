@@ -37,25 +37,12 @@ import {
   updateSignerRight,
   verifySignature
 } from "./Multisig.js"
-
-/**
- * Current verification key of pool contract
- */
-export const contractData =
-  "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"
-/**
- * Current hash of verification key of pool contract
- */
-export const contractHash = Field(7480901441026468595703278519003423509807923435933557767337375565636818933806n)
-/**
- * Current verification key of pool token holder contract
- */
-export const contractHolderData =
-  "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"
-/**
- * Current hash of verification key of pool token holder contract
- */
-export const contractHolderHash = Field(10934710013189555854007459451926974774069788064534905477416401624924106043331n)
+import {
+  poolDataTestnet,
+  poolHashTestnet,
+  poolTokenHolderDataTestnet,
+  poolTokenHolderHashTestnet
+} from "./VerificationKey.js"
 
 export type PoolFactoryBase = SmartContract & {
   getPoolVK(): Promise<VerificationKey>
@@ -141,6 +128,18 @@ export class UpdateSignerEvent extends Struct({
  * Factory who create pools
  */
 export class PoolFactory extends TokenContract implements PoolFactoryBase {
+  /**
+   * Current verification key of pool contract, can differ between networks
+   */
+  static vkPool: VerificationKey = new VerificationKey({ data: poolDataTestnet, hash: poolHashTestnet })
+  /**
+   * Current verification key of pool token holder contract, can differ between networks
+   */
+  static vkPoolTokenHolder: VerificationKey = new VerificationKey({
+    data: poolTokenHolderDataTestnet,
+    hash: poolTokenHolderHashTestnet
+  })
+
   /**
    * List of signer approved to deploy a new pool
    */
@@ -330,11 +329,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
    */
   @method.returns(VerificationKey)
   async getPoolVK() {
-    const verificationKey = new VerificationKey({
-      data: contractData,
-      hash: contractHash
-    })
-    return verificationKey
+    return PoolFactory.vkPool
   }
 
   /**
@@ -343,11 +338,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
    */
   @method.returns(VerificationKey)
   async getPoolTokenHolderVK() {
-    const verificationKey = new VerificationKey({
-      data: contractHolderData,
-      hash: contractHolderHash
-    })
-    return verificationKey
+    return PoolFactory.vkPoolTokenHolder
   }
 
   /**
@@ -441,7 +432,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
     poolAccount.account.isNew.requireEquals(Bool(true))
 
     // set pool account vk and permission
-    poolAccount.body.update.verificationKey = { isSome: Bool(true), value: { data: contractData, hash: contractHash } }
+    poolAccount.body.update.verificationKey = { isSome: Bool(true), value: PoolFactory.vkPool }
     poolAccount.body.update.permissions = {
       isSome: Bool(true),
       value: {
@@ -527,10 +518,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
     poolHolderAccount.account.isNew.requireEquals(Bool(true))
 
     // set pool token holder account vk and permission
-    poolHolderAccount.body.update.verificationKey = {
-      isSome: Bool(true),
-      value: { data: contractHolderData, hash: contractHolderHash }
-    }
+    poolHolderAccount.body.update.verificationKey = { isSome: Bool(true), value: PoolFactory.vkPoolTokenHolder }
     poolHolderAccount.body.update.permissions = {
       isSome: Bool(true),
       value: {
