@@ -1,4 +1,4 @@
-import { deployPoolRight, PoolFactory } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight, PoolFactory } from "@lumina-dex/contracts"
 import { luminadexFactories, MINA_ADDRESS } from "@lumina-dex/sdk"
 import { fetchAccount, Mina, Poseidon, PrivateKey, Provable, PublicKey, Signature, TokenId, UInt64 } from "o1js"
 import { getDb } from "@/db"
@@ -31,8 +31,8 @@ export const createPoolAndTransaction = async ({
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
-	const masterSigner = await getMasterSigner()
-	const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
+	//const masterSigner = await getMasterSigner()
+	const masterSignerPrivateKey = PrivateKey.fromBase58(process.env.SIGNER1!)
 	const masterSignerPublicKey = masterSignerPrivateKey.toPublicKey()
 
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
@@ -110,14 +110,7 @@ export const createPoolAndTransaction = async ({
 					fundNewAccount(network, PublicKey.fromBase58(user), 4)
 					const token = tokenA === MINA_ADDRESS ? tokenB : tokenA
 					logger.log("Creating Mina token pool ...", token)
-					await zkFactory.createPool(
-						newPoolPublicKey,
-						token1,
-						masterSignerPublicKey,
-						signature,
-						witness,
-						deployPoolRight
-					)
+					await zkFactory.createPool(newPoolPublicKey, token1, masterSignerPublicKey, signature, witness, allRight)
 					logger.log("Mina token pool created successfully")
 				}
 				if (!isMinaTokenPool) {
@@ -130,7 +123,7 @@ export const createPoolAndTransaction = async ({
 						masterSignerPublicKey,
 						signature,
 						witness,
-						deployPoolRight
+						allRight
 					)
 				}
 			}

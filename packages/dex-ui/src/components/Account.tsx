@@ -7,6 +7,7 @@ import Menu from "./Menu"
 
 export const zekoTestnet: Networks = "zeko:testnet"
 export const minaTestnet: Networks = "mina:devnet"
+export const mina: Networks = "mina:mainnet"
 
 const Account = () => {
 	const { Wallet } = useContext(LuminaContext)
@@ -68,9 +69,10 @@ const Account = () => {
 							value={walletContext.currentNetwork}
 							onChange={async (ev) => await switchNetwork(ev.target.value as Networks)}
 						>
-							{walletContext.currentNetwork !== zekoTestnet && walletContext.currentNetwork !== minaTestnet && (
-								<option>N/A</option>
-							)}
+							{walletContext.currentNetwork !== zekoTestnet &&
+								walletContext.currentNetwork !== minaTestnet &&
+								walletContext.currentNetwork !== mina && <option>N/A</option>}
+							<option value={mina}>Mina</option>
 							<option value={zekoTestnet}>Zeko</option>
 							<option value={minaTestnet}>Devnet</option>
 						</select>

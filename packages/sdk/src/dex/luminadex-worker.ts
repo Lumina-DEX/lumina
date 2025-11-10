@@ -128,15 +128,17 @@ const initContracts = async () => {
 let globalCache: ReturnType<typeof readCache>
 const compileContract = async ({ contract, disableCache }: { contract: ContractName; disableCache: boolean }) => {
 	try {
+		Mina.setActiveInstance(minaNetwork("mina:mainnet"))
+
 		const contracts = context().contracts
 
-		if (disableCache) {
-			logger.start("Compiling contract without cache", contract)
-			logger.warn("Cache is disabled")
-			await contracts[contract].compile({})
-			logger.success("Compiled contract successfully without cache", contract)
-			return
-		}
+		//if (disableCache) {
+		logger.start("Compiling contract without cache", contract)
+		logger.warn("Cache is disabled")
+		await contracts[contract].compile({})
+		logger.success("Compiled contract successfully without cache", contract)
+		return
+		//}
 
 		if (!globalCache) {
 			logger.warn("No global cache found, fetching zipped contracts")
@@ -144,7 +146,8 @@ const compileContract = async ({ contract, disableCache }: { contract: ContractN
 			globalCache = readCache(cacheFiles)
 		}
 		logger.start("Compiling contract with cache", contract)
-		await contracts[contract].compile({ cache: globalCache })
+		const vk = await contracts[contract].compile({ cache: globalCache })
+		logger.success("Compiled contract vk hash", vk.verificationKey.hash.toString())
 		logger.success("Compiled contract successfully with cache", contract)
 	} catch (error) {
 		logger.error(`Contract compilation failed for ${contract}`, error)

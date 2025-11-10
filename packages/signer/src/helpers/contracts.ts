@@ -1,7 +1,16 @@
-import { FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
+import {
+	FungibleToken,
+	FungibleTokenAdmin,
+	poolDataMainnet,
+	PoolFactory,
+	poolHashMainnet,
+	poolTokenHolderDataMainnet,
+	poolTokenHolderHashMainnet
+} from "@lumina-dex/contracts"
 import type { ConsolaInstance } from "consola"
-import { Cache } from "o1js"
+import { Cache, Mina, VerificationKey } from "o1js"
 import { logger } from "./utils"
+import { getNetwork } from "./job"
 
 const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	const start = performance.now()
@@ -24,6 +33,14 @@ export const compileContracts = async () => {
 	}
 	logger.log("Compiling contracts...")
 	// setNumberOfWorkers(4)
+	const Network = getNetwork("mina:mainnet")
+	Mina.setActiveInstance(Network)
+
+	PoolFactory.vkPool = new VerificationKey({ data: poolDataMainnet, hash: poolHashMainnet })
+	PoolFactory.vkPoolTokenHolder = new VerificationKey({
+		data: poolTokenHolderDataMainnet,
+		hash: poolTokenHolderHashMainnet
+	})
 	const c = time("compile")
 	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 

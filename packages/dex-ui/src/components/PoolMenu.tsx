@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { emptyAddress } from "@/utils/addresses"
 import { LuminaContext } from "./Layout"
+import { mina } from "./Account"
 
 interface PoolMenuProps {
 	poolAddress: string
@@ -21,11 +22,36 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 	const handleOpen = () => setOpen(true)
 	const handleClose = () => setOpen(false)
 
-	const { data: cdnList } = useQuery({
-		queryKey: [walletContext.currentNetwork],
-		queryFn: () => fetchPoolList(walletContext.currentNetwork),
-		initialData: []
-	})
+	// const { data: cdnList } = useQuery({
+	// 	queryKey: [walletContext.currentNetwork],
+	// 	queryFn: () => fetchPoolList(walletContext.currentNetwork),
+	// 	initialData: []
+	// })
+
+	const newPool: LuminaPool = {
+		address: "B62qoCev6vjZbnLfPxWUzLXJ3QRightexvLtUBxATrKeUzSXibNccc2",
+		tokenId: "wvGbpVBN6TiS52jgh5pbQDMzH5NqUS4MUxpSBZdY4nKdrZ8ymW",
+		tokens: [
+			{
+				address: "MINA",
+				chainId: "mina:mainnet",
+				tokenId: "MINA",
+				symbol: "MINA",
+				decimals: 9
+			},
+			{
+				address: "B62qiXp7KaEzKjwX3EGbQXnXQV9hK8shf9pbZfAsTZi9DowDKJEXicL",
+				chainId: "mina:mainnet",
+				tokenId: "wWJXkcizyi9dVtKKddESaQFyRdvETVUxWiCADFuaUi4nVcV6M2",
+				symbol: "ZKA",
+				decimals: 9
+			}
+		],
+		chainId: "mina:mainnet",
+		name: "MINA/ZKA"
+	}
+
+	const cdnList = [newPool]
 
 	const getPoolInfo = useCallback((pool: LuminaPool) => {
 		const clonePool = { ...pool }
@@ -67,17 +93,10 @@ const PoolMenu = ({ poolAddress, setPool }: PoolMenuProps) => {
 	}
 
 	useEffect(() => {
-		if (poolExist) {
-			const newPool = getPoolInfo(poolExist)
-			setPool(newPool)
-			setCurrent(newPool)
-		} else if (cdnList.length > 0) {
-			// If the pool doesn't exist on this network, we take the first one
-			const newPool = getPoolInfo(cdnList[0])
-			setPool(newPool)
-			setCurrent(newPool)
-		}
-	}, [poolExist, cdnList, setPool, getPoolInfo])
+		const newPool = getPoolInfo(cdnList[0])
+		setPool(newPool)
+		setCurrent(newPool)
+	}, [setPool, getPoolInfo])
 
 	const getName = (pool: LuminaPool) => {
 		return pool?.tokens[0].symbol + "/" + pool?.tokens[1].symbol
