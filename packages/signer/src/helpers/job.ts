@@ -114,7 +114,11 @@ export const getInfisicalSecret = async (secretName: string): Promise<string> =>
 	return singleSecret.secretValue
 }
 
-export async function getMasterSigner(): Promise<string> {
+export async function getMasterSigner(network: Networks): Promise<string> {
+	if (network.includes("mainnet")) {
+		const mainnetSecret = await getInfisicalSecret("MAINNET_SIGNER_PRIVATE_KEY")
+		return mainnetSecret
+	}
 	const secret = await getInfisicalSecret("POOL_SIGNER_PRIVATE_KEY")
 	return secret
 }
