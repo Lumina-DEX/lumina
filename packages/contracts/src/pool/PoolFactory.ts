@@ -8,6 +8,7 @@ import {
   MerkleMap,
   MerkleMapWitness,
   method,
+  Mina,
   Permissions,
   Poseidon,
   PublicKey,
@@ -38,9 +39,13 @@ import {
   verifySignature
 } from "./Multisig.js"
 import {
+  poolDataMainnet,
   poolDataTestnet,
+  poolHashMainnet,
   poolHashTestnet,
+  poolTokenHolderDataMainnet,
   poolTokenHolderDataTestnet,
+  poolTokenHolderHashMainnet,
   poolTokenHolderHashTestnet
 } from "./VerificationKey.js"
 
@@ -131,14 +136,40 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
   /**
    * Current verification key of pool contract, can differ between networks
    */
-  static vkPool: VerificationKey = new VerificationKey({ data: poolDataTestnet, hash: poolHashTestnet })
+  get vkPool(): VerificationKey {
+    if (Mina.getNetworkId() === "mainnet") {
+      return new VerificationKey({
+        data: poolDataMainnet,
+        hash: poolHashMainnet
+      })
+    } else if (Mina.getNetworkId() === "devnet" || Mina.getNetworkId() === "testnet") {
+      return new VerificationKey({
+        data: poolDataTestnet,
+        hash: poolHashTestnet
+      })
+    } else {
+      throw new Error(`Network ${Mina.getNetworkId()} not supported`)
+    }
+  }
+
   /**
    * Current verification key of pool token holder contract, can differ between networks
    */
-  static vkPoolTokenHolder: VerificationKey = new VerificationKey({
-    data: poolTokenHolderDataTestnet,
-    hash: poolTokenHolderHashTestnet
-  })
+  get vkPoolTokenHolder(): VerificationKey {
+    if (Mina.getNetworkId() === "mainnet") {
+      return new VerificationKey({
+        data: poolTokenHolderDataMainnet,
+        hash: poolTokenHolderHashMainnet
+      })
+    } else if (Mina.getNetworkId() === "devnet" || Mina.getNetworkId() === "testnet") {
+      return new VerificationKey({
+        data: poolTokenHolderDataTestnet,
+        hash: poolTokenHolderHashTestnet
+      })
+    } else {
+      throw new Error(`Network ${Mina.getNetworkId()} not supported`)
+    }
+  }
 
   /**
    * List of signer approved to deploy a new pool
@@ -329,7 +360,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
    */
   @method.returns(VerificationKey)
   async getPoolVK() {
-    return PoolFactory.vkPool
+    return this.vkPool
   }
 
   /**
@@ -338,7 +369,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
    */
   @method.returns(VerificationKey)
   async getPoolTokenHolderVK() {
-    return PoolFactory.vkPoolTokenHolder
+    return this.vkPoolTokenHolder
   }
 
   /**
@@ -432,7 +463,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
     poolAccount.account.isNew.requireEquals(Bool(true))
 
     // set pool account vk and permission
-    poolAccount.body.update.verificationKey = { isSome: Bool(true), value: PoolFactory.vkPool }
+    poolAccount.body.update.verificationKey = { isSome: Bool(true), value: this.vkPool }
     poolAccount.body.update.permissions = {
       isSome: Bool(true),
       value: {
@@ -518,7 +549,7 @@ export class PoolFactory extends TokenContract implements PoolFactoryBase {
     poolHolderAccount.account.isNew.requireEquals(Bool(true))
 
     // set pool token holder account vk and permission
-    poolHolderAccount.body.update.verificationKey = { isSome: Bool(true), value: PoolFactory.vkPoolTokenHolder }
+    poolHolderAccount.body.update.verificationKey = { isSome: Bool(true), value: this.vkPoolTokenHolder }
     poolHolderAccount.body.update.permissions = {
       isSome: Bool(true),
       value: {

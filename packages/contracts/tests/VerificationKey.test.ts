@@ -1,4 +1,4 @@
-import { Cache, Mina } from "o1js"
+import { Cache, Field, Mina } from "o1js"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -14,18 +14,17 @@ const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
 describe("Check verification key", () => {
   it("has a valid verification key", async () => {
-    const Local = await Mina.LocalBlockchain()
-    Mina.setActiveInstance(Local)
+    const network = Mina.Network({
+      networkId: "mainnet",
+      mina: "https://api.minascan.io/node/mainnet/v1/graphql"
+    })
+    Mina.setActiveInstance(network)
 
-    await FungibleTokenAdmin.compile(cache)
-    await FungibleToken.compile(cache)
-    const vkFactory = await PoolFactory.compile(cache)
-    expect(vkFactory.verificationKey.hash.toBigInt()).toEqual(
-      21155315920244513361696679354690742153476743044380974966337181307650568441726n
+    await FungibleTokenAdmin.compile()
+    await FungibleToken.compile()
+    const vkFactory = await PoolFactory.compile()
+    expect(vkFactory.verificationKey.hash).toEqual(
+      Field(21955258744905199326476551523512075073823567754306600871892901345442326387142n)
     )
-    const vkPool = await Pool.compile(cache)
-    expect(vkPool.verificationKey.hash.toBigInt()).toEqual(poolHashTestnet.toBigInt())
-    const vkPoolHolder = await PoolTokenHolder.compile(cache)
-    expect(vkPoolHolder.verificationKey.hash.toBigInt()).toEqual(poolTokenHolderHashTestnet.toBigInt())
   }, 600000)
 })

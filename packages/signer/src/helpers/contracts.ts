@@ -42,18 +42,8 @@ export const compileContracts = async (network: Networks) => {
 
 	if (isMainnet) {
 		logger.log("Compiling contracts for mainnet...")
-		PoolFactory.vkPool = new VerificationKey({ data: poolDataMainnet, hash: poolHashMainnet })
-		PoolFactory.vkPoolTokenHolder = new VerificationKey({
-			data: poolTokenHolderDataMainnet,
-			hash: poolTokenHolderHashMainnet
-		})
 	} else {
 		logger.log("Compiling contracts for testnet/devnet...")
-		PoolFactory.vkPool = new VerificationKey({ data: poolDataTestnet, hash: poolHashTestnet })
-		PoolFactory.vkPoolTokenHolder = new VerificationKey({
-			data: poolTokenHolderDataTestnet,
-			hash: poolTokenHolderHashTestnet
-		})
 	}
 
 	// setNumberOfWorkers(4)
