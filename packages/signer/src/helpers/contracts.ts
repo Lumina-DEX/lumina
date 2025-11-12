@@ -1,21 +1,9 @@
-import {
-	FungibleToken,
-	FungibleTokenAdmin,
-	poolDataMainnet,
-	poolDataTestnet,
-	PoolFactory,
-	poolHashMainnet,
-	poolHashTestnet,
-	poolTokenHolderDataMainnet,
-	poolTokenHolderDataTestnet,
-	poolTokenHolderHashMainnet,
-	poolTokenHolderHashTestnet
-} from "@lumina-dex/contracts"
+import { FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
+import type { Networks } from "@lumina-dex/sdk"
 import type { ConsolaInstance } from "consola"
-import { Cache, Mina, VerificationKey } from "o1js"
-import { logger } from "./utils"
-import { Networks } from "@lumina-dex/sdk"
+import { Cache, Mina } from "o1js"
 import { getNetwork } from "./job"
+import { logger } from "./utils"
 
 const createMeasure = (l: ConsolaInstance) => (label: string) => {
 	const start = performance.now()
