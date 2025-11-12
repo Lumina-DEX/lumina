@@ -14,7 +14,7 @@ export class GraphQLClient {
 			body: JSON.stringify({ query, variables })
 		})
 
-		const result = await response.json()
+		const result = (await response.json()) as { data?: T; errors?: any }
 		if (result.errors) {
 			throw new Error(result.errors)
 		}
