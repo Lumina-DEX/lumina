@@ -2,6 +2,7 @@ import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { type JobResult, schema } from "./graphql"
+import { getApiKey } from "./helpers/job"
 import { getJobQueue } from "./queue"
 
 const Schema = v.object({
@@ -42,7 +43,8 @@ export const yoga = createYoga<{ env: typeof env }>({
 	}),
 	context: async ({ env, request }) => {
 		const authToken = request.headers.get("Authorization") || ""
-		const isAdmin = authToken === `Bearer ${env.API_KEY}`
+		const apiKey = await getApiKey()
+		const isAdmin = authToken === `Bearer ${apiKey}`
 		return {
 			isAdmin,
 			env,
