@@ -5,6 +5,7 @@ import { useContext, useEffect, useEffectEvent } from "react"
 import { LuminaContext } from "./Layout"
 import Menu from "./Menu"
 
+export const minaMainnet: Networks = "mina:mainnet"
 export const zekoTestnet: Networks = "zeko:testnet"
 export const minaTestnet: Networks = "mina:devnet"
 
@@ -71,6 +72,7 @@ const Account = () => {
 							{walletContext.currentNetwork !== zekoTestnet && walletContext.currentNetwork !== minaTestnet && (
 								<option>N/A</option>
 							)}
+							<option value={minaMainnet}>Mina</option>
 							<option value={zekoTestnet}>Zeko</option>
 							<option value={minaTestnet}>Devnet</option>
 						</select>
