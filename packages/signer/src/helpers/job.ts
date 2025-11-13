@@ -123,6 +123,11 @@ export async function getMasterSigner(network: Networks): Promise<string> {
 	return secret
 }
 
+export async function getApiKey(): Promise<string> {
+	const secret = await getInfisicalSecret("SIGNER_API_KEY")
+	return secret
+}
+
 export const fundNewAccount = (network: Networks, feePayer: PublicKey, numberOfAccounts = 1) => {
 	try {
 		const creationFee = defaultCreationFee[network]
