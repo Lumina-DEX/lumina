@@ -10,8 +10,7 @@ const Schema = v.object({
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
 	INFISICAL_CLIENT_ID: v.string(),
-	INFISICAL_CLIENT_SECRET: v.string(),
-	API_KEY: v.string()
+	INFISICAL_CLIENT_SECRET: v.string()
 })
 export const env = v.parse(Schema, process.env)
 
