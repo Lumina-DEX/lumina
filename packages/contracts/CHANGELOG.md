@@ -1,5 +1,11 @@
 # @lumina-dex/contracts
 
+## 0.10.0
+
+### Minor Changes
+
+- 9d1dba6: Generate verification key for mainnet
+
 ## 0.9.0
 
 ### Minor Changes
