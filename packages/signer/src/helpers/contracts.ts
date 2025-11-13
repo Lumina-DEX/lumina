@@ -71,7 +71,6 @@ function isCompiledForNetwork(network: string): boolean {
 	const isMainnet = network.includes("mainnet")
 	if (isMainnet) {
 		return isCompiledMainnet
-	} else {
-		return isCompiled
 	}
+	return isCompiled
 }
