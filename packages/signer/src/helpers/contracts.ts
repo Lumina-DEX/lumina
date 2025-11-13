@@ -22,19 +22,14 @@ let isCompiledMainnet = false
 
 export const compileContracts = async (network: Networks) => {
 	const isMainnet = network.includes("mainnet")
-	if ((!isCompiled && !isMainnet) || (!isCompiledMainnet && isMainnet)) {
+	if (isCompiledForNetwork(network)) {
 		logger.log("Contracts already compiled, skipping...")
 		return
 	}
 	Mina.setActiveInstance(getNetwork(network))
 
-	if (isMainnet) {
-		logger.log("Compiling contracts for mainnet...")
-	} else {
-		logger.log("Compiling contracts for testnet/devnet...")
-	}
+	logger.log(`Compiling contracts for ${network}...`)
 
-	// setNumberOfWorkers(4)
 	const c = time("compile")
 	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
@@ -65,9 +60,18 @@ export const compileContracts = async (network: Networks) => {
 }
 
 export const ensureCompiled = async (network: Networks) => {
-	const isMainnet = network.includes("mainnet")
-	if ((!isCompiled && !isMainnet) || (!isCompiledMainnet && isMainnet)) {
+	logger.log("Check contract is compiled.")
+	if (!isCompiledForNetwork(network)) {
 		logger.error("Contracts were not compiled.")
 		await compileContracts(network)
+	}
+}
+
+function isCompiledForNetwork(network: string): boolean {
+	const isMainnet = network.includes("mainnet")
+	if (isMainnet) {
+		return isCompiledMainnet
+	} else {
+		return isCompiled
 	}
 }

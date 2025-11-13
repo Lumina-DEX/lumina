@@ -48,7 +48,7 @@ tasks:
     preset: "server"
 
   web:
-    command: bun ./index.html
+    command: bun  --port 3002  ./index.html
     preset: "server"
 
   test:
