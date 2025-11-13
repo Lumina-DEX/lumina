@@ -1,4 +1,4 @@
-import type { Networks } from "@lumina-dex/sdk"
+import { type Networks, poolCreationUrl } from "@lumina-dex/sdk"
 import { useCallback, useEffect, useState } from "react"
 import { type NetworkEnum, networkValueToEnum } from "@/models/network-type"
 import { SIGNER_QUERIES } from "@/models/queries"
@@ -13,8 +13,8 @@ import { EditNetworkForm } from "./EditNetworkForm"
 import { SignersTable } from "./SignersTable"
 
 export default function SignerManagement() {
-	const [apiKey, setApiKey] = useState("7810")
-	const [endpoint, setEndpoint] = useState("http://localhost:3001/graphql")
+	const [apiKey, setApiKey] = useState("")
+	const [endpoint, setEndpoint] = useState(poolCreationUrl)
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [signers, setSigners] = useState<Signer[]>([])
 	const [selectedNetwork, setSelectedNetwork] = useState<NetworkEnum | "">("mina_mainnet")

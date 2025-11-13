@@ -1,3 +1,4 @@
+import { poolCreationUrl } from "@lumina-dex/sdk"
 import { useCallback, useEffect, useState } from "react"
 import type { Multisig } from "@/models/multisig"
 import type { NetworkEnum } from "@/models/network-type"
@@ -11,8 +12,8 @@ import { CreateMultisigForm } from "./CreateMultisigForm"
 import { MultisigTable } from "./MultisigTable"
 
 export default function MultisigManagement() {
-	const [apiKey, setApiKey] = useState("7810")
-	const [endpoint, setEndpoint] = useState("http://localhost:3001/graphql")
+	const [apiKey, setApiKey] = useState("")
+	const [endpoint, setEndpoint] = useState(poolCreationUrl)
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [multisigs, setMultisigs] = useState<Multisig[]>([])
 	const [signers, setSigners] = useState<Signer[]>([])
