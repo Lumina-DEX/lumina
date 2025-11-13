@@ -9,7 +9,8 @@ const Schema = v.object({
 	INFISICAL_ENVIRONMENT: v.string(),
 	INFISICAL_PROJECT_ID: v.string(),
 	INFISICAL_CLIENT_ID: v.string(),
-	INFISICAL_CLIENT_SECRET: v.string()
+	INFISICAL_CLIENT_SECRET: v.string(),
+	API_KEY: v.string()
 })
 export const env = v.parse(Schema, process.env)
 
@@ -17,6 +18,7 @@ export type Database = typeof getDb
 export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
+	isAdmin: boolean
 	database: Database
 	jobQueue: JobQueue
 	pubsub: ReturnType<typeof createPubSub<Record<string, [job: JobResult]>>>
@@ -38,8 +40,11 @@ export const yoga = createYoga<{ env: typeof env }>({
 		methods: ["*"],
 		exposedHeaders: ["*"]
 	}),
-	context: async ({ env }) => {
+	context: async ({ env, request }) => {
+		const authToken = request.headers.get("Authorization") || ""
+		const isAdmin = authToken === `Bearer ${env.API_KEY}`
 		return {
+			isAdmin,
 			env,
 			database: getDb,
 			jobQueue,

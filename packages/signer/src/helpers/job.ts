@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight, deployPoolRight } from "@lumina-dex/contracts"
+import { allRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -14,7 +14,7 @@ import {
 	PublicKey,
 	UInt64
 } from "o1js"
-import { pool, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
+import { pool, poolKey, signerMerkle, signerMerkleNetworks } from "../../drizzle/schema"
 import type { getDb } from "../db"
 import { getEnv, logger } from "./utils"
 
@@ -24,6 +24,8 @@ type Transaction = Parameters<Parameters<Drizzle["transaction"]>[0]>[0]
 type NewSignerMerkle = typeof signerMerkle.$inferSelect & {
 	permission: number
 }
+
+type NewPoolKey = typeof poolKey.$inferInsert
 
 // list of different approved user to sign
 
@@ -41,8 +43,6 @@ export async function getMerkle(database: Drizzle, network: Networks): Promise<[
 		.innerJoin(signerMerkleNetworks, eq(signerMerkle.id, signerMerkleNetworks.signerId))
 		.where(and(eq(signerMerkleNetworks.network, network), eq(signerMerkleNetworks.active, true)))
 
-	const _allRightHash = Poseidon.hash(allRight.toFields())
-	const _deployRightHash = Poseidon.hash(deployPoolRight.toFields())
 	const merkle = new MerkleMap()
 	users = []
 	data.forEach((x) => {
@@ -58,7 +58,7 @@ export async function getMerkle(database: Drizzle, network: Networks): Promise<[
 	return [merkle, users]
 }
 
-export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key: string) {
+export function getUniqueUserPairs(users: NewSignerMerkle[], id: number, key: string, isFactory = false) {
 	const pairs = []
 
 	for (let i = 0; i < users.length; i++) {
@@ -71,13 +71,20 @@ export function getUniqueUserPairs(users: NewSignerMerkle[], poolId: number, key
 			const encrypB = Encryption.encrypt(encrypA.cipherText, PublicKey.fromBase58(userB.publicKey))
 			const encryptBPub = PublicKey.fromGroup(encrypB.publicKey).toBase58()
 			const encrypted_key = encrypB.cipherText.join(",")
-			const poolKeyRow = {
-				poolId: poolId,
+			poolKey.$inferInsert
+			const poolKeyRow: NewPoolKey = {
 				signer1Id: userA.id,
 				signer2Id: userB.id,
 				generatedPublic1: encryptAPub,
 				generatedPublic2: encryptBPub,
 				encryptedKey: encrypted_key
+			}
+			if (isFactory) {
+				poolKeyRow.factoryId = id
+				poolKeyRow.poolId = null
+			} else {
+				poolKeyRow.factoryId = null
+				poolKeyRow.poolId = id
 			}
 			pairs.push(poolKeyRow)
 		}
@@ -107,7 +114,11 @@ export const getInfisicalSecret = async (secretName: string): Promise<string> =>
 	return singleSecret.secretValue
 }
 
-export async function getMasterSigner(): Promise<string> {
+export async function getMasterSigner(network: Networks): Promise<string> {
+	if (network.includes("mainnet")) {
+		const mainnetSecret = await getInfisicalSecret("MAINNET_SIGNER_PRIVATE_KEY")
+		return mainnetSecret
+	}
 	const secret = await getInfisicalSecret("POOL_SIGNER_PRIVATE_KEY")
 	return secret
 }

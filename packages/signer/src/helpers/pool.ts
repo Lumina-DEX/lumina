@@ -31,7 +31,7 @@ export const createPoolAndTransaction = async ({
 
 	const [merkle, users] = await getMerkle(db.drizzle, network)
 
-	const masterSigner = await getMasterSigner()
+	const masterSigner = await getMasterSigner(network)
 	const masterSignerPrivateKey = PrivateKey.fromBase58(masterSigner)
 	const masterSignerPublicKey = masterSignerPrivateKey.toPublicKey()
 

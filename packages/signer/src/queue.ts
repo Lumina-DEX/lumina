@@ -1,43 +1,83 @@
 import type { PubSub } from "graphql-yoga"
-import type { CreatePoolInputType, JobResult } from "./graphql"
+import type { CreatePoolInputType, DeployFactoryInputType, FactoryJobResult, JobResult } from "./graphql"
 import { ensureCompiled } from "./helpers/contracts"
+import { deployFactoryAndTransaction } from "./helpers/factory"
 import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
 
+type AnyJobResult = JobResult | FactoryJobResult
+
 type JobTask = {
 	jobId: string
-	data: CreatePoolInputType
-	pubsub: PubSub<Record<string, [JobResult]>>
+	data: CreatePoolInputType | DeployFactoryInputType
+	pubsub: PubSub<Record<string, [AnyJobResult]>>
 }
 
 // In-memory job cache
-const jobs = new Map<string, JobResult>()
+const jobs = new Map<string, AnyJobResult>()
+
+const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
+	return "deployer" in data
+}
+
+const isPoolJob = (data: CreatePoolInputType | DeployFactoryInputType): data is CreatePoolInputType => {
+	return "user" in data && "tokenA" in data && "tokenB" in data
+}
 
 const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 	logger.log(`Processing job ${jobId}:`, Date.now())
 
 	try {
-		await ensureCompiled()
-		const result = await createPoolAndTransaction({ ...data, jobId })
-		const jobResult = {
-			status: "completed",
-			poolPublicKey: result.poolPublicKey,
-			transactionJson: result.transactionJson,
-			completedAt: new Date()
-		} as const
+		await ensureCompiled(data.network)
 
-		jobs.set(jobId, jobResult)
-		pubsub.publish(jobId, jobResult)
-		logger.log(`✅ Job ${jobId} completed`)
+		if (isFactoryJob(data)) {
+			logger.log(`Processing factory deployment job ${jobId}`)
+			const result = await deployFactoryAndTransaction({ ...data, jobId })
+			const jobResult: FactoryJobResult = {
+				status: "completed",
+				factoryPublicKey: result.factoryPublicKey,
+				transactionJson: result.transactionJson,
+				completedAt: new Date()
+			}
+
+			jobs.set(jobId, jobResult)
+			pubsub.publish(jobId, jobResult)
+			logger.log(`✅ Factory deployment job ${jobId} completed`)
+		} else if (isPoolJob(data)) {
+			logger.log(`Processing pool creation job ${jobId}`)
+			const result = await createPoolAndTransaction({ ...data, jobId })
+			const jobResult: JobResult = {
+				status: "completed",
+				poolPublicKey: result.poolPublicKey,
+				transactionJson: result.transactionJson,
+				completedAt: new Date()
+			}
+
+			jobs.set(jobId, jobResult)
+			pubsub.publish(jobId, jobResult)
+			logger.log(`✅ Pool creation job ${jobId} completed`)
+		} else {
+			throw new Error(`Unknown job type for job ${jobId}`)
+		}
 	} catch (error) {
 		logger.error(`❌ Job ${jobId} failed:`, error)
 
-		const jobResult = {
-			status: "failed",
-			poolPublicKey: "",
-			transactionJson: "",
-			completedAt: new Date()
-		} as const
+		let jobResult: AnyJobResult
+		if (isFactoryJob(data)) {
+			jobResult = {
+				status: "failed",
+				factoryPublicKey: error instanceof Error ? error.message : "Unknown error",
+				transactionJson: "",
+				completedAt: new Date()
+			} as FactoryJobResult
+		} else {
+			jobResult = {
+				status: "failed",
+				poolPublicKey: error instanceof Error ? error.message : "Unknown error",
+				transactionJson: "",
+				completedAt: new Date()
+			} as JobResult
+		}
 
 		jobs.set(jobId, jobResult)
 		pubsub.publish(jobId, jobResult)
@@ -73,10 +113,25 @@ class Queuer<T> {
 
 // Serial processing, one job at a time
 const queuer = new Queuer<JobTask>(async (task) => await processJob(task))
-export const getJobQueue = (pubsub: PubSub<Record<string, [JobResult]>>) => {
+
+export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 	return {
-		addJob: (jobId: string, data: CreatePoolInputType) => {
-			jobs.set(jobId, { status: "pending", poolPublicKey: "", transactionJson: "", completedAt: new Date() })
+		addJob: (jobId: string, data: CreatePoolInputType | DeployFactoryInputType) => {
+			if (isFactoryJob(data)) {
+				jobs.set(jobId, {
+					status: "pending",
+					factoryPublicKey: "",
+					transactionJson: "",
+					completedAt: new Date()
+				} as FactoryJobResult)
+			} else {
+				jobs.set(jobId, {
+					status: "pending",
+					poolPublicKey: "",
+					transactionJson: "",
+					completedAt: new Date()
+				} as JobResult)
+			}
 			queuer.addItem({ jobId, data, pubsub })
 		},
 		getJob: (jobId: string) => jobs.get(jobId),

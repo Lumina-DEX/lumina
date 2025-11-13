@@ -28,6 +28,11 @@ tasks:
     command: bun run --watch src/bun.ts
     extends: dev
 
+  dev-local:
+    command: npx tsx --watch --env-file=.env src/node.ts
+    deps: ["^:build"]
+    preset: "server"
+
   build:
     command: tsdown
     deps: ["^:build"]
@@ -43,7 +48,7 @@ tasks:
     preset: "server"
 
   web:
-    command: bun ./index.html
+    command: bun  --port 3002  ./index.html
     preset: "server"
 
   test:

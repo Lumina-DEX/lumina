@@ -1,6 +1,8 @@
 import { FungibleToken, FungibleTokenAdmin, PoolFactory } from "@lumina-dex/contracts"
+import type { Networks } from "@lumina-dex/sdk"
 import type { ConsolaInstance } from "consola"
-import { Cache } from "o1js"
+import { Cache, Mina } from "o1js"
+import { getNetwork } from "./job"
 import { logger } from "./utils"
 
 const createMeasure = (l: ConsolaInstance) => (label: string) => {
@@ -16,14 +18,18 @@ const createMeasure = (l: ConsolaInstance) => (label: string) => {
 const time = createMeasure(logger)
 
 let isCompiled = false
+let isCompiledMainnet = false
 
-export const compileContracts = async () => {
-	if (isCompiled) {
+export const compileContracts = async (network: Networks) => {
+	const isMainnet = network.includes("mainnet")
+	if (isCompiledForNetwork(network)) {
 		logger.log("Contracts already compiled, skipping...")
 		return
 	}
-	logger.log("Compiling contracts...")
-	// setNumberOfWorkers(4)
+	Mina.setActiveInstance(getNetwork(network))
+
+	logger.log(`Compiling contracts for ${network}...`)
+
 	const c = time("compile")
 	const cache = { cache: Cache.FileSystemDefault, forceRecompile: true }
 
@@ -42,13 +48,29 @@ export const compileContracts = async () => {
 	logger.log("factory vk hash", vk.verificationKey.hash.toBigInt())
 	c()
 
-	isCompiled = true
+	if (isMainnet) {
+		// todo find a solution to compile once by network
+		isCompiledMainnet = true
+		isCompiled = false
+	} else {
+		isCompiledMainnet = false
+		isCompiled = true
+	}
 	logger.log("✅ All contracts compiled successfully")
 }
 
-export const ensureCompiled = async () => {
-	if (!isCompiled) {
+export const ensureCompiled = async (network: Networks) => {
+	logger.log("Check contract is compiled.")
+	if (!isCompiledForNetwork(network)) {
 		logger.error("Contracts were not compiled.")
-		await compileContracts()
+		await compileContracts(network)
 	}
+}
+
+function isCompiledForNetwork(network: string): boolean {
+	const isMainnet = network.includes("mainnet")
+	if (isMainnet) {
+		return isCompiledMainnet
+	}
+	return isCompiled
 }

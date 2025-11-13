@@ -22,6 +22,20 @@
 			"when": 1758278655089,
 			"tag": "0002_rich_morph",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1761561260476,
+			"tag": "0003_harsh_alex_power",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1762187554653,
+			"tag": "0004_pool_nullable",
+			"breakpoints": true
 		}
 	]
 }
