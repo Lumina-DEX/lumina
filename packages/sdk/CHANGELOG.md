@@ -1,5 +1,12 @@
 # @lumina-dex/sdk
 
+## 0.26.1
+
+### Patch Changes
+
+- Updated dependencies [9d1dba6]
+  - @lumina-dex/contracts@0.10.0
+
 ## 0.26.0
 
 ### Minor Changes
