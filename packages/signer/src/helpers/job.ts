@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight } from "@lumina-dex/contracts"
+import { allRight, deployPoolRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -50,7 +50,7 @@ export async function getMerkle(database: Drizzle, network: Networks): Promise<[
 		const pubKey = PublicKey.fromBase58(x.publicKey)
 		merkle.set(Poseidon.hash(pubKey.toFields()), rightHash)
 
-		if (x.permission === Number(allRight)) {
+		if (x.permission !== Number(deployPoolRight)) {
 			users.push(x)
 		}
 	})
