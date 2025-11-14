@@ -45,7 +45,7 @@ Dex.send({
 			amount: "5"
 		},
 
-		// Maximum allowed slippage in percentage
+		// Slippage in percentage
 		slippagePercent: 0.5
 	}
 })
@@ -54,7 +54,7 @@ Dex.send({
 The DEX machine will calculate:
 
 - Optimal amounts for both tokens
-- Maximum amounts with slippage
+- Amounts with slippage
 - Expected LP tokens to receive
 
 These results will be stored in `context.dex.addLiquidity.calculated`.
@@ -87,7 +87,7 @@ Dex.send({
 		// liquidity amount to withdraw
 		lpAmount: "10000",
 
-		// Maximum allowed slippage in percentage
+		// Slippage in percentage
 		slippagePercent: 0.5
 	}
 })
@@ -96,7 +96,7 @@ Dex.send({
 The DEX machine will calculate:
 
 - Expected amounts of both tokens to receive
-- Minimum amounts with slippage
+- Amount out with slippage
 - The exact amount of LP tokens that will be burned
 
 These results will be stored in `context.dex.removeLiquidity.calculated`.

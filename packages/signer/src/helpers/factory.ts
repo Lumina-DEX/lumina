@@ -102,16 +102,15 @@ export const deployFactoryAndTransaction = async ({
 	const minaTransaction = await db.drizzle.transaction(async (txOrm) => {
 		logger.log("Starting db transaction for factory deployment")
 
+		const factoryJob = {
+			publicKey: factoryPublicKeyBase58,
+			user: deployer,
+			network,
+			jobId
+		}
+		logger.log("factory job information", factoryJob)
 		// Insert factory
-		const result = await txOrm
-			.insert(factory)
-			.values({
-				publicKey: factoryPublicKeyBase58,
-				user: deployer,
-				network,
-				jobId
-			})
-			.returning({ insertedId: factory.id })
+		const result = await txOrm.insert(factory).values(factoryJob).returning({ insertedId: factory.id })
 
 		factoryId = result[0].insertedId
 		logger.log("Inserted new factory into database", factoryId)
