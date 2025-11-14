@@ -31,7 +31,7 @@ Dex.send({
 		// The output token address
 		to: "B62qjDaZ2wDLkFpt7a7eJme6SAJDuc3R3A2j2DRw7VMmJAFahut7e8w",
 
-		// Maximum allowed slippage in percentage
+		// Slippage in percentage
 		slippagePercent: 0.5
 	}
 })
@@ -40,8 +40,8 @@ Dex.send({
 The SDK will fetch the current pool state from the blockchain and calculate:
 
 - Expected output amount
-- Minimum output amount (with slippage)
-- Maximum input amount (with slippage)
+- Output amount (with slippage)
+- Input amount (with slippage)
 
 These results will be stored in the `context.dex.swap.calculated` object.
 
