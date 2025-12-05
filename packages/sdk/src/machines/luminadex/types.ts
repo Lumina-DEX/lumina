@@ -3,7 +3,7 @@ import type { ActorRefFrom } from "xstate"
 import type { LuminaDexWorker, MintToken } from "../../dex/luminadex-worker"
 import type { transactionMachine } from "../transaction"
 import type { WalletActorRef } from "../wallet/actors"
-import type { WalletEmit } from "../wallet/types"
+import type { Networks, WalletEmit } from "../wallet/types"
 import type { createPoolMachine } from "./actors/createPool"
 
 export type DexWorker = Comlink.Remote<LuminaDexWorker>
@@ -24,6 +24,7 @@ interface ContractContext {
 	loaded: {
 		[name in ContractName]: boolean
 	}
+	loadedNetwork: Networks | null
 	toLoad: Set<ContractName>
 	currentlyLoading: ContractName | null
 	error: LuminaError | null

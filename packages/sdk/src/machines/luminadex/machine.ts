@@ -28,6 +28,7 @@ import {
 	setContractError,
 	setDexError,
 	setToLoadFromFeatures,
+	unloadedContracts,
 	walletNetwork,
 	walletUser
 } from "./helpers"
@@ -67,6 +68,10 @@ export const createLuminaDexMachine = () =>
 			calculateRemoveLiquidityAmount
 		},
 		actions: {
+			setNetworkInstance: enqueueActions(({ context, event }) => {
+				assertEvent(event, "NetworkChanged")
+				context.contract.worker.minaInstance(event.network)
+			}),
 			createPool: enqueueActions(({ context, enqueue, event }) => {
 				assertEvent(event, "DeployPool")
 				const tokenA = event.settings.tokenA
@@ -128,14 +133,8 @@ export const createLuminaDexMachine = () =>
 					worker,
 					toLoad: new Set<ContractName>([]),
 					currentlyLoading: null,
-					loaded: {
-						Faucet: false,
-						FungibleToken: false,
-						FungibleTokenAdmin: false,
-						Pool: false,
-						PoolFactory: false,
-						PoolTokenHolder: false
-					},
+					loadedNetwork: null,
+					loaded: unloadedContracts(),
 					error: null
 				},
 				dex: {
@@ -182,10 +181,10 @@ export const createLuminaDexMachine = () =>
 		}),
 		on: {
 			NoMinaWalletDetected: { target: ".dexSystem.UNSUPPORTED" },
+			//TODO: Should we reload all-contracts on network change ?
 			NetworkChanged: {
-				actions: enqueueActions(({ context, event }) => {
-					context.contract.worker.minaInstance(event.network)
-				})
+				actions: "setNetworkInstance"
+				// target: "RELOAD_CONTRACTS"
 			},
 			AccountChanged: {}
 		},
@@ -202,13 +201,65 @@ export const createLuminaDexMachine = () =>
 								target: "LOADING",
 								actions: assign(({ context, event }) => ({
 									...context,
-									contract: { ...context.contract, toLoad: event.output }
+									contract: {
+										...context.contract,
+										loadedNetwork: context.wallet.getSnapshot().context.currentNetwork,
+										toLoad: event.output
+									}
 								}))
 							},
 							onError: {
 								target: "FAILED",
 								actions: assign(setContractError("Loading Contracts"))
 							}
+						}
+					},
+					RELOAD_CONTRACTS: {
+						description: "Reload all contracts.",
+						entry: enqueueActions(({ context, enqueue }) => {
+							logger.info("Network changed, reloading all contracts...")
+							const loaded = unloadedContracts()
+							const toLoad = setToLoadFromFeatures(context.features)
+							enqueue.assign({
+								contract: {
+									...context.contract,
+									currentlyLoading: toLoad.values().next().value ?? null,
+									loaded,
+									toLoad
+								}
+							})
+							enqueue.raise({ type: "LoadNextContract" })
+						})
+					},
+					LOADING: {
+						description: "The compiled contracts are loading.",
+						entry: enqueueActions(({ context, enqueue }) => {
+							if (context.contract.toLoad.size > 0) {
+								const [next, ...remaining] = Array.from(context.contract.toLoad)
+								logger.info(`Preparing to load '${next}' contract next, remaining:`, remaining)
+								enqueue.assign({
+									contract: {
+										...context.contract,
+										currentlyLoading: next ?? null,
+										toLoad: new Set(remaining)
+									}
+								})
+								if (next) enqueue.raise({ type: "LoadNextContract" })
+							} else {
+								logger.success("All features have been loaded", context.features)
+								enqueue.raise({ type: "ContractsReady" })
+							}
+						}),
+						on: {
+							ContractsReady: { target: "READY" },
+							LoadNextContract: [
+								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
+								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
+								{ target: "COMPILE_POOL", guard: "compilePool" },
+								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
+								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },
+								{ target: "COMPILE_FAUCET", guard: "compileFaucet" }
+							]
 						}
 					},
 					COMPILE_FUNGIBLE_TOKEN: {
@@ -293,37 +344,6 @@ export const createLuminaDexMachine = () =>
 								target: "FAILED",
 								actions: assign(setContractError("Compile Faucet Contracts"))
 							}
-						}
-					},
-					LOADING: {
-						description: "The compiled contracts are loading.",
-						entry: enqueueActions(({ context, enqueue }) => {
-							if (context.contract.toLoad.size > 0) {
-								const [next, ...remaining] = Array.from(context.contract.toLoad)
-								logger.info(`Preparing to load '${next}' contract next, remaining:`, remaining)
-								enqueue.assign({
-									contract: {
-										...context.contract,
-										currentlyLoading: next ?? null,
-										toLoad: new Set(remaining)
-									}
-								})
-								if (next) enqueue.raise({ type: "LoadNextContract" })
-							} else {
-								logger.success("All features have been loaded", context.features)
-								enqueue.raise({ type: "ContractsReady" })
-							}
-						}),
-						on: {
-							ContractsReady: { target: "READY" },
-							LoadNextContract: [
-								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
-								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
-								{ target: "COMPILE_POOL", guard: "compilePool" },
-								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
-								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },
-								{ target: "COMPILE_FAUCET", guard: "compileFaucet" }
-							]
 						}
 					},
 					READY: {

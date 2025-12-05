@@ -9,6 +9,16 @@ export const { act, logger } = createLogger("[DEX]")
 
 export const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
 
+export const unloadedContracts = () =>
+	({
+		Faucet: false,
+		FungibleToken: false,
+		FungibleTokenAdmin: false,
+		Pool: false,
+		PoolFactory: false,
+		PoolTokenHolder: false
+	}) as const
+
 export const setToLoadFromFeatures = (features: DexFeatures) => {
 	const toLoad = new Set<ContractName>([])
 	if (features.includes("Swap")) {
