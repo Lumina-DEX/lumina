@@ -79,6 +79,7 @@ type ContractEvent =
 	| { type: "ContractsReady" }
 	| { type: "InitContracts" }
 	| { type: "LoadNextContract" }
+	| { type: "ReloadContracts" }
 	| { type: "LoadFeatures"; features: DexFeatures }
 
 type DexEvent =

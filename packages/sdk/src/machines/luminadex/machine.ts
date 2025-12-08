@@ -181,11 +181,7 @@ export const createLuminaDexMachine = () =>
 		}),
 		on: {
 			NoMinaWalletDetected: { target: ".dexSystem.UNSUPPORTED" },
-			//TODO: Should we reload all-contracts on network change ?
-			NetworkChanged: {
-				actions: "setNetworkInstance"
-				// target: "RELOAD_CONTRACTS"
-			},
+			NetworkChanged: { actions: "setNetworkInstance", target: ".contractSystem.RELOAD_CONTRACTS" },
 			AccountChanged: {}
 		},
 		type: "parallel",
@@ -217,19 +213,32 @@ export const createLuminaDexMachine = () =>
 					RELOAD_CONTRACTS: {
 						description: "Reload all contracts.",
 						entry: enqueueActions(({ context, enqueue }) => {
+							const currentNetwork = context.wallet.getSnapshot().context.currentNetwork
+							const loadedNetwork = context.contract.loadedNetwork
+							if (currentNetwork === loadedNetwork) {
+								if (context.contract.toLoad.size === 0) {
+									logger.info("Contracts are already loaded for the current network.")
+									enqueue.raise({ type: "ContractsReady" })
+									return
+								}
+								logger.info("Contracts to load remain the same, continuing loading...")
+								enqueue.raise({ type: "ReloadContracts" })
+								return
+							}
 							logger.info("Network changed, reloading all contracts...")
-							const loaded = unloadedContracts()
 							const toLoad = setToLoadFromFeatures(context.features)
 							enqueue.assign({
 								contract: {
 									...context.contract,
 									currentlyLoading: toLoad.values().next().value ?? null,
-									loaded,
+									loadedNetwork: currentNetwork,
+									loaded: unloadedContracts(),
 									toLoad
 								}
 							})
-							enqueue.raise({ type: "LoadNextContract" })
-						})
+							enqueue.raise({ type: "ReloadContracts" })
+						}),
+						on: { ReloadContracts: { target: "LOADING" } }
 					},
 					LOADING: {
 						description: "The compiled contracts are loading.",
