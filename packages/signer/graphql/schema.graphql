@@ -1,3 +1,11 @@
+input CreateMultisigInput {
+  data: String!
+  deadline: Int!
+  network: Network!
+  signature: String!
+  signerId: Int!
+}
+
 """Input type for creating a new pool"""
 input CreatePoolInput {
   network: Network!
@@ -6,12 +14,40 @@ input CreatePoolInput {
   user: String!
 }
 
+input CreateSignerInput {
+  publicKey: String!
+}
+
+input CreateSignerNetworkInput {
+  active: Boolean
+  network: Network!
+  permission: Int!
+  signerId: Int!
+}
+
 """
 A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
 """
 scalar Date
 
-"""A job representing a pool creation task"""
+"""Input type for deploying a factory"""
+input DeployFactoryInput {
+  data: String!
+  delegator: String!
+  deployer: String!
+  network: Network!
+  protocol: String!
+}
+
+"""A factory deployment job result represented in JSON format"""
+type FactoryJobResult {
+  completedAt: Date!
+  factoryPublicKey: String!
+  status: String!
+  transactionJson: String!
+}
+
+"""A job representing a task"""
 type Job {
   id: String
   status: String
@@ -25,12 +61,48 @@ type JobResult {
   transactionJson: String!
 }
 
+"""A multisig transaction"""
+type Multisig {
+  createdAt: Date
+  data: String
+  deadline: Int
+  id: Int
+  network: String
+  signature: String
+  signer: Signer
+  signerId: Int
+}
+
 type Mutation {
-  """Confirm a job with a given jobId"""
+  """Confirm a factory deployment job with a given jobId"""
+  confirmFactoryJob(jobId: String!): String
+
+  """Confirm a pool job with a given jobId"""
   confirmJob(jobId: String!): String
+
+  """Create a new multisig transaction (Admin only)"""
+  createMultisig(input: CreateMultisigInput!): Multisig
 
   """Create a new pool"""
   createPool(input: CreatePoolInput!): Job
+
+  """Create a new signer (Admin only)"""
+  createSigner(input: CreateSignerInput!): Signer
+
+  """Add a signer to a network (Admin only)"""
+  createSignerNetwork(input: CreateSignerNetworkInput!): SignerNetwork
+
+  """Delete a multisig transaction (Admin only)"""
+  deleteMultisig(id: Int!): String
+
+  """Deploy a new factory"""
+  deployFactory(input: DeployFactoryInput!): Job
+
+  """Update a signer (Admin only)"""
+  updateSigner(id: Int!, input: UpdateSignerInput!): Signer
+
+  """Update a signer's network configuration (Admin only)"""
+  updateSignerNetwork(input: UpdateSignerNetworkInput!, network: Network!, signerId: Int!): SignerNetwork
 }
 
 enum Network {
@@ -41,11 +113,64 @@ enum Network {
 }
 
 type Query {
+  """Get the factory deployment job"""
+  factoryDeploymentJob(jobId: String!): FactoryJobResult
+
+  """Get a multisig by ID (Admin only)"""
+  multisig(id: Int!): Multisig
+
+  """Get all multisigs with optional network filter (Admin only)"""
+  multisigs(
+    """Filter multisigs by network"""
+    network: Network
+  ): [Multisig!]
+
   """Get the pool creation job"""
   poolCreationJob(jobId: String!): JobResult
+
+  """Get a signer by ID with their network permissions (Admin only)"""
+  signer(id: Int!): Signer
+
+  """Get all signers with their network permissions (Admin only)"""
+  signers(
+    """Filter signers by network"""
+    network: Network
+  ): [Signer!]
+}
+
+"""A signer in the merkle tree"""
+type Signer {
+  createdAt: Date
+  id: Int
+
+  """Network configurations for this signer"""
+  networks: [SignerNetwork!]
+  publicKey: String
+}
+
+"""A signer's network configuration"""
+type SignerNetwork {
+  active: Boolean
+  createdAt: Date
+  id: Int
+  network: String
+  permission: Int
+  signerId: Int
 }
 
 type Subscription {
+  """Subscribe to factory deployment events"""
+  factoryDeployment(jobId: String!): FactoryJobResult
+
   """Subscribe to pool creation events"""
   poolCreation(jobId: String!): JobResult
+}
+
+input UpdateSignerInput {
+  publicKey: String!
+}
+
+input UpdateSignerNetworkInput {
+  active: Boolean!
+  permission: Int!
 }

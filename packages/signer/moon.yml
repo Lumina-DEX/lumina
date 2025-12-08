@@ -124,3 +124,9 @@ tasks:
     inputs:
       - "@group(sources)"
       - "@group(tests)"
+
+  typecheck:
+    command: tsc --noEmit
+    inputs:
+      - "@group(sources)"
+      - "@group(tests)"

@@ -8,6 +8,7 @@ import { factory, multisig, pool, signerMerkle, signerMerkleNetworks } from "../
 import type { Context } from "."
 import { updateStatusAndCDN } from "./helpers/job"
 import { logger } from "./helpers/utils"
+import { jobKey } from "./queue"
 
 type Builder = {
 	Scalars: {
@@ -185,7 +186,7 @@ const CreateSignerInput = builder.inputType("CreateSignerInput", {
 
 const UpdateSignerInput = builder.inputType("UpdateSignerInput", {
 	fields: (t) => ({
-		publicKey: t.string({ required: false })
+		publicKey: t.string({ required: true })
 	})
 })
 
@@ -200,14 +201,10 @@ const CreateSignerNetworkInput = builder.inputType("CreateSignerNetworkInput", {
 
 const UpdateSignerNetworkInput = builder.inputType("UpdateSignerNetworkInput", {
 	fields: (t) => ({
-		permission: t.int({ required: false }),
-		active: t.boolean({ required: false })
+		permission: t.int({ required: true }),
+		active: t.boolean({ required: true })
 	})
 })
-
-const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
-	return data && "deployer" in data
-}
 
 // ==================== SIGNER QUERIES ====================
 
@@ -246,7 +243,7 @@ builder.queryField("signers", (t) =>
 				}
 
 				if (row.network) {
-					signersMap.get(row.signer.id)!.networks?.push(row.network)
+					signersMap.get(row.signer.id)?.networks?.push(row.network)
 				}
 			}
 
@@ -460,16 +457,20 @@ builder.subscriptionField("poolCreation", (t) =>
 				}
 				const job = q.getJob(args.jobId)
 				if (!job) return rfail(`Job ${args.jobId} not found`)
-				if (job.status === "failed") return rfail(`Job ${args.jobId} failed : ${job.poolPublicKey}`)
+				if (job.status === "failed") return rfail(`Job ${args.jobId} failed : ${jobKey(job)}`)
 				if (job.status === "completed") {
 					logger.log(`Job ${args.jobId} already completed`)
-					push(job)
+					if ("poolPublicKey" in job) {
+						push(job)
+					}
 					return stop()
 				}
 				for await (const result of pubsub.subscribe(args.jobId)) {
 					logger.log(`Job ${args.jobId} event:`, result)
-					if (result.status === "failed") return rfail(`Job ${args.jobId} failed: ${result.poolPublicKey}`)
-					push(result)
+					if (result.status === "failed") return rfail(`Job ${args.jobId} failed: ${jobKey(result)}`)
+					if ("poolPublicKey" in result) {
+						push(result)
+					}
 					return stop()
 				}
 				await stop
@@ -486,9 +487,9 @@ builder.queryField("poolCreationJob", (t) =>
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { jobQueue }) => {
 			using q = jobQueue()
-			const job = q.getJob(jobId)
+			const job = q.getPoolJob(jobId)
 			if (!job) return fail(`Job ${jobId} not found`)
-			if (job.status === "failed") return fail(`Job ${jobId} failed: ${job.poolPublicKey}`)
+			if (job.status === "failed") return fail(`Job ${jobId} failed: ${jobKey(job)}`)
 			logger.log(`Job ${jobId} found:`, job)
 			return job
 		}
@@ -534,13 +535,17 @@ builder.subscriptionField("factoryDeployment", (t) =>
 				if (job.status === "failed") return rfail(`Factory deployment job ${args.jobId} failed`)
 				if (job.status === "completed") {
 					logger.log(`Factory deployment job ${args.jobId} already completed`)
-					push(job as FactoryJobResult)
+					if ("factoryPublicKey" in job) {
+						push(job)
+					}
 					return stop()
 				}
 				for await (const result of pubsub.subscribe(args.jobId)) {
 					logger.log(`Factory deployment job ${args.jobId} event:`, result)
 					if (result.status === "failed") return rfail(`Factory deployment job ${args.jobId} failed`)
-					push(result as FactoryJobResult)
+					if ("factoryPublicKey" in result) {
+						push(result)
+					}
 					return stop()
 				}
 				await stop
