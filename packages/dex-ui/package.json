@@ -14,7 +14,7 @@
 		"@tanstack/react-pacer": "^0.16.4",
 		"@tanstack/react-query": "^5.90.2",
 		"coi-serviceworker": "^0.1.7",
-		"next": "15.5.4",
+		"next": "15.5.7",
 		"o1js": "catalog:",
 		"react": "catalog:",
 		"react-currency-format": "github:mohitgupta8888/react-currency-format#4f365ec5005e23451a3b95da1a209b0025622b8d",
