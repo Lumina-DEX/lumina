@@ -127,6 +127,7 @@ tasks:
 
   typecheck:
     command: tsc --noEmit
+    deps: ["^:build"]
     inputs:
       - "@group(sources)"
       - "@group(tests)"

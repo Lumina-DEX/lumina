@@ -562,12 +562,12 @@ builder.queryField("factoryDeploymentJob", (t) =>
 		args: { jobId: t.arg.string({ required: true }) },
 		resolve: async (_, { jobId }, { jobQueue }) => {
 			using q = jobQueue()
-			const job = q.getJob(jobId)
+			const job = q.getFactoryJob(jobId)
 			if (!job) return fail(`Factory deployment job ${jobId} not found`)
 
 			if (job.status === "failed") return fail(`Factory deployment job ${jobId} failed`)
 			logger.log(`Factory deployment job ${jobId} found:`, job)
-			return job as FactoryJobResult
+			return job
 		}
 	})
 )

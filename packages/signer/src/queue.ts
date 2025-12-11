@@ -137,8 +137,14 @@ export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 			queuer.addItem({ jobId, data, pubsub })
 		},
 		getJob: (jobId: string) => jobs.get(jobId),
-		getFactoryJob: (jobId: string) => jobs.get(jobId) as FactoryJobResult | undefined,
-		getPoolJob: (jobId: string) => jobs.get(jobId) as JobResult | undefined,
+		getFactoryJob: (jobId: string) => {
+			const job = jobs.get(jobId)
+			if (job && "factoryPublicKey" in job) return job as FactoryJobResult
+		},
+		getPoolJob: (jobId: string) => {
+			const job = jobs.get(jobId)
+			if (job && "poolPublicKey" in job) return job as JobResult
+		},
 		hasJob: (jobId: string) => jobs.has(jobId),
 		removeJob: (jobId: string) => {
 			jobs.delete(jobId)
