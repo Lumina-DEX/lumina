@@ -56,11 +56,14 @@ export const inputCompile = ({ context, contract }: { contract: ContractName; co
 })
 
 export const loaded = ({ context, contract }: { contract: ContractName; context: LuminaDexMachineContext }) => {
+	context.contract.toLoad.delete(contract)
+	const toLoad = new Set(context.contract.toLoad)
 	return {
 		contract: {
 			...context.contract,
 			currentlyLoading: null,
-			loaded: { ...context.contract.loaded, [contract]: true }
+			loaded: { ...context.contract.loaded, [contract]: true },
+			toLoad
 		}
 	}
 }

@@ -258,8 +258,7 @@ export const createLuminaDexMachine = () =>
 								enqueue.assign({
 									contract: {
 										...context.contract,
-										currentlyLoading: next ?? null,
-										toLoad: new Set(remaining)
+										currentlyLoading: next ?? null
 									}
 								})
 								if (next) enqueue.raise({ type: "LoadNextContract" })
