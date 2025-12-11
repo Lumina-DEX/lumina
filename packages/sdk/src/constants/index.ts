@@ -58,6 +58,7 @@ export const chainFaucets = {
 		tokenAddress: "B62qn71xMXqLmAT83rXW3t7jmnEvezaCYbcnb9NWYz85GTs41VYGDha",
 		tokenId: "wZmPhCrDVraeYcB3By5USJCJ9KCMLYYp497Zuby2b8Rq3wTcbn"
 	},
+	// TODO: Add missing faucets
 	"zeko:mainnet": {
 		address: "NOT_IMPLEMENTED",
 		tokenAddress: "NOT_IMPLEMENTED",
@@ -91,20 +92,17 @@ export const defaultCreationFee = {
 	"mina:mainnet": undefined
 } as const
 
+//TODO: Is the signer address always the same ?
 export const poolInstance = {
 	"mina:devnet": {
-		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
-		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso"
 	},
-	//TODO: Add missing signer
 	"mina:mainnet": {
-		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
-		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso"
 	},
-	"zeko:mainnet": { signer: "NOT_IMPLEMENTED", user0: "NOT_IMPLEMENTED" },
+	"zeko:mainnet": { signer: "NOT_IMPLEMENTED" },
 	"zeko:testnet": {
-		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso",
-		user0: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35"
+		signer: "EKF4sSFc1w5PTFVT8Q4KbbujcM283nyp1dQCht686DeiPtYZswso"
 	}
 } as const
 

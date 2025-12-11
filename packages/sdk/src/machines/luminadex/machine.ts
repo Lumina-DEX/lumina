@@ -181,7 +181,15 @@ export const createLuminaDexMachine = () =>
 		}),
 		on: {
 			NoMinaWalletDetected: { target: ".dexSystem.UNSUPPORTED" },
-			NetworkChanged: { actions: "setNetworkInstance", target: ".contractSystem.RELOAD_CONTRACTS" },
+			NetworkChanged: [
+				// If no network was loaded yet, just set it without reloading contracts
+				{ actions: "setNetworkInstance", guard: ({ context }) => context.contract.loadedNetwork === null },
+				{
+					actions: "setNetworkInstance",
+					target: ".contractSystem.RELOAD_CONTRACTS",
+					guard: ({ context }) => context.contract.loadedNetwork !== null
+				}
+			],
 			AccountChanged: {}
 		},
 		type: "parallel",
@@ -215,6 +223,7 @@ export const createLuminaDexMachine = () =>
 						entry: enqueueActions(({ context, enqueue }) => {
 							const currentNetwork = context.wallet.getSnapshot().context.currentNetwork
 							const loadedNetwork = context.contract.loadedNetwork
+							logger.info("Reloading contracts check...", { currentNetwork, loadedNetwork })
 							if (currentNetwork === loadedNetwork) {
 								if (context.contract.toLoad.size === 0) {
 									logger.info("Contracts are already loaded for the current network.")
@@ -557,15 +566,14 @@ export const createLuminaDexMachine = () =>
 							src: "deployPool",
 							input: ({ context, event }) => {
 								assertEvent(event, "DeployPool")
-								const { signer, user0 } = poolInstance[walletNetwork(context)]
+								const { signer } = poolInstance[walletNetwork(context)]
 								return {
 									...inputWorker(context),
 									tokenA: context.dex.deployPool.tokenA,
 									tokenB: context.dex.deployPool.tokenB,
 									user: walletUser(context),
 									factory: luminaDexFactory(context),
-									signer,
-									user0
+									signer
 								}
 							},
 							onDone: {
