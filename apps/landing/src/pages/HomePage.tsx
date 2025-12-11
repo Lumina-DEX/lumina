@@ -73,7 +73,7 @@ function HomePage() {
 	)
 
 	const StartSwapping = () => (
-		<Link to={"https://beta.luminadex.com"} target="_blank">
+		<Link to={"https://sdk.luminadex.com/dexes/frontends"} target="_blank">
 			<Button
 				shape="round"
 				size={"large"}
