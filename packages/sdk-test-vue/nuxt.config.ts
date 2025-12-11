@@ -15,7 +15,7 @@ export default defineNuxtConfig({
 	nitro: { static: true },
 	ssr: false,
 	routeRules: {
-		"/**": { headers }
+		"/**": { headers, ssr: false, static: true, prerender: true }
 	},
 	hooks: {
 		"vite:serverCreated": (server) => {

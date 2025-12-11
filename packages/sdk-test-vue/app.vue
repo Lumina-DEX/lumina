@@ -37,8 +37,9 @@ const contractStatus = computed(() => ({
 	currentlyLoading: Dex.snapshot.value.context.contract.currentlyLoading,
 	loaded: Dex.snapshot.value.context.contract.loaded
 }))
+const network = computed(() => Wallet.snapshot.value.context.currentNetwork)
 const minaBalances = computed(
-	() => Wallet.snapshot.value.context.balances["mina:devnet"]
+	() => Wallet.snapshot.value.context.balances[network.value]
 )
 
 const notEmpty = (obj: Reactive<unknown>) =>
@@ -254,11 +255,11 @@ const enableClaim = () => {
 }
 
 const fetchTokenBalances = async () => {
-	const resultTokens = await fetchTokenList("mina:devnet")
+	const resultTokens = await fetchTokenList(network.value)
 	tokens.value = resultTokens
 	Wallet.send({
 		type: "FetchBalance",
-		network: "mina:devnet",
+		network: network.value,
 		tokens: resultTokens.map((token) => ({
 			address: token.address,
 			decimal: 10 ** token.decimals,
@@ -284,7 +285,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <h2>Lumina SDK Test v{{ sdkVersion }}</h2>
+    <h2>Lumina SDK Test v{{ sdkVersion }} | {{ network }}</h2>
     <hr>
     {{ contractStatus }}
     <hr>

@@ -227,16 +227,14 @@ export interface DeployPoolArgs {
 	user: string
 	factory: string
 	signer: string
-	user0: string
 }
 
-const deployPoolInstance = async ({ tokenA, tokenB, user, factory, user0, signer }: DeployPoolArgs) => {
+const deployPoolInstance = async ({ tokenA, tokenB, user, factory, signer }: DeployPoolArgs) => {
 	logger.start("Deploying pool instance", {
 		tokenA,
 		tokenB,
 		user,
 		factory,
-		user0,
 		signer
 	})
 	const poolKey = PrivateKey.random()
@@ -249,7 +247,7 @@ const deployPoolInstance = async ({ tokenA, tokenB, user, factory, user0, signer
 	// TODO: temporary solution for testnet
 	const signerPk = PrivateKey.fromBase58(signer)
 	const approvedSignerPublic = signerPk.toPublicKey()
-	logger.debug({ user0, approvedSignerPublic })
+	logger.debug({ approvedSignerPublic })
 
 	const signature = Signature.create(signerPk, poolKey.toPublicKey().toFields())
 	logger.debug({ signature })

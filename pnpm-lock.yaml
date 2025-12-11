@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@biomejs/biome':
-      specifier: ^2.2.4
-      version: 2.2.4
+      specifier: ^2.3.8
+      version: 2.3.8
     '@types/react':
       specifier: 19.2.0
       version: 19.2.0
@@ -54,7 +54,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@changesets/cli':
         specifier: ^2.27.10
         version: 2.27.10
@@ -109,7 +109,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@cloudflare/vite-plugin':
         specifier: ^1.13.8
         version: 1.13.8(vite@7.1.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(workerd@1.20250927.0)(wrangler@4.40.3)
@@ -236,7 +236,7 @@ importers:
     dependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@cloudflare/containers':
         specifier: ^0.0.28
         version: 0.0.28
@@ -331,7 +331,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@types/node':
         specifier: ^20
         version: 20.17.8
@@ -425,7 +425,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@cloudflare/workers-types':
         specifier: ^4.20241127.0
         version: 4.20241127.0
@@ -492,7 +492,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@tanstack/router-plugin':
         specifier: ^1.97.0
         version: 1.97.0(@tanstack/react-router@1.97.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))
@@ -519,7 +519,7 @@ importers:
         version: link:../sdk
       nuxt:
         specifier: ^3.15.1
-        version: 3.15.1(@biomejs/biome@2.2.4)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(aws4fetch@1.0.20)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0))(eslint@9.36.0(jiti@2.5.1))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(yaml@2.8.1)
+        version: 3.15.1(@biomejs/biome@2.3.8)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(aws4fetch@1.0.20)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0))(eslint@9.36.0(jiti@2.5.1))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(yaml@2.8.1)
       vue:
         specifier: latest
         version: 3.5.22(typescript@5.8.3)
@@ -532,7 +532,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       '@nuxt/kit':
         specifier: ^3.15.4
         version: 3.15.4(magicast@0.3.5)(rollup@4.52.3)
@@ -578,7 +578,7 @@ importers:
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
-        version: 2.2.4
+        version: 2.3.8
       dotenv:
         specifier: ^17.2.0
         version: 17.2.0
@@ -1605,55 +1605,55 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@biomejs/biome@2.2.4':
-    resolution: {integrity: sha512-TBHU5bUy/Ok6m8c0y3pZiuO/BZoY/OcGxoLlrfQof5s8ISVwbVBdFINPQZyFfKwil8XibYWb7JMwnT8wT4WVPg==}
+  '@biomejs/biome@2.3.8':
+    resolution: {integrity: sha512-Qjsgoe6FEBxWAUzwFGFrB+1+M8y/y5kwmg5CHac+GSVOdmOIqsAiXM5QMVGZJ1eCUCLlPZtq4aFAQ0eawEUuUA==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.2.4':
-    resolution: {integrity: sha512-RJe2uiyaloN4hne4d2+qVj3d3gFJFbmrr5PYtkkjei1O9c+BjGXgpUPVbi8Pl8syumhzJjFsSIYkcLt2VlVLMA==}
+  '@biomejs/cli-darwin-arm64@2.3.8':
+    resolution: {integrity: sha512-HM4Zg9CGQ3txTPflxD19n8MFPrmUAjaC7PQdLkugeeC0cQ+PiVrd7i09gaBS/11QKsTDBJhVg85CEIK9f50Qww==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.2.4':
-    resolution: {integrity: sha512-cFsdB4ePanVWfTnPVaUX+yr8qV8ifxjBKMkZwN7gKb20qXPxd/PmwqUH8mY5wnM9+U0QwM76CxFyBRJhC9tQwg==}
+  '@biomejs/cli-darwin-x64@2.3.8':
+    resolution: {integrity: sha512-lUDQ03D7y/qEao7RgdjWVGCu+BLYadhKTm40HkpJIi6kn8LSv5PAwRlew/DmwP4YZ9ke9XXoTIQDO1vAnbRZlA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.2.4':
-    resolution: {integrity: sha512-7TNPkMQEWfjvJDaZRSkDCPT/2r5ESFPKx+TEev+I2BXDGIjfCZk2+b88FOhnJNHtksbOZv8ZWnxrA5gyTYhSsQ==}
+  '@biomejs/cli-linux-arm64-musl@2.3.8':
+    resolution: {integrity: sha512-PShR4mM0sjksUMyxbyPNMxoKFPVF48fU8Qe8Sfx6w6F42verbwRLbz+QiKNiDPRJwUoMG1nPM50OBL3aOnTevA==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-arm64@2.2.4':
-    resolution: {integrity: sha512-M/Iz48p4NAzMXOuH+tsn5BvG/Jb07KOMTdSVwJpicmhN309BeEyRyQX+n1XDF0JVSlu28+hiTQ2L4rZPvu7nMw==}
+  '@biomejs/cli-linux-arm64@2.3.8':
+    resolution: {integrity: sha512-Uo1OJnIkJgSgF+USx970fsM/drtPcQ39I+JO+Fjsaa9ZdCN1oysQmy6oAGbyESlouz+rzEckLTF6DS7cWse95g==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64-musl@2.2.4':
-    resolution: {integrity: sha512-m41nFDS0ksXK2gwXL6W6yZTYPMH0LughqbsxInSKetoH6morVj43szqKx79Iudkp8WRT5SxSh7qVb8KCUiewGg==}
+  '@biomejs/cli-linux-x64-musl@2.3.8':
+    resolution: {integrity: sha512-YGLkqU91r1276uwSjiUD/xaVikdxgV1QpsicT0bIA1TaieM6E5ibMZeSyjQ/izBn4tKQthUSsVZacmoJfa3pDA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64@2.2.4':
-    resolution: {integrity: sha512-orr3nnf2Dpb2ssl6aihQtvcKtLySLta4E2UcXdp7+RTa7mfJjBgIsbS0B9GC8gVu0hjOu021aU8b3/I1tn+pVQ==}
+  '@biomejs/cli-linux-x64@2.3.8':
+    resolution: {integrity: sha512-QDPMD5bQz6qOVb3kiBui0zKZXASLo0NIQ9JVJio5RveBEFgDgsvJFUvZIbMbUZT3T00M/1wdzwWXk4GIh0KaAw==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-win32-arm64@2.2.4':
-    resolution: {integrity: sha512-NXnfTeKHDFUWfxAefa57DiGmu9VyKi0cDqFpdI+1hJWQjGJhJutHPX0b5m+eXvTKOaf+brU+P0JrQAZMb5yYaQ==}
+  '@biomejs/cli-win32-arm64@2.3.8':
+    resolution: {integrity: sha512-H4IoCHvL1fXKDrTALeTKMiE7GGWFAraDwBYFquE/L/5r1927Te0mYIGseXi4F+lrrwhSWbSGt5qPFswNoBaCxg==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.2.4':
-    resolution: {integrity: sha512-3Y4V4zVRarVh/B/eSHczR4LYoSVyv3Dfuvm3cWs5w/HScccS0+Wt/lHOcDTRYeHjQmMYVC3rIRWqyN2EI52+zg==}
+  '@biomejs/cli-win32-x64@2.3.8':
+    resolution: {integrity: sha512-RguzimPoZWtBapfKhKjcWXBVI91tiSprqdBYu7tWhgN8pKRZhw24rFeNZTNf6UiBfjCYCi9eFQs/JzJZIhuK4w==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -14202,39 +14202,39 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@biomejs/biome@2.2.4':
+  '@biomejs/biome@2.3.8':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.2.4
-      '@biomejs/cli-darwin-x64': 2.2.4
-      '@biomejs/cli-linux-arm64': 2.2.4
-      '@biomejs/cli-linux-arm64-musl': 2.2.4
-      '@biomejs/cli-linux-x64': 2.2.4
-      '@biomejs/cli-linux-x64-musl': 2.2.4
-      '@biomejs/cli-win32-arm64': 2.2.4
-      '@biomejs/cli-win32-x64': 2.2.4
+      '@biomejs/cli-darwin-arm64': 2.3.8
+      '@biomejs/cli-darwin-x64': 2.3.8
+      '@biomejs/cli-linux-arm64': 2.3.8
+      '@biomejs/cli-linux-arm64-musl': 2.3.8
+      '@biomejs/cli-linux-x64': 2.3.8
+      '@biomejs/cli-linux-x64-musl': 2.3.8
+      '@biomejs/cli-win32-arm64': 2.3.8
+      '@biomejs/cli-win32-x64': 2.3.8
 
-  '@biomejs/cli-darwin-arm64@2.2.4':
+  '@biomejs/cli-darwin-arm64@2.3.8':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.2.4':
+  '@biomejs/cli-darwin-x64@2.3.8':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.2.4':
+  '@biomejs/cli-linux-arm64-musl@2.3.8':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.2.4':
+  '@biomejs/cli-linux-arm64@2.3.8':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.2.4':
+  '@biomejs/cli-linux-x64-musl@2.3.8':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.2.4':
+  '@biomejs/cli-linux-x64@2.3.8':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.2.4':
+  '@biomejs/cli-win32-arm64@2.3.8':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.2.4':
+  '@biomejs/cli-win32-x64@2.3.8':
     optional: true
 
   '@bundled-es-modules/cookie@2.0.1':
@@ -16184,7 +16184,7 @@ snapshots:
       - rollup
       - supports-color
 
-  '@nuxt/vite-builder@3.15.1(@biomejs/biome@2.2.4)(@types/node@22.10.0)(eslint@9.36.0(jiti@2.5.1))(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vue@3.5.22(typescript@5.8.3))(yaml@2.8.1)':
+  '@nuxt/vite-builder@3.15.1(@biomejs/biome@2.3.8)(@types/node@22.10.0)(eslint@9.36.0(jiti@2.5.1))(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vue@3.5.22(typescript@5.8.3))(yaml@2.8.1)':
     dependencies:
       '@nuxt/kit': 3.15.1(magicast@0.3.5)(rollup@4.52.3)
       '@rollup/plugin-replace': 6.0.2(rollup@4.52.3)
@@ -16215,7 +16215,7 @@ snapshots:
       unplugin: 2.1.2
       vite: 6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1)
       vite-node: 2.1.8(@types/node@22.10.0)(terser@5.37.0)
-      vite-plugin-checker: 0.8.0(@biomejs/biome@2.2.4)(eslint@9.36.0(jiti@2.5.1))(optionator@0.9.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))
+      vite-plugin-checker: 0.8.0(@biomejs/biome@2.3.8)(eslint@9.36.0(jiti@2.5.1))(optionator@0.9.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))
       vue: 3.5.22(typescript@5.8.3)
       vue-bundle-renderer: 2.1.1
     transitivePeerDependencies:
@@ -22067,14 +22067,14 @@ snapshots:
 
   nuxi@3.20.0: {}
 
-  nuxt@3.15.1(@biomejs/biome@2.2.4)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(aws4fetch@1.0.20)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0))(eslint@9.36.0(jiti@2.5.1))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(yaml@2.8.1):
+  nuxt@3.15.1(@biomejs/biome@2.3.8)(@libsql/client@0.15.9)(@parcel/watcher@2.5.0)(@types/node@22.10.0)(aws4fetch@1.0.20)(db0@0.2.1(@libsql/client@0.15.9)(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0)))(drizzle-orm@0.37.0(@cloudflare/workers-types@4.20241127.0)(@libsql/client@0.15.9)(@types/react@19.2.2)(bun-types@1.3.1(@types/react@19.2.2))(postgres@3.4.7)(react@19.2.0))(eslint@9.36.0(jiti@2.5.1))(ioredis@5.6.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(yaml@2.8.1):
     dependencies:
       '@nuxt/devalue': 2.0.2
       '@nuxt/devtools': 1.7.0(rollup@4.52.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1))(vue@3.5.22(typescript@5.8.3))
       '@nuxt/kit': 3.15.1(magicast@0.3.5)(rollup@4.52.3)
       '@nuxt/schema': 3.15.1
       '@nuxt/telemetry': 2.6.4(magicast@0.3.5)(rollup@4.52.3)
-      '@nuxt/vite-builder': 3.15.1(@biomejs/biome@2.2.4)(@types/node@22.10.0)(eslint@9.36.0(jiti@2.5.1))(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vue@3.5.22(typescript@5.8.3))(yaml@2.8.1)
+      '@nuxt/vite-builder': 3.15.1(@biomejs/biome@2.3.8)(@types/node@22.10.0)(eslint@9.36.0(jiti@2.5.1))(magicast@0.3.5)(optionator@0.9.4)(rollup@4.52.3)(terser@5.37.0)(tsx@4.20.6)(typescript@5.8.3)(vue@3.5.22(typescript@5.8.3))(yaml@2.8.1)
       '@unhead/dom': 1.11.18
       '@unhead/shared': 1.11.18
       '@unhead/ssr': 1.11.18
@@ -24955,7 +24955,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.8.0(@biomejs/biome@2.2.4)(eslint@9.36.0(jiti@2.5.1))(optionator@0.9.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1)):
+  vite-plugin-checker@0.8.0(@biomejs/biome@2.3.8)(eslint@9.36.0(jiti@2.5.1))(optionator@0.9.4)(typescript@5.8.3)(vite@6.0.7(@types/node@22.10.0)(jiti@2.5.1)(terser@5.37.0)(tsx@4.20.6)(yaml@2.8.1)):
     dependencies:
       '@babel/code-frame': 7.27.1
       ansi-escapes: 4.3.2
@@ -24973,7 +24973,7 @@ snapshots:
       vscode-languageserver-textdocument: 1.0.12
       vscode-uri: 3.0.8
     optionalDependencies:
-      '@biomejs/biome': 2.2.4
+      '@biomejs/biome': 2.3.8
       eslint: 9.36.0(jiti@2.5.1)
       optionator: 0.9.4
       typescript: 5.8.3
