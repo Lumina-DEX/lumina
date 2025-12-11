@@ -5,7 +5,7 @@ import { deployFactoryAndTransaction } from "./helpers/factory"
 import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
 
-type AnyJobResult = JobResult | FactoryJobResult
+export type AnyJobResult = JobResult | FactoryJobResult
 
 type JobTask = {
 	jobId: string
@@ -15,6 +15,8 @@ type JobTask = {
 
 // In-memory job cache
 const jobs = new Map<string, AnyJobResult>()
+
+export const jobKey = (job: AnyJobResult) => ("poolPublicKey" in job ? job.poolPublicKey : job.factoryPublicKey)
 
 const isFactoryJob = (data: CreatePoolInputType | DeployFactoryInputType): data is DeployFactoryInputType => {
 	return "deployer" in data
@@ -135,6 +137,14 @@ export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 			queuer.addItem({ jobId, data, pubsub })
 		},
 		getJob: (jobId: string) => jobs.get(jobId),
+		getFactoryJob: (jobId: string) => {
+			const job = jobs.get(jobId)
+			if (job && "factoryPublicKey" in job) return job as FactoryJobResult
+		},
+		getPoolJob: (jobId: string) => {
+			const job = jobs.get(jobId)
+			if (job && "poolPublicKey" in job) return job as JobResult
+		},
 		hasJob: (jobId: string) => jobs.has(jobId),
 		removeJob: (jobId: string) => {
 			jobs.delete(jobId)
