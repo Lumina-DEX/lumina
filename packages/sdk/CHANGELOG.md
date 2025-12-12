@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.27.0
+
+### Minor Changes
+
+- 3ad820e: add mainnet support
+
 ## 0.26.1
 
 ### Patch Changes
