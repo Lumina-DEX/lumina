@@ -55,16 +55,19 @@ export const createPoolAndTransaction = async ({
 		const listPair = getUniqueUserPairs(users, poolId, newPoolPrivateKey.toBase58())
 		// insert the encrypted key of the pool in database
 		await txOrm.insert(tPoolKey).values(listPair)
-		// logger.log("Inserted pool keys into database", listPair)
+		logger.log("Inserted pool keys into database", listPair.length)
 		const signature = Signature.create(masterSignerPrivateKey, newPoolPublicKey.toFields())
 		const witness = merkle.getWitness(Poseidon.hash(masterSignerPublicKey.toFields()))
 		const factory = luminadexFactories[network]
 		const factoryKey = PublicKey.fromBase58(factory)
 		const zkFactory = new PoolFactory(factoryKey)
 		const factoryTokenId = TokenId.derive(factoryKey)
+		logger.log("Factory address", factoryKey.toBase58())
 
 		const tokenAPublicKey = tokenA === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenA)
+		logger.log("Token A address", tokenAPublicKey.toBase58())
 		const tokenBPublicKey = tokenB === MINA_ADDRESS ? PublicKey.empty() : PublicKey.fromBase58(tokenB)
+		logger.log("Token B address", tokenBPublicKey.toBase58())
 
 		// For pool creation, we need to ensure that tokenA and tokenB are ordered
 		const tokenALower = tokenAPublicKey.x.lessThan(tokenBPublicKey.x)
