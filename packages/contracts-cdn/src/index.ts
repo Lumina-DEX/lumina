@@ -27,7 +27,7 @@ export class FetchToken extends Container<Env> {
 }
 
 // TODO: Update this when we launch a new network.
-const liveNetworks = networks.filter((n) => !n.includes("mainnet"))
+const liveNetworks = networks.filter((n) => !n.includes("zeko:mainnet"))
 
 export default {
 	async scheduled(event, env, context) {
