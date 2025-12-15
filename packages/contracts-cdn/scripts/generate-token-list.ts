@@ -11,7 +11,8 @@ import { fetchAllTokensFromPoolFactory } from "../../sdk/src/helpers/blockchain"
 const generateTokens = async () => {
 	const resultZeko = await fetchAllTokensFromPoolFactory({ network: "zeko:testnet" })
 	const resultMina = await fetchAllTokensFromPoolFactory({ network: "mina:devnet" })
-	console.log(resultZeko, resultMina)
+	const resultMinaMainnet = await fetchAllTokensFromPoolFactory({ network: "mina:mainnet" })
+	console.log("fetch tokens", { resultZeko, resultMina, resultMinaMainnet })
 	// const { tokens: tokens2 } = await fetchAllTokensFromPoolFactory({ network })
 	// const __dirname = path.dirname(new URL(import.meta.url).pathname)
 	// const genDir = path.resolve(__dirname, "../generated")

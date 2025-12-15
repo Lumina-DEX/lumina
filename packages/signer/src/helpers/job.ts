@@ -1,5 +1,5 @@
 import { InfisicalSDK } from "@infisical/sdk"
-import { allRight, deployPoolRight } from "@lumina-dex/contracts"
+import { deployPoolRight } from "@lumina-dex/contracts"
 import { defaultCreationFee, defaultFee, type Networks, urls } from "@lumina-dex/sdk"
 import { and, eq } from "drizzle-orm"
 import {
@@ -159,7 +159,7 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 
 export const updateStatusAndCDN = async ({ poolAddress, network }: { poolAddress: string; network: Networks }) => {
 	const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
-	const response = await fetch("https://cdn.luminadex.com/workflows", {
+	const response = await fetch("https://cdn.luminadex.com/workflows/sync-pool", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
