@@ -82,7 +82,6 @@ async function createOptimizedZipBundle(c: string) {
 	}
 
 	// ZIP entries with adaptive compression
-	// biome-ignore lint/suspicious/noExplicitAny
 	const zipObj: Record<string, Uint8Array | [Uint8Array, any]> = {}
 
 	console.log("Reading files for ZIP bundle...")
