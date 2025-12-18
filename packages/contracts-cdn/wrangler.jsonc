@@ -13,11 +13,13 @@
 		"DO_TOKENLIST_NAME": "db-prod-v2",
 		"SUPABASE_URL": "https://dqofogasktmvjqcjaeyk.supabase.co"
 	},
-	// Workers Static Assets
-	"assets": {
-		"directory": "./public",
-		"binding": "ASSETS"
-	},
+	// r2 Assets
+	"r2_buckets": [
+		{
+			"binding": "CDN_BUCKET",
+			"bucket_name": "lumina-cache"
+		}
+	],
 	// Workers Logs
 	// Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 	// Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs

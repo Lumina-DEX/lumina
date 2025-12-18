@@ -29,6 +29,12 @@ export class FetchToken extends Container<Env> {
 // TODO: Update this when we launch a new network.
 const liveNetworks = networks.filter((n) => !n.includes("zeko:mainnet"))
 
+function getNetworkTypeFromRequest(url: URL): "mainnet" | "testnet" {
+	// Accept `?network=zeko:mainnet` (or any string containing "mainnet")
+	const n = url.searchParams.get("network") ?? ""
+	return n.includes("mainnet") ? "mainnet" : "testnet"
+}
+
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
@@ -48,6 +54,7 @@ export default {
 		// TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
+
 		// Manually trigger the SyncPool workflow for Auth users
 		if (match?.data.path === "sync-pool" && auth({ env, request })) {
 			const body = await request.json()
@@ -195,9 +202,10 @@ export default {
 			return response
 		}
 
-		// Return the json data with the cached contracts
+		// Return the manifest.json for the correct network (mainnet/testnet)
 		if (match?.data.path === "manifest" && match.params?.version) {
-			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${match.params.version}/manifest.json`)
+			const networkType = getNetworkTypeFromRequest(url)
+			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${networkType}/${match.params.version}/manifest.json`)
 			return serveAsset({ assetUrl, env, request, context })
 		}
 

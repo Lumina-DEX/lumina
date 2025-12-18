@@ -1,31 +1,38 @@
 #!/bin/bash
 set -e
 
-# Number of lagrange-basis files required
 REQUIRED_LAGRANGE_FILES=12
 
 check_lagrange_basis() {
-    # Count lagrange-basis files in cache
-    count=$(find cache/ -maxdepth 1 -type f -name "*lagrange-basis*" | wc -l)
-    echo "Found $count lagrange-basis files"
-    [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
+  local dir="$1"
+  count=$(find "$dir" -maxdepth 1 -type f -name "*lagrange-basis*" | wc -l)
+  echo "[$dir] Found $count lagrange-basis files"
+  [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
 }
 
-# Run your command while there are fewer than required lagrange files
-while check_lagrange_basis; do
-    echo "Fewer than $REQUIRED_LAGRANGE_FILES lagrange files found, compiling contracts..."
-    # Compile the contracts
-    node --experimental-strip-types scripts/compile-contracts.ts
+compile_one() {
+  local network="$1"
+  local dir="cache/$network"
 
-    # Optional: add a small delay to prevent tight looping
+  mkdir -p "$dir"
+
+  while check_lagrange_basis "$dir"; do
+    echo "[$network] compiling contracts..."
+    NETWORK_TYPE="$network" CACHE_DIR="$dir" \
+      node --experimental-strip-types scripts/compile-contracts.ts
     sleep 1
-done
+  done
 
-echo "Successfully compiled contracts - $REQUIRED_LAGRANGE_FILES or more lagrange files found"
+  echo "[$network] cache ready"
+}
 
-echo "Creating the cache ..."
+compile_one "testnet"
+compile_one "mainnet"
 
-node --experimental-strip-types scripts/create-cache.ts
+echo "Creating the cache bundles ..."
+# Ici, ton create-cache.ts doit aussi accepter NETWORK_TYPE + CACHE_DIR (voir ci-dessous)
+NETWORK_TYPE="testnet" CACHE_DIR="cache/testnet" node --experimental-strip-types scripts/create-cache.ts
+NETWORK_TYPE="mainnet" CACHE_DIR="cache/mainnet" node --experimental-strip-types scripts/create-cache.ts
 
 echo "Done!"
 exit 0
