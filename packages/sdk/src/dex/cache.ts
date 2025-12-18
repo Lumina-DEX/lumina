@@ -32,12 +32,16 @@ const fetchWithRetry =
 const getNetworkType = (network?: string): "mainnet" | "testnet" =>
 	network?.includes("mainnet") ? "mainnet" : "testnet"
 
+const assetBase = (networkType: "mainnet" | "testnet") =>
+	`${luminaCdnOrigin}/cdn-cgi/assets/${networkType}/v${contractsVersion}`
+
 /**
  * Fetch cache contracts one by one with Promise.all
  * @returns CacheList
  */
-export const fetchCachedContracts = async (network?: string) => {
-	const headers = new Headers([["Content-Encoding", "br, gzip, deflate"]])
+export const fetchCachedContracts = async (network?: Networks) => {
+	// Client should send Accept-Encoding (not Content-Encoding)
+	const headers = new Headers([["Accept-Encoding", "br, gzip, deflate"]])
 	const networkType = getNetworkType(network)
 
 	// Manifest is selected by `?network=...`
@@ -49,14 +53,12 @@ export const fetchCachedContracts = async (network?: string) => {
 
 	const json = (await manifest.json()) as { cache: string[] }
 
+	const base = assetBase(networkType)
 	const cacheList = await Promise.all(
 		json.cache
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
 			.map(async (file: string) => {
-				const response = await fetchWithRetry(3)(
-					`${luminaCdnOrigin}/${networkType}/v${contractsVersion}/cache/${file}.txt`,
-					{ headers }
-				)
+				const response = await fetchWithRetry(3)(`${base}/cache/${file}.txt`, { headers })
 				return {
 					file,
 					data: new Uint8Array(await response.arrayBuffer())
@@ -79,8 +81,7 @@ type CacheData = {
  */
 export const fetchZippedContracts = async (network?: Networks) => {
 	const networkType = getNetworkType(network)
-
-	const response = await fetch(`${luminaCdnOrigin}/${networkType}/v${contractsVersion}/bundle.zip`)
+	const response = await fetch(`${assetBase(networkType)}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 
 	const zipBuffer = await response.arrayBuffer()

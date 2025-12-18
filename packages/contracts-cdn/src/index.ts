@@ -35,6 +35,10 @@ function getNetworkTypeFromRequest(url: URL): "mainnet" | "testnet" {
 	return n.includes("mainnet") ? "mainnet" : "testnet"
 }
 
+function cacheForever(headers: Headers) {
+	headers.set("Cache-Control", "public, max-age=31536000, immutable")
+}
+
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
@@ -53,6 +57,22 @@ export default {
 	async fetch(request, env, context): Promise<Response> {
 		// TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
+
+		// Serve versioned CDN assets from R2
+		// Expected keys: cdn-cgi/assets/{mainnet|testnet}/v{version}/...
+		if (url.pathname.startsWith("/cdn-cgi/assets/")) {
+			const key = url.pathname.replace(/^\//, "")
+			const obj = await env.CDN_BUCKET.get(key)
+			if (!obj) return notFound()
+
+			const h = new Headers(headers)
+			obj.writeHttpMetadata(h)
+			h.set("etag", obj.httpEtag)
+			cacheForever(h)
+
+			return new Response(obj.body, { headers: h })
+		}
+
 		const match = findRoute(router, request.method, url.pathname)
 
 		// Manually trigger the SyncPool workflow for Auth users
@@ -202,14 +222,22 @@ export default {
 			return response
 		}
 
-		// Return the manifest.json for the correct network (mainnet/testnet)
+		// Return the manifest.json for the correct network (mainnet/testnet) from R2
 		if (match?.data.path === "manifest" && match.params?.version) {
 			const networkType = getNetworkTypeFromRequest(url)
-			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${networkType}/${match.params.version}/manifest.json`)
-			return serveAsset({ assetUrl, env, request, context })
+			const key = `cdn-cgi/assets/${networkType}/${match.params.version}/manifest.json`
+
+			const obj = await env.CDN_BUCKET.get(key)
+			if (!obj) return notFound()
+
+			const manifest = JSON.parse(await obj.text()) as Record<string, unknown>
+			manifest.networkType = networkType
+			manifest.network = url.searchParams.get("network") ?? null
+
+			return Response.json(manifest, { headers })
 		}
 
-		// Serve the assets
+		// Optional fallback: still serve any other assets bundled with the Worker
 		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
 		return serveAsset({ assetUrl, env, request, context })
 	}
