@@ -9,11 +9,7 @@ import { cleanPoolTable } from "./supabase"
 
 const router = createRouter<{ path: string }>()
 
-// Backward-compatible manifest endpoint (defaults to testnet assets)
-addRoute(router, "GET", "/api/manifest/:version", { path: "manifest.legacy" })
-
-// New manifest endpoint with network in path
-addRoute(router, "GET", "/api/manifest/:network/:version", { path: "manifest.network" })
+addRoute(router, "GET", "/api/manifest/:version", { path: "manifest" })
 
 addRoute(router, "GET", "/api/:network/:entities", { path: "entities" })
 addRoute(router, "GET", "/api/:network/:entities/count", { path: "entities/count" })
@@ -33,11 +29,6 @@ export class FetchToken extends Container<Env> {
 // TODO: Update this when we launch a new network.
 const liveNetworks = networks.filter((n) => !n.includes("zeko:mainnet"))
 
-function getNetworkType(network: string): "mainnet" | "testnet" {
-	// Rule: if the network name contains "mainnet", treat it as mainnet, otherwise testnet.
-	return network.includes("mainnet") ? "mainnet" : "testnet"
-}
-
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
@@ -53,12 +44,10 @@ export default {
 				break
 		}
 	},
-
 	async fetch(request, env, context): Promise<Response> {
 		// TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
 		const match = findRoute(router, request.method, url.pathname)
-
 		// Manually trigger the SyncPool workflow for Auth users
 		if (match?.data.path === "sync-pool" && auth({ env, request })) {
 			const body = await request.json()
@@ -137,10 +126,8 @@ export default {
 			const isToken = match.params.entity === "token"
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
-
 			const db = getDb(env)
 			const body = await request.json()
-
 			if (isToken) {
 				const token = v.parse(TokenSchema, body)
 				const result = await db.insertTokenIfExists({
@@ -153,7 +140,6 @@ export default {
 				context.waitUntil(caches.default.delete(cacheKey))
 				return new Response("Token Inserted", { headers, status: 201 })
 			}
-
 			const pool = v.parse(PoolSchema, body)
 			const result = await db.insertPoolIfExists({
 				network,
@@ -189,45 +175,33 @@ export default {
 			match.params?.network
 		) {
 			const isToken = match.params.entities === "tokens"
+			// Check for the cache
 			const network = match.params.network as Networks
 			if (!networks.includes(network)) return notFound()
 
-			// Check for the cache
 			const cacheKey = isToken ? tokenCacheKey(match.params.network) : poolCacheKey(match.params.network)
 			const cache = caches.default
 			const cacheResponse = await cache.match(cacheKey)
-			if (cacheResponse?.ok) return cacheResponse
+			if (cacheResponse?.ok) {
+				return cacheResponse
+			}
 
 			const db = getDb(env)
 			const data = isToken ? await db.findAllTokens({ network }) : await db.findAllPools({ network })
 			if (!data) return notFound()
-
 			const response = Response.json(data, { headers })
 			context.waitUntil(cache.put(cacheKey, response.clone()))
 			data[Symbol.dispose]() // TODO: Use using keyword
 			return response
 		}
 
-		// New manifest route: /api/manifest/:network/:version
-		if (match?.data.path === "manifest.network" && match.params?.network && match.params?.version) {
-			const networkType = getNetworkType(match.params.network)
-			// for testnet we keep the old behavior
-			let assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${match.params.version}/manifest.json`)
-			if (networkType === "mainnet") {
-				const networkStandardize = match.params.network.replace(":", "_")
-				assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${networkStandardize}/${match.params.version}/manifest.json`)
-			}
-			return serveAsset({ assetUrl, env, request, context })
-		}
-
-		// Legacy manifest route: /api/manifest/:version
-		// This keeps backward compatibility (defaults to the old location, i.e. testnet-only)
-		if (match?.data.path === "manifest.legacy" && match.params?.version) {
+		// Return the json data with the cached contracts
+		if (match?.data.path === "manifest" && match.params?.version) {
 			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${match.params.version}/manifest.json`)
 			return serveAsset({ assetUrl, env, request, context })
 		}
 
-		// Serve the assets (static assets binding)
+		// Serve the assets
 		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
 		return serveAsset({ assetUrl, env, request, context })
 	}
