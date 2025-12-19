@@ -7,16 +7,25 @@ ENV PNPM_HOME="/pnpm"
 ENV PNPM_STORE_DIR="/pnpm/store"
 ENV PATH="$PNPM_HOME:$PATH"
 
+# ✅ Fix curl: (77) by installing CA certs (+ openssl) and refreshing cert store
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends git unzip gzip xz-utils curl \
+  && apt-get install -y --no-install-recommends \
+      ca-certificates openssl \
+      git unzip gzip xz-utils curl \
+  && update-ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PROTO_HOME="/usr/local/proto"
 SHELL ["/bin/bash", "-c"]
 
+# Install proto
 RUN curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+
 ENV PATH="$PATH:$PROTO_HOME/bin"
 ENV PATH="$PROTO_HOME/shims:$PATH"
+
+# Fail fast if proto isn't available
+RUN proto --version
 
 COPY .prototools ./.prototools
 RUN proto install moon
@@ -34,11 +43,13 @@ COPY .moon ./.moon
 COPY pnpm-lock.yaml ./
 COPY --parents packages/*/package.json .
 
+# If you rely on Moon toolchain pinning, keep this (it can download tools)
 RUN moon setup
 
 # Install ONLY the contracts-cdn workspace graph (includes @lumina-dex/contracts + @lumina-dex/sdk)
+# ✅ Use --mount cache for pnpm store to reduce disk and speed up builds
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter ./packages/contracts-cdn...
+    pnpm install --frozen-lockfile --filter "./packages/contracts-cdn..."
 
 # Copy sources after install (keeps install layer cached)
 COPY packages/contracts/ ./packages/contracts/
