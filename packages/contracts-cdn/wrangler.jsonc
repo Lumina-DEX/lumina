@@ -2,11 +2,16 @@
 	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
 	"name": "luminadex-contracts-cdn",
 	"compatibility_date": "2025-01-16",
-	"main": "src/index.ts",
+	"main": "output/index.js",
 	"workers_dev": true,
 	"preview_urls": true,
 	"upload_source_maps": true,
-	"routes": [{ "pattern": "cdn.luminadex.com", "custom_domain": true }],
+	"routes": [
+		{
+			"pattern": "cdn.luminadex.com",
+			"custom_domain": true
+		}
+	],
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
@@ -39,15 +44,32 @@
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#durable-objects
 	"durable_objects": {
 		"bindings": [
-			{ "name": "TOKENLIST", "class_name": "TokenList" },
-			{ "name": "FETCHTOKEN", "class_name": "FetchToken" }
+			{
+				"name": "TOKENLIST",
+				"class_name": "TokenList"
+			},
+			{
+				"name": "FETCHTOKEN",
+				"class_name": "FetchToken"
+			}
 		]
 	},
 	// Durable Object migrations.
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList", "FetchToken"] }],
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["TokenList", "FetchToken"]
+		}
+	],
 	// We need rules so we can import migrations in the next steps
-	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
+	"rules": [
+		{
+			"type": "Text",
+			"globs": ["**/*.sql"],
+			"fallthrough": true
+		}
+	],
 	// Schedule cron triggers:
 	"triggers": {
 		// Every 30 minutes, every day at midnight

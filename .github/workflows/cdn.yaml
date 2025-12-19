@@ -9,7 +9,9 @@ on:
   workflow_dispatch:
   workflow_call:
 
+# Prevent concurrent deployments on the same branch
 concurrency: wc-${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   id-token: write
   contents: write
@@ -23,24 +25,41 @@ jobs:
   deploy-cdn:
     name: Deploy CDN
     runs-on: ubuntu-latest
+
     outputs:
-      url: ${{ steps.cloudflare.outputs.deployment-url }} # TODO: Use this for e2e tests.
+      # Used by downstream jobs (e.g. e2e tests)
+      url: ${{ steps.cloudflare.outputs.deployment-url }}
+
     steps:
+      # Checkout the repository
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Install Moon + toolchain (pnpm, node, bun, etc.)
       - name: 🛠️ Setup Moon toolchain
-        uses: "moonrepo/setup-toolchain@v0"
+        uses: moonrepo/setup-toolchain@v0
 
+      # Run tests (currently a no-op due to vitest + containers limitation)
       - name: 🧪 Run contracts-cdn tests
         run: moon contracts-cdn:test
 
+      # Build the Mina proving key cache and public CDN assets
+      # This generates:
+      # - cache/
+      # - public/cdn-cgi/assets/**
       - name: 🗂️ Build contracts-cdn cache
         run: moon contracts-cdn:build-cache
 
-      - name: 🚀 Deploy to Cloudflare Workers Static Assets
+      # Build the Worker bundle (tsdown -> output/index.js)
+      # Important: Wrangler must deploy a prebuilt JS file
+      - name: 🏗️ Build Worker bundle
+        run: moon contracts-cdn:container-build
+
+      # Deploy the Worker + static assets to Cloudflare
+      # This step must NOT trigger a full monorepo build
+      - name: 🚀 Deploy to Cloudflare Workers
         id: cloudflare
         uses: ./.github/workflows/actions/deploy-cloudflare
         env:
@@ -49,6 +68,7 @@ jobs:
         with:
           task: contracts-cdn:deploy
 
+      # Comment on the commit with the deployment URL and logs
       - name: 💬 Comment on commit
         uses: actions/github-script@v7
         env:
@@ -58,17 +78,19 @@ jobs:
           script: |
             const url = "${{ steps.cloudflare.outputs.deployment-url }}"
             const output = process.env.COMMAND_OUTPUT
-            const body =
-            `### 🛸 LuminaDex CDN is live 🏌️‍♀️
-            #### 🌍 Deploy URL
 
-            [Cloudflare Workers API preview](${url})
+            const body = `
+            ### 🛸 LuminaDex CDN is live
+
+            #### 🌍 Deploy URL
+            ${url ? `[Cloudflare Workers preview](${url})` : "_No URL detected_"}
 
             #### 🔍 Build Output
+            <details><summary>Logs</summary><pre>${output}</pre></details>
 
-            <details><summary>Output</summary><pre>${output}</pre></details>
+            > Deployed via GitHub Actions
+            `
 
-            > Deployed by Cloudflare Wrangler Action`
             const { sha, repo: { owner , repo }} = context
             const commitComment = await github.rest.repos.createCommitComment({ commit_sha: sha, owner, repo, body })
             console.log({ commitComment })
