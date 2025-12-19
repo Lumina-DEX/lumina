@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.28.0
+
+### Minor Changes
+
+- d719068: Load different cache files between mainnet and testnet
+
 ## 0.27.0
 
 ### Minor Changes
