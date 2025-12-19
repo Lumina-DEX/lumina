@@ -1,60 +1,58 @@
 # syntax=docker/dockerfile:1.7-labs
-# Stage 1: Base image with Bun
-# Using the official Bun image for a lean and fast environment.
+
 FROM oven/bun:1 AS base
 WORKDIR /app
 
-# Stage 2: Install system dependencies for the base image
 ENV PNPM_HOME="/pnpm"
+ENV PNPM_STORE_DIR="/pnpm/store"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN apt update && apt install -y git unzip gzip xz-utils curl
 
-# Set the PROTO_HOME environment variable for all subsequent layers
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends git unzip gzip xz-utils curl \
+  && rm -rf /var/lib/apt/lists/*
+
 ENV PROTO_HOME="/usr/local/proto"
-
-# Set the default shell to bash 
 SHELL ["/bin/bash", "-c"]
 
-# Execute the installation in a single, clean RUN command.
 RUN curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-
-# Add the proto binary directory to the PATH
 ENV PATH="$PATH:$PROTO_HOME/bin"
 ENV PATH="$PROTO_HOME/shims:$PATH"
 
-RUN proto --version
 COPY .prototools ./.prototools
 RUN proto install moon
+
+# ---------- builder ----------
 FROM base AS builder
 WORKDIR /app
 
-# Copy workspace configuration files
+# Workspace metadata (cache-friendly)
 COPY pnpm-workspace.yaml ./
 COPY tsconfig.json ./
 COPY package.json ./
 COPY patches ./patches/
 COPY .moon ./.moon
 COPY pnpm-lock.yaml ./
-
-# Copy all package.json files from the monorepo packages
 COPY --parents packages/*/package.json .
 
 RUN moon setup
-RUN pnpm fetch
 
+# Install ONLY the contracts-cdn workspace graph (includes @lumina-dex/contracts + @lumina-dex/sdk)
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --filter ./packages/contracts-cdn...
+
+# Copy sources after install (keeps install layer cached)
 COPY packages/contracts/ ./packages/contracts/
 COPY packages/sdk/ ./packages/sdk/
 COPY packages/contracts-cdn/ ./packages/contracts-cdn/
 
 RUN moon contracts-cdn:container-build
 
-# Stage 3: Production image
-# This is the final image that will be deployed.
+# ---------- production ----------
 FROM base AS production
 WORKDIR /app
 
-# Copy application from the build stage
 COPY --from=builder --chown=bun:bun /app/packages/contracts-cdn/output/index.js index.js
+
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["bun", "run", "index.js"]      
+CMD ["bun", "run", "index.js"]
