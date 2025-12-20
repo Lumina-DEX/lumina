@@ -67,12 +67,10 @@ tasks:
     command: wrangler deploy
     deps:
       - container-build
-      - build-cache
   deploy-preview:
     command: wrangler versions upload
     deps:
       - container-build
-      - build-cache
   lint:
     command: biome check --formatter-enabled=false
     inputs:
