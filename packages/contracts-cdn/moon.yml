@@ -65,12 +65,16 @@ tasks:
       - public/cdn-cgi/assets/
   deploy:
     command: wrangler deploy
-    deps:
-      - container-build
+    deps: ["^:build"]
+    inputs:
+      - src/**/*
+      - wrangler.jsonc
   deploy-preview:
     command: wrangler versions upload
-    deps:
-      - container-build
+    deps: ["^:build"]
+    inputs:
+      - src/**/*
+      - wrangler.jsonc
   lint:
     command: biome check --formatter-enabled=false
     inputs:

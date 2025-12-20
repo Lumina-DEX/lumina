@@ -2,7 +2,7 @@
 	"$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
 	"name": "luminadex-contracts-cdn",
 	"compatibility_date": "2025-01-16",
-	"main": "output/index.js",
+	"main": "src/index.ts",
 	"workers_dev": true,
 	"preview_urls": true,
 	"upload_source_maps": true,
