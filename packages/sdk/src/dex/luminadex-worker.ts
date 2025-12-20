@@ -126,9 +126,11 @@ const initContracts = async () => {
 }
 
 let globalCache: ReturnType<typeof readCache>
+let globalCacheNetwork: NetworkUri | null = null
 const compileContract = async ({ contract, disableCache }: { contract: ContractName; disableCache: boolean }) => {
 	try {
 		const contracts = context().contracts
+		const currentNetwork = context().network || "mina:mainnet"
 
 		if (disableCache) {
 			logger.start("Compiling contract without cache", contract)
@@ -138,10 +140,11 @@ const compileContract = async ({ contract, disableCache }: { contract: ContractN
 			return
 		}
 
-		if (!globalCache) {
-			logger.warn("No global cache found, fetching zipped contracts")
-			const cacheFiles = await fetchZippedContracts()
+		if (!globalCache || globalCacheNetwork !== currentNetwork) {
+			logger.info("No global cache found, fetching contracts cache for network", currentNetwork)
+			const cacheFiles = await fetchZippedContracts(currentNetwork)
 			globalCache = readCache(cacheFiles)
+			globalCacheNetwork = currentNetwork
 		}
 		logger.start("Compiling contract with cache", contract)
 		await contracts[contract].compile({ cache: globalCache })
