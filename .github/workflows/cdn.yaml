@@ -57,6 +57,15 @@ jobs:
       - name: 🏗️ Build Worker bundle
         run: moon contracts-cdn:container-build
 
+        # Free disk space before Docker build
+      - name: 🧹 Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+
       # Deploy the Worker + static assets to Cloudflare
       # This step must NOT trigger a full monorepo build
       - name: 🚀 Deploy to Cloudflare Workers
