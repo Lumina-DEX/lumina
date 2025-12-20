@@ -64,11 +64,11 @@ tasks:
       - cache/
       - public/cdn-cgi/assets/
   deploy:
-    command: wrangler deploy
+    command: wrangler deploy --format modules
     deps:
       - container-build
   deploy-preview:
-    command: wrangler versions upload
+    command: wrangler versions upload --format modules
     deps:
       - container-build
   lint:
