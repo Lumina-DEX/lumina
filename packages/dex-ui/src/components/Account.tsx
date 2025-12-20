@@ -69,9 +69,7 @@ const Account = () => {
 							value={walletContext.currentNetwork}
 							onChange={async (ev) => await switchNetwork(ev.target.value as Networks)}
 						>
-							{walletContext.currentNetwork !== zekoTestnet &&
-								walletContext.currentNetwork !== minaTestnet &&
-								walletContext.currentNetwork !== minaMainnet && <option>N/A</option>}
+              {!([minaMainnet, zekoTestnet, minaTestnet].includes(walletContext.currentNetwork)) && <option>N/A</option>}
 							<option value={minaMainnet}>Mina</option>
 							<option value={zekoTestnet}>Zeko</option>
 							<option value={minaTestnet}>Devnet</option>
