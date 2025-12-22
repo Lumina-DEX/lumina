@@ -42,7 +42,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         working-directory: packages/contracts-cdn
         run: |
-          cat > rclone.conf << 'EOF'
+          cat > rclone.conf << EOF
           [r2]
           type = s3
           provider = Cloudflare

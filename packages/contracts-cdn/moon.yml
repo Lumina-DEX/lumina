@@ -59,10 +59,10 @@ tasks:
     command: bun run scripts/compile-benchmark.ts
   build-cache:
     script: ./compile-and-create.sh
-    deps: ["contracts:build"]
+    deps: ["^:build"]
     outputs:
       - cache/
-      - public/cdn-cgi/assets/
+      - tmp/contract-cache/
   deploy:
     command: wrangler deploy
     deps: ["^:build"]

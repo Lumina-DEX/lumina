@@ -1,8 +1,8 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 import { FungibleToken, Pool, PoolFactory, PoolTokenHolder } from "@lumina-dex/contracts"
+import { archiveUrls, networks } from "@lumina-dex/sdk/constants"
 import { Cache, Mina } from "o1js"
-import { archiveUrls, networks } from "../../sdk/src/constants"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 

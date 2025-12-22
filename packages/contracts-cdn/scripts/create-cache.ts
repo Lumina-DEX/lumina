@@ -1,11 +1,8 @@
 import { execSync } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
+import { networks, contractsVersion as version } from "@lumina-dex/sdk/constants"
 import { unzipSync, zipSync } from "fflate"
-import contracts from "../../contracts/package.json" with { type: "json" }
-import { networks } from "../../sdk/src/constants"
-
-const { version } = contracts
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
