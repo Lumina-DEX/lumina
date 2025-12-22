@@ -1,41 +1,39 @@
-# Node dependencies (recursive)
-**/node_modules
-**/.pnpm-store
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+cache
+dist
+.vitepress/cache
 
-# Build outputs (recursive)
-**/dist
-**/output
-**/.output
-**/.next
-**/.open-next
-**/.nuxt
-**/.nitro
-**/cache
-**/.cache
-**/.vitepress/cache
-
-# Large assets
-packages/contracts-cdn/public/
-**/*.zip
-**/*.tar.gz
-
-# Moon/Git
-.moon/cache
-.git
+# Node dependencies
+node_modules
 
 # Logs
-**/logs
-**/*.log
+logs
+*.log
 
 # Misc
 .DS_Store
 .fleet
 .idea
-.wrangler
+
+# Local env files
 .env
 .env.*
 !.env.example
 
+.wrangler
+
+# Moon
+.moon/cache
+.git
+
+.next
+.open-next
+packages/contracts-cdn/public
 
 Dockerfile
 Dockerfile.Container

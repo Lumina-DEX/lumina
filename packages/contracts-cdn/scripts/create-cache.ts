@@ -1,67 +1,44 @@
 import { execSync } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
+import { networks, contractsVersion as version } from "@lumina-dex/sdk/constants"
 import { unzipSync, zipSync } from "fflate"
-
-import contracts from "../../contracts/package.json" with { type: "json" }
-
-const { version } = contracts
-console.log(`Creating cache for version ${version}`)
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
-/**
- * CLI:
- *   node ... create-cache.ts [network]
- *
- * Examples:
- *   mina:devnet   (default, legacy output)
- *   mina:mainnet  (output under public/.../mina_mainnet/v{version})
- */
-const network = (process.argv[2] ?? "mina:devnet").toLowerCase()
-const isMainnet = network.includes("mainnet")
-const networkStandardized = network.replace(":", "_")
+const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
+const isValidNetwork = networks.includes(network)
+if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
 
-/**
- * Cache input directory:
- * - legacy devnet/testnet -> ../cache
- * - mainnet              -> ../cache/mina_mainnet
- */
-export const cacheDir = isMainnet
-	? path.resolve(__dirname, `../cache/${networkStandardized}`)
-	: path.resolve(__dirname, "../cache")
+// Cache directory per network
+export const cacheDir = path.resolve(__dirname, `../cache/${network}`)
 
-/**
- * Public output directory:
- * - legacy devnet/testnet -> ../public/cdn-cgi/assets/v{version}
- * - mainnet              -> ../public/cdn-cgi/assets/mina_mainnet/v{version}
- */
-export const publicDir = isMainnet
-	? path.resolve(__dirname, `../public/cdn-cgi/assets/${networkStandardized}/v${version}`)
-	: path.resolve(__dirname, `../public/cdn-cgi/assets/v${version}`)
-
+// Output directory per network
+export const uploadBaseDir = path.resolve(__dirname, `../tmp/contract-cache/${network}/v${version}`)
 export const testDir = path.resolve(__dirname, "../test")
 
-console.log("Cache bundle settings:", { network, networkStandardized, cacheDir, publicDir })
+console.log(`Creating cache for ${network} - version v${version}`)
+console.log(`cacheDir: ${cacheDir}`)
+console.log(`uploadBaseDir: ${uploadBaseDir}`)
 
-await fs.rm(publicDir, { recursive: true, force: true })
+// Remove previous output if it exists
+await fs.rm(uploadBaseDir, { recursive: true, force: true })
 
-const publicCacheDir = path.resolve(publicDir, "cache")
-await fs.mkdir(publicCacheDir, { recursive: true })
+const uploadCacheDir = path.resolve(uploadBaseDir, "cache")
+await fs.mkdir(uploadCacheDir, { recursive: true })
 
 async function writeCache() {
 	const cachedContracts = await fs.readdir(cacheDir)
 
-	// Keep this filter: proving keys + headers are too large for client delivery.
 	const filterPkAndHeader = (x: string) => !x.includes("-pk-") && !x.includes(".header")
 
 	console.log("Writing compiled.json...")
 	const fileName = cachedContracts.filter(filterPkAndHeader)
 	const json = JSON.stringify(fileName)
 
-	await fs.writeFile(path.resolve(publicDir, "compiled.json"), json, "utf8")
+	await fs.writeFile(path.resolve(uploadBaseDir, "compiled.json"), json, "utf8")
 
-	// Keep the same filename to avoid breaking tests/tooling.
+	// Generate a network-specific cache file for tests/dev tooling
 	await fs.writeFile(
 		path.resolve(testDir, "generated-cache.ts"),
 		`export const cache = ${json}.join();
@@ -69,78 +46,77 @@ export const version = "${version}";`,
 		"utf8"
 	)
 
-	console.log("Copying cache to public...")
-	await fs.cp(cacheDir, publicCacheDir, {
+	console.log("Copying cache files to public directory...")
+	await fs.cp(cacheDir, uploadCacheDir, {
 		recursive: true,
 		filter: (source) => filterPkAndHeader(source)
 	})
 
-	const publicCacheContent = await fs.readdir(publicCacheDir)
+	const publicCacheContent = await fs.readdir(uploadCacheDir)
 
-	console.log("Renaming files...")
+	console.log("Renaming files for better browser compression...")
 	for (const file of publicCacheContent) {
-		const fullPath = path.join(publicCacheDir, file)
+		const fullPath = path.join(uploadCacheDir, file)
 		const fileExtension = path.extname(file)
-		const fileNameOnly = path.basename(file, fileExtension)
+		const fileName = path.basename(file, fileExtension)
 
-		// Use .txt extension to enable better browser compression.
-		const newFileName = `${fileNameOnly}.txt`
-		await fs.rename(fullPath, path.join(publicCacheDir, newFileName))
+		// Use .txt extension to enable better browser compression
+		const newFileName = `${fileName}.txt`
+		await fs.rename(fullPath, path.join(uploadCacheDir, newFileName))
 	}
 
 	return json
 }
 
 async function createOptimizedZipBundle(c: string) {
-	const files = await fs.readdir(publicCacheDir)
-	const filesContent = {} as Record<string, Uint8Array>
+	const files = await fs.readdir(uploadCacheDir)
+	const filesContent: Record<string, Uint8Array> = {}
 
 	for (const file of files) {
-		filesContent[file] = await fs.readFile(path.join(publicCacheDir, file))
+		filesContent[file] = await fs.readFile(path.join(uploadCacheDir, file))
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: zip level config is not typed
+	// ZIP entries with adaptive compression
+	// biome-ignore lint/suspicious/noExplicitAny: Zip Filedata --- IGNORE ---
 	const zipObj: Record<string, Uint8Array | [Uint8Array, any]> = {}
 
-	console.log("Reading files...")
+	console.log("Reading files for ZIP bundle...")
 	for (const file of files) {
-		const content = await fs.readFile(path.join(publicCacheDir, file))
-		const stats = await fs.stat(path.join(publicCacheDir, file))
+		const content = await fs.readFile(path.join(uploadCacheDir, file))
+		const stats = await fs.stat(path.join(uploadCacheDir, file))
 
-		// For files larger than 500KB, use maximum compression.
-		if (stats.size > 500000) {
+		// Use stronger compression for large files
+		if (stats.size > 500_000) {
 			zipObj[file] = [new Uint8Array(content), { level: 9, mem: 12 }]
 		} else {
-			// For smaller files, use lower compression to save CPU.
+			// Use lighter compression for small files to save CPU
 			zipObj[file] = [new Uint8Array(content), { level: 6 }]
 		}
 	}
 
-	console.log("Creating zip bundle...")
+	console.log("Creating ZIP bundle...")
 	const zipped = zipSync(zipObj)
-	await fs.writeFile(path.join(publicDir, "bundle.zip"), zipped)
+	await fs.writeFile(path.join(uploadBaseDir, "bundle.zip"), zipped)
 
+	// Verify ZIP integrity by comparing with original files
 	const unzipped = unzipSync(zipped)
-	console.log("Files in zip:", Object.keys(unzipped))
+	console.log("Files in ZIP:", Object.keys(unzipped))
 
-	const tempDir = path.join(publicDir, "temp_diff")
+	const tempDir = path.join(uploadBaseDir, "temp_diff")
 	await fs.mkdir(tempDir, { recursive: true })
 
-	// Compare files to verify zip integrity.
 	let allMatch = true
 	try {
 		for (const [filename, originalContent] of Object.entries(filesContent)) {
 			const unzippedContent = unzipped[filename]
 			if (!unzippedContent) {
-				console.error(`Missing file in unzipped content: ${filename}`)
+				console.error(`Missing file in ZIP: ${filename}`)
 				allMatch = false
 				continue
 			}
 
 			if (originalContent.length !== unzippedContent.length) {
-				console.error(`Size mismatch for ${filename}:`)
-				console.error(`  Original: ${originalContent.length} bytes`)
-				console.error(`  Unzipped: ${unzippedContent.length} bytes`)
+				console.error(`Size mismatch for ${filename}`)
 				allMatch = false
 				continue
 			}
@@ -153,14 +129,14 @@ async function createOptimizedZipBundle(c: string) {
 			execSync(`diff "${originalPath}" "${unzippedPath}"`, { stdio: "inherit" })
 		}
 
-		console.log(allMatch ? "All files match perfectly!" : "Found mismatches!")
+		console.log(allMatch ? "ZIP verification successful" : "ZIP verification failed")
 	} catch (e) {
 		console.error(e)
 	} finally {
 		await fs.rm(tempDir, { recursive: true })
 	}
 
-	// Create manifest.
+	// Manifest file for this network + version
 	const manifest = {
 		version,
 		network,
@@ -169,7 +145,7 @@ async function createOptimizedZipBundle(c: string) {
 		totalFiles: Object.keys(zipObj).length
 	}
 
-	await fs.writeFile(path.join(publicDir, "manifest.json"), JSON.stringify(manifest, null, 2))
+	await fs.writeFile(path.join(uploadBaseDir, "manifest.json"), JSON.stringify(manifest, null, 2))
 }
 
 const c = await writeCache()
