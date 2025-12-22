@@ -13,6 +13,11 @@
 		"DO_TOKENLIST_NAME": "db-prod-v2",
 		"SUPABASE_URL": "https://dqofogasktmvjqcjaeyk.supabase.co"
 	},
+	// TODO: [backward compatibility] Workers Static Assets
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
+	},
 	// r2 Assets
 	"r2_buckets": [
 		{

@@ -4,7 +4,7 @@ import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
 import { PoolSchema, TokenSchema } from "./helper"
-import { auth, getDb, headers, notFound, poolCacheKey, serveR2Asset, sync, tokenCacheKey } from "./http"
+import { auth, getDb, headers, notFound, poolCacheKey, serveAsset, serveR2Asset, sync, tokenCacheKey } from "./http"
 import { cleanPoolTable } from "./supabase"
 
 const router = createRouter<{ path: string }>()
@@ -20,6 +20,9 @@ addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 addRoute(router, "POST", "/workflows/sync-pool", { path: "sync-pool" })
 
 addRoute(router, "GET", "/contract-cache/:network/:version/**", { path: "contract-cache" })
+
+//TODO: [backward compatibility]  Delete this later
+addRoute(router, "GET", "/api/manifest/:version", { path: "manifest" })
 
 export class FetchToken extends Container<Env> {
 	defaultPort = 3000
@@ -202,7 +205,16 @@ export default {
 			return serveR2Asset({ origin: url.origin, key: url.pathname.replace(/^\//, ""), env, request, context })
 		}
 
-		return notFound()
+		// TODO: [backward compatibility]  Delete this later < backward compatibility >
+		if (match?.data.path === "manifest" && match.params?.version) {
+			const assetUrl = new URL(`${url.origin}/cdn-cgi/assets/${match.params.version}/manifest.json`)
+			return serveAsset({ assetUrl, env, request, context })
+		}
+
+		// Serve the assets (static assets binding)
+		// TODO: [backward compatibility] => delete below and do : return notFound()
+		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
+		return serveAsset({ assetUrl, env, request, context })
 	}
 } satisfies ExportedHandler<Env>
 

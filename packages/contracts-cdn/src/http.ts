@@ -14,6 +14,30 @@ export const getDb = (env: Env) => {
 	return env.TOKENLIST.get(dbDO)
 }
 
+//TODO: [backward compatibility]  Delete this later
+export const serveAsset = async ({
+	assetUrl,
+	env,
+	request,
+	context
+}: Omit<ServeAsset, "origin" | "key"> & { assetUrl: URL }) => {
+	// Cache Key must be a Request to avoid leaking headers to other users.
+	const cacheKey = new Request(assetUrl.toString(), request)
+	const cache = caches.default
+	const cacheResponse = await cache.match(cacheKey)
+	if (cacheResponse?.ok) return cacheResponse
+
+	const assetResponse = await env.ASSETS.fetch(assetUrl)
+	const response = new Response(assetResponse.body, assetResponse)
+	// Here we can control the cache headers precisely.
+	if (response.ok) {
+		for (const [n, v] of Object.entries(headers)) response.headers.append(n, v)
+		response.headers.append("Cache-Control", "public, max-age=31536000, immutable")
+		context.waitUntil(cache.put(cacheKey, response.clone()))
+	}
+	return response
+}
+
 /**
  * Serve an asset from R2 if it exists or return a 404. Use cache if possible.
  */
