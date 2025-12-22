@@ -1,11 +1,5 @@
 {
 	"servers": {
-		"moon": {
-			"type": "stdio",
-			"command": "moon",
-			"args": ["mcp"],
-			"cwd": "${workspaceFolder}"
-		},
 		"playwright": {
 			"command": "npx",
 			"args": ["@playwright/mcp@latest"]

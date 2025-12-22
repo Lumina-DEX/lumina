@@ -29,31 +29,24 @@ const fetchWithRetry =
 		throw new Error("Max retries reached")
 	}
 
-const getNetworkType = (network?: string): "mainnet" | "testnet" =>
-	network?.includes("mainnet") ? "mainnet" : "testnet"
-
-const assetBase = (networkType: "mainnet" | "testnet") =>
-	`${luminaCdnOrigin}/cdn-cgi/assets/${networkType}/v${contractsVersion}`
+const assetBase = (network: Networks) => `${luminaCdnOrigin}/contract-cache/${network}/v${contractsVersion}`
 
 /**
  * Fetch cache contracts one by one with Promise.all
  * @returns CacheList
  */
-export const fetchCachedContracts = async (network?: Networks) => {
-	// Client should send Accept-Encoding (not Content-Encoding)
+export const fetchCachedContracts = async (network: Networks) => {
 	const headers = new Headers([["Accept-Encoding", "br, gzip, deflate"]])
-	const networkType = getNetworkType(network)
 
-	// Manifest is selected by `?network=...`
-	const manifestUrl = new URL(`${luminaCdnOrigin}/api/manifest/v${contractsVersion}`)
-	if (network) manifestUrl.searchParams.set("network", network)
+	const base = assetBase(network)
+
+	const manifestUrl = new URL(`${base}/manifest.json`)
 
 	const manifest = await fetch(manifestUrl.toString(), { headers })
 	if (!manifest.ok) throw new Error(`Failed to fetch manifest: ${manifest.statusText}`)
 
 	const json = (await manifest.json()) as { cache: string[] }
 
-	const base = assetBase(networkType)
 	const cacheList = await Promise.all(
 		json.cache
 			.filter((x: string) => !x.includes("-pk-") && !x.includes(".header"))
@@ -79,9 +72,8 @@ type CacheData = {
  * Fetch zipped contracts and unzip them. This is faster than fetchCachedContracts.
  * @returns CacheList
  */
-export const fetchZippedContracts = async (network?: Networks) => {
-	const networkType = getNetworkType(network)
-	const response = await fetch(`${assetBase(networkType)}/bundle.zip`)
+export const fetchZippedContracts = async (network: Networks) => {
+	const response = await fetch(`${assetBase(network)}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 
 	const zipBuffer = await response.arrayBuffer()

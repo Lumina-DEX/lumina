@@ -1,0 +1,65 @@
+name: Upload CDN Files
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency: wc-${{ github.workflow }}-${{ github.ref }}
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
+
+jobs:
+  upload-cdn:
+    name: Upload CDN Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Install rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🛠️ Setup Moon toolchain
+        uses: "moonrepo/setup-toolchain@v0"
+
+      - name: 🗂️ Build contracts-cdn cache
+        run: moon contracts-cdn:build-cache
+
+      - name: ☁️ Upload CDN assets to Cloudflare R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET_CACHE }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        working-directory: packages/contracts-cdn
+        run: |
+          cat > rclone.conf << 'EOF'
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${R2_ACCESS_KEY_ID}
+          secret_access_key = ${R2_SECRET_ACCESS_KEY}
+          endpoint = https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com
+          acl = private
+          EOF
+
+          version = $(jq '.version' ../contracts/package.json -r)
+
+          echo "Uploading contract-cache version v${version} to R2 bucket ${R2_BUCKET}..."
+
+          rclone sync tmp/contract-cache "r2:${R2_BUCKET}/contract-cache" \
+            --config ./rclone.conf \
+            --checksum \
+            --fast-list \
+            --transfers 16 \
+            --checkers 32 \
+            --exclude "/**/temp_diff/**"

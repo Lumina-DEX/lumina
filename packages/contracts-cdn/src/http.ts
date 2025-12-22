@@ -2,7 +2,8 @@ import { getContainer } from "@cloudflare/containers"
 import type { LuminaPool, LuminaToken, Networks } from "@lumina-dex/sdk"
 
 interface ServeAsset {
-	assetUrl: URL
+	origin: string
+	key: string
 	env: Env
 	request: Request
 	context: ExecutionContext
@@ -14,21 +15,32 @@ export const getDb = (env: Env) => {
 }
 
 /**
- * Serve an asset if it exists or return a 404. Use cache if possible.
+ * Serve an asset from R2 if it exists or return a 404. Use cache if possible.
  */
-export const serveAsset = async ({ assetUrl, env, request, context }: ServeAsset) => {
+export const serveR2Asset = async ({ origin, key, env, request, context }: ServeAsset) => {
 	// Cache Key must be a Request to avoid leaking headers to other users.
+	const assetUrl = new URL(`${origin}/${key}`)
 	const cacheKey = new Request(assetUrl.toString(), request)
+
 	const cache = caches.default
 	const cacheResponse = await cache.match(cacheKey)
 	if (cacheResponse?.ok) return cacheResponse
 
-	const assetResponse = await env.ASSETS.fetch(assetUrl)
-	const response = new Response(assetResponse.body, assetResponse)
-	// Here we can control the cache headers precisely.
+	const object = await env.CDN_BUCKET.get(key)
+	if (!object) return notFound()
+
+	const hasBody = "body" in object
+
+	const newHeaders = new Headers(headers)
+	object.writeHttpMetadata(newHeaders)
+	newHeaders.set("etag", object.httpEtag)
+	newHeaders.append("Cache-Control", "public, max-age=31536000, immutable")
+
+	const response = hasBody
+		? new Response(object.body, { headers: newHeaders })
+		: new Response(undefined, { status: 412 })
+
 	if (response.ok) {
-		for (const [n, v] of Object.entries(headers)) response.headers.append(n, v)
-		response.headers.append("Cache-Control", "public, max-age=31536000, immutable")
 		context.waitUntil(cache.put(cacheKey, response.clone()))
 	}
 	return response

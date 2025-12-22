@@ -37,39 +37,6 @@ jobs:
       - name: 🧪 Run contracts-cdn tests
         run: moon contracts-cdn:test
 
-      - name: 🗂️ Build contracts-cdn cache
-        run: moon contracts-cdn:build-cache
-
-      - name: 📦 Install rclone
-        run: |
-          curl -fsSL https://rclone.org/install.sh | sudo bash
-
-      - name: ☁️ Upload CDN assets to Cloudflare R2
-        env:
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET_CACHE }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-        working-directory: packages/contracts-cdn
-        run: |
-          cat > rclone.conf << 'EOF'
-          [r2]
-          type = s3
-          provider = Cloudflare
-          access_key_id = ${R2_ACCESS_KEY_ID}
-          secret_access_key = ${R2_SECRET_ACCESS_KEY}
-          endpoint = https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com
-          acl = private
-          EOF
-
-          rclone sync ./public/cdn-cgi/assets "r2:${R2_BUCKET}/cdn-cgi/assets" \
-            --config ./rclone.conf \
-            --checksum \
-            --fast-list \
-            --transfers 16 \
-            --checkers 32 \
-            --exclude "/**/temp_diff/**"
-
       - name: 🚀 Deploy to Cloudflare Workers Static Assets
         id: cloudflare
         uses: ./.github/workflows/actions/deploy-cloudflare

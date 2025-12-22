@@ -1,36 +1,35 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 import { FungibleToken, Pool, PoolFactory, PoolTokenHolder } from "@lumina-dex/contracts"
-import { Cache /*, Mina */, Mina } from "o1js"
+import { Cache, Mina } from "o1js"
+import { archiveUrls, networks } from "../../sdk/src/constants"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
-// Ex: CACHE_DIR=cache/mainnet ou cache/testnet
-const cacheDir = process.env.CACHE_DIR
-	? path.resolve(process.cwd(), process.env.CACHE_DIR)
-	: path.resolve(__dirname, "../cache")
+const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
+const isValidNetwork = networks.includes(network)
+if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
+
+const networkType = network === "mina:mainnet" ? "mainnet" : "testnet"
+const cacheDir = path.resolve(__dirname, "../cache", networkType)
 
 await fs.mkdir(cacheDir, { recursive: true })
 
 const cache = Cache.FileSystem(cacheDir)
 
 export async function compileContracts() {
-	console.log("Starting contract compilation :", { cacheDir })
+	console.log("Starting contract compilation :", { cacheDir, network })
 
-	const networkType = process.env.NETWORK_TYPE ?? "testnet"
 	Mina.setActiveInstance(
 		Mina.Network({
-			mina:
-				networkType === "mainnet"
-					? "https://api.minascan.io/archive/mainnet/v1/graphql"
-					: "https://api.minascan.io/archive/devnet/v1/graphql",
-			networkId: networkType === "mainnet" ? "mainnet" : "testnet"
+			mina: archiveUrls[network],
+			networkId: network === "mina:mainnet" ? "mainnet" : "testnet"
 		})
 	)
 
 	interface Contract {
 		name: string
-		compile: ({ cache }: { cache: Cache }) => Promise<any>
+		compile: ({ cache }: { cache: Cache }) => Promise<unknown>
 	}
 
 	const ct = async (contract: Contract) => {

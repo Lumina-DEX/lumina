@@ -51,6 +51,13 @@ jobs:
     uses: ./.github/workflows/deploy-test-apps.yml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
     secrets: inherit
 
+  upload-cdn-files:
+    name: Upload CDN Files if a new version of the contracts was published
+    needs: [release]
+    if: ${{ contains(needs.release.outputs.published, '"@lumina-dex/contracts"') }}
+    uses: ./.github/workflows/upload-cdn-files.yaml # Call reusable workflow https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+    secrets: inherit
+
   deploy-cdn:
     name: Deploy the CDN if a new version of the contracts was published
     needs: [release]

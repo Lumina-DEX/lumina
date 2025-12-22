@@ -4,12 +4,10 @@ import { networks } from "@lumina-dex/sdk/constants"
 import { addRoute, createRouter, findRoute } from "rou3"
 import * as v from "valibot"
 import { PoolSchema, TokenSchema } from "./helper"
-import { auth, getDb, headers, notFound, poolCacheKey, serveAsset, sync, tokenCacheKey } from "./http"
+import { auth, getDb, headers, notFound, poolCacheKey, serveR2Asset, sync, tokenCacheKey } from "./http"
 import { cleanPoolTable } from "./supabase"
 
 const router = createRouter<{ path: string }>()
-
-addRoute(router, "GET", "/api/manifest/:version", { path: "manifest" })
 
 addRoute(router, "GET", "/api/:network/:entities", { path: "entities" })
 addRoute(router, "GET", "/api/:network/:entities/count", { path: "entities/count" })
@@ -21,6 +19,8 @@ addRoute(router, "POST", "/api/:network/reset", { path: "reset" })
 addRoute(router, "GET", "/scheduled", { path: "scheduled" })
 addRoute(router, "POST", "/workflows/sync-pool", { path: "sync-pool" })
 
+addRoute(router, "GET", "/contract-cache/:network/:version/**", { path: "contract-cache" })
+
 export class FetchToken extends Container<Env> {
 	defaultPort = 3000
 	sleepAfter = "5m"
@@ -28,12 +28,6 @@ export class FetchToken extends Container<Env> {
 
 // TODO: Update this when we launch a new network.
 const liveNetworks = networks.filter((n) => !n.includes("zeko:mainnet"))
-
-function getNetworkTypeFromRequest(url: URL): "mainnet" | "testnet" {
-	// Accept `?network=zeko:mainnet` (or any string containing "mainnet")
-	const n = url.searchParams.get("network") ?? ""
-	return n.includes("mainnet") ? "mainnet" : "testnet"
-}
 
 function cacheForever(headers: Headers) {
 	headers.set("Cache-Control", "public, max-age=31536000, immutable")
@@ -222,24 +216,14 @@ export default {
 			return response
 		}
 
-		// Return the manifest.json for the correct network (mainnet/testnet) from R2
-		if (match?.data.path === "manifest" && match.params?.version) {
-			const networkType = getNetworkTypeFromRequest(url)
-			const key = `cdn-cgi/assets/${networkType}/${match.params.version}/manifest.json`
+		// Return the cached asset from R2
+		if (match?.data.path === "contract-cache" && match.params?.version && match.params?.network) {
+			const key = `contract-cache${url.pathname}`
 
-			const obj = await env.CDN_BUCKET.get(key)
-			if (!obj) return notFound()
-
-			const manifest = JSON.parse(await obj.text()) as Record<string, unknown>
-			manifest.networkType = networkType
-			manifest.network = url.searchParams.get("network") ?? null
-
-			return Response.json(manifest, { headers })
+			return serveR2Asset({ origin: url.origin, key, env, request, context })
 		}
 
-		// Optional fallback: still serve any other assets bundled with the Worker
-		const assetUrl = new URL(`${url.origin}/cdn-cgi/assets${url.pathname}`)
-		return serveAsset({ assetUrl, env, request, context })
+		return notFound()
 	}
 } satisfies ExportedHandler<Env>
 

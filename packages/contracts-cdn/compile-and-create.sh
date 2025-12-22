@@ -10,7 +10,7 @@ check_lagrange_basis() {
   [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
 }
 
-compile_one() {
+compile_network() {
   local network="$1"
   local dir="cache/$network"
 
@@ -18,21 +18,19 @@ compile_one() {
 
   while check_lagrange_basis "$dir"; do
     echo "[$network] compiling contracts..."
-    NETWORK_TYPE="$network" CACHE_DIR="$dir" \
-      node --experimental-strip-types scripts/compile-contracts.ts
+    node --experimental-strip-types scripts/compile-contracts.ts "$network"
     sleep 1
   done
 
   echo "[$network] cache ready"
 }
 
-compile_one "testnet"
-compile_one "mainnet"
+compile_network "mina:devnet"
+compile_network "mina:mainnet"
 
 echo "Creating the cache bundles ..."
-# Ici, ton create-cache.ts doit aussi accepter NETWORK_TYPE + CACHE_DIR (voir ci-dessous)
-NETWORK_TYPE="testnet" CACHE_DIR="cache/testnet" node --experimental-strip-types scripts/create-cache.ts
-NETWORK_TYPE="mainnet" CACHE_DIR="cache/mainnet" node --experimental-strip-types scripts/create-cache.ts
+node --experimental-strip-types scripts/create-cache.ts "mina:devnet"
+node --experimental-strip-types scripts/create-cache.ts "mina:mainnet"
 
 echo "Done!"
 exit 0

@@ -223,28 +223,13 @@ export const createLuminaDexMachine = () =>
 						entry: enqueueActions(({ context, enqueue }) => {
 							const currentNetwork = context.wallet.getSnapshot().context.currentNetwork
 							const loadedNetwork = context.contract.loadedNetwork
-
-							const getNetworkType = (n: string | null) => (n?.includes("mainnet") ? "mainnet" : "testnet")
-							const currentType = getNetworkType(currentNetwork)
-							const loadedType = getNetworkType(loadedNetwork)
-
-							logger.info("Reloading contracts check...", {
-								currentNetwork,
-								loadedNetwork,
-								currentType,
-								loadedType
-							})
-
-							// Only reload contracts when switching between mainnet <-> testnet
-							if (currentType === loadedType) {
-								// Keep worker instance in sync with the actual network, but do NOT reload contracts
-								enqueue.assign({
-									contract: {
-										...context.contract,
-										loadedNetwork: currentNetwork
-									}
-								})
-
+							logger.info("Reloading contracts check...", { currentNetwork, loadedNetwork })
+							// zeko:testnet and mina:devnet are interchangeable
+							if (
+								currentNetwork === loadedNetwork ||
+								(currentNetwork === "mina:devnet" && loadedNetwork === "zeko:testnet") ||
+								(currentNetwork === "zeko:testnet" && loadedNetwork === "mina:devnet")
+							) {
 								if (context.contract.toLoad.size === 0) {
 									logger.info("Contracts are already loaded for the current network type.")
 									enqueue.raise({ type: "ContractsReady" })
@@ -256,8 +241,7 @@ export const createLuminaDexMachine = () =>
 								return
 							}
 
-							// mainnet <-> testnet switch => full reload
-							logger.info("Network type changed, reloading all contracts...")
+							logger.info("Network changed, reloading all contracts...")
 							const toLoad = setToLoadFromFeatures(context.features)
 
 							enqueue.assign({
