@@ -29,7 +29,16 @@ const fetchWithRetry =
 		throw new Error("Max retries reached")
 	}
 
-const assetBase = (network: Networks) => `${luminaCdnOrigin}/contract-cache/${network}/v${contractsVersion}`
+const assetBase = (network: Networks) => {
+	//TODO: On Zeko mainnet, make sure the constants are the same.
+	const n = {
+		"mina:devnet": "mina:devnet",
+		"mina:mainnet": "mina:mainnet",
+		"zeko:testnet": "mina:devnet",
+		"zeko:mainnet": "mina:mainnet"
+	}[network]
+	return `${luminaCdnOrigin}/contract-cache/${n}/v${contractsVersion}`
+}
 
 /**
  * Fetch cache contracts one by one with Promise.all

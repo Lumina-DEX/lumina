@@ -30,6 +30,7 @@ import { defaultFee, MINA_ADDRESS, type NetworkUri, urls } from "../constants"
 import { minaNetwork } from "../helpers/blockchain"
 import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
+import type { Networks } from "../machines/wallet/types"
 import { fetchZippedContracts, readCache } from "./cache"
 
 const logger = prefixedLogger("[DEX WORKER]")
@@ -125,10 +126,17 @@ const initContracts = async () => {
 	logger.success("Loaded contracts")
 }
 
-let globalCache: ReturnType<typeof readCache>
+const globalCache: Record<Networks, undefined | ReturnType<typeof readCache>> = {
+	"mina:mainnet": undefined,
+	"mina:devnet": undefined,
+	"zeko:testnet": undefined,
+	"zeko:mainnet": undefined
+} as const
+
 const compileContract = async ({ contract, disableCache }: { contract: ContractName; disableCache: boolean }) => {
 	try {
 		const contracts = context().contracts
+		const currentNetwork = context().network || "mina:mainnet"
 
 		if (disableCache) {
 			logger.start("Compiling contract without cache", contract)
@@ -138,13 +146,13 @@ const compileContract = async ({ contract, disableCache }: { contract: ContractN
 			return
 		}
 
-		if (!globalCache) {
-			logger.warn("No global cache found, fetching zipped contracts")
-			const cacheFiles = await fetchZippedContracts()
-			globalCache = readCache(cacheFiles)
+		if (!globalCache[currentNetwork]) {
+			logger.warn(`No global cache found for network ${currentNetwork}, fetching zipped contracts.`)
+			const cacheFiles = await fetchZippedContracts(currentNetwork)
+			globalCache[currentNetwork] = readCache(cacheFiles)
 		}
 		logger.start("Compiling contract with cache", contract)
-		await contracts[contract].compile({ cache: globalCache })
+		await contracts[contract].compile({ cache: globalCache[currentNetwork] })
 		logger.success("Compiled contract successfully with cache", contract)
 	} catch (error) {
 		logger.error(`Contract compilation failed for ${contract}`, error)

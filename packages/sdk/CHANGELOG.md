@@ -1,5 +1,17 @@
 # @lumina-dex/sdk
 
+## 0.29.0
+
+### Minor Changes
+
+- 7dfe5e6: load contracts cache by network
+
+## 0.28.0
+
+### Minor Changes
+
+- d719068: Load different cache files between mainnet and testnet
+
 ## 0.27.0
 
 ### Minor Changes

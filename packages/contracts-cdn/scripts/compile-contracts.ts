@@ -10,8 +10,7 @@ const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
 const isValidNetwork = networks.includes(network)
 if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
 
-const networkType = network === "mina:mainnet" ? "mainnet" : "testnet"
-const cacheDir = path.resolve(__dirname, "../cache", networkType)
+const cacheDir = path.resolve(__dirname, "../cache", network)
 
 await fs.mkdir(cacheDir, { recursive: true })
 

@@ -29,10 +29,6 @@ export class FetchToken extends Container<Env> {
 // TODO: Update this when we launch a new network.
 const liveNetworks = networks.filter((n) => !n.includes("zeko:mainnet"))
 
-function cacheForever(headers: Headers) {
-	headers.set("Cache-Control", "public, max-age=31536000, immutable")
-}
-
 export default {
 	async scheduled(event, env, context) {
 		console.log("Scheduled event triggered", event)
@@ -51,21 +47,6 @@ export default {
 	async fetch(request, env, context): Promise<Response> {
 		// TODO: implement rate-limiting and bot protection here.
 		const url = new URL(request.url)
-
-		// Serve versioned CDN assets from R2
-		// Expected keys: cdn-cgi/assets/{mainnet|testnet}/v{version}/...
-		if (url.pathname.startsWith("/cdn-cgi/assets/")) {
-			const key = url.pathname.replace(/^\//, "")
-			const obj = await env.CDN_BUCKET.get(key)
-			if (!obj) return notFound()
-
-			const h = new Headers(headers)
-			obj.writeHttpMetadata(h)
-			h.set("etag", obj.httpEtag)
-			cacheForever(h)
-
-			return new Response(obj.body, { headers: h })
-		}
 
 		const match = findRoute(router, request.method, url.pathname)
 
@@ -218,9 +199,7 @@ export default {
 
 		// Return the cached asset from R2
 		if (match?.data.path === "contract-cache" && match.params?.version && match.params?.network) {
-			const key = `contract-cache${url.pathname}`
-
-			return serveR2Asset({ origin: url.origin, key, env, request, context })
+			return serveR2Asset({ origin: url.origin, key: url.pathname.replace(/^\//, ""), env, request, context })
 		}
 
 		return notFound()
