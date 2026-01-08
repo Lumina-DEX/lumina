@@ -1,6 +1,7 @@
 import { unzipSync } from "fflate"
 import { contractsVersion, luminaCdnOrigin } from "../constants"
 import { prefixedLogger } from "../helpers/debug"
+import type { Networks } from "../machines/wallet/types"
 
 type CachedFile = { file: string; data: Uint8Array }
 type CacheList = Record<string, CachedFile>
@@ -28,43 +29,32 @@ const fetchWithRetry =
 		throw new Error("Max retries reached")
 	}
 
-// Keep legacy behavior as default (devnet/testnet bundle path)
-const networkToPathPrefix = (network?: string) => {
-	// If no network is provided, keep backward compatibility (legacy testnet/devnet assets)
-	if (!network) return ""
-
-	// Standardize "mina:mainnet" => "mina_mainnet" (matches your Worker routing + build output)
-	const standardized = network.replace(":", "_")
-
-	// Only mainnet is stored under a subfolder; everything else stays in the legacy location
-	// (devnet/testnet networks all share the same proving keys for now)
-	return network.includes("mainnet") ? `/${standardized}` : ""
+const assetBase = (network: Networks) => {
+	//TODO: On Zeko mainnet, make sure the constants are the same.
+	const n = {
+		"mina:devnet": "mina:devnet",
+		"mina:mainnet": "mina:mainnet",
+		"zeko:testnet": "mina:devnet",
+		"zeko:mainnet": "mina:mainnet"
+	}[network]
+	return `${luminaCdnOrigin}/contract-cache/${n}/v${contractsVersion}`
 }
 
 /**
  * Fetch cache contracts one by one with Promise.all
  * @returns CacheList
  */
-export const fetchCachedContracts = async (network?: string) => {
-	// Client should send Accept-Encoding (not Content-Encoding)
+export const fetchCachedContracts = async (network: Networks) => {
 	const headers = new Headers([["Accept-Encoding", "br, gzip, deflate"]])
 
-	// New route when network is provided:
-	//   /api/manifest/:network/vX
-	// Legacy route when network is not provided:
-	//   /api/manifest/vX
-	const manifestUrl = network
-		? `${luminaCdnOrigin}/api/manifest/${network}/v${contractsVersion}`
-		: `${luminaCdnOrigin}/api/manifest/v${contractsVersion}`
+	const base = assetBase(network)
 
-	const manifest = await fetch(manifestUrl, { headers })
+	const manifestUrl = new URL(`${base}/manifest.json`)
+
+	const manifest = await fetch(manifestUrl.toString(), { headers })
 	if (!manifest.ok) throw new Error(`Failed to fetch manifest: ${manifest.statusText}`)
 
 	const json = (await manifest.json()) as { cache: string[] }
-
-	// Assets are versioned, and mainnet lives in /mina_mainnet/vX/...
-	const prefix = networkToPathPrefix(network)
-	const base = `${luminaCdnOrigin}${prefix}/v${contractsVersion}`
 
 	const cacheList = await Promise.all(
 		json.cache
@@ -91,11 +81,8 @@ type CacheData = {
  * Fetch zipped contracts and unzip them. This is faster than fetchCachedContracts.
  * @returns CacheList
  */
-export const fetchZippedContracts = async (network?: string) => {
-	const prefix = networkToPathPrefix(network)
-	const url = `${luminaCdnOrigin}${prefix}/v${contractsVersion}/bundle.zip`
-
-	const response = await fetch(url)
+export const fetchZippedContracts = async (network: Networks) => {
+	const response = await fetch(`${assetBase(network)}/bundle.zip`)
 	if (!response.ok) throw new Error(`Failed to fetch contracts: ${response.statusText}`)
 
 	const zipBuffer = await response.arrayBuffer()
@@ -119,9 +106,9 @@ export const readCache = (files: CacheList) => ({
 
 		if (dataType === "string") {
 			logger.debug(`${id} found.`)
-			return files[id].data
+			const data = files[id].data
+			return data
 		}
-
 		logger.error(`${id} data type is not a string : not supported.`)
 		return undefined
 	},

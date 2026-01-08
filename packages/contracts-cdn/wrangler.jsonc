@@ -6,23 +6,25 @@
 	"workers_dev": true,
 	"preview_urls": true,
 	"upload_source_maps": true,
-	"routes": [
-		{
-			"pattern": "cdn.luminadex.com",
-			"custom_domain": true
-		}
-	],
+	"routes": [{ "pattern": "cdn.luminadex.com", "custom_domain": true }],
 	"compatibility_flags": ["nodejs_compat"],
 	"vars": {
 		"ENVIRONMENT": "production",
 		"DO_TOKENLIST_NAME": "db-prod-v2",
 		"SUPABASE_URL": "https://dqofogasktmvjqcjaeyk.supabase.co"
 	},
-	// Workers Static Assets
+	// TODO: [backward compatibility] Workers Static Assets
 	"assets": {
 		"directory": "./public",
 		"binding": "ASSETS"
 	},
+	// r2 Assets
+	"r2_buckets": [
+		{
+			"binding": "CDN_BUCKET",
+			"bucket_name": "lumina-cache"
+		}
+	],
 	// Workers Logs
 	// Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 	// Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
@@ -44,32 +46,15 @@
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#durable-objects
 	"durable_objects": {
 		"bindings": [
-			{
-				"name": "TOKENLIST",
-				"class_name": "TokenList"
-			},
-			{
-				"name": "FETCHTOKEN",
-				"class_name": "FetchToken"
-			}
+			{ "name": "TOKENLIST", "class_name": "TokenList" },
+			{ "name": "FETCHTOKEN", "class_name": "FetchToken" }
 		]
 	},
 	// Durable Object migrations.
 	// Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#migrations
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": ["TokenList", "FetchToken"]
-		}
-	],
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["TokenList", "FetchToken"] }],
 	// We need rules so we can import migrations in the next steps
-	"rules": [
-		{
-			"type": "Text",
-			"globs": ["**/*.sql"],
-			"fallthrough": true
-		}
-	],
+	"rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
 	// Schedule cron triggers:
 	"triggers": {
 		// Every 30 minutes, every day at midnight

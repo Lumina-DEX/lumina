@@ -5,40 +5,36 @@ set -e
 REQUIRED_LAGRANGE_FILES=12
 
 check_lagrange_basis() {
-    local cache_path="$1"
-    # Count lagrange-basis files in cache
-    count=$(find "$cache_path" -maxdepth 1 -type f -name "*lagrange-basis*" | wc -l)
-    echo "Found $count lagrange-basis files in $cache_path"
-    [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
+  local dir="$1"
+  # Count lagrange-basis files in cache
+  count=$(find "$dir" -maxdepth 1 -type f -name "*lagrange-basis*" | wc -l)
+  echo "[$dir] Found $count lagrange-basis files"
+  [ "$count" -lt "$REQUIRED_LAGRANGE_FILES" ]
 }
 
 compile_network() {
-    local network="$1"
-    local cache_path="$2"
+  local network="$1"
+  local dir="cache/$network"
 
-    mkdir -p "$cache_path"
+  mkdir -p "$dir"
 
-    # Run your command while there are fewer than required lagrange files
-    while check_lagrange_basis "$cache_path"; do
-        echo "Fewer than $REQUIRED_LAGRANGE_FILES lagrange files found, compiling contracts for $network..."
-        # Compile the contracts
-        node --experimental-strip-types scripts/compile-contracts.ts "$network"
+  # Run your command while there are fewer than required lagrange files
+  while check_lagrange_basis "$dir"; do
+    echo "[$network] compiling contracts..."
+    # Compile the contracts
+    node --experimental-strip-types scripts/compile-contracts.ts "$network"
+    sleep 1
+  done
 
-        # Optional: add a small delay to prevent tight looping
-        sleep 1
-    done
-
-    echo "Successfully compiled contracts - $REQUIRED_LAGRANGE_FILES or more lagrange files found for $network"
-
-    echo "Creating the cache bundle for $network ..."
-    node --experimental-strip-types scripts/create-cache.ts "$network"
+  echo "[$network] cache ready"
 }
 
-# Legacy bundle (kept as-is): devnet/testnet -> cache/
-compile_network "mina:devnet" "cache"
+compile_network "mina:devnet"
+compile_network "mina:mainnet"
 
-# Mainnet bundle: mina:mainnet -> cache/mina_mainnet/
-compile_network "mina:mainnet" "cache/mina_mainnet"
+echo "Creating the cache bundles ..."
+node --experimental-strip-types scripts/create-cache.ts "mina:devnet"
+node --experimental-strip-types scripts/create-cache.ts "mina:mainnet"
 
 echo "Done!"
 exit 0

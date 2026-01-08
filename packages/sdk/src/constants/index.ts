@@ -20,8 +20,8 @@ export const startBlock: Record<NetworkUri, number> = {
 
 export const urls = {
 	"mina:mainnet": "https://api.minascan.io/node/mainnet/v1/graphql",
-	"mina:devnet": "https://api.minascan.io/node/devnet/v1/graphql",
-	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"mina:devnet": "https://gateway.mina.devnet.zeko.io",
+	"zeko:testnet": "https://testnet.zeko.io/graphql",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 
@@ -29,8 +29,8 @@ export type SupportedNetwork = keyof typeof urls
 
 export const archiveUrls = {
 	"mina:mainnet": "https://api.minascan.io/archive/mainnet/v1/graphql",
-	"mina:devnet": "https://api.minascan.io/archive/devnet/v1/graphql",
-	"zeko:testnet": "https://devnet.zeko.io/graphql",
+	"mina:devnet": "https://gateway.mina.archive.devnet.zeko.io",
+	"zeko:testnet": "https://archive.testnet.zeko.io/graphql",
 	"zeko:mainnet": "NOT_IMPLEMENTED"
 } as const
 

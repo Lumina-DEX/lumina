@@ -1,65 +1,34 @@
 import fs from "node:fs/promises"
 import path from "node:path"
-
 import { FungibleToken, Pool, PoolFactory, PoolTokenHolder } from "@lumina-dex/contracts"
+import { archiveUrls, networks } from "@lumina-dex/sdk/constants"
 import { Cache, Mina } from "o1js"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
-/**
- * CLI:
- *   node ... compile-contracts.ts [network]
- *
- * Examples:
- *   mina:devnet   (default, legacy)
- *   mina:mainnet  (stored under cache/mina_mainnet)
- */
-const network = (process.argv[2] ?? "mina:devnet").toLowerCase()
+const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
+const isValidNetwork = networks.includes(network)
+if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
 
-/**
- * Standardize network name for folder usage (ex: mina:mainnet -> mina_mainnet)
- */
-const networkStandardized = network.replace(":", "_")
-
-/**
- * Keep backward compatibility:
- * - devnet/testnet -> ../cache
- * - mina:mainnet   -> ../cache/mina_mainnet
- */
-export const cacheDir = network.includes("mainnet")
-	? path.resolve(__dirname, `../cache/${networkStandardized}`)
-	: path.resolve(__dirname, "../cache")
+const cacheDir = path.resolve(__dirname, "../cache", network)
 
 await fs.mkdir(cacheDir, { recursive: true })
 
 const cache = Cache.FileSystem(cacheDir)
 
-function setMinaInstance(n: string) {
-	const isMainnet = n.includes("mainnet")
+export async function compileContracts() {
+	console.log("Starting contract compilation :", { cacheDir, network })
 
-	// These endpoints can be updated later if needed.
 	Mina.setActiveInstance(
 		Mina.Network({
-			mina: isMainnet
-				? "https://api.minascan.io/archive/mainnet/v1/graphql"
-				: "https://api.minascan.io/archive/devnet/v1/graphql",
-			networkId: isMainnet ? "mainnet" : "testnet"
+			mina: archiveUrls[network],
+			networkId: network === "mina:mainnet" ? "mainnet" : "testnet"
 		})
 	)
-}
-
-export async function compileContracts() {
-	console.log("Starting contract compilation:", {
-		network,
-		cacheDir
-	})
-
-	setMinaInstance(network)
 
 	interface Contract {
 		name: string
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		compile: ({ cache }: { cache: Cache }) => Promise<any>
+		compile: ({ cache }: { cache: Cache }) => Promise<unknown>
 	}
 
 	const ct = async (contract: Contract) => {
