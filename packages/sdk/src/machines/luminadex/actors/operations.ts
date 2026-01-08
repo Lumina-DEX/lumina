@@ -126,7 +126,7 @@ export const calculateRemoveLiquidityAmount = fromPromise(
 
 				const supply = Number.parseInt(reserves.liquidity)
 				// lp token has 9 decimals
-				const liquidity = Number.parseInt(lpAmount) * 10 ** 9
+				const liquidity = Number.parseFloat(lpAmount) * 10 ** 9
 				const liquidityAmount = getAmountOutFromLiquidity({
 					liquidity,
 					tokenA: { address: reserves.token0.address, balance: balanceA },
