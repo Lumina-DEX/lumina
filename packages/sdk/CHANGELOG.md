@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 0.30.0
+
+### Minor Changes
+
+- b39d2d7: Fixes a calculation error on liquidity removal
+
 ## 0.29.0
 
 ### Minor Changes
