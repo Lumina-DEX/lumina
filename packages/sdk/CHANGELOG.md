@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 1.0.0
+
+### Major Changes
+
+- 1cfab7f: Refactor contract cache and fix wallet fetching
+
 ## 0.30.0
 
 ### Minor Changes
