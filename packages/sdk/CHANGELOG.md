@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 1.0.1
+
+### Patch Changes
+
+- 7443408: fix: fetch balances with will now use the post method
+
 ## 1.0.0
 
 ### Major Changes
