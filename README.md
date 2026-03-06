@@ -23,7 +23,7 @@ apt-get install git unzip gzip xz-utils
 dnf install git unzip gzip xz
 
 # Linux, macOS, WSL
-curl -fsSL https://get.prototools.dev | sh
+bash <(curl -fsSL https://moonrepo.dev/install/proto.sh)
 ```
 
 ```powershell
