@@ -157,6 +157,36 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 	})
 }
 
+/**
+ * Check if a query network is allowed based on the configured env network.
+ * - If env network is mina:mainnet: strict match required
+ * - If env network contains devnet or testnet: query can contain either devnet or testnet
+ */
+export function isNetworkAllowed(queryNetwork: Networks): boolean {
+	const env = getEnv()
+	const envNetwork = env.NETWORK as string
+
+	if (envNetwork === "mina:mainnet") {
+		return queryNetwork === "mina:mainnet"
+	}
+
+	const isEnvTestOrDev = envNetwork.includes("testnet") || envNetwork.includes("devnet")
+	const isQueryTestOrDev = queryNetwork.includes("testnet") || queryNetwork.includes("devnet")
+
+	return isEnvTestOrDev && isQueryTestOrDev
+}
+
+/**
+ * Validate the query network against the env network configuration.
+ * Throws an error if the network is not allowed.
+ */
+export function validateNetwork(queryNetwork: Networks): void {
+	if (!isNetworkAllowed(queryNetwork)) {
+		const env = getEnv()
+		throw new Error(`Network mismatch: query network "${queryNetwork}" is not allowed for env network "${env.NETWORK}"`)
+	}
+}
+
 export const updateStatusAndCDN = async ({ poolAddress, network }: { poolAddress: string; network: Networks }) => {
 	const secret = await getInfisicalSecret("LUMINA_TOKEN_ENDPOINT_AUTH_TOKEN")
 	const response = await fetch("https://cdn.luminadex.com/workflows/sync-pool", {

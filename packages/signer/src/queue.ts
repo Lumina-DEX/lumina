@@ -4,6 +4,7 @@ import { ensureCompiled } from "./helpers/contracts"
 import { deployFactoryAndTransaction } from "./helpers/factory"
 import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
+import { validateNetwork } from "./helpers/job"
 
 export type AnyJobResult = JobResult | FactoryJobResult
 
@@ -30,6 +31,7 @@ const processJob = async ({ jobId, data, pubsub }: JobTask) => {
 	logger.log(`Processing job ${jobId}:`, Date.now())
 
 	try {
+		validateNetwork(data.network)
 		await ensureCompiled(data.network)
 
 		if (isFactoryJob(data)) {
