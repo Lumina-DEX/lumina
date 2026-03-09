@@ -25,7 +25,10 @@ vi.mock("../src/helpers/contracts", () => ({
 }))
 
 vi.mock("../src/helpers/job", () => ({
-	updateStatusAndCDN: vi.fn(async () => "CDN updated")
+	updateStatusAndCDN: vi.fn(async () => "CDN updated"),
+	validateNetwork: vi.fn((network: string) => {
+		return true
+	})
 }))
 
 vi.mock("../src/helpers/pool", () => ({
