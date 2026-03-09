@@ -55,6 +55,7 @@ jobs:
           INFISICAL_PROJECT_ID: 1cae9006-c83d-415d-b207-c966c9d1df48
           INFISICAL_CLIENT_ID: ${{ secrets.INFISICAL_CLIENT_ID }}
           INFISICAL_CLIENT_SECRET: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          NETWORK: "mina:devnet"
 
       - name: 📊 Upload Moon report
         uses: "moonrepo/run-report-action@v1"
