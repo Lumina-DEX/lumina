@@ -134,7 +134,8 @@ describe("GraphQL API", () => {
 					INFISICAL_ENVIRONMENT: "test",
 					INFISICAL_PROJECT_ID: "test",
 					INFISICAL_CLIENT_ID: "test",
-					INFISICAL_CLIENT_SECRET: "test"
+					INFISICAL_CLIENT_SECRET: "test",
+					NETWORK: "mina:devnet"
 				},
 				shouldUpdateCDN: false
 			}
