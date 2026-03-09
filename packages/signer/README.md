@@ -207,7 +207,7 @@ sudo chmod 777 /var/lib/dokku/data/pool-signer-data
 
 ## Network
 
-Set the network with:
+Set the network in env with:
 
 ```env
 NETWORK="mina:devnet"
