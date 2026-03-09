@@ -159,21 +159,20 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 
 /**
  * Check if a query network is allowed based on the configured env network.
- * - If env network is mina:mainnet: strict match required
+ * - If env network is mainnet strict match required
  * - If env network contains devnet or testnet: query can contain either devnet or testnet
  */
 export function isNetworkAllowed(queryNetwork: Networks): boolean {
 	const env = getEnv()
 	const envNetwork = env.NETWORK as string
 
-	if (envNetwork === "mina:mainnet") {
-		return queryNetwork === "mina:mainnet"
-	}
-
 	const isEnvTestOrDev = envNetwork.includes("testnet") || envNetwork.includes("devnet")
 	const isQueryTestOrDev = queryNetwork.includes("testnet") || queryNetwork.includes("devnet")
 
-	return isEnvTestOrDev && isQueryTestOrDev
+	if (isEnvTestOrDev && isQueryTestOrDev) {
+		return true
+	}
+	return queryNetwork === envNetwork
 }
 
 /**

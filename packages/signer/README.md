@@ -204,3 +204,22 @@ sudo touch /usr/src/app/packages/signer/data/db.sqlite
 dokku storage:mount pool-signer /var/lib/dokku/data/pool-signer-data:/usr/src/app/packages/signer/data
 sudo chmod 777 /var/lib/dokku/data/pool-signer-data
 ```
+
+## Network
+
+Set the network with:
+
+```env
+NETWORK="mina:devnet"
+```
+
+Supported values:
+
+- `mina:devnet`
+- `zeko:testnet`
+- `mina:mainnet`
+
+Use `mina:devnet` or `zeko:testnet` for testnet.
+Use `mina:mainnet` for mainnet.
+
+`zeko:testnet` can be used the same way as `mina:devnet` because they currently generate the same proving keys.
