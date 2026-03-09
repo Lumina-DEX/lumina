@@ -30,7 +30,7 @@ jobs:
           curl -fsSL https://d2lang.com/install.sh | sh -s --
 
       - name: 🛠️ Setup Moon toolchain
-        uses: "moonrepo/setup-toolchain@v0.4.1"
+        uses: "moonrepo/setup-toolchain@v0"
 
       - name: 🧪 Run CI tasks
         run: "moon ci"
