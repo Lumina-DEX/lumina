@@ -123,6 +123,7 @@ docker run --rm -it --network lumina-net -p 3001:3001 \
   -e INFISICAL_PROJECT_ID=your_project_id \
   -e INFISICAL_CLIENT_ID=your_client_id \
   -e INFISICAL_CLIENT_SECRET=your_client_secret \
+  -e NETWORK=chain_network \
   luminadex-signer
 ```
 
@@ -156,7 +157,8 @@ dokku config:set pool-signer \
   INFISICAL_ENVIRONMENT=your_infisical_environment \
   INFISICAL_PROJECT_ID=your_infisical_project_id \
   INFISICAL_CLIENT_ID=your_infisical_client_id \
-  INFISICAL_CLIENT_SECRET=your_infisical_client_secret
+  INFISICAL_CLIENT_SECRET=your_infisical_client_secret \
+  NETWORK=chain_network
 ```
 
 Configure the domain :
