@@ -41,7 +41,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🛠️ Setup Moon toolchain
-        uses: "moonrepo/setup-toolchain@v0"
+        uses: "moonrepo/setup-toolchain@v0.6.3"
 
       - name: 🗃️ DB migrate & seed
         run: moon signer:db-migrate && moon signer:db-seed
