@@ -201,14 +201,6 @@ export class PoolTokenHolder extends SmartContract implements IPool {
     reserveTokenMin: UInt64,
     supplyMax: UInt64
   ) {
-    Provable.log("Withdraw liquidity args", {
-      liquidityAmount,
-      amountMinaMin,
-      amountTokenMin,
-      reserveMinaMin,
-      reserveTokenMin,
-      supplyMax
-    })
     const sender = this.sender.getUnconstrained()
     const amountToken = this.withdraw(sender, liquidityAmount, amountTokenMin, reserveTokenMin, supplyMax)
     const pool = new Pool(this.address)
