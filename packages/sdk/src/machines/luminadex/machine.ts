@@ -33,6 +33,7 @@ import {
 	walletUser
 } from "./helpers"
 import type { ContractName, LuminaDexMachineContext, LuminaDexMachineEvent, LuminaDexMachineInput } from "./types"
+import { version } from "../../../package.json"
 
 export const createLuminaDexMachine = () =>
 	setup({
@@ -111,7 +112,7 @@ export const createLuminaDexMachine = () =>
 				type: "module"
 			})
 			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
-			logger.info("Dex Features loaded:", features)
+			logger.info(`Dex Features loaded (v${version}):`, features)
 			return {
 				transactions: {},
 				features: features ?? ["Swap"], // Default to Swap feature if none provided
@@ -279,8 +280,8 @@ export const createLuminaDexMachine = () =>
 						on: {
 							ContractsReady: { target: "READY" },
 							LoadNextContract: [
-								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
+								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_POOL", guard: "compilePool" },
 								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
 								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },

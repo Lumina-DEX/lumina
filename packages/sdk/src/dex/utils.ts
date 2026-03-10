@@ -74,11 +74,13 @@ export function getFirstAmountLiquidityOut({ tokenA, tokenB }: GetFirstAmountLiq
 	}
 }
 
-interface GetAmountOutFromLiquidity {
+type BalanceInput = string | number
+
+type GetAmountOutFromLiquidity = {
 	liquidity: number
-	tokenA: { address: string; balance: number }
-	tokenB: { address: string; balance: number }
-	supply: number
+	tokenA: { address: string; balance: BalanceInput }
+	tokenB: { address: string; balance: BalanceInput }
+	supply: BalanceInput
 	slippagePercent: number
 }
 
@@ -89,17 +91,26 @@ export function getAmountOutFromLiquidity({
 	supply,
 	slippagePercent
 }: GetAmountOutFromLiquidity) {
-	const balanceAMin = tokenA.balance - (tokenA.balance * slippagePercent) / 100
-	const balanceBMin = tokenB.balance - (tokenB.balance * slippagePercent) / 100
-	const supplyMax = supply + (supply * slippagePercent) / 100
+	const slip = BigInt(Math.trunc(slippagePercent * 100))
+	const balanceA = BigInt(tokenA.balance)
+	const balanceB = BigInt(tokenB.balance)
+	const supplyBig = BigInt(supply)
 
-	// truncate - 1
-	const amountAOut = Math.trunc((liquidity * balanceAMin) / supplyMax) - 1
-	const amountBOut = Math.trunc((liquidity * balanceBMin) / supplyMax) - 1
+	const balanceAMin = balanceA - (balanceA * slip) / 10_000n
+	const balanceBMin = balanceB - (balanceB * slip) / 10_000n
+	const supplyMax = supplyBig + (supplyBig * slip) / 10_000n
+
+	// Must match exactly what the contract receives — truncate before computing
+	const liquidityBig = BigInt(Math.trunc(liquidity))
+
+	// mirrors contract's mulDiv(liquidityAmount, reserveMin, supplyMax) - 1
+	const amountAOut = (liquidityBig * balanceAMin) / supplyMax - 1n
+	const amountBOut = (liquidityBig * balanceBMin) / supplyMax - 1n
+
 	return {
-		tokenA: { address: tokenA.address, amountOut: amountAOut, balanceMin: balanceAMin },
-		tokenB: { address: tokenB.address, amountOut: amountBOut, balanceMin: balanceBMin },
-		supplyMax,
-		liquidity
+		tokenA: { address: tokenA.address, amountOut: Number(amountAOut), balanceMin: Number(balanceAMin) },
+		tokenB: { address: tokenB.address, amountOut: Number(amountBOut), balanceMin: Number(balanceBMin) },
+		supplyMax: Number(supplyMax),
+		liquidity: Number(liquidityBig) // return the truncated value — same as what the contract gets
 	}
 }

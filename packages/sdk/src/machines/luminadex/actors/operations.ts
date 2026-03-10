@@ -121,12 +121,12 @@ export const calculateRemoveLiquidityAmount = fromPromise(
 			const reserves = await worker.getReserves(pool)
 
 			if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-				const balanceA = Number.parseInt(reserves.token0.amount)
-				const balanceB = Number.parseInt(reserves.token1.amount)
-
-				const supply = Number.parseInt(reserves.liquidity)
+				const balanceA = reserves.token0.amount
+				const balanceB = reserves.token1.amount
+				const supply = reserves.liquidity
 				// lp token has 9 decimals
-				const liquidity = Number.parseFloat(lpAmount) * 10 ** 9
+				const liquidity = Number.parseFloat(lpAmount) * 10 ** 9 // still float but handled below
+
 				const liquidityAmount = getAmountOutFromLiquidity({
 					liquidity,
 					tokenA: { address: reserves.token0.address, balance: balanceA },

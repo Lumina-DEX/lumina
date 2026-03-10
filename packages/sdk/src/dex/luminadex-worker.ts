@@ -115,11 +115,11 @@ const initContracts = async () => {
 	workerState.send({
 		type: "SetContracts",
 		contracts: {
+			FungibleTokenAdmin,
+			FungibleToken,
 			PoolFactory,
 			Pool,
 			PoolTokenHolder,
-			FungibleToken,
-			FungibleTokenAdmin,
 			Faucet
 		}
 	})
@@ -351,7 +351,7 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 	const tokenPublic = PublicKey.fromBase58(token)
 	const userKey = PublicKey.fromBase58(user)
 	const receiver = PublicKey.fromBase58(to)
-	const tokenAmount = UInt64.from(amount * 10 ** 9)
+	const tokenAmount = uint64FromNumber(amount * 10 ** 9)
 	logger.debug({ tokenPublic, userKey, receiver, tokenAmount })
 	const contracts = context().contracts
 
@@ -469,11 +469,11 @@ const swap = async (args: SwapArgs) => {
 
 	const swapArgList = [
 		TAX_RECEIVER,
-		UInt64.from(Math.trunc(args.frontendFee)),
-		UInt64.from(Math.trunc(args.amount)),
-		UInt64.from(Math.trunc(args.minOut)),
-		UInt64.from(Math.trunc(args.balanceInMax)),
-		UInt64.from(Math.trunc(args.balanceOutMin))
+		uint64FromNumber(args.frontendFee),
+		uint64FromNumber(args.amount),
+		uint64FromNumber(args.minOut),
+		uint64FromNumber(args.balanceInMax),
+		uint64FromNumber(args.balanceOutMin)
 	] as const
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -555,14 +555,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			if (supply > 0) {
 				return zkPool.supplyLiquidity(
-					UInt64.from(Math.trunc(mina.amount)),
-					UInt64.from(Math.trunc(token.amount)),
-					UInt64.from(Math.trunc(mina.reserve)),
-					UInt64.from(Math.trunc(token.reserve)),
-					UInt64.from(supply)
+					uint64FromNumber(mina.amount),
+					uint64FromNumber(token.amount),
+					uint64FromNumber(mina.reserve),
+					uint64FromNumber(token.reserve),
+					uint64FromNumber(supply)
 				)
 			}
-			return zkPool.supplyFirstLiquidities(UInt64.from(mina.amount), UInt64.from(token.amount))
+			return zkPool.supplyFirstLiquidities(uint64FromNumber(mina.amount), uint64FromNumber(token.amount))
 		}
 
 		const token0Address = zkPoolToken0Key.toBase58()
@@ -570,14 +570,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		if (supply > 0) {
 			return zkPool.supplyLiquidityToken(
-				UInt64.from(Math.trunc(token0.amount)),
-				UInt64.from(Math.trunc(token1.amount)),
-				UInt64.from(Math.trunc(token0.reserve)),
-				UInt64.from(Math.trunc(token1.reserve)),
-				UInt64.from(supply)
+				uint64FromNumber(token0.amount),
+				uint64FromNumber(token1.amount),
+				uint64FromNumber(token0.reserve),
+				uint64FromNumber(token1.reserve),
+				uint64FromNumber(supply)
 			)
 		}
-		return zkPool.supplyFirstLiquiditiesToken(UInt64.from(token0.amount), UInt64.from(token1.amount))
+		return zkPool.supplyFirstLiquiditiesToken(uint64FromNumber(token0.amount), uint64FromNumber(token1.amount))
 	}
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -644,24 +644,24 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 			const mina = tokenA.address === MINA_ADDRESS ? tokenA : tokenB
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			return zkHolder.withdrawLiquidity(
-				UInt64.from(liquidity),
-				UInt64.from(Math.trunc(mina.amount)),
-				UInt64.from(Math.trunc(token.amount)),
-				UInt64.from(Math.trunc(mina.reserve)),
-				UInt64.from(Math.trunc(token.reserve)),
-				UInt64.from(supply)
+				uint64FromNumber(liquidity),
+				uint64FromNumber(mina.amount),
+				uint64FromNumber(token.amount),
+				uint64FromNumber(mina.reserve),
+				uint64FromNumber(token.reserve),
+				uint64FromNumber(supply)
 			)
 		}
 
 		const token0 = token0Address === tokenA.address ? tokenA : tokenB
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		return zkHolder.withdrawLiquidityToken(
-			UInt64.from(liquidity),
-			UInt64.from(Math.trunc(token0.amount)),
-			UInt64.from(Math.trunc(token1.amount)),
-			UInt64.from(Math.trunc(token0.reserve)),
-			UInt64.from(Math.trunc(token1.reserve)),
-			UInt64.from(supply)
+			uint64FromNumber(liquidity),
+			uint64FromNumber(token0.amount),
+			uint64FromNumber(token1.amount),
+			uint64FromNumber(token0.reserve),
+			uint64FromNumber(token1.reserve),
+			uint64FromNumber(supply)
 		)
 	}
 
@@ -752,6 +752,23 @@ const minaInstance = (networkUrl: NetworkUri) => {
 	const url = urls[networkUrl]
 	Mina.setActiveInstance(minaNetwork(networkUrl))
 	logger.success("Mina instance set", url)
+}
+
+/**
+ * Safely converts a JavaScript number to a o1js {@link UInt64} by truncating any
+ * decimal part before the conversion. Using `Math.trunc` prevents o1js from generate
+ * the wrong number
+ *
+ * @param value - The number to convert. Must be a non-negative finite number within
+ *   the UInt64 range [0, 2^64 − 1]. Decimal digits are silently dropped.
+ * @returns A {@link UInt64} representing the truncated integer value.
+ *
+ * @example
+ * uint64FromNumber(1.9)   // → UInt64(1)
+ * uint64FromNumber(1e9)   // → UInt64(1_000_000_000)
+ */
+function uint64FromNumber(value: number): UInt64 {
+	return UInt64.from(Math.trunc(value))
 }
 
 async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {

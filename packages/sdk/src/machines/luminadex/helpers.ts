@@ -21,6 +21,14 @@ export const unloadedContracts = () =>
 
 export const setToLoadFromFeatures = (features: DexFeatures) => {
 	const toLoad = new Set<ContractName>([])
+	if (features.includes("DeployToken")) {
+		toLoad.add("FungibleTokenAdmin")
+		toLoad.add("FungibleToken")
+	}
+	if (features.includes("Claim")) {
+		toLoad.add("FungibleToken")
+		toLoad.add("Faucet")
+	}
 	if (features.includes("Swap")) {
 		toLoad.add("FungibleToken")
 		toLoad.add("Pool")
@@ -28,14 +36,6 @@ export const setToLoadFromFeatures = (features: DexFeatures) => {
 	}
 	if (features.includes("ManualDeployPool")) {
 		toLoad.add("PoolFactory")
-	}
-	if (features.includes("DeployToken")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("FungibleTokenAdmin")
-	}
-	if (features.includes("Claim")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("Faucet")
 	}
 	return toLoad
 }
