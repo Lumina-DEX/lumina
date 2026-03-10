@@ -20,6 +20,8 @@ jobs:
 
       - name: 🛠️ Setup Moon toolchain
         uses: "moonrepo/setup-toolchain@v0"
+        with:
+          moon-version: "1.40.3"
 
       - name: 🗄️ Apply Drizzle migrations
         run: moon signer:db-migrate -- --force
