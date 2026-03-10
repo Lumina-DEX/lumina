@@ -1,6 +1,7 @@
 import * as Comlink from "comlink"
 import { produce } from "immer"
 import { and, assertEvent, assign, enqueueActions, setup, spawnChild, stopChild } from "xstate"
+import { version } from "../../../package.json"
 import { chainFaucets, poolInstance } from "../../constants/index"
 import type { LuminaDexWorker } from "../../dex/luminadex-worker"
 import { isBetween } from "../../helpers/validation"
@@ -33,7 +34,6 @@ import {
 	walletUser
 } from "./helpers"
 import type { ContractName, LuminaDexMachineContext, LuminaDexMachineEvent, LuminaDexMachineInput } from "./types"
-import { version } from "../../../package.json"
 
 export const createLuminaDexMachine = () =>
 	setup({
