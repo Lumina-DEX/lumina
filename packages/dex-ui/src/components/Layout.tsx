@@ -13,7 +13,7 @@ const Dex = Wallet
 	? createDex({
 			input: {
 				wallet: Wallet,
-				features: ["Swap"],
+				features: ["Swap", "DeployToken"],
 				frontendFee: {
 					destination: "B62qrUAGW6S4pSBcZko2LdbUAhtLd15zVs9KtQedScBvwuZVbcnej35",
 					amount: feeAmount

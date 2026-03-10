@@ -25,7 +25,7 @@ const Withdraw = () => {
 	}
 
 	function formatToken(value: number) {
-		return (value / 10 ** 9).toFixed(2)
+		return value / 10 ** 9
 	}
 
 	const debouncedChangeSettings = useMemo(
@@ -72,7 +72,7 @@ const Withdraw = () => {
 					<CurrencyFormat
 						className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
 						thousandSeparator={true}
-						decimalScale={6}
+						decimalScale={12}
 						placeholder="0.0"
 						value={fromAmount}
 						onValueChange={({ value }) => setFromAmount(value)}
