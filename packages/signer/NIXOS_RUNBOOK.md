@@ -1,17 +1,16 @@
 # Lumina Signer NixOS Runbook
 
 > [!WARNING]
-> Before running any signer infra script, set `LEGACY_SIGNER_BLOCKLIST` in
-> `packages/signer/infra/scripts/signer-fleet.env` so it includes the current live legacy signer
-> host IP or hostname plus any legacy aliases you want blocked. The scripts fail closed until this
-> is set.
+> Before running any signer infra script, set `LEGACY_SIGNER_HOST` or `LEGACY_SIGNER_IP` in
+> `packages/signer/infra/scripts/signer-fleet.env`. The scripts refuse to touch `lumina_root`,
+> `lumina`, `dokku_lumina`, or the configured legacy host.
 
 This runbook is split into:
 
-- operator steps: commands a human runs from a workstation
-- agent steps: commands CI or a separate automation can run once the host exists
+- operator preparation: things a human sets up locally before asking the agent to proceed
+- agent rollout: the steps the agent follows once the local shell environment is ready
 
-## Operator Steps
+## Operator Preparation
 
 ### 1. Buy the Hetzner server
 
@@ -50,10 +49,11 @@ cp packages/signer/infra/scripts/signer-fleet.env.example packages/signer/infra/
 
 Set:
 
-- `LEGACY_SIGNER_BLOCKLIST`
+- `LEGACY_SIGNER_HOST` or `LEGACY_SIGNER_IP`
 - the target hostnames and IPs
 - the single SSH alias per host
 - Cloudflare token and zone
+- `SIGNER_IMAGE_REF` with the first signer image digest you intend to deploy
 
 ### 5. Put the admin SSH public keys in the repo-local ignored directory
 
@@ -79,17 +79,24 @@ nixos-anywhere \
 
 After the install finishes, change the SSH alias to `User lumina-admin`.
 
-### 7. Apply the smoke host config
+## Agent Rollout
 
-This intentionally deploys a plain webserver image, not the signer app:
+After the operator preparation is complete, the agent runs the remaining steps.
+
+### 1. Install NixOS with `nixos-anywhere`
+
+Generate the hardware file and install NixOS:
 
 ```bash
-packages/signer/infra/scripts/rebuild-smoke-host.sh --target zeko-testnet
+nixos-anywhere \
+  --generate-hardware-config \
+  nixos-generate-config \
+  packages/signer/infra/nixos/hosts/generated/zeko-testnet-signer-hardware.nix \
+  --flake ./packages/signer/infra/nixos#zeko-testnet-signer \
+  --target-host lumina_signer_zeko_testnet
 ```
 
-### 8. Create the Cloudflare DNS record
-
-Use the API, not the dashboard:
+### 2. Create or update the Cloudflare DNS record
 
 ```bash
 ZONE_ID="$(curl -fsS "https://api.cloudflare.com/client/v4/zones?name=luminadex.com" \
@@ -108,15 +115,21 @@ curl -fsS "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
 
 If the record already exists, update it instead of creating a duplicate.
 
-### 9. Verify the smoke host
+### 3. Deploy the signer image digest
 
 ```bash
-packages/signer/infra/scripts/check-smoke-host.sh --target zeko-testnet
+packages/signer/infra/scripts/rebuild-host.sh --target zeko-testnet
 ```
 
-### 10. Bootstrap signer rows directly in Postgres
+### 4. Verify the host
 
-Prepare a payload file:
+```bash
+packages/signer/infra/scripts/check-host.sh --target zeko-testnet --path /graphql
+```
+
+### 5. Seed signer rows with the existing seed process
+
+Prepare a payload file if the target needs production-specific signers:
 
 ```json
 {
@@ -126,38 +139,35 @@ Prepare a payload file:
 }
 ```
 
-Then run:
+Then run the existing seed entrypoint with the payload:
 
 ```bash
 DATABASE_URL='postgresql://...' \
-packages/signer/infra/scripts/bootstrap-signers.sh \
-  --target zeko-testnet \
-  --payload /absolute/path/to/zeko-testnet-signers.json
+SIGNER_SEED_FILE='/absolute/path/to/zeko-testnet-signers.json' \
+SIGNER_SEED_TARGET_ENV='zeko-testnet' \
+moon signer:db-seed
 ```
 
-This writes `SignerMerkle` and `SignerMerkleNetwork` rows directly in Postgres and verifies them
-with a readback query.
+The seed script keeps its existing dev/testnet defaults when those env vars are unset.
 
-## Agent Steps
-
-These are the only steps meant for CI or another automation:
+## CI / Automation
 
 ### Build the signer image
 
 Use [signer-image.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-image.yml) to
 test, build, and publish `ghcr.io/lumina-dex/lumina-signer`.
 
-### Re-apply the smoke host config
+### Re-apply the signer host config
 
 Use [signer-deploy-testnet.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-deploy-testnet.yml)
 for zeko testnet and [signer-promote.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-promote.yml)
-for manual production smoke deploys.
+for manual production deploys.
 
 Those workflows:
 
 - install Nix on the runner
 - rebuild the target host config declaratively
-- deploy the smoke webserver image
-- run the simple HTTPS smoke check
+- deploy the signer image digest from GHCR
+- run a simple HTTPS check against `/graphql`
 
 They do not bootstrap signers, mutate the database, or touch Cloudflare.

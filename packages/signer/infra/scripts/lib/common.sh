@@ -32,6 +32,12 @@ maybe_source_env() {
 	fi
 }
 
+require_legacy_guard() {
+	if [[ -z "${LEGACY_SIGNER_HOST:-}" && -z "${LEGACY_SIGNER_IP:-}" ]]; then
+		die "Set LEGACY_SIGNER_HOST or LEGACY_SIGNER_IP in signer-fleet.env before running signer infra scripts."
+	fi
+}
+
 target_prefix() {
 	case "${1:-}" in
 		zeko-testnet) printf 'ZEKO_TESTNET' ;;
@@ -113,10 +119,6 @@ target_ssh_alias() {
 	printf 'lumina_signer_%s' "${1//-/_}"
 }
 
-smoke_image_ref() {
-	printf '%s' "${SMOKE_IMAGE_REF:-docker.io/library/nginx:1.27-alpine}"
-}
-
 resolve_ipv4() {
 	local value="$1"
 
@@ -138,38 +140,38 @@ resolve_ipv4() {
 	return 1
 }
 
-require_blocklist() {
-	[[ -n "${LEGACY_SIGNER_BLOCKLIST:-}" ]] || die \
-		"Set LEGACY_SIGNER_BLOCKLIST in signer-fleet.env before running signer infra scripts."
-}
-
-blocklist_items() {
-	require_blocklist
-	printf '%s' "$LEGACY_SIGNER_BLOCKLIST" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | awk 'NF'
-}
-
-guard_not_blocked() {
+guard_not_legacy_target() {
 	local value="$1"
 	local label="${2:-target}"
 	local resolved_ip=""
+	local resolved_host=""
 
 	[[ -n "$value" ]] || die "$label is empty"
+	require_legacy_guard
 
-	while IFS= read -r blocked; do
-		[[ -n "$blocked" ]] || continue
-		if [[ "$value" == "$blocked" ]]; then
-			die "$label is blocked by LEGACY_SIGNER_BLOCKLIST ($blocked)."
-		fi
-	done < <(blocklist_items)
+	case "$value" in
+		lumina_root | lumina | dokku_lumina)
+			die "$label matches a forbidden legacy alias ($value)."
+			;;
+	esac
+
+	if [[ -n "${LEGACY_SIGNER_HOST:-}" && "$value" == "$LEGACY_SIGNER_HOST" ]]; then
+		die "$label matches LEGACY_SIGNER_HOST."
+	fi
+	if [[ -n "${LEGACY_SIGNER_IP:-}" && "$value" == "$LEGACY_SIGNER_IP" ]]; then
+		die "$label matches LEGACY_SIGNER_IP."
+	fi
 
 	resolved_ip="$(resolve_ipv4 "$value" || true)"
-	if [[ -n "$resolved_ip" ]]; then
-		while IFS= read -r blocked; do
-			[[ -n "$blocked" ]] || continue
-			if [[ "$resolved_ip" == "$blocked" ]]; then
-				die "$label resolves to a blocked host ($blocked)."
-			fi
-		done < <(blocklist_items)
+	if [[ -n "${LEGACY_SIGNER_IP:-}" && -n "$resolved_ip" && "$resolved_ip" == "$LEGACY_SIGNER_IP" ]]; then
+		die "$label resolves to LEGACY_SIGNER_IP."
+	fi
+
+	if [[ -n "${LEGACY_SIGNER_HOST:-}" ]]; then
+		resolved_host="$(resolve_ipv4 "$LEGACY_SIGNER_HOST" || true)"
+		if [[ -n "$resolved_ip" && -n "$resolved_host" && "$resolved_ip" == "$resolved_host" ]]; then
+			die "$label resolves to the legacy signer host."
+		fi
 	fi
 }
 
@@ -177,7 +179,7 @@ build_ssh_target() {
 	local target="$1"
 
 	if [[ -n "${SSH_HOST:-}" ]]; then
-		guard_not_blocked "$SSH_HOST" "SSH_HOST"
+		guard_not_legacy_target "$SSH_HOST" "SSH_HOST"
 		if [[ -n "${SSH_USER:-}" ]]; then
 			printf '%s@%s' "$SSH_USER" "$SSH_HOST"
 		else
@@ -195,7 +197,7 @@ build_ssh_command() {
 	local ssh_target
 
 	ssh_target="$(build_ssh_target "$target")"
-	guard_not_blocked "$ssh_target" "SSH target"
+	guard_not_legacy_target "$ssh_target" "SSH target"
 
 	ssh_command_ref=(ssh -o BatchMode=yes)
 	if [[ -n "${SSH_PORT:-}" ]]; then

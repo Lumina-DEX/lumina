@@ -18,14 +18,14 @@ main() {
 	local common_script="$SCRIPT_DIR/lib/common.sh"
 
 	assert_fails \
-		"blocklist exact match" \
-		"export LEGACY_SIGNER_BLOCKLIST='legacy.internal,198.51.100.99'; source '$common_script'; guard_not_blocked 'legacy.internal' 'legacy host'"
+		"legacy host exact match" \
+		"export LEGACY_SIGNER_HOST='legacy.internal'; export LEGACY_SIGNER_IP='198.51.100.99'; source '$common_script'; guard_not_legacy_target 'legacy.internal' 'legacy host'"
 
 	assert_fails \
-		"blocklist resolved ip match" \
-		"export LEGACY_SIGNER_BLOCKLIST='198.51.100.99'; source '$common_script'; resolve_ipv4() { printf '198.51.100.99'; }; guard_not_blocked 'new-host.internal' 'legacy host'"
+		"legacy ip resolved match" \
+		"export LEGACY_SIGNER_HOST='legacy.internal'; export LEGACY_SIGNER_IP='198.51.100.99'; source '$common_script'; resolve_ipv4() { printf '198.51.100.99'; }; guard_not_legacy_target 'new-host.internal' 'legacy host'"
 
-	log "Blocklist guard tests passed."
+	log "Legacy target guard tests passed."
 }
 
 main "$@"

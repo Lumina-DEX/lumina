@@ -2,7 +2,17 @@
 
 let
   imageFromEnv = builtins.getEnv "LUMINA_SIGNER_IMAGE_REF";
+  containerPortFromEnv = builtins.getEnv "LUMINA_SIGNER_CONTAINER_PORT";
+  envFileFromEnv = builtins.getEnv "LUMINA_SIGNER_ENV_FILE";
   cfg = config.lumina.signer;
+  envArgs =
+    if cfg.envFile == null then
+      [ ]
+    else
+      [
+        "--env-file"
+        cfg.envFile
+      ];
   podmanCommand = [
     "${pkgs.podman}/bin/podman"
     "run"
@@ -12,7 +22,7 @@ let
     cfg.appName
     "-p"
     "${cfg.listenAddress}:${toString cfg.listenPort}:${toString cfg.containerPort}"
-  ] ++ cfg.extraPodmanArgs ++ [
+  ] ++ envArgs ++ cfg.extraPodmanArgs ++ [
     cfg.imageRef
   ];
 in
@@ -43,10 +53,10 @@ in
     imageRef = lib.mkOption {
       type = lib.types.str;
       default =
-        if imageFromEnv != "" then imageFromEnv else "docker.io/library/nginx:1.27-alpine";
+        if imageFromEnv != "" then imageFromEnv else throw "Set LUMINA_SIGNER_IMAGE_REF before rebuilding the host.";
       description = ''
-        Container image to run. The default is intentionally a commodity webserver so the first
-        rollout proves the host path without coupling it to the signer runtime yet.
+        Container image to run. CI and the initial bootstrap both inject the signer image digest
+        through LUMINA_SIGNER_IMAGE_REF.
       '';
     };
 
@@ -64,8 +74,18 @@ in
 
     containerPort = lib.mkOption {
       type = lib.types.port;
-      default = 80;
+      default =
+        if containerPortFromEnv != "" then
+          builtins.fromJSON containerPortFromEnv
+        else
+          3001;
       description = "Port exposed by the container image.";
+    };
+
+    envFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = if envFileFromEnv != "" then envFileFromEnv else "/var/lib/lumina-signer/env";
+      description = "Optional env file passed to podman.";
     };
 
     extraPodmanArgs = lib.mkOption {
@@ -79,7 +99,7 @@ in
     virtualisation.podman.enable = true;
 
     systemd.services.${cfg.appName} = {
-      description = "Lumina signer smoke container";
+      description = "Lumina signer container";
       after = [
         "network-online.target"
         "podman.service"
@@ -102,6 +122,8 @@ in
         ExecStart = lib.escapeShellArgs podmanCommand;
         ExecStop = "-${pkgs.podman}/bin/podman stop -t 15 ${cfg.appName}";
         ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}";
+      } // lib.optionalAttrs (cfg.envFile != null) {
+        ExecCondition = "test -s ${cfg.envFile}";
       };
     };
   };

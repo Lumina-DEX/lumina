@@ -6,14 +6,13 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
 TARGET_ENV="${TARGET_ENV:-}"
-IMAGE_REF="${IMAGE_REF:-}"
+IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
+CONTAINER_PORT="${CONTAINER_PORT:-}"
+ENV_FILE_PATH="${ENV_FILE_PATH:-}"
 
 usage() {
 	cat <<'EOF'
-Usage: rebuild-smoke-host.sh --target <env> [--image-ref <container-image>]
-
-This script applies the NixOS host config and intentionally deploys a plain webserver image.
-It is a host smoke test, not the final signer release path.
+Usage: rebuild-host.sh --target <env> [--image-ref <container-image>] [--container-port <port>] [--env-file <path>]
 EOF
 }
 
@@ -28,6 +27,16 @@ parse_args() {
 			--image-ref)
 				[[ $# -ge 2 ]] || die "--image-ref requires a value"
 				IMAGE_REF="$2"
+				shift 2
+				;;
+			--container-port)
+				[[ $# -ge 2 ]] || die "--container-port requires a value"
+				CONTAINER_PORT="$2"
+				shift 2
+				;;
+			--env-file)
+				[[ $# -ge 2 ]] || die "--env-file requires a value"
+				ENV_FILE_PATH="$2"
 				shift 2
 				;;
 			-h | --help)
@@ -51,14 +60,10 @@ main() {
 	require_command ssh
 
 	[[ -n "$TARGET_ENV" ]] || die "--target is required"
+	[[ -n "$IMAGE_REF" ]] || die "--image-ref or SIGNER_IMAGE_REF is required"
 	hostname="$(target_hostname "$TARGET_ENV")"
-	guard_not_blocked "$hostname" "Target hostname"
-
-	if [[ -n "$IMAGE_REF" ]]; then
-		image_ref="$IMAGE_REF"
-	else
-		image_ref="$(smoke_image_ref)"
-	fi
+	guard_not_legacy_target "$hostname" "Target hostname"
+	image_ref="$IMAGE_REF"
 
 	ssh_target="$(build_ssh_target "$TARGET_ENV")"
 	flake_dir="$(repo_root)/packages/signer/infra/nixos"
@@ -75,9 +80,11 @@ main() {
 	fi
 
 	log "Applying $(target_host_config "$TARGET_ENV") to ${ssh_target}"
-	# The image is injected at evaluation time so the host stays declarative from Nix's point of view.
+	# The image is injected at evaluation time so CI can promote a digest by rebuilding the host config.
 	LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ssh_public_key" \
 		LUMINA_SIGNER_IMAGE_REF="$image_ref" \
+		LUMINA_SIGNER_CONTAINER_PORT="${CONTAINER_PORT:-3001}" \
+		LUMINA_SIGNER_ENV_FILE="${ENV_FILE_PATH:-/var/lib/lumina-signer/env}" \
 		nixos-rebuild switch \
 		--flake "${flake_dir}#$(target_host_config "$TARGET_ENV")" \
 		--target-host "$ssh_target" \

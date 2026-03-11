@@ -6,10 +6,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
 TARGET_ENV="${TARGET_ENV:-}"
+CHECK_PATH="${CHECK_PATH:-/graphql}"
 
 usage() {
 	cat <<'EOF'
-Usage: check-smoke-host.sh --target <env>
+Usage: check-host.sh --target <env> [--path </health-or-graphql>]
 EOF
 }
 
@@ -19,6 +20,11 @@ parse_args() {
 			--target)
 				[[ $# -ge 2 ]] || die "--target requires a value"
 				TARGET_ENV="$2"
+				shift 2
+				;;
+			--path)
+				[[ $# -ge 2 ]] || die "--path requires a value"
+				CHECK_PATH="$2"
 				shift 2
 				;;
 			-h | --help)
@@ -43,16 +49,16 @@ main() {
 
 	[[ -n "$TARGET_ENV" ]] || die "--target is required"
 	hostname="$(target_hostname "$TARGET_ENV")"
-	guard_not_blocked "$hostname" "Target hostname"
+	guard_not_legacy_target "$hostname" "Target hostname"
 
 	for unit in caddy lumina-signer; do
 		[[ "$(run_remote "$TARGET_ENV" "systemctl is-active ${unit}")" == "active" ]] || die \
 			"Systemd unit ${unit} is not active on ${TARGET_ENV}."
 	done
 
-	# The smoke image serves a simple page; a 200 over HTTPS is enough for this rollout stage.
-	curl -fsS "https://${hostname}/" >/dev/null || die "HTTPS smoke check failed for ${hostname}."
-	log "Smoke check succeeded for ${TARGET_ENV}."
+	curl -fsS "https://${hostname}${CHECK_PATH}" >/dev/null || die \
+		"HTTPS check failed for ${hostname}${CHECK_PATH}."
+	log "Host check succeeded for ${TARGET_ENV}."
 }
 
 main "$@"

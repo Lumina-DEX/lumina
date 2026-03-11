@@ -10,6 +10,10 @@ on:
         options:
           - mina-mainnet
           - zeko-mainnet
+      image_digest:
+        description: "Signer image digest to deploy"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,7 +24,7 @@ concurrency:
 
 jobs:
   promote:
-    name: Rebuild production smoke host
+    name: Deploy production signer
     runs-on: ubuntu-latest
     environment: ${{ inputs.target_env == 'mina-mainnet' && 'signer-mina-mainnet' || 'signer-zeko-mainnet' }}
     env:
@@ -28,7 +32,8 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      LEGACY_SIGNER_BLOCKLIST: ${{ secrets.LEGACY_SIGNER_BLOCKLIST }}
+      LEGACY_SIGNER_HOST: ${{ secrets.LEGACY_SIGNER_HOST }}
+      LEGACY_SIGNER_IP: ${{ secrets.LEGACY_SIGNER_IP }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,12 +48,16 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
-      - name: Rebuild NixOS smoke host
+      - name: Rebuild NixOS host with signer image
         run: |
-          packages/signer/infra/scripts/rebuild-smoke-host.sh \
-            --target "${{ inputs.target_env }}"
+          packages/signer/infra/scripts/rebuild-host.sh \
+            --target "${{ inputs.target_env }}" \
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}" \
+            --container-port 3001 \
+            --env-file /var/lib/lumina-signer/env
 
-      - name: Check HTTPS smoke path
+      - name: Check signer endpoint
         run: |
-          packages/signer/infra/scripts/check-smoke-host.sh \
-            --target "${{ inputs.target_env }}"
+          packages/signer/infra/scripts/check-host.sh \
+            --target "${{ inputs.target_env }}" \
+            --path /graphql

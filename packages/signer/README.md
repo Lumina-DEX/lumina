@@ -99,9 +99,8 @@ The signer rollout files now live under `packages/signer/infra/`.
 - NixOS configs: `packages/signer/infra/nixos/`
 - Operator and CI helper scripts: `packages/signer/infra/scripts/`
 
-The current rollout path intentionally uses a smoke-test webserver image to validate that a new
-NixOS host, Podman, Caddy, Cloudflare, and SSH flow are healthy before wiring in the signer app
-release model.
+The rollout files under `packages/signer/infra/` manage the NixOS hosts and CI-driven signer image
+deploys for new servers.
 
 ### Docker
 

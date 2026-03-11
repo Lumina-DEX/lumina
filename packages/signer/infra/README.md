@@ -11,8 +11,8 @@ Contents:
 Current scope:
 
 - bootstrap fresh Hetzner servers into NixOS
-- rebuild hosts with a smoke-test container image
-- seed signer permissions directly in Postgres
+- rebuild hosts with a signer image digest from GHCR
+- keep the seed flow anchored to `packages/signer/scripts/seed.ts`
 
-It intentionally does not contain an app-specific release system yet. The first rollout step is
-just enough to prove the server, Caddy, Podman, and SSH path are healthy.
+The operator prepares the local shell environment first, then the agent or CI can execute the
+host rollout steps from the runbook.
