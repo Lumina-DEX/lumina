@@ -30,8 +30,6 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      LEGACY_SIGNER_HOST: ${{ secrets.LEGACY_SIGNER_HOST }}
-      LEGACY_SIGNER_IP: ${{ secrets.LEGACY_SIGNER_IP }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

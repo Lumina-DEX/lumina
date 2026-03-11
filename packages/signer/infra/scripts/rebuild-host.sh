@@ -62,7 +62,6 @@ main() {
 	[[ -n "$TARGET_ENV" ]] || die "--target is required"
 	[[ -n "$IMAGE_REF" ]] || die "--image-ref or SIGNER_IMAGE_REF is required"
 	hostname="$(target_hostname "$TARGET_ENV")"
-	guard_not_legacy_target "$hostname" "Target hostname"
 	image_ref="$IMAGE_REF"
 
 	ssh_target="$(build_ssh_target "$TARGET_ENV")"

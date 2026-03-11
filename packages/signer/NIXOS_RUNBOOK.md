@@ -1,10 +1,5 @@
 # Lumina Signer NixOS Runbook
 
-> [!WARNING]
-> Before running any signer infra script, set `LEGACY_SIGNER_HOST` or `LEGACY_SIGNER_IP` in
-> `packages/signer/infra/scripts/signer-fleet.env`. The scripts refuse to touch `lumina_root`,
-> `lumina`, `dokku_lumina`, or the configured legacy host.
-
 This runbook is split into:
 
 - operator preparation: things a human sets up locally before asking the agent to proceed
@@ -49,7 +44,6 @@ cp packages/signer/infra/scripts/signer-fleet.env.example packages/signer/infra/
 
 Set:
 
-- `LEGACY_SIGNER_HOST` or `LEGACY_SIGNER_IP`
 - the target hostnames and IPs
 - the single SSH alias per host
 - Cloudflare token and zone

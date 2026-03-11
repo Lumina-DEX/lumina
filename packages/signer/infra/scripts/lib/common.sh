@@ -32,12 +32,6 @@ maybe_source_env() {
 	fi
 }
 
-require_legacy_guard() {
-	if [[ -z "${LEGACY_SIGNER_HOST:-}" && -z "${LEGACY_SIGNER_IP:-}" ]]; then
-		die "Set LEGACY_SIGNER_HOST or LEGACY_SIGNER_IP in signer-fleet.env before running signer infra scripts."
-	fi
-}
-
 target_prefix() {
 	case "${1:-}" in
 		zeko-testnet) printf 'ZEKO_TESTNET' ;;
@@ -119,67 +113,11 @@ target_ssh_alias() {
 	printf 'lumina_signer_%s' "${1//-/_}"
 }
 
-resolve_ipv4() {
-	local value="$1"
-
-	if [[ "$value" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-		printf '%s' "$value"
-		return 0
-	fi
-
-	if command -v dig >/dev/null 2>&1; then
-		dig +short A "$value" | awk 'NF { print $1; exit }'
-		return 0
-	fi
-
-	if command -v getent >/dev/null 2>&1; then
-		getent ahostsv4 "$value" | awk 'NR == 1 { print $1 }'
-		return 0
-	fi
-
-	return 1
-}
-
-guard_not_legacy_target() {
-	local value="$1"
-	local label="${2:-target}"
-	local resolved_ip=""
-	local resolved_host=""
-
-	[[ -n "$value" ]] || die "$label is empty"
-	require_legacy_guard
-
-	case "$value" in
-		lumina_root | lumina | dokku_lumina)
-			die "$label matches a forbidden legacy alias ($value)."
-			;;
-	esac
-
-	if [[ -n "${LEGACY_SIGNER_HOST:-}" && "$value" == "$LEGACY_SIGNER_HOST" ]]; then
-		die "$label matches LEGACY_SIGNER_HOST."
-	fi
-	if [[ -n "${LEGACY_SIGNER_IP:-}" && "$value" == "$LEGACY_SIGNER_IP" ]]; then
-		die "$label matches LEGACY_SIGNER_IP."
-	fi
-
-	resolved_ip="$(resolve_ipv4 "$value" || true)"
-	if [[ -n "${LEGACY_SIGNER_IP:-}" && -n "$resolved_ip" && "$resolved_ip" == "$LEGACY_SIGNER_IP" ]]; then
-		die "$label resolves to LEGACY_SIGNER_IP."
-	fi
-
-	if [[ -n "${LEGACY_SIGNER_HOST:-}" ]]; then
-		resolved_host="$(resolve_ipv4 "$LEGACY_SIGNER_HOST" || true)"
-		if [[ -n "$resolved_ip" && -n "$resolved_host" && "$resolved_ip" == "$resolved_host" ]]; then
-			die "$label resolves to the legacy signer host."
-		fi
-	fi
-}
 
 build_ssh_target() {
 	local target="$1"
 
 	if [[ -n "${SSH_HOST:-}" ]]; then
-		guard_not_legacy_target "$SSH_HOST" "SSH_HOST"
 		if [[ -n "${SSH_USER:-}" ]]; then
 			printf '%s@%s' "$SSH_USER" "$SSH_HOST"
 		else
@@ -197,7 +135,6 @@ build_ssh_command() {
 	local ssh_target
 
 	ssh_target="$(build_ssh_target "$target")"
-	guard_not_legacy_target "$ssh_target" "SSH target"
 
 	ssh_command_ref=(ssh -o BatchMode=yes)
 	if [[ -n "${SSH_PORT:-}" ]]; then

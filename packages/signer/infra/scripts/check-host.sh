@@ -49,7 +49,6 @@ main() {
 
 	[[ -n "$TARGET_ENV" ]] || die "--target is required"
 	hostname="$(target_hostname "$TARGET_ENV")"
-	guard_not_legacy_target "$hostname" "Target hostname"
 
 	for unit in caddy lumina-signer; do
 		[[ "$(run_remote "$TARGET_ENV" "systemctl is-active ${unit}")" == "active" ]] || die \
