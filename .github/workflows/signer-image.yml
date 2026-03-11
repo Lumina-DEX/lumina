@@ -36,7 +36,6 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/signer
     outputs:
       image_digest: ${{ steps.build.outputs.digest }}
-      git_sha: ${{ github.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,13 +90,12 @@ jobs:
             echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- Image: \`ghcr.io/lumina-dex/lumina-signer@${{ steps.build.outputs.digest }}\`"
             echo "- Git SHA: \`${{ github.sha }}\`"
+            echo
+            echo "Smoke-host deploys intentionally use a generic webserver image for now."
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-testnet:
-    name: Auto-deploy signer testnet
+    name: Rebuild testnet smoke host
     needs: build-image
     uses: ./.github/workflows/signer-deploy-testnet.yml
-    with:
-      image_digest: ${{ needs.build-image.outputs.image_digest }}
-      git_sha: ${{ needs.build-image.outputs.git_sha }}
     secrets: inherit

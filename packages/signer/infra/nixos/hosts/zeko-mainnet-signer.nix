@@ -1,8 +1,14 @@
 { lib, ... }:
 
 let
-  readKeyIfPresent = path:
-    lib.optional (builtins.pathExists path) (lib.strings.removeSuffix "\n" (builtins.readFile path));
+  readKeyOrEnv = envName: path:
+    let
+      fromEnv = builtins.getEnv envName;
+    in
+      if fromEnv != "" then
+        [ fromEnv ]
+      else
+        lib.optional (builtins.pathExists path) (lib.strings.removeSuffix "\n" (builtins.readFile path));
   generatedHardware = ./generated/zeko-mainnet-signer-hardware.nix;
 in
 {
@@ -18,10 +24,7 @@ in
 
   lumina.baseHardening = {
     enable = true;
-    adminUser = "lumina-admin";
-    adminAuthorizedKeys = readKeyIfPresent ./keys/zeko-mainnet-admin.pub;
-    serviceUser = "lumina-signer-service";
-    serviceAuthorizedKeys = readKeyIfPresent ./keys/zeko-mainnet-service.pub;
+    adminAuthorizedKeys = readKeyOrEnv "LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY" ./keys/zeko-mainnet-admin.pub;
   };
 
   lumina.signer = {

@@ -9,7 +9,7 @@ Server-side proof generation service for pool creation.
 - **Queue**: TanStack Pacer (in-memory, serial processing)
 - **GraphQL**: Pothos + GraphQL Yoga (with built-in PubSub)
 - **Secrets**: Infisical
-- **Deployment**: Dokku on Hetzner
+- **Deployment**: NixOS + Podman + Caddy for new signer hosts
 
 ## Installation
 
@@ -93,10 +93,15 @@ Use the GraphQL playground at http://localhost:3001/graphql to test the API.
 
 ## Deploy
 
-We should containerize this service and deploy it to a big Hetzner server
-(https://docs.docker.com/guides/deno/containerize/) In addition, we should also
-include a CI pipeline to automate the deployment process with Pulumi
-(https://timozander.de/blog/using-pulumi-with-hcloud/)
+The signer rollout files now live under `packages/signer/infra/`.
+
+- Runbook: `packages/signer/NIXOS_RUNBOOK.md`
+- NixOS configs: `packages/signer/infra/nixos/`
+- Operator and CI helper scripts: `packages/signer/infra/scripts/`
+
+The current rollout path intentionally uses a smoke-test webserver image to validate that a new
+NixOS host, Podman, Caddy, Cloudflare, and SSH flow are healthy before wiring in the signer app
+release model.
 
 ### Docker
 

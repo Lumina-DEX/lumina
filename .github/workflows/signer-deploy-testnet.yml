@@ -2,23 +2,7 @@ name: Signer Deploy Testnet
 
 on:
   workflow_call:
-    inputs:
-      image_digest:
-        required: true
-        type: string
-      git_sha:
-        required: true
-        type: string
   workflow_dispatch:
-    inputs:
-      image_digest:
-        description: "Image digest or immutable image reference"
-        required: true
-        type: string
-      git_sha:
-        description: "Git SHA to record in release.env"
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -29,7 +13,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy zeko testnet signer
+    name: Rebuild zeko testnet smoke host
     runs-on: ubuntu-latest
     environment: signer-zeko-testnet
     env:
@@ -37,7 +21,7 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      SIGNER_API_KEY: ${{ secrets.SIGNER_API_KEY }}
+      LEGACY_SIGNER_BLOCKLIST: ${{ secrets.LEGACY_SIGNER_BLOCKLIST }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,24 +33,15 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-      - name: Select git SHA
-        id: meta
-        run: |
-          git_sha="${{ inputs.git_sha }}"
-          if [ -z "$git_sha" ]; then
-            git_sha="${GITHUB_SHA}"
-          fi
-          echo "git_sha=$git_sha" >> "$GITHUB_OUTPUT"
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
-      - name: Deploy image digest
+      - name: Rebuild NixOS smoke host
         run: |
-          packages/signer/scripts/ops/deploy-image-over-ssh.sh \
-            --target zeko-testnet \
-            --image-digest "${{ inputs.image_digest }}" \
-            --git-sha "${{ steps.meta.outputs.git_sha }}"
+          packages/signer/infra/scripts/rebuild-smoke-host.sh \
+            --target zeko-testnet
 
-      - name: Run remote signer audit
+      - name: Check HTTPS smoke path
         run: |
-          packages/signer/scripts/ops/audit-signer-fleet.sh \
-            --remote-only \
+          packages/signer/infra/scripts/check-smoke-host.sh \
             --target zeko-testnet

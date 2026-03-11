@@ -10,14 +10,9 @@ on:
         options:
           - mina-mainnet
           - zeko-mainnet
-      image_digest:
-        description: "Image digest or immutable image reference"
-        required: true
-        type: string
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: signer-promote-${{ inputs.target_env }}
@@ -25,16 +20,15 @@ concurrency:
 
 jobs:
   promote:
-    name: Promote signer image
+    name: Rebuild production smoke host
     runs-on: ubuntu-latest
     environment: ${{ inputs.target_env == 'mina-mainnet' && 'signer-mina-mainnet' || 'signer-zeko-mainnet' }}
     env:
-      TARGET_ENV: ${{ inputs.target_env }}
       TARGET_HOSTNAME: ${{ secrets.TARGET_HOSTNAME }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      SIGNER_API_KEY: ${{ secrets.SIGNER_API_KEY }}
+      LEGACY_SIGNER_BLOCKLIST: ${{ secrets.LEGACY_SIGNER_BLOCKLIST }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,45 +40,15 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
 
-      - name: Resolve git SHA from image label
-        id: meta
+      - name: Rebuild NixOS smoke host
         run: |
-          image_input="${{ inputs.image_digest }}"
-          case "$image_input" in
-            ghcr.io/lumina-dex/lumina-signer@sha256:*)
-              image_ref="$image_input"
-              ;;
-            sha256:*)
-              image_ref="ghcr.io/lumina-dex/lumina-signer@$image_input"
-              ;;
-            *)
-              image_ref="ghcr.io/lumina-dex/lumina-signer@sha256:$image_input"
-              ;;
-          esac
+          packages/signer/infra/scripts/rebuild-smoke-host.sh \
+            --target "${{ inputs.target_env }}"
 
-          docker pull "$image_ref"
-          git_sha="$(docker inspect "$image_ref" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
-          [ -n "$git_sha" ] || { echo "Unable to resolve org.opencontainers.image.revision for $image_ref" >&2; exit 1; }
-
-          echo "image_ref=$image_ref" >> "$GITHUB_OUTPUT"
-          echo "git_sha=$git_sha" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy approved digest
+      - name: Check HTTPS smoke path
         run: |
-          packages/signer/scripts/ops/deploy-image-over-ssh.sh \
-            --target "${TARGET_ENV}" \
-            --image-digest "${{ inputs.image_digest }}" \
-            --git-sha "${{ steps.meta.outputs.git_sha }}"
-
-      - name: Run remote signer audit
-        run: |
-          packages/signer/scripts/ops/audit-signer-fleet.sh \
-            --remote-only \
-            --target "${TARGET_ENV}"
+          packages/signer/infra/scripts/check-smoke-host.sh \
+            --target "${{ inputs.target_env }}"

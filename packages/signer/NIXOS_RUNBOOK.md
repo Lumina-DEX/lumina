@@ -1,127 +1,95 @@
 # Lumina Signer NixOS Runbook
 
 > [!WARNING]
-> Never run `nixos-anywhere`, `bootstrap-signers.sh`, `deploy-image-over-ssh.sh`, or any bootstrap command against the legacy live signer host at `157.180.50.185` or the aliases `lumina_root`, `lumina`, `dokku_lumina`.
+> Before running any signer infra script, set `LEGACY_SIGNER_BLOCKLIST` in
+> `packages/signer/infra/scripts/signer-fleet.env` so it includes the current live legacy signer
+> host IP or hostname plus any legacy aliases you want blocked. The scripts fail closed until this
+> is set.
 
-This runbook is only for new signer hosts:
+This runbook is split into:
+
+- operator steps: commands a human runs from a workstation
+- agent steps: commands CI or a separate automation can run once the host exists
+
+## Operator Steps
+
+### 1. Buy the Hetzner server
+
+Provision a new Hetzner Dedicated Root server for one of:
 
 - `zeko-testnet.signer.luminadex.com`
 - `mina-mainnet.signer.luminadex.com`
 - `zeko-mainnet.signer.luminadex.com`
 
-Use these host mappings:
+Record the public IPv4 address for the target host.
 
-| Target | NixOS config | Root alias | Admin alias | Service alias |
-| --- | --- | --- | --- | --- |
-| `zeko-testnet` | `infra/nixos#zeko-testnet-signer` | `lumina_signer_zeko_testnet_root` | `lumina_signer_zeko_testnet_admin` | `lumina_signer_zeko_testnet_service` |
-| `mina-mainnet` | `infra/nixos#mina-mainnet-signer` | `lumina_signer_mina_mainnet_root` | `lumina_signer_mina_mainnet_admin` | `lumina_signer_mina_mainnet_service` |
-| `zeko-mainnet` | `infra/nixos#zeko-mainnet-signer` | `lumina_signer_zeko_mainnet_root` | `lumina_signer_zeko_mainnet_admin` | `lumina_signer_zeko_mainnet_service` |
+### 2. Install Debian 12 base
 
-## 1. Buy Hetzner server
+Install plain Debian 12 as the temporary bootstrap OS. Do not install Dokku. Keep SSH enabled.
 
-Provision a new Hetzner Dedicated Root server for the target environment. Record the public IPv4 address for the new server in `packages/signer/scripts/ops/signer-fleet.env`.
+### 3. Create one local SSH alias per host
 
-## 2. Install Debian 12 base
-
-Install plain Debian 12 as the temporary bootstrap OS. Do not install Dokku. Ensure OpenSSH is enabled.
-
-## 3. Add operator SSH key and create local SSH aliases
-
-Add the operator public key to Debian root, then define all three aliases locally in `~/.ssh/config`:
+Use one alias per host. Start with `User root` during bootstrap, then switch the same alias to
+`User lumina-admin` after NixOS is installed.
 
 ```sshconfig
-Host lumina_signer_zeko_testnet_root
+Host lumina_signer_zeko_testnet
   HostName <zeko-testnet-ip>
   User root
   Port 22
   IdentityFile ~/.ssh/lumina_signer_zeko_testnet
-
-Host lumina_signer_zeko_testnet_admin
-  HostName <zeko-testnet-ip>
-  User lumina-admin
-  Port 22
-  IdentityFile ~/.ssh/lumina_signer_zeko_testnet
-
-Host lumina_signer_zeko_testnet_service
-  HostName <zeko-testnet-ip>
-  User lumina-signer-service
-  Port 22
-  IdentityFile ~/.ssh/lumina_signer_zeko_testnet_service
 ```
 
-Repeat that pattern for `mina-mainnet` and `zeko-mainnet`.
+Repeat for `lumina_signer_mina_mainnet` and `lumina_signer_zeko_mainnet`.
 
-Before installation, place the public keys that NixOS should install at:
-
-- `infra/nixos/hosts/keys/zeko-testnet-admin.pub`
-- `infra/nixos/hosts/keys/zeko-testnet-service.pub`
-- `infra/nixos/hosts/keys/mina-mainnet-admin.pub`
-- `infra/nixos/hosts/keys/mina-mainnet-service.pub`
-- `infra/nixos/hosts/keys/zeko-mainnet-admin.pub`
-- `infra/nixos/hosts/keys/zeko-mainnet-service.pub`
-
-## 4. Fill local env file from signer-fleet.env.example
-
-Create the operator env file and fill in Cloudflare plus server IP values:
+### 4. Fill the local env file
 
 ```bash
-cp packages/signer/scripts/ops/signer-fleet.env.example packages/signer/scripts/ops/signer-fleet.env
+cp packages/signer/infra/scripts/signer-fleet.env.example packages/signer/infra/scripts/signer-fleet.env
 ```
 
-## 5. Run local preflight audit
+Set:
 
-Run the preflight audit before any NixOS install:
+- `LEGACY_SIGNER_BLOCKLIST`
+- the target hostnames and IPs
+- the single SSH alias per host
+- Cloudflare token and zone
+
+### 5. Put the admin SSH public keys in the repo-local ignored directory
+
+Store the operator public keys here:
+
+- `packages/signer/infra/nixos/hosts/keys/zeko-testnet-admin.pub`
+- `packages/signer/infra/nixos/hosts/keys/mina-mainnet-admin.pub`
+- `packages/signer/infra/nixos/hosts/keys/zeko-mainnet-admin.pub`
+
+### 6. Run `nixos-anywhere` against the new host only
+
+Generate the hardware file and install NixOS:
 
 ```bash
-packages/signer/scripts/ops/audit-signer-fleet.sh --preflight-only --target zeko-testnet
-```
-
-Swap the target for `mina-mainnet` or `zeko-mainnet` as needed.
-
-## 6. Run nixos-anywhere against the new server only
-
-Generate and store the hardware file for the target, then run `nixos-anywhere` only against the matching `_root` alias:
-
-```bash
-mkdir -p infra/nixos/hosts/generated
+mkdir -p packages/signer/infra/nixos/hosts/generated
 nixos-anywhere \
-  --generate-hardware-config nixos-generate-config infra/nixos/hosts/generated/zeko-testnet-signer-hardware.nix \
-  --flake ./infra/nixos#zeko-testnet-signer \
-  --target-host lumina_signer_zeko_testnet_root
+  --generate-hardware-config \
+  nixos-generate-config \
+  packages/signer/infra/nixos/hosts/generated/zeko-testnet-signer-hardware.nix \
+  --flake ./packages/signer/infra/nixos#zeko-testnet-signer \
+  --target-host lumina_signer_zeko_testnet
 ```
 
-Do not point this command at any legacy alias or `157.180.50.185`.
+After the install finishes, change the SSH alias to `User lumina-admin`.
 
-## 7. Apply NixOS host config from repo
+### 7. Apply the smoke host config
 
-After the first install, verify the host switched to NixOS and apply the repo flake again through the admin alias:
+This intentionally deploys a plain webserver image, not the signer app:
 
 ```bash
-ssh lumina_signer_zeko_testnet_admin 'grep -E "^ID=nixos$" /etc/os-release'
-ssh lumina_signer_zeko_testnet_admin 'sudo nixos-rebuild switch --flake /etc/nixos#zeko-testnet-signer'
+packages/signer/infra/scripts/rebuild-smoke-host.sh --target zeko-testnet
 ```
 
-If you manage `/etc/nixos` from a checkout elsewhere on the host, use that path instead of `/etc/nixos`.
+### 8. Create the Cloudflare DNS record
 
-## 8. Create `/var/lib/lumina-signer/env` on the host
-
-Create the runtime env file on the host. It must stay on the server, mode `0600`, owned by `root:root`.
-
-```bash
-ssh lumina_signer_zeko_testnet_admin 'sudo install -d -m 0750 -o root -g root /var/lib/lumina-signer'
-ssh lumina_signer_zeko_testnet_admin 'sudo sh -c "cat > /var/lib/lumina-signer/env"' <<'EOF'
-DATABASE_URL=postgresql://...
-INFISICAL_ENVIRONMENT=...
-INFISICAL_PROJECT_ID=...
-INFISICAL_CLIENT_ID=...
-INFISICAL_CLIENT_SECRET=...
-EOF
-ssh lumina_signer_zeko_testnet_admin 'sudo chmod 0600 /var/lib/lumina-signer/env && sudo chown root:root /var/lib/lumina-signer/env'
-```
-
-## 9. Create or update Cloudflare DNS record
-
-Use the Cloudflare API, not the dashboard. Example for testnet:
+Use the API, not the dashboard:
 
 ```bash
 ZONE_ID="$(curl -fsS "https://api.cloudflare.com/client/v4/zones?name=luminadex.com" \
@@ -138,24 +106,17 @@ curl -fsS "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
     '{type: $type, name: $name, content: $content, proxied: true, ttl: 1}')"
 ```
 
-If the record already exists, update it with the record ID instead of creating a duplicate.
+If the record already exists, update it instead of creating a duplicate.
 
-## 10. Deploy first image digest
-
-Deploy by immutable digest only:
+### 9. Verify the smoke host
 
 ```bash
-packages/signer/scripts/ops/deploy-image-over-ssh.sh \
-  --target zeko-testnet \
-  --image-digest sha256:<image-digest> \
-  --git-sha <git-sha>
+packages/signer/infra/scripts/check-smoke-host.sh --target zeko-testnet
 ```
 
-This writes `/var/lib/lumina-signer/release.env`, restarts `lumina-signer`, and verifies HTTPS.
+### 10. Bootstrap signer rows directly in Postgres
 
-## 11. Bootstrap signer permissions
-
-Prepare a target-specific payload file:
+Prepare a payload file:
 
 ```json
 {
@@ -168,20 +129,35 @@ Prepare a target-specific payload file:
 Then run:
 
 ```bash
-SIGNER_API_KEY=<admin-api-key> \
-packages/signer/scripts/ops/bootstrap-signers.sh \
+DATABASE_URL='postgresql://...' \
+packages/signer/infra/scripts/bootstrap-signers.sh \
   --target zeko-testnet \
   --payload /absolute/path/to/zeko-testnet-signers.json
 ```
 
-The script uses GraphQL admin mutations against `https://<hostname>/graphql`, creates missing signers, adds or updates network permissions, and verifies final state.
+This writes `SignerMerkle` and `SignerMerkleNetwork` rows directly in Postgres and verifies them
+with a readback query.
 
-## 12. Run final full audit
+## Agent Steps
 
-Finish with the full end-to-end audit:
+These are the only steps meant for CI or another automation:
 
-```bash
-packages/signer/scripts/ops/audit-signer-fleet.sh --full --target zeko-testnet
-```
+### Build the signer image
 
-When this passes, the host is ready for normal digest-based releases through CI.
+Use [signer-image.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-image.yml) to
+test, build, and publish `ghcr.io/lumina-dex/lumina-signer`.
+
+### Re-apply the smoke host config
+
+Use [signer-deploy-testnet.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-deploy-testnet.yml)
+for zeko testnet and [signer-promote.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-promote.yml)
+for manual production smoke deploys.
+
+Those workflows:
+
+- install Nix on the runner
+- rebuild the target host config declaratively
+- deploy the smoke webserver image
+- run the simple HTTPS smoke check
+
+They do not bootstrap signers, mutate the database, or touch Cloudflare.

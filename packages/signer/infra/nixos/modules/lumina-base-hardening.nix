@@ -10,25 +10,13 @@ in
     adminUser = lib.mkOption {
       type = lib.types.str;
       default = "lumina-admin";
-      description = "Primary operator account for the host.";
+      description = "Primary SSH operator account.";
     };
 
     adminAuthorizedKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "SSH public keys allowed for the operator account.";
-    };
-
-    serviceUser = lib.mkOption {
-      type = lib.types.str;
-      default = "lumina-signer-service";
-      description = "Deployment account used by CI and release operators.";
-    };
-
-    serviceAuthorizedKeys = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "SSH public keys allowed for the deployment account.";
+      description = "Public keys allowed for the operator account.";
     };
 
     timezone = lib.mkOption {
@@ -40,7 +28,7 @@ in
     stateVersion = lib.mkOption {
       type = lib.types.str;
       default = "24.11";
-      description = "NixOS state version for new hosts.";
+      description = "NixOS state version.";
     };
   };
 
@@ -81,14 +69,7 @@ in
       shell = pkgs.bashInteractive;
     };
 
-    users.users.${cfg.serviceUser} = {
-      isNormalUser = true;
-      description = "Lumina signer deploy user";
-      openssh.authorizedKeys.keys = cfg.serviceAuthorizedKeys;
-      shell = pkgs.bashInteractive;
-    };
-
-    security.sudo.wheelNeedsPassword = true;
+    security.sudo.wheelNeedsPassword = false;
 
     system.autoUpgrade = {
       enable = true;
@@ -103,7 +84,7 @@ in
       curl
       git
       jq
-      openssl
+      podman
     ];
 
     system.stateVersion = cfg.stateVersion;
