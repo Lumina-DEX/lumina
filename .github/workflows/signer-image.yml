@@ -1,0 +1,103 @@
+name: Signer Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/signer/**"
+      - ".github/workflows/signer-image.yml"
+      - ".github/workflows/signer-deploy-testnet.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-image:
+    name: Build signer image
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: signer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d signer"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/signer
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      git_sha: ${{ github.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install toolchain and dependencies
+        uses: ./.github/workflows/actions/install
+
+      - name: Setup Moon toolchain
+        uses: moonrepo/setup-toolchain@v0
+
+      - name: Apply signer migrations
+        run: moon signer:db-migrate
+
+      - name: Run signer integration tests
+        run: moon signer:test-integration
+        env:
+          INFISICAL_ENVIRONMENT: ci
+          INFISICAL_PROJECT_ID: 1cae9006-c83d-415d-b207-c966c9d1df48
+          INFISICAL_CLIENT_ID: ${{ secrets.INFISICAL_CLIENT_ID }}
+          INFISICAL_CLIENT_SECRET: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push signer image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/signer/Dockerfile
+          push: true
+          provenance: false
+          tags: ghcr.io/lumina-dex/lumina-signer:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Publish digest summary
+        run: |
+          {
+            echo "## Signer image"
+            echo
+            echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
+            echo "- Image: \`ghcr.io/lumina-dex/lumina-signer@${{ steps.build.outputs.digest }}\`"
+            echo "- Git SHA: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-testnet:
+    name: Auto-deploy signer testnet
+    needs: build-image
+    uses: ./.github/workflows/signer-deploy-testnet.yml
+    with:
+      image_digest: ${{ needs.build-image.outputs.image_digest }}
+      git_sha: ${{ needs.build-image.outputs.git_sha }}
+    secrets: inherit

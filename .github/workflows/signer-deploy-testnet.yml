@@ -1,0 +1,72 @@
+name: Signer Deploy Testnet
+
+on:
+  workflow_call:
+    inputs:
+      image_digest:
+        required: true
+        type: string
+      git_sha:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Image digest or immutable image reference"
+        required: true
+        type: string
+      git_sha:
+        description: "Git SHA to record in release.env"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signer-zeko-testnet
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy zeko testnet signer
+    runs-on: ubuntu-latest
+    environment: signer-zeko-testnet
+    env:
+      TARGET_HOSTNAME: ${{ secrets.TARGET_HOSTNAME }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SIGNER_API_KEY: ${{ secrets.SIGNER_API_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Select git SHA
+        id: meta
+        run: |
+          git_sha="${{ inputs.git_sha }}"
+          if [ -z "$git_sha" ]; then
+            git_sha="${GITHUB_SHA}"
+          fi
+          echo "git_sha=$git_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy image digest
+        run: |
+          packages/signer/scripts/ops/deploy-image-over-ssh.sh \
+            --target zeko-testnet \
+            --image-digest "${{ inputs.image_digest }}" \
+            --git-sha "${{ steps.meta.outputs.git_sha }}"
+
+      - name: Run remote signer audit
+        run: |
+          packages/signer/scripts/ops/audit-signer-fleet.sh \
+            --remote-only \
+            --target zeko-testnet
