@@ -7,29 +7,27 @@
 
   outputs = { self, nixpkgs, ... }:
     let
+      inherit (nixpkgs) lib;
       systems = [
         "x86_64-linux"
         "aarch64-linux"
       ];
-      mkHost = system: module:
+      hostDefinitions = import ./lib/host-definitions.nix;
+      mkHost = host:
         nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [ module ];
+          inherit (host) system;
+          modules = [ host.module ];
         };
     in
     {
       nixosModules = {
+        lumina-host = import ./modules/lumina-host.nix;
         lumina-base-hardening = import ./modules/lumina-base-hardening.nix;
         lumina-caddy = import ./modules/lumina-caddy.nix;
         lumina-signer = import ./modules/lumina-signer.nix;
       };
 
-      nixosConfigurations = {
-        zeko-testnet-signer = mkHost "x86_64-linux" ./hosts/zeko-testnet-signer.nix;
-        mina-mainnet-signer = mkHost "x86_64-linux" ./hosts/mina-mainnet-signer.nix;
-        zeko-mainnet-signer = mkHost "x86_64-linux" ./hosts/zeko-mainnet-signer.nix;
-        local-arm64-signer-test = mkHost "aarch64-linux" ./hosts/local-arm64-signer-test.nix;
-      };
+      nixosConfigurations = lib.mapAttrs (_: mkHost) hostDefinitions;
 
       formatter = nixpkgs.lib.genAttrs systems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     };

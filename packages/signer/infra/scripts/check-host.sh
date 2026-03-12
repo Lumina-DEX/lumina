@@ -51,12 +51,20 @@ main() {
 	hostname="$(target_hostname "$TARGET_ENV")"
 
 	for unit in caddy lumina-signer; do
-		[[ "$(run_remote "$TARGET_ENV" "systemctl is-active ${unit}")" == "active" ]] || die \
+		[[ "$(run_remote_as "$TARGET_ENV" "$(remote_admin_user)" "systemctl is-active ${unit}")" == "active" ]] || die \
 			"Systemd unit ${unit} is not active on ${TARGET_ENV}."
 	done
 
-	curl -fsS "https://${hostname}${CHECK_PATH}" >/dev/null || die \
-		"HTTPS check failed for ${hostname}${CHECK_PATH}."
+	if [[ "$CHECK_PATH" == "/graphql" ]]; then
+		curl -fsS \
+			-H 'Content-Type: application/json' \
+			--data '{"query":"{ __typename }"}' \
+			"https://${hostname}${CHECK_PATH}" | grep -q '"data"' || die \
+			"GraphQL HTTPS check failed for ${hostname}${CHECK_PATH}."
+	else
+		curl -fsS "https://${hostname}${CHECK_PATH}" >/dev/null || die \
+			"HTTPS check failed for ${hostname}${CHECK_PATH}."
+	fi
 	log "Host check succeeded for ${TARGET_ENV}."
 }
 

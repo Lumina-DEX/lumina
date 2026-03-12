@@ -5,9 +5,10 @@ let
   generatedHardware = ./generated/mina-mainnet-signer-hardware.nix;
 in
 mkSignerHost {
-  hostName = "mina-mainnet-signer";
-  publicHostname = "mina-mainnet.signer.luminadex.com";
-  targetEnvironment = "mina-mainnet";
-  adminKeyPath = ./keys/mina-mainnet-admin.pub;
+  host = {
+    hostName = "mina-mainnet-signer";
+    publicHostname = "mina-mainnet.signer.luminadex.com";
+    targetEnvironment = "mina-mainnet";
+  };
   extraImports = lib.optional (builtins.pathExists generatedHardware) generatedHardware;
 }

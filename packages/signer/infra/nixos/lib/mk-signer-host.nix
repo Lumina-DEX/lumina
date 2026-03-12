@@ -1,29 +1,18 @@
 { lib }:
 
 {
-  hostName,
-  publicHostname,
-  targetEnvironment,
-  adminKeyPath ? null,
+  host,
   adminKeyEnv ? "LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY",
   extraImports ? [ ],
   extraConfig ? { },
 }:
 
 let
-  readKeyOrEnv = envName: path:
-    let
-      fromEnv = builtins.getEnv envName;
-    in
-    if fromEnv != "" then
-      [ fromEnv ]
-    else
-      lib.optional (path != null && builtins.pathExists path) (
-        lib.strings.removeSuffix "\n" (builtins.readFile path)
-      );
+  adminKeyFromEnv = builtins.getEnv adminKeyEnv;
 in
 {
   imports = [
+    ../modules/lumina-host.nix
     ../modules/lumina-base-hardening.nix
     ../modules/lumina-caddy.nix
     ../modules/lumina-signer.nix
@@ -33,16 +22,18 @@ in
     {
       # Default the hostname here so local test hosts can override it without
       # duplicating the rest of the signer host shape.
-      networking.hostName = lib.mkDefault hostName;
+      networking.hostName = lib.mkDefault host.hostName;
+
+      lumina.host = host;
 
       lumina.baseHardening = {
         enable = true;
-        adminAuthorizedKeys = readKeyOrEnv adminKeyEnv adminKeyPath;
+        adminAuthorizedKeys = lib.optional (adminKeyFromEnv != "") adminKeyFromEnv;
       };
 
       lumina.signer = {
         enable = true;
-        inherit publicHostname targetEnvironment;
+        inherit (host) publicHostname targetEnvironment;
       };
     }
     extraConfig

@@ -5,9 +5,10 @@ let
   generatedHardware = ./generated/zeko-mainnet-signer-hardware.nix;
 in
 mkSignerHost {
-  hostName = "zeko-mainnet-signer";
-  publicHostname = "zeko-mainnet.signer.luminadex.com";
-  targetEnvironment = "zeko-mainnet";
-  adminKeyPath = ./keys/zeko-mainnet-admin.pub;
+  host = {
+    hostName = "zeko-mainnet-signer";
+    publicHostname = "zeko-mainnet.signer.luminadex.com";
+    targetEnvironment = "zeko-mainnet";
+  };
   extraImports = lib.optional (builtins.pathExists generatedHardware) generatedHardware;
 }

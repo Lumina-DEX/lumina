@@ -1,0 +1,3 @@
+- T001 | done | align-signer-rollout-with-zeko-machines | done/T001-align-signer-rollout-with-zeko-machines.md
+- T002 | done | separate-runbook-roles-and-type-host-data | done/T002-separate-runbook-roles-and-type-host-data.md
+- T003 | done | integrate-helper-into-runbook | done/T003-integrate-helper-into-runbook.md
