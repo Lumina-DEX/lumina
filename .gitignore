@@ -105,6 +105,7 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+packages/signer/infra/scripts/signer-fleet.env
 
 # parcel-bundler cache (https://parceljs.org/)
 
