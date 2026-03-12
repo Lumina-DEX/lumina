@@ -116,16 +116,24 @@ in
         RestartSec = "5s";
         TimeoutStartSec = "300";
         ExecStartPre = [
-          "${pkgs.podman}/bin/podman pull ${cfg.imageRef}"
+          (lib.escapeShellArgs [
+            "${pkgs.podman}/bin/podman"
+            "pull"
+            cfg.imageRef
+          ])
           "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}"
         ];
         ExecStart = lib.escapeShellArgs podmanCommand;
         ExecStop = "-${pkgs.podman}/bin/podman stop -t 15 ${cfg.appName}";
         ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}";
       } // lib.optionalAttrs (cfg.envFile != null) {
-        # ExecCondition does not inherit the unit PATH, so use the absolute
-        # coreutils path instead of relying on a shell builtin name.
-        ExecCondition = "${pkgs.coreutils}/bin/test -s ${cfg.envFile}";
+        # Use an explicit argv so the env-file path is quoted correctly even if
+        # it ever contains whitespace.
+        ExecCondition = lib.escapeShellArgs [
+          "${pkgs.coreutils}/bin/test"
+          "-s"
+          cfg.envFile
+        ];
       };
     };
   };
