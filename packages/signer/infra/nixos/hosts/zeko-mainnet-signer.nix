@@ -11,4 +11,7 @@ mkSignerHost {
     targetEnvironment = "zeko-mainnet";
   };
   extraImports = lib.optional (builtins.pathExists generatedHardware) generatedHardware;
+  extraConfig = {
+    lumina.baseHardening.autoUpgradeEnable = false;
+  };
 }

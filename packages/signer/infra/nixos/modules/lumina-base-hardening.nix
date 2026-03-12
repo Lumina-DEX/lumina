@@ -30,6 +30,12 @@ in
       default = "24.11";
       description = "NixOS state version.";
     };
+
+    autoUpgradeEnable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether unattended NixOS auto-upgrades are enabled.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -72,11 +78,10 @@ in
     security.sudo.wheelNeedsPassword = false;
 
     system.autoUpgrade = {
-      enable = true;
+      enable = cfg.autoUpgradeEnable;
       allowReboot = false;
       dates = "04:00";
       randomizedDelaySec = "45min";
-      flags = [ "--upgrade-all" ];
     };
 
     environment.systemPackages = with pkgs; [

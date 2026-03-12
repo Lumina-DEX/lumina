@@ -170,9 +170,9 @@ packages/signer/infra/scripts/check-host.sh --target zeko-testnet --path /graphq
 
 ## CI / Automation
 
-- [signer-image.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-image.yml) builds and publishes the signer image digest to GHCR
-- [signer-deploy-testnet.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-deploy-testnet.yml) auto-deploys that digest to `zeko-testnet`
-- [signer-promote.yml](/Users/hebilicious/GitHub/lumina/monorepo/.github/workflows/signer-promote.yml) manually promotes an approved digest to `mina-mainnet` or `zeko-mainnet`
+- [signer-image.yml](../../.github/workflows/signer-image.yml) builds and publishes the signer image digest to GHCR
+- [signer-deploy-testnet.yml](../../.github/workflows/signer-deploy-testnet.yml) auto-deploys that digest to `zeko-testnet`
+- [signer-promote.yml](../../.github/workflows/signer-promote.yml) manually promotes an approved digest to `mina-mainnet` or `zeko-mainnet`
 
 Normal CI deploys do not upload runtime secrets or touch Cloudflare. Those stay in the first-time
 agent rollout flow only.

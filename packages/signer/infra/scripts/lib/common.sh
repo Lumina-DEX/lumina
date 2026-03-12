@@ -27,8 +27,10 @@ maybe_source_env() {
 	env_file="${SIGNER_FLEET_ENV_FILE:-$(script_dir)/signer-fleet.env}"
 
 	if [[ -f "$env_file" ]]; then
+		set -a
 		# shellcheck source=/dev/null
 		source "$env_file"
+		set +a
 	fi
 }
 

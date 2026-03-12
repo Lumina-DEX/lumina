@@ -11,4 +11,7 @@ mkSignerHost {
     targetEnvironment = "mina-mainnet";
   };
   extraImports = lib.optional (builtins.pathExists generatedHardware) generatedHardware;
+  extraConfig = {
+    lumina.baseHardening.autoUpgradeEnable = false;
+  };
 }

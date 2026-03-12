@@ -99,21 +99,39 @@ ensure_dns_record() {
 
 host_is_nixos() {
 	local target="$1"
+	local os_id
 
-	run_remote_as "$target" "$(remote_admin_user)" \
-		"source /etc/os-release >/dev/null 2>&1 && [ \"\$ID\" = nixos ]" >/dev/null 2>&1
+	os_id="$(
+		run_remote_as "$target" "$(remote_admin_user)" \
+			"source /etc/os-release >/dev/null 2>&1 && printf '%s' \"\$ID\"" 2>/dev/null || true
+	)"
+	[[ "$os_id" == "nixos" ]]
+}
+
+bootstrap_host_os() {
+	local target="$1"
+
+	run_remote_as "$target" "$(remote_bootstrap_user)" \
+		"source /etc/os-release >/dev/null 2>&1 && printf '%s' \"\$ID\"" 2>/dev/null || true
 }
 
 install_nixos_if_needed() {
 	local target="$1"
 	local image_ref="$2"
 	local ssh_public_key="$3"
-	local flake_dir hardware_path
+	local flake_dir hardware_path bootstrap_os
 
 	if host_is_nixos "$target"; then
 		log "${target} already reports NixOS. Skipping nixos-anywhere."
 		return 0
 	fi
+
+	bootstrap_os="$(bootstrap_host_os "$target")"
+	if [[ "$bootstrap_os" == "nixos" ]]; then
+		die "${target} already reports NixOS over bootstrap SSH. Fix admin SSH instead of rerunning nixos-anywhere."
+	fi
+	[[ -n "$bootstrap_os" ]] || die \
+		"Unable to determine the remote OS for ${target}. Refusing to run nixos-anywhere blindly."
 
 	flake_dir="$(repo_root)/packages/signer/infra/nixos"
 	hardware_path="$(target_generated_hardware_path "$target")"
