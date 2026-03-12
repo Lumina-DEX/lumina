@@ -7,8 +7,11 @@
 
   outputs = { self, nixpkgs, ... }:
     let
-      system = "x86_64-linux";
-      mkHost = module:
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      mkHost = system: module:
         nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [ module ];
@@ -22,11 +25,12 @@
       };
 
       nixosConfigurations = {
-        zeko-testnet-signer = mkHost ./hosts/zeko-testnet-signer.nix;
-        mina-mainnet-signer = mkHost ./hosts/mina-mainnet-signer.nix;
-        zeko-mainnet-signer = mkHost ./hosts/zeko-mainnet-signer.nix;
+        zeko-testnet-signer = mkHost "x86_64-linux" ./hosts/zeko-testnet-signer.nix;
+        mina-mainnet-signer = mkHost "x86_64-linux" ./hosts/mina-mainnet-signer.nix;
+        zeko-mainnet-signer = mkHost "x86_64-linux" ./hosts/zeko-mainnet-signer.nix;
+        local-arm64-signer-test = mkHost "aarch64-linux" ./hosts/local-arm64-signer-test.nix;
       };
 
-      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt-rfc-style;
+      formatter = nixpkgs.lib.genAttrs systems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     };
 }

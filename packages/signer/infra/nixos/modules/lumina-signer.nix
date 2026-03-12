@@ -123,7 +123,9 @@ in
         ExecStop = "-${pkgs.podman}/bin/podman stop -t 15 ${cfg.appName}";
         ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}";
       } // lib.optionalAttrs (cfg.envFile != null) {
-        ExecCondition = "test -s ${cfg.envFile}";
+        # ExecCondition does not inherit the unit PATH, so use the absolute
+        # coreutils path instead of relying on a shell builtin name.
+        ExecCondition = "${pkgs.coreutils}/bin/test -s ${cfg.envFile}";
       };
     };
   };
