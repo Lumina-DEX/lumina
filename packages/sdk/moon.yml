@@ -59,4 +59,4 @@ tasks:
     command: vitest run
     options:
       cache: false
-      runInCI: false
+      runInCI: true
