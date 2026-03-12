@@ -4,41 +4,41 @@ import { getAmountOutFromLiquidity } from "../src/dex/utils"
 describe("getAmountOutFromLiquidity", () => {
 	it("should handle 0% slippage — balanceMin equals full balance", () => {
 		const result = getAmountOutFromLiquidity({
-			liquidity: 36205869.5,
-			tokenA: { address: "MINA", balance: "336033312365460" },
+			liquidity: BigInt("36205869"),
+			tokenA: { address: "MINA", balance: BigInt("336033312365460") },
 			tokenB: {
 				address: "B62qjUhPDbMskxMduyzkyGnK6LZwHksuuYPRjyF4owJM7UWLGJynN36",
-				balance: "555061724685882"
+				balance: BigInt("555061724685882")
 			},
-			supply: "1751668281916",
+			supply: BigInt("1751668281916"),
 			slippagePercent: 0
 		})
 
-		expect(result.tokenA.balanceMin).toBe(336033312365460)
-		expect(result.tokenB.balanceMin).toBe(555061724685882)
-		expect(result.supplyMax).toBe(1751668281916)
+		expect(result.tokenA.balanceMin).toBe(BigInt("336033312365460"))
+		expect(result.tokenB.balanceMin).toBe(BigInt("555061724685882"))
+		expect(result.supplyMax).toBe(BigInt("1751668281916"))
 	})
 
 	it("should produce lower amountOut with higher slippage", () => {
 		const base = getAmountOutFromLiquidity({
-			liquidity: 36205869.5,
-			tokenA: { address: "MINA", balance: "336033312365460" },
+			liquidity: BigInt("36205869"),
+			tokenA: { address: "MINA", balance: BigInt("336033312365460") },
 			tokenB: {
 				address: "B62qjUhPDbMskxMduyzkyGnK6LZwHksuuYPRjyF4owJM7UWLGJynN36",
-				balance: "555061724685882"
+				balance: BigInt("555061724685882")
 			},
-			supply: "1751668281916",
+			supply: BigInt("1751668281916"),
 			slippagePercent: 1
 		})
 
 		const highSlippage = getAmountOutFromLiquidity({
-			liquidity: 36205869.5,
-			tokenA: { address: "MINA", balance: "336033312365460" },
+			liquidity: BigInt("36205869"),
+			tokenA: { address: "MINA", balance: BigInt("336033312365460") },
 			tokenB: {
 				address: "B62qjUhPDbMskxMduyzkyGnK6LZwHksuuYPRjyF4owJM7UWLGJynN36",
-				balance: "555061724685882"
+				balance: BigInt("555061724685882")
 			},
-			supply: "1751668281916",
+			supply: BigInt("1751668281916"),
 			slippagePercent: 5
 		})
 
@@ -58,13 +58,13 @@ describe("getAmountOutFromLiquidity", () => {
 		const contractTokenOut = (liquidityAmount * reserveTokenMin) / supplyMax
 
 		const result = getAmountOutFromLiquidity({
-			liquidity: 36205869.5,
-			tokenA: { address: "MINA", balance: "336033312365460" },
+			liquidity: BigInt("36205869"),
+			tokenA: { address: "MINA", balance: BigInt("336033312365460") },
 			tokenB: {
 				address: "B62qjUhPDbMskxMduyzkyGnK6LZwHksuuYPRjyF4owJM7UWLGJynN36",
-				balance: "555061724685882"
+				balance: BigInt("555061724685882")
 			},
-			supply: "1751668281916",
+			supply: BigInt("1751668281916"),
 			slippagePercent: 1
 		})
 

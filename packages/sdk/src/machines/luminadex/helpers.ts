@@ -1,13 +1,17 @@
 import { nanoid } from "nanoid"
 import type { ActionArgs, ErrorActorEvent } from "xstate"
 import { luminadexFactories } from "../../constants"
+import { toUnits } from "../../dex/utils"
 import { createLogger } from "../../helpers/debug"
 import type { TransactionMachineInput } from "../transaction"
 import type { Can, ContractName, DexFeatures, LuminaDexMachineContext, LuminaDexMachineEvent, Token } from "./types"
 
 export const { act, logger } = createLogger("[DEX]")
 
-export const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
+export const amount = (token: Token): bigint => {
+	const decimals = Math.round(Math.log10(token.decimal ?? 1e9))
+	return toUnits(Number.parseFloat(token.amount), decimals)
+}
 
 export const unloadedContracts = () =>
 	({

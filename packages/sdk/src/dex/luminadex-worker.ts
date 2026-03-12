@@ -428,10 +428,10 @@ export interface SwapArgs {
 	user: string
 	frontendFee: number
 	frontendFeeDestination: string
-	amount: number
-	minOut: number
-	balanceOutMin: number
-	balanceInMax: number
+	amount: bigint
+	minOut: bigint
+	balanceOutMin: bigint
+	balanceInMax: bigint
 	factory: string
 }
 
@@ -472,10 +472,10 @@ const swap = async (args: SwapArgs) => {
 	const swapArgList = [
 		TAX_RECEIVER,
 		uint64FromNumber(args.frontendFee),
-		uint64FromNumber(args.amount),
-		uint64FromNumber(args.minOut),
-		uint64FromNumber(args.balanceInMax),
-		uint64FromNumber(args.balanceOutMin)
+		uint64FromBigint(args.amount),
+		uint64FromBigint(args.minOut),
+		uint64FromBigint(args.balanceInMax),
+		uint64FromBigint(args.balanceOutMin)
 	] as const
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -506,22 +506,22 @@ const swap = async (args: SwapArgs) => {
 
 type LiquidityToken = {
 	address: string
-	amount: number
-	reserve: number
+	amount: bigint
+	reserve: bigint
 }
 export interface AddLiquidity {
 	pool: string
 	user: string
 	tokenA: LiquidityToken
 	tokenB: LiquidityToken
-	supplyMin: number
+	supplyMin: bigint
 }
 const addLiquidity = async (args: AddLiquidity) => {
 	logger.start("Add liquidity", args)
 	const { poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool } =
 		await getZkTokenFromPool(args.pool)
 	logger.debug({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool })
-	const supply = Math.trunc(args.supplyMin)
+	const supply = args.supplyMin
 	const userKey = PublicKey.fromBase58(args.user)
 	logger.debug({ supply, userKey })
 	await Promise.all([
@@ -548,7 +548,7 @@ const addLiquidity = async (args: AddLiquidity) => {
 	}: {
 		tokenA: LiquidityToken
 		tokenB: LiquidityToken
-		supply: number
+		supply: bigint
 	}) => {
 		logger.debug({ tokenA, tokenB, supply })
 		const isMina = tokenA.address === MINA_ADDRESS || tokenB.address === MINA_ADDRESS
@@ -557,14 +557,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			if (supply > 0) {
 				return zkPool.supplyLiquidity(
-					uint64FromNumber(mina.amount),
-					uint64FromNumber(token.amount),
-					uint64FromNumber(mina.reserve),
-					uint64FromNumber(token.reserve),
-					uint64FromNumber(supply)
+					uint64FromBigint(mina.amount),
+					uint64FromBigint(token.amount),
+					uint64FromBigint(mina.reserve),
+					uint64FromBigint(token.reserve),
+					uint64FromBigint(supply)
 				)
 			}
-			return zkPool.supplyFirstLiquidities(uint64FromNumber(mina.amount), uint64FromNumber(token.amount))
+			return zkPool.supplyFirstLiquidities(uint64FromBigint(mina.amount), uint64FromBigint(token.amount))
 		}
 
 		const token0Address = zkPoolToken0Key.toBase58()
@@ -572,14 +572,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		if (supply > 0) {
 			return zkPool.supplyLiquidityToken(
-				uint64FromNumber(token0.amount),
-				uint64FromNumber(token1.amount),
-				uint64FromNumber(token0.reserve),
-				uint64FromNumber(token1.reserve),
-				uint64FromNumber(supply)
+				uint64FromBigint(token0.amount),
+				uint64FromBigint(token1.amount),
+				uint64FromBigint(token0.reserve),
+				uint64FromBigint(token1.reserve),
+				uint64FromBigint(supply)
 			)
 		}
-		return zkPool.supplyFirstLiquiditiesToken(uint64FromNumber(token0.amount), uint64FromNumber(token1.amount))
+		return zkPool.supplyFirstLiquiditiesToken(uint64FromBigint(token0.amount), uint64FromBigint(token1.amount))
 	}
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -599,8 +599,8 @@ export interface WithdrawLiquidity {
 	user: string
 	tokenA: LiquidityToken
 	tokenB: LiquidityToken
-	liquidityAmount: number
-	supplyMax: number
+	liquidityAmount: bigint
+	supplyMax: bigint
 }
 
 const withdrawLiquidity = async (args: WithdrawLiquidity) => {
@@ -627,8 +627,8 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 		fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	])
 
-	const supply = Math.trunc(args.supplyMax)
-	const liquidity = Math.trunc(args.liquidityAmount)
+	const supply = args.supplyMax
+	const liquidity = args.liquidityAmount
 	logger.info({ supply, liquidity })
 
 	const createWithdrawLiquidity = ({
@@ -639,31 +639,31 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	}: {
 		tokenA: LiquidityToken
 		tokenB: LiquidityToken
-		liquidity: number
-		supply: number
+		liquidity: bigint
+		supply: bigint
 	}) => {
 		if (isMinaPool) {
 			const mina = tokenA.address === MINA_ADDRESS ? tokenA : tokenB
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			return zkHolder.withdrawLiquidity(
-				uint64FromNumber(liquidity),
-				uint64FromNumber(mina.amount),
-				uint64FromNumber(token.amount),
-				uint64FromNumber(mina.reserve),
-				uint64FromNumber(token.reserve),
-				uint64FromNumber(supply)
+				uint64FromBigint(liquidity),
+				uint64FromBigint(mina.amount),
+				uint64FromBigint(token.amount),
+				uint64FromBigint(mina.reserve),
+				uint64FromBigint(token.reserve),
+				uint64FromBigint(supply)
 			)
 		}
 
 		const token0 = token0Address === tokenA.address ? tokenA : tokenB
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		return zkHolder.withdrawLiquidityToken(
-			uint64FromNumber(liquidity),
-			uint64FromNumber(token0.amount),
-			uint64FromNumber(token1.amount),
-			uint64FromNumber(token0.reserve),
-			uint64FromNumber(token1.reserve),
-			uint64FromNumber(supply)
+			uint64FromBigint(liquidity),
+			uint64FromBigint(token0.amount),
+			uint64FromBigint(token1.amount),
+			uint64FromBigint(token0.reserve),
+			uint64FromBigint(token1.reserve),
+			uint64FromBigint(supply)
 		)
 	}
 

@@ -1,5 +1,5 @@
 "use client"
-import type { LuminaPool } from "@lumina-dex/sdk"
+import { fromUnits, type LuminaPool } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
@@ -32,7 +32,7 @@ const Swap = () => {
 		Dex.send({ type: "Swap" })
 	}
 
-	const format = (n: number) => n / 10 ** tokenOut.decimals
+	const format = (n: bigint) => fromUnits(n, tokenOut.decimals)
 
 	const debouncedChangeSettings = useMemo(
 		() =>
