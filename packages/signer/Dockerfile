@@ -4,8 +4,10 @@
 FROM node:latest AS base
 WORKDIR /app
 
+ARG MOON_VERSION=1.40.3
+
 # Install moon binary
-RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash -s -- "${MOON_VERSION}"
 ENV PATH="/root/.moon/bin:/root/.proto/bin:$PATH"
 
 #### SKELETON STAGE
