@@ -1,5 +1,5 @@
 "use client"
-import type { LuminaPool } from "@lumina-dex/sdk"
+import { fromNanoUnits, fromUnits, type LuminaPool } from "@lumina-dex/sdk"
 import { debounce } from "@tanstack/react-pacer"
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import CurrencyFormat from "react-currency-format"
@@ -62,11 +62,10 @@ const Liquidity = () => {
 			if (result) {
 				const decimalsA = tokenA.decimals
 				const decimalsB = tokenB.decimals
-				const decimalsLiquidity = 9
 
-				const amountA = result.tokenA.amountIn / 10 ** decimalsA
-				const amountB = result.tokenB.amountIn / 10 ** decimalsB
-				const liquidity = result.liquidity / 10 ** decimalsLiquidity
+				const amountA = fromUnits(result.tokenA.amountIn, decimalsA)
+				const amountB = fromUnits(result.tokenB.amountIn, decimalsB)
+				const liquidity = fromNanoUnits(result.liquidity)
 
 				if (lastEditedField.current === "from" && amountB > 0) {
 					setToAmount(amountB.toFixed(2).toString())

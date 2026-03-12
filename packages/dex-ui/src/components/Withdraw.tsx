@@ -1,5 +1,5 @@
 "use client"
-import type { LuminaPool } from "@lumina-dex/sdk"
+import { fromNanoUnits, type LuminaPool } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
 import { useContext, useEffect, useMemo, useState } from "react"
@@ -17,15 +17,15 @@ const Withdraw = () => {
 
 	const { Dex } = useContext(LuminaContext)
 
-	const toMina = useSelector(Dex, (state) => state.context.dex.removeLiquidity.calculated?.tokenA.amountOut ?? 0)
-	const toToken = useSelector(Dex, (state) => state.context.dex.removeLiquidity.calculated?.tokenB.amountOut ?? 0)
+	const toMina = useSelector(Dex, (state) => state.context.dex.removeLiquidity.calculated?.tokenA.amountOut ?? 0n)
+	const toToken = useSelector(Dex, (state) => state.context.dex.removeLiquidity.calculated?.tokenB.amountOut ?? 0n)
 
 	const withdrawLiquidity = () => {
 		Dex.send({ type: "RemoveLiquidity" })
 	}
 
-	function formatToken(value: number) {
-		return value / 10 ** 9
+	function formatToken(value: bigint) {
+		return fromNanoUnits(value)
 	}
 
 	const debouncedChangeSettings = useMemo(

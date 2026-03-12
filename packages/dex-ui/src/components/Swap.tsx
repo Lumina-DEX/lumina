@@ -12,7 +12,7 @@ import PoolMenu from "./PoolMenu"
 
 const Swap = () => {
 	const { Dex } = useContext(LuminaContext)
-	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0)
+	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0n)
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
