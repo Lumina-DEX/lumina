@@ -32,6 +32,7 @@ import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import type { Networks } from "../machines/wallet/types"
 import { fetchZippedContracts, readCache } from "./cache"
+import { toNanoUnits } from "./utils"
 
 const logger = prefixedLogger("[DEX WORKER]")
 const measure = createMeasure(logger)
@@ -115,11 +116,11 @@ const initContracts = async () => {
 	workerState.send({
 		type: "SetContracts",
 		contracts: {
+			FungibleTokenAdmin,
+			FungibleToken,
 			PoolFactory,
 			Pool,
 			PoolTokenHolder,
-			FungibleToken,
-			FungibleTokenAdmin,
 			Faucet
 		}
 	})
@@ -351,7 +352,8 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 	const tokenPublic = PublicKey.fromBase58(token)
 	const userKey = PublicKey.fromBase58(user)
 	const receiver = PublicKey.fromBase58(to)
-	const tokenAmount = UInt64.from(amount * 10 ** 9)
+	const rawAmount = toNanoUnits(amount)
+	const tokenAmount = uint64FromBigint(rawAmount)
 	logger.debug({ tokenPublic, userKey, receiver, tokenAmount })
 	const contracts = context().contracts
 
@@ -426,10 +428,10 @@ export interface SwapArgs {
 	user: string
 	frontendFee: number
 	frontendFeeDestination: string
-	amount: number
-	minOut: number
-	balanceOutMin: number
-	balanceInMax: number
+	amount: bigint
+	minOut: bigint
+	balanceOutMin: bigint
+	balanceInMax: bigint
 	factory: string
 }
 
@@ -469,11 +471,11 @@ const swap = async (args: SwapArgs) => {
 
 	const swapArgList = [
 		TAX_RECEIVER,
-		UInt64.from(Math.trunc(args.frontendFee)),
-		UInt64.from(Math.trunc(args.amount)),
-		UInt64.from(Math.trunc(args.minOut)),
-		UInt64.from(Math.trunc(args.balanceInMax)),
-		UInt64.from(Math.trunc(args.balanceOutMin))
+		uint64FromNumber(args.frontendFee),
+		uint64FromBigint(args.amount),
+		uint64FromBigint(args.minOut),
+		uint64FromBigint(args.balanceInMax),
+		uint64FromBigint(args.balanceOutMin)
 	] as const
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -504,22 +506,22 @@ const swap = async (args: SwapArgs) => {
 
 type LiquidityToken = {
 	address: string
-	amount: number
-	reserve: number
+	amount: bigint
+	reserve: bigint
 }
 export interface AddLiquidity {
 	pool: string
 	user: string
 	tokenA: LiquidityToken
 	tokenB: LiquidityToken
-	supplyMin: number
+	supplyMin: bigint
 }
 const addLiquidity = async (args: AddLiquidity) => {
 	logger.start("Add liquidity", args)
 	const { poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool } =
 		await getZkTokenFromPool(args.pool)
 	logger.debug({ poolKey, zkToken0Id, zkToken1Id, zkPoolTokenId, zkPoolToken0Key, zkPoolToken1Key, zkPool })
-	const supply = Math.trunc(args.supplyMin)
+	const supply = args.supplyMin
 	const userKey = PublicKey.fromBase58(args.user)
 	logger.debug({ supply, userKey })
 	await Promise.all([
@@ -546,7 +548,7 @@ const addLiquidity = async (args: AddLiquidity) => {
 	}: {
 		tokenA: LiquidityToken
 		tokenB: LiquidityToken
-		supply: number
+		supply: bigint
 	}) => {
 		logger.debug({ tokenA, tokenB, supply })
 		const isMina = tokenA.address === MINA_ADDRESS || tokenB.address === MINA_ADDRESS
@@ -555,14 +557,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			if (supply > 0) {
 				return zkPool.supplyLiquidity(
-					UInt64.from(Math.trunc(mina.amount)),
-					UInt64.from(Math.trunc(token.amount)),
-					UInt64.from(Math.trunc(mina.reserve)),
-					UInt64.from(Math.trunc(token.reserve)),
-					UInt64.from(supply)
+					uint64FromBigint(mina.amount),
+					uint64FromBigint(token.amount),
+					uint64FromBigint(mina.reserve),
+					uint64FromBigint(token.reserve),
+					uint64FromBigint(supply)
 				)
 			}
-			return zkPool.supplyFirstLiquidities(UInt64.from(mina.amount), UInt64.from(token.amount))
+			return zkPool.supplyFirstLiquidities(uint64FromBigint(mina.amount), uint64FromBigint(token.amount))
 		}
 
 		const token0Address = zkPoolToken0Key.toBase58()
@@ -570,14 +572,14 @@ const addLiquidity = async (args: AddLiquidity) => {
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		if (supply > 0) {
 			return zkPool.supplyLiquidityToken(
-				UInt64.from(Math.trunc(token0.amount)),
-				UInt64.from(Math.trunc(token1.amount)),
-				UInt64.from(Math.trunc(token0.reserve)),
-				UInt64.from(Math.trunc(token1.reserve)),
-				UInt64.from(supply)
+				uint64FromBigint(token0.amount),
+				uint64FromBigint(token1.amount),
+				uint64FromBigint(token0.reserve),
+				uint64FromBigint(token1.reserve),
+				uint64FromBigint(supply)
 			)
 		}
-		return zkPool.supplyFirstLiquiditiesToken(UInt64.from(token0.amount), UInt64.from(token1.amount))
+		return zkPool.supplyFirstLiquiditiesToken(uint64FromBigint(token0.amount), uint64FromBigint(token1.amount))
 	}
 
 	const transaction = await Mina.transaction({ sender: userKey, fee: getFee() }, async () => {
@@ -597,8 +599,8 @@ export interface WithdrawLiquidity {
 	user: string
 	tokenA: LiquidityToken
 	tokenB: LiquidityToken
-	liquidityAmount: number
-	supplyMax: number
+	liquidityAmount: bigint
+	supplyMax: bigint
 }
 
 const withdrawLiquidity = async (args: WithdrawLiquidity) => {
@@ -625,8 +627,8 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 		fetchAccount({ publicKey: userKey, tokenId: zkPoolTokenId })
 	])
 
-	const supply = Math.trunc(args.supplyMax)
-	const liquidity = Math.trunc(args.liquidityAmount)
+	const supply = args.supplyMax
+	const liquidity = args.liquidityAmount
 	logger.info({ supply, liquidity })
 
 	const createWithdrawLiquidity = ({
@@ -637,31 +639,31 @@ const withdrawLiquidity = async (args: WithdrawLiquidity) => {
 	}: {
 		tokenA: LiquidityToken
 		tokenB: LiquidityToken
-		liquidity: number
-		supply: number
+		liquidity: bigint
+		supply: bigint
 	}) => {
 		if (isMinaPool) {
 			const mina = tokenA.address === MINA_ADDRESS ? tokenA : tokenB
 			const token = tokenA.address === MINA_ADDRESS ? tokenB : tokenA
 			return zkHolder.withdrawLiquidity(
-				UInt64.from(liquidity),
-				UInt64.from(Math.trunc(mina.amount)),
-				UInt64.from(Math.trunc(token.amount)),
-				UInt64.from(Math.trunc(mina.reserve)),
-				UInt64.from(Math.trunc(token.reserve)),
-				UInt64.from(supply)
+				uint64FromBigint(liquidity),
+				uint64FromBigint(mina.amount),
+				uint64FromBigint(token.amount),
+				uint64FromBigint(mina.reserve),
+				uint64FromBigint(token.reserve),
+				uint64FromBigint(supply)
 			)
 		}
 
 		const token0 = token0Address === tokenA.address ? tokenA : tokenB
 		const token1 = token0Address === tokenA.address ? tokenB : tokenA
 		return zkHolder.withdrawLiquidityToken(
-			UInt64.from(liquidity),
-			UInt64.from(Math.trunc(token0.amount)),
-			UInt64.from(Math.trunc(token1.amount)),
-			UInt64.from(Math.trunc(token0.reserve)),
-			UInt64.from(Math.trunc(token1.reserve)),
-			UInt64.from(supply)
+			uint64FromBigint(liquidity),
+			uint64FromBigint(token0.amount),
+			uint64FromBigint(token1.amount),
+			uint64FromBigint(token0.reserve),
+			uint64FromBigint(token1.reserve),
+			uint64FromBigint(supply)
 		)
 	}
 
@@ -752,6 +754,27 @@ const minaInstance = (networkUrl: NetworkUri) => {
 	const url = urls[networkUrl]
 	Mina.setActiveInstance(minaNetwork(networkUrl))
 	logger.success("Mina instance set", url)
+}
+
+/**
+ * Safely converts a JavaScript number to a o1js {@link UInt64} by truncating any
+ * decimal part before the conversion. Using `Math.trunc` prevents o1js from generate
+ * the wrong number
+ *
+ * @param value - The number to convert. Must be a non-negative finite number within
+ *   the UInt64 range [0, 2^64 − 1]. Decimal digits are silently dropped.
+ * @returns A {@link UInt64} representing the truncated integer value.
+ *
+ * @example
+ * uint64FromNumber(1.9)   // → UInt64(1)
+ * uint64FromNumber(1e9)   // → UInt64(1_000_000_000)
+ */
+function uint64FromNumber(value: number): UInt64 {
+	return UInt64.from(Math.trunc(value))
+}
+
+function uint64FromBigint(value: bigint): UInt64 {
+	return UInt64.from(value)
 }
 
 async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {

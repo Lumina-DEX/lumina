@@ -1,6 +1,7 @@
 import * as Comlink from "comlink"
 import { produce } from "immer"
 import { and, assertEvent, assign, enqueueActions, setup, spawnChild, stopChild } from "xstate"
+import { version } from "../../../package.json"
 import { chainFaucets, poolInstance } from "../../constants/index"
 import type { LuminaDexWorker } from "../../dex/luminadex-worker"
 import { isBetween } from "../../helpers/validation"
@@ -111,7 +112,7 @@ export const createLuminaDexMachine = () =>
 				type: "module"
 			})
 			const worker = Comlink.wrap<LuminaDexWorker>(nsWorker)
-			logger.info("Dex Features loaded:", features)
+			logger.info(`Dex Features loaded (v${version}):`, features)
 			return {
 				transactions: {},
 				features: features ?? ["Swap"], // Default to Swap feature if none provided
@@ -279,8 +280,8 @@ export const createLuminaDexMachine = () =>
 						on: {
 							ContractsReady: { target: "READY" },
 							LoadNextContract: [
-								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_FUNGIBLE_TOKEN_ADMIN", guard: "compileFungibleTokenAdmin" },
+								{ target: "COMPILE_FUNGIBLE_TOKEN", guard: "compileFungibleToken" },
 								{ target: "COMPILE_POOL", guard: "compilePool" },
 								{ target: "COMPILE_POOL_TOKEN_HOLDER", guard: "compilePoolTokenHolder" },
 								{ target: "COMPILE_POOL_FACTORY", guard: "compilePoolFactory" },

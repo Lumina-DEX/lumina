@@ -272,6 +272,31 @@ const removeLiquiditySettings = context.dex.removeLiquidity
 
 ## Helper Functions
 
+### Unit Conversion
+
+Calculated amounts are returned as `bigint` in the token's smallest units. The SDK exports four helpers to convert between on-chain units and human-readable decimals:
+
+| Function                      | Description                                     |
+| ----------------------------- | ----------------------------------------------- |
+| `toUnits(amount, decimals)`   | `number` → `bigint` for any decimal precision   |
+| `toNanoUnits(amount)`         | `number` → `bigint` for 9-decimal tokens (MINA) |
+| `fromUnits(amount, decimals)` | `bigint` → `number` for any decimal precision   |
+| `fromNanoUnits(amount)`       | `bigint` → `number` for 9-decimal tokens (MINA) |
+
+```ts
+import { fromNanoUnits, fromUnits, toNanoUnits, toUnits } from "@lumina-dex/sdk"
+
+// Display a calculated swap output
+fromNanoUnits(calculated.amountOut) // → 1.5
+
+// Display with custom decimals
+fromUnits(calculated.amountOut, 6) // → 1.5 for a 6-decimal token
+
+// Convert user input to on-chain units before sending
+toNanoUnits(1.5) // → 1_500_000_000n
+toUnits(1.5, 6) // → 1_500_000n
+```
+
 ### `canDoDexAction`
 
 The SDK provides a helper function to check what actions are currently possible:
@@ -308,18 +333,18 @@ Available checks:
 You can subscribe to state changes to respond to events:
 
 ```ts
+import { canDoDexAction, fromUnits } from "@lumina-dex/sdk"
+
 const unsubscribe = Dex.subscribe((state) => {
 	console.log("Contract system state:", state.value.contractSystem)
 	console.log("DEX system state:", state.value.dexSystem)
 
-	// Check what actions are possible
 	const canDo = canDoDexAction(state.context)
 	console.log("Available actions:", canDo)
 
-	// Handle specific state transitions
 	if (state.matches({ dexSystem: "DEX.READY" }) && state.context.dex.swap.calculated) {
 		console.log("Swap calculation complete")
-		console.log("Expected output:", state.context.dex.swap.calculated.amountOut / 1e9)
+		console.log("Expected output:", fromUnits(state.context.dex.swap.calculated.amountOut, 9))
 	}
 })
 

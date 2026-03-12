@@ -12,3 +12,7 @@ To add a changeset, run the following command from the monorepo root in your ter
 ```bash
 moon run changeset
 ```
+
+```bash
+npx @changesets/cli
+```
