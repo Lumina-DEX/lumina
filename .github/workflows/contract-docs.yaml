@@ -24,6 +24,8 @@ jobs:
 
       - name: 🛠️ Setup Moon toolchain
         uses: "moonrepo/setup-toolchain@v0"
+        with:
+          moon-version: "1.40.3"
 
       - name: 📝 Build contract docs
         run: moon contracts:docs

@@ -1,3 +1,4 @@
+````markdown
 # Swapping Tokens
 
 Token swapping is one of the primary features of the LuminaDex. This guide explains how to implement token swapping with the LuminaDex SDK.
@@ -67,7 +68,6 @@ The SDK provides a convenient helper function `canDoDexAction` that checks if sp
 ```ts
 import { canDoDexAction } from "@lumina-dex/sdk"
 
-// Check if actions are available
 const canDo = canDoDexAction(Dex.getSnapshot().context)
 
 if (canDo.changeSwapSettings) {
@@ -107,15 +107,64 @@ from: {
 }
 ```
 
-## Token Decimals
+## Token Amounts and Unit Conversion
 
-All token amounts in the SDK are handled with their appropriate decimal precision. For most tokens, this is 9 decimal places (1e9).
+All calculated token amounts in the SDK are returned as `bigint` in the token's smallest units (similar to wei in Ethereum). Most tokens use 9 decimal places.
 
-The `amountIn` and `amountOut` values in the calculated result are in the token's smallest units (similar to wei in Ethereum). To convert to human-readable values, divide by the appropriate decimal factor:
+The SDK exports four utility functions for converting between human-readable decimals and on-chain units:
+
+### `toUnits(amount, decimals)`
+
+Converts a decimal number to the smallest unit of a token as `bigint`. Uses string manipulation internally to avoid floating-point precision loss.
 
 ```ts
-// Convert from raw units to human-readable
-const humanReadableAmount = calculatedAmount / 1e9
+import { toUnits } from "@lumina-dex/sdk"
+
+toUnits(1.5, 9) // → 1_500_000_000n
+toUnits(10, 6) // → 10_000_000n
+```
+
+### `toNanoUnits(amount)`
+
+Convenience wrapper for tokens with 9 decimal places (MINA and most tokens on Mina Protocol).
+
+```ts
+import { toNanoUnits } from "@lumina-dex/sdk"
+
+toNanoUnits(1.5) // → 1_500_000_000n
+```
+
+### `fromUnits(amount, decimals)`
+
+Converts a `bigint` amount in smallest units back to a human-readable decimal number.
+
+```ts
+import { fromUnits } from "@lumina-dex/sdk"
+
+fromUnits(1_500_000_000n, 9) // → 1.5
+fromUnits(10_000_000n, 6) // → 10
+```
+
+### `fromNanoUnits(amount)`
+
+Convenience wrapper for tokens with 9 decimal places.
+
+```ts
+import { fromNanoUnits } from "@lumina-dex/sdk"
+
+fromNanoUnits(1_500_000_000n) // → 1.5
+```
+
+### Usage Example
+
+```ts
+const calculated = Dex.getSnapshot().context.dex.swap.calculated
+
+if (calculated) {
+	// calculated.amountOut is bigint — convert for display
+	console.log("Expected output:", fromNanoUnits(calculated.amountOut))
+	console.log("Min output (with slippage):", fromNanoUnits(calculated.balanceOutMin))
+}
 ```
 
 ## Error Handling
@@ -136,3 +185,4 @@ if (contractError) {
 ```
 
 Use these to display appropriate error messages to the user.
+````

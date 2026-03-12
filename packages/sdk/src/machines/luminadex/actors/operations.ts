@@ -3,7 +3,8 @@ import {
 	getAmountLiquidityOut,
 	getAmountOut,
 	getAmountOutFromLiquidity,
-	getFirstAmountLiquidityOut
+	getFirstAmountLiquidityOut,
+	toNanoUnits
 } from "../../../dex/utils"
 import { getDebugConfig } from "../../../helpers/debug"
 import { act, amount, setToLoadFromFeatures } from "../helpers"
@@ -42,24 +43,18 @@ export const calculateSwapAmount = fromPromise(
 			const reserves = await worker.getReserves(pool)
 			const settings = { from, slippagePercent }
 			if (reserves.token0.amount && reserves.token1.amount) {
-				const amountIn = amount(from)
 				const ok = reserves.token0.address === from.address
-				const balanceIn = Number.parseInt(ok ? reserves.token0.amount : reserves.token1.amount)
-				const balanceOut = Number.parseInt(ok ? reserves.token1.amount : reserves.token0.amount)
-				const swapAmount = getAmountOut({
-					amountIn,
-					balanceIn,
-					balanceOut,
-					slippagePercent,
-					frontendFee
-				})
+				const amountIn = amount(from)
+				const balanceIn = BigInt(ok ? reserves.token0.amount : reserves.token1.amount)
+				const balanceOut = BigInt(ok ? reserves.token1.amount : reserves.token0.amount)
+				const swapAmount = getAmountOut({ amountIn, balanceIn, balanceOut, slippagePercent, frontendFee })
 				return { swapAmount, settings }
 			}
 			const swapAmount = {
-				amountIn: 0,
-				amountOut: 0,
-				balanceOutMin: 0,
-				balanceInMax: 0
+				amountIn: 0n,
+				amountOut: 0n,
+				balanceOutMin: 0n,
+				balanceInMax: 0n
 			}
 			return { swapAmount, settings }
 		})
@@ -71,45 +66,36 @@ export const calculateAddLiquidityAmount = fromPromise(
 		return act("calculateAddLiquidityAmount", async () => {
 			const { worker, pool, tokenA, tokenB, slippagePercent } = input
 			const reserves = await worker.getReserves(pool)
-
 			const isToken0 = reserves.token0.address === tokenA.address
 
 			if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-				const balanceA = Number.parseInt(isToken0 ? reserves.token0.amount : reserves.token1.amount)
-				const balanceB = Number.parseInt(isToken0 ? reserves.token1.amount : reserves.token0.amount)
+				const balanceA = BigInt(isToken0 ? reserves.token0.amount : reserves.token1.amount)
+				const balanceB = BigInt(isToken0 ? reserves.token1.amount : reserves.token0.amount)
+				const supply = BigInt(reserves.liquidity)
 
-				const liquidity = Number.parseInt(reserves.liquidity)
-
-				if (liquidity > 0) {
+				if (supply > 0n) {
 					const amountAIn = amount(tokenA)
-					const liquidityAmount = getAmountLiquidityOut({
-						tokenA: {
-							address: tokenA.address,
-							amountIn: amountAIn,
-							balance: balanceA
-						},
+					return getAmountLiquidityOut({
+						tokenA: { address: tokenA.address, amountIn: amountAIn, balance: balanceA },
 						tokenB: { address: tokenB.address, balance: balanceB },
-						supply: liquidity,
+						supply,
 						slippagePercent
 					})
-					return liquidityAmount
 				}
 
 				const amountAIn = amount(tokenA)
 				const amountBIn = amount(tokenB)
-				const liquidityAmount = getFirstAmountLiquidityOut({
+				return getFirstAmountLiquidityOut({
 					tokenA: { address: tokenA.address, amountIn: amountAIn },
 					tokenB: { address: tokenB.address, amountIn: amountBIn }
 				})
-				return liquidityAmount
 			}
-			const liquidityAmount = {
-				tokenA: { address: "", amountIn: 0, balanceMax: 0 },
-				tokenB: { address: "", amountIn: 0, balanceMax: 0 },
-				supplyMin: 0,
-				liquidity: 0
+			return {
+				tokenA: { address: "", amountIn: 0n, balanceMax: 0n },
+				tokenB: { address: "", amountIn: 0n, balanceMax: 0n },
+				supplyMin: 0n,
+				liquidity: 0n
 			}
-			return liquidityAmount
 		})
 	}
 )
@@ -121,28 +107,21 @@ export const calculateRemoveLiquidityAmount = fromPromise(
 			const reserves = await worker.getReserves(pool)
 
 			if (reserves.token0.amount && reserves.token1.amount && reserves.liquidity) {
-				const balanceA = Number.parseInt(reserves.token0.amount)
-				const balanceB = Number.parseInt(reserves.token1.amount)
-
-				const supply = Number.parseInt(reserves.liquidity)
-				// lp token has 9 decimals
-				const liquidity = Number.parseFloat(lpAmount) * 10 ** 9
-				const liquidityAmount = getAmountOutFromLiquidity({
+				const liquidity = toNanoUnits(Number.parseFloat(lpAmount))
+				return getAmountOutFromLiquidity({
 					liquidity,
-					tokenA: { address: reserves.token0.address, balance: balanceA },
-					tokenB: { address: reserves.token1.address, balance: balanceB },
-					supply,
+					tokenA: { address: reserves.token0.address, balance: BigInt(reserves.token0.amount) },
+					tokenB: { address: reserves.token1.address, balance: BigInt(reserves.token1.amount) },
+					supply: BigInt(reserves.liquidity),
 					slippagePercent
 				})
-				return liquidityAmount
 			}
-			const liquidityAmount = {
-				tokenA: { address: "", amountOut: 0, balanceMin: 0 },
-				tokenB: { address: "", amountOut: 0, balanceMin: 0 },
-				supplyMax: 0,
-				liquidity: 0
+			return {
+				tokenA: { address: "", amountOut: 0n, balanceMin: 0n },
+				tokenB: { address: "", amountOut: 0n, balanceMin: 0n },
+				supplyMax: 0n,
+				liquidity: 0n
 			}
-			return liquidityAmount
 		})
 	}
 )

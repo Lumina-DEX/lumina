@@ -1,13 +1,17 @@
 import { nanoid } from "nanoid"
 import type { ActionArgs, ErrorActorEvent } from "xstate"
 import { luminadexFactories } from "../../constants"
+import { toUnits } from "../../dex/utils"
 import { createLogger } from "../../helpers/debug"
 import type { TransactionMachineInput } from "../transaction"
 import type { Can, ContractName, DexFeatures, LuminaDexMachineContext, LuminaDexMachineEvent, Token } from "./types"
 
 export const { act, logger } = createLogger("[DEX]")
 
-export const amount = (token: Token) => Number.parseFloat(token.amount) * (token.decimal ?? 1e9)
+export const amount = (token: Token): bigint => {
+	const decimals = Math.round(Math.log10(token.decimal ?? 1e9))
+	return toUnits(Number.parseFloat(token.amount), decimals)
+}
 
 export const unloadedContracts = () =>
 	({
@@ -21,6 +25,14 @@ export const unloadedContracts = () =>
 
 export const setToLoadFromFeatures = (features: DexFeatures) => {
 	const toLoad = new Set<ContractName>([])
+	if (features.includes("DeployToken")) {
+		toLoad.add("FungibleTokenAdmin")
+		toLoad.add("FungibleToken")
+	}
+	if (features.includes("Claim")) {
+		toLoad.add("FungibleToken")
+		toLoad.add("Faucet")
+	}
 	if (features.includes("Swap")) {
 		toLoad.add("FungibleToken")
 		toLoad.add("Pool")
@@ -28,14 +40,6 @@ export const setToLoadFromFeatures = (features: DexFeatures) => {
 	}
 	if (features.includes("ManualDeployPool")) {
 		toLoad.add("PoolFactory")
-	}
-	if (features.includes("DeployToken")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("FungibleTokenAdmin")
-	}
-	if (features.includes("Claim")) {
-		toLoad.add("FungibleToken")
-		toLoad.add("Faucet")
 	}
 	return toLoad
 }

@@ -12,6 +12,9 @@ export * from "./graphql/zeko"
 // Export machines
 export * from "./machines"
 
+// utils
+export { fromUnits, toUnits, fromNanoUnits, toNanoUnits } from "./dex/utils"
+
 // Dex
 export * from "./dex/cache"
 export * from "./machines/luminadex/types"

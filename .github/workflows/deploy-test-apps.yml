@@ -24,6 +24,7 @@ jobs:
         with:
           auto-install: true
           auto-setup: true
+          moon-version: "1.40.3"
 
       - name: 🚀 Deploy Test Vue website
         run: moon sdk-test-vue:deploy
