@@ -351,7 +351,8 @@ const mintToken = async ({ user, token, to, amount }: MintToken) => {
 	const tokenPublic = PublicKey.fromBase58(token)
 	const userKey = PublicKey.fromBase58(user)
 	const receiver = PublicKey.fromBase58(to)
-	const tokenAmount = uint64FromNumber(amount * 10 ** 9)
+	const rawAmount = toNanoUnits(amount)
+	const tokenAmount = uint64FromBigint(rawAmount)
 	logger.debug({ tokenPublic, userKey, receiver, tokenAmount })
 	const contracts = context().contracts
 
@@ -769,6 +770,17 @@ const minaInstance = (networkUrl: NetworkUri) => {
  */
 function uint64FromNumber(value: number): UInt64 {
 	return UInt64.from(Math.trunc(value))
+}
+
+function uint64FromBigint(value: bigint): UInt64 {
+	return UInt64.from(value)
+}
+
+function toNanoUnits(amount: number): bigint {
+	const amountStr = amount.toString()
+	const [integerPart, decimalPart = ""] = amountStr.split(".")
+	const paddedDecimals = (decimalPart + "000000000").slice(0, 9)
+	return BigInt(integerPart + paddedDecimals)
 }
 
 async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {
