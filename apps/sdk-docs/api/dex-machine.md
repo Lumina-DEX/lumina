@@ -347,6 +347,9 @@ const unsubscribe = Dex.subscribe((state) => {
 		console.log("Expected output:", fromUnits(state.context.dex.swap.calculated.amountOut, 9))
 	}
 })
+
+// Later, clean up the subscription
+unsubscribe()
 ```
 
 ## Type Definitions
