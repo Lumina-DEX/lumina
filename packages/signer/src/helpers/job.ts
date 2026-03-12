@@ -158,31 +158,21 @@ export function getNetwork(network: Networks): ReturnType<typeof Mina.Network> {
 }
 
 /**
- * Check if a query network is allowed based on the configured env network.
- * - If env network is mainnet strict match required
- * - If env network contains devnet or testnet: query can contain either devnet or testnet
+ * Validates the query network against the configured env network.
+ * - If env network is mainnet, strict match is required
+ * - If env network contains devnet or testnet, query can contain either devnet or testnet
+ * Throws an error if the network is not allowed.
  */
-export function isNetworkAllowed(queryNetwork: Networks): boolean {
+export function validateNetwork(queryNetwork: Networks): void {
 	const env = getEnv()
 	const envNetwork = env.NETWORK as string
 
 	const isEnvTestOrDev = envNetwork.includes("testnet") || envNetwork.includes("devnet")
 	const isQueryTestOrDev = queryNetwork.includes("testnet") || queryNetwork.includes("devnet")
 
-	if (isEnvTestOrDev && isQueryTestOrDev) {
-		return true
-	}
-	return queryNetwork === envNetwork
-}
-
-/**
- * Validate the query network against the env network configuration.
- * Throws an error if the network is not allowed.
- */
-export function validateNetwork(queryNetwork: Networks): void {
-	if (!isNetworkAllowed(queryNetwork)) {
-		const env = getEnv()
-		throw new Error(`Network mismatch: query network "${queryNetwork}" is not allowed for env network "${env.NETWORK}"`)
+	const allowed = (isEnvTestOrDev && isQueryTestOrDev) || queryNetwork === envNetwork
+	if (!allowed) {
+		throw new Error(`Network mismatch: query network "${queryNetwork}" is not allowed for env network "${envNetwork}"`)
 	}
 }
 
