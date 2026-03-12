@@ -3,7 +3,8 @@ import {
 	getAmountLiquidityOut,
 	getAmountOut,
 	getAmountOutFromLiquidity,
-	getFirstAmountLiquidityOut
+	getFirstAmountLiquidityOut,
+	toNanoUnits
 } from "../../../dex/utils"
 import { getDebugConfig } from "../../../helpers/debug"
 import { act, amount, setToLoadFromFeatures } from "../helpers"
@@ -125,13 +126,13 @@ export const calculateRemoveLiquidityAmount = fromPromise(
 				const balanceB = reserves.token1.amount
 				const supply = reserves.liquidity
 				// lp token has 9 decimals
-				const liquidity = Number.parseFloat(lpAmount) * 10 ** 9 // still float but handled below
+				const liquidity = toNanoUnits(Number.parseFloat(lpAmount))
 
 				const liquidityAmount = getAmountOutFromLiquidity({
 					liquidity,
-					tokenA: { address: reserves.token0.address, balance: balanceA },
-					tokenB: { address: reserves.token1.address, balance: balanceB },
-					supply,
+					tokenA: { address: reserves.token0.address, balance: BigInt(reserves.token0.amount) },
+					tokenB: { address: reserves.token1.address, balance: BigInt(reserves.token1.amount) },
+					supply: BigInt(reserves.liquidity),
 					slippagePercent
 				})
 				return liquidityAmount

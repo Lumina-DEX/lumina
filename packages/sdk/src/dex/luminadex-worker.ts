@@ -32,6 +32,7 @@ import { createMeasure, prefixedLogger } from "../helpers/debug"
 import type { ContractName } from "../machines/luminadex/types"
 import type { Networks } from "../machines/wallet/types"
 import { fetchZippedContracts, readCache } from "./cache"
+import { toNanoUnits } from "./utils"
 
 const logger = prefixedLogger("[DEX WORKER]")
 const measure = createMeasure(logger)
@@ -774,13 +775,6 @@ function uint64FromNumber(value: number): UInt64 {
 
 function uint64FromBigint(value: bigint): UInt64 {
 	return UInt64.from(value)
-}
-
-function toNanoUnits(amount: number): bigint {
-	const amountStr = amount.toString()
-	const [integerPart, decimalPart = ""] = amountStr.split(".")
-	const paddedDecimals = (decimalPart + "000000000").slice(0, 9)
-	return BigInt(integerPart + paddedDecimals)
 }
 
 async function transactionStatus({ zkAppId, url }: { zkAppId: string; url?: string }) {

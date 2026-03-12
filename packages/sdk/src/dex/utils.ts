@@ -74,13 +74,11 @@ export function getFirstAmountLiquidityOut({ tokenA, tokenB }: GetFirstAmountLiq
 	}
 }
 
-type BalanceInput = string | number
-
 type GetAmountOutFromLiquidity = {
-	liquidity: number
-	tokenA: { address: string; balance: BalanceInput }
-	tokenB: { address: string; balance: BalanceInput }
-	supply: BalanceInput
+	liquidity: bigint
+	tokenA: { address: string; balance: bigint }
+	tokenB: { address: string; balance: bigint }
+	supply: bigint
 	slippagePercent: number
 }
 
@@ -92,25 +90,31 @@ export function getAmountOutFromLiquidity({
 	slippagePercent
 }: GetAmountOutFromLiquidity) {
 	const slip = BigInt(Math.trunc(slippagePercent * 100))
-	const balanceA = BigInt(tokenA.balance)
-	const balanceB = BigInt(tokenB.balance)
-	const supplyBig = BigInt(supply)
 
-	const balanceAMin = balanceA - (balanceA * slip) / 10_000n
-	const balanceBMin = balanceB - (balanceB * slip) / 10_000n
-	const supplyMax = supplyBig + (supplyBig * slip) / 10_000n
+	const balanceAMin = tokenA.balance - (tokenA.balance * slip) / 10_000n
+	const balanceBMin = tokenB.balance - (tokenB.balance * slip) / 10_000n
+	const supplyMax = supply + (supply * slip) / 10_000n
 
-	// Must match exactly what the contract receives — truncate before computing
-	const liquidityBig = BigInt(Math.trunc(liquidity))
-
-	// mirrors contract's mulDiv(liquidityAmount, reserveMin, supplyMax) - 1
-	const amountAOut = (liquidityBig * balanceAMin) / supplyMax - 1n
-	const amountBOut = (liquidityBig * balanceBMin) / supplyMax - 1n
+	const amountAOut = (liquidity * balanceAMin) / supplyMax - 1n
+	const amountBOut = (liquidity * balanceBMin) / supplyMax - 1n
 
 	return {
-		tokenA: { address: tokenA.address, amountOut: Number(amountAOut), balanceMin: Number(balanceAMin) },
-		tokenB: { address: tokenB.address, amountOut: Number(amountBOut), balanceMin: Number(balanceBMin) },
-		supplyMax: Number(supplyMax),
-		liquidity: Number(liquidityBig) // return the truncated value — same as what the contract gets
+		tokenA: { address: tokenA.address, amountOut: amountAOut, balanceMin: balanceAMin },
+		tokenB: { address: tokenB.address, amountOut: amountBOut, balanceMin: balanceBMin },
+		supplyMax,
+		liquidity
 	}
+}
+
+/**
+ * Converts a decimal number to nano units (multiplies by 10^9 and converts to bigint).
+ * Handles up to 9 decimal places and truncates any excess decimals.
+ * @param amount The decimal number to convert (e.g., 1.23456789)
+ * @returns the bigint representation of the amount in nano units
+ */
+export function toNanoUnits(amount: number): bigint {
+	const amountStr = amount.toString()
+	const [integerPart, decimalPart = ""] = amountStr.split(".")
+	const paddedDecimals = (decimalPart + "000000000").slice(0, 9)
+	return BigInt(integerPart + paddedDecimals)
 }
