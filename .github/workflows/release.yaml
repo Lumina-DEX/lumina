@@ -33,6 +33,11 @@ jobs:
         with:
           moon-version: "1.40.3"
 
+      - name: 🔐 Configure npm trusted publishing
+        uses: actions/setup-node@v4
+        with:
+          registry-url: "https://registry.npmjs.org"
+
       - name: 🚀 Create Release PR and publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -43,8 +48,7 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_PROVENANCE: "true"
 
   deploy-test-apps-trigger:
     name: Trigger Deploy Test Apps Workflow

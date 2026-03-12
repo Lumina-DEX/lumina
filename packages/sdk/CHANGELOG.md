@@ -1,5 +1,13 @@
 # @lumina-dex/sdk
 
+## 1.1.0
+
+### Minor Changes
+
+- 938da4c: update get liquidity amount out calculation
+  update contract order on loading
+  change type from number to bigint for swap and liquidity management
+
 ## 1.0.1
 
 ### Patch Changes
