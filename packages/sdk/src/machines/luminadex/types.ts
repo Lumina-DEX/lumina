@@ -35,28 +35,28 @@ interface DexContext {
 	addLiquidity: {
 		transactionLid: DexTransactionLid
 		calculated: {
-			tokenA: { address: string; amountIn: number; balanceMax: number }
-			tokenB: { address: string; amountIn: number; balanceMax: number }
-			liquidity: number
-			supplyMin: number
+			tokenA: { address: string; amountIn: bigint; balanceMax: bigint }
+			tokenB: { address: string; amountIn: bigint; balanceMax: bigint }
+			liquidity: bigint
+			supplyMin: bigint
 		} | null
 	} & AddLiquiditySettings
 	removeLiquidity: {
 		transactionLid: DexTransactionLid
 		calculated: {
-			tokenA: { address: string; amountOut: number; balanceMin: number }
-			tokenB: { address: string; amountOut: number; balanceMin: number }
-			liquidity: number
-			supplyMax: number
+			tokenA: { address: string; amountOut: bigint; balanceMin: bigint }
+			tokenB: { address: string; amountOut: bigint; balanceMin: bigint }
+			liquidity: bigint
+			supplyMax: bigint
 		} | null
 	} & RemoveLiquiditySettings
 	swap: {
 		transactionLid: DexTransactionLid
 		calculated: {
-			amountIn: number
-			amountOut: number
-			balanceOutMin: number
-			balanceInMax: number
+			amountIn: bigint
+			amountOut: bigint
+			balanceOutMin: bigint
+			balanceInMax: bigint
 		} | null
 	} & SwapSettings
 	mint: Omit<MintToken, "user"> & { transactionLid: DexTransactionLid }

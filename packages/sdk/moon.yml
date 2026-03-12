@@ -55,3 +55,8 @@ tasks:
     command: biome check --formatter-enabled=false --write
     inputs:
       - "@group(sources)"
+  test:
+    command: vitest run
+    options:
+      cache: false
+      runInCI: true

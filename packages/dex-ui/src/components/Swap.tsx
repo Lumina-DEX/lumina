@@ -1,5 +1,5 @@
 "use client"
-import type { LuminaPool } from "@lumina-dex/sdk"
+import { fromUnits, type LuminaPool } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { debounce } from "@tanstack/react-pacer"
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
@@ -12,7 +12,7 @@ import PoolMenu from "./PoolMenu"
 
 const Swap = () => {
 	const { Dex } = useContext(LuminaContext)
-	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0)
+	const toAmount = useSelector(Dex, (state) => state.context.dex.swap.calculated?.amountOut || 0n)
 
 	const [poolAddress, setPoolAddress] = useState(poolToka)
 	const [pool, setPool] = useState<LuminaPool>()
@@ -32,7 +32,7 @@ const Swap = () => {
 		Dex.send({ type: "Swap" })
 	}
 
-	const format = (n: number) => n / 10 ** tokenOut.decimals
+	const format = (n: bigint) => fromUnits(n, tokenOut.decimals)
 
 	const debouncedChangeSettings = useMemo(
 		() =>
@@ -82,7 +82,7 @@ const Swap = () => {
 					<CurrencyFormat
 						className="w-48 border-black text-default pr-3 text-xl text-right rounded focus:outline-none "
 						thousandSeparator={true}
-						decimalScale={2}
+						decimalScale={12}
 						placeholder="0.0"
 						value={fromAmount}
 						onValueChange={({ value }) => setFromAmount(value)}
@@ -108,7 +108,7 @@ const Swap = () => {
 					<CurrencyFormat
 						className="w-48 border-slate-50 text-default  pr-3 text-xl text-right text-xl rounded focus:outline-none "
 						thousandSeparator={true}
-						decimalScale={2}
+						decimalScale={12}
 						placeholder="0.0"
 						value={format(toAmount)}
 					/>
