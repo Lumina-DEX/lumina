@@ -1,0 +1,59 @@
+name: Signer Deploy Testnet
+
+on:
+  workflow_call:
+    inputs:
+      image_digest:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Signer image digest to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signer-zeko-testnet
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy zeko testnet signer
+    runs-on: ubuntu-latest
+    environment: signer-zeko-testnet
+    env:
+      TARGET_HOSTNAME: ${{ secrets.TARGET_HOSTNAME }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Rebuild NixOS host with signer image
+        run: |
+          packages/signer/infra/scripts/rebuild-host.sh \
+            --target zeko-testnet \
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}" \
+            --container-port 3001 \
+            --env-file /var/lib/lumina-signer/env
+
+      - name: Check signer endpoint
+        run: |
+          packages/signer/infra/scripts/check-host.sh \
+            --target zeko-testnet \
+            --path /graphql

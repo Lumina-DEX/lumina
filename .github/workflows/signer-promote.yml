@@ -1,0 +1,61 @@
+name: Signer Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Production signer environment"
+        required: true
+        type: choice
+        options:
+          - mina-mainnet
+          - zeko-mainnet
+      image_digest:
+        description: "Signer image digest to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signer-promote-${{ inputs.target_env }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Deploy production signer
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_env == 'mina-mainnet' && 'signer-mina-mainnet' || 'signer-zeko-mainnet' }}
+    env:
+      TARGET_HOSTNAME: ${{ secrets.TARGET_HOSTNAME }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Rebuild NixOS host with signer image
+        run: |
+          packages/signer/infra/scripts/rebuild-host.sh \
+            --target "${{ inputs.target_env }}" \
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}" \
+            --container-port 3001 \
+            --env-file /var/lib/lumina-signer/env
+
+      - name: Check signer endpoint
+        run: |
+          packages/signer/infra/scripts/check-host.sh \
+            --target "${{ inputs.target_env }}" \
+            --path /graphql
