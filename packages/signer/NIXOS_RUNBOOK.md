@@ -168,7 +168,8 @@ If this fails, fix any issues before proceeding.
 
 ## 10. Install NixOS via nixos-anywhere
 
-The generated hardware file stays gitignored under `packages/signer/infra/nixos/hosts/generated/`.
+Hardware configuration is provided by `lumina-hetzner-ax41.nix` and `lumina-disko.nix` — no
+generated hardware file is needed.
 
 Run from inside the Nix toolbox container. `$LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY` and
 `$LUMINA_SIGNER_CI_AUTHORIZED_KEY` must already be set (injected via `-e` in step 10).
@@ -182,14 +183,11 @@ Write the script to the monorepo root (outside Docker), then run the container n
 cat > nixos-install.sh << 'SCRIPT'
 #!/bin/sh
 set -e
-mkdir -p packages/signer/infra/nixos/hosts/generated
 LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="${LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY}" \
 LUMINA_SIGNER_CI_AUTHORIZED_KEY="${LUMINA_SIGNER_CI_AUTHORIZED_KEY}" \
 nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
   --build-on remote \
   --option pure-eval false \
-  --generate-hardware-config nixos-generate-config \
-  packages/signer/infra/nixos/hosts/generated/zeko-testnet-signer-hardware.nix \
   --flake "path:./packages/signer/infra/nixos#zeko-testnet-signer" \
   --target-host root@lumina_signer_zeko_testnet
 SCRIPT
@@ -199,7 +197,8 @@ CI_KEY="$(cat ~/.ssh/lumina_ci_zeko_testnet.pub)"
 
 docker run --rm -i \
   -v "$PWD:/work" \
-  -v "$HOME/.ssh:/root/.ssh" \
+  -v "$HOME/.ssh/lumina_signer_zeko_testnet:/root/.ssh/id_ed25519:ro" \
+  -v "$HOME/.ssh/known_hosts:/root/.ssh/known_hosts" \
   -e LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ADMIN_KEY" \
   -e LUMINA_SIGNER_CI_AUTHORIZED_KEY="$CI_KEY" \
   -w /work \
@@ -328,10 +327,11 @@ and `lumina-admin.openssh.authorizedKeys.keys` was empty.
 
 ### ssh-copy-id fails with "Read-only file system" inside container
 
-**Cause:** `~/.ssh` was mounted with `:ro`. nixos-anywhere internally runs `ssh-copy-id` which
-creates a temp dir inside `~/.ssh`.
+**Cause:** The SSH identity key is mounted with `:ro`. nixos-anywhere internally runs `ssh-copy-id`
+which creates a temp dir inside `~/.ssh`.
 
-**Fix:** Remove `:ro` from the SSH volume mount in the `docker run` command (see step 10).
+**Fix:** The `known_hosts` volume is mounted read-write so `ssh-copy-id` can write to `~/.ssh`.
+If you still see errors, verify both volume mounts in step 10 are present.
 
 ### Service stays inactive after secrets are uploaded
 

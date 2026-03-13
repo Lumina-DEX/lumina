@@ -32,6 +32,8 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
+      LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY: ${{ secrets.ADMIN_AUTHORIZED_KEY }}
+      LUMINA_SIGNER_CI_AUTHORIZED_KEY: ${{ secrets.CI_AUTHORIZED_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,9 +52,7 @@ jobs:
         run: |
           packages/signer/infra/scripts/rebuild-host.sh \
             --target "${{ inputs.target_env }}" \
-            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}" \
-            --container-port 3001 \
-            --env-file /var/lib/lumina-signer/env
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}"
 
       - name: Check signer endpoint
         run: |
