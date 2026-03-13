@@ -50,23 +50,11 @@ remote_release_env_path() {
 	printf '%s' "${LUMINA_SIGNER_RELEASE_ENV_FILE:-$(remote_state_dir)/release.env}"
 }
 
-default_bootstrap_user() {
-	printf 'root'
-}
-
 remote_admin_user() {
 	if [[ -n "${SSH_USER:-}" ]]; then
 		printf '%s' "$SSH_USER"
 	else
 		default_admin_user
-	fi
-}
-
-remote_bootstrap_user() {
-	if [[ -n "${BOOTSTRAP_SSH_USER:-}" ]]; then
-		printf '%s' "$BOOTSTRAP_SSH_USER"
-	else
-		default_bootstrap_user
 	fi
 }
 

@@ -60,7 +60,6 @@ main() {
 	require_command curl
 	require_command jq
 	require_command docker
-	require_command nixos-rebuild
 	require_command scp
 	require_command ssh
 	require_command ssh-keygen

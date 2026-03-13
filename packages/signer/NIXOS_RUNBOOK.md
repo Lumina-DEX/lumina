@@ -347,7 +347,7 @@ the edge using the ACM wildcard certificate for `*.signer.luminadex.com`. Caddy'
 challenge cannot reach port 80 through the proxy. Caddy should not attempt to manage its own
 cert when Cloudflare handles TLS end-to-end.
 
-**Note:** The `rollout-host.sh` script uses `proxied: true`. The Cloudflare ACM wildcard for
+**Note:** The DNS record is created with `proxied: true`. The Cloudflare ACM wildcard for
 `*.signer.luminadex.com` must exist for this to work. If it is missing, request it in the
 Cloudflare dashboard → SSL/TLS → Edge Certificates → Advanced Certificate Manager.
 
