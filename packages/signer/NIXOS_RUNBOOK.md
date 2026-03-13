@@ -299,10 +299,17 @@ gh secret set TARGET_HOSTNAME --env signer-zeko-testnet --body "${ZEKO_TESTNET_H
 gh secret set SSH_PRIVATE_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zeko_testnet
 # Scan the server IP directly — the hostname resolves to Cloudflare's edge when proxied
 ssh-keyscan -H "${ZEKO_TESTNET_SERVER_IP}" 2>/dev/null | gh secret set SSH_KNOWN_HOSTS --env signer-zeko-testnet
+
+# Operator and CI public keys — used by rebuild-host.sh to populate authorized_keys
+gh secret set ADMIN_AUTHORIZED_KEY --env signer-zeko-testnet < ~/.ssh/lumina_signer_zeko_testnet.pub
+gh secret set CI_AUTHORIZED_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zeko_testnet.pub
 ```
 
 > [!NOTE]
 > `SSH_KNOWN_HOSTS` must be updated after every OS reinstall because the host SSH fingerprint changes.
+> `ADMIN_AUTHORIZED_KEY` and `CI_AUTHORIZED_KEY` ensure CI deploys preserve both the operator
+> and CI SSH access. Without them, `rebuild-host.sh` derives keys from the CI runner's ephemeral
+> private key and silently removes the operator's access.
 
 ## CI workflows
 
