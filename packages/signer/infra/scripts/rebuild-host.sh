@@ -40,6 +40,7 @@ parse_args() {
 
 main() {
 	local ssh_target flake_dir image_ref ssh_public_key release_payload
+	local -a scp_command
 
 	parse_args "$@"
 	maybe_source_env
@@ -70,7 +71,9 @@ GIT_SHA=${GIT_SHA:-$(git -C "$(repo_root)" rev-parse HEAD 2>/dev/null || true)}
 RELEASED_AT=${RELEASED_AT:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
 EOF
 
-		scp "$release_payload" "${ssh_target}:/tmp/lumina-signer-release.env"
+		build_scp_command scp_command
+		scp_command+=("$release_payload" "${ssh_target}:/tmp/lumina-signer-release.env")
+		"${scp_command[@]}"
 		rm -f "$release_payload"
 
 		run_remote_as "$TARGET_ENV" "$(remote_admin_user)" \

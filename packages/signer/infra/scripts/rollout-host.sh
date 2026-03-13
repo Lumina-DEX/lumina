@@ -170,6 +170,7 @@ upload_release_env() {
 	local target="$1"
 	local image_ref="$2"
 	local release_file
+	local -a scp_command
 
 	release_file="$(mktemp)"
 	cat >"$release_file" <<EOF
@@ -178,7 +179,12 @@ GIT_SHA=${GIT_SHA:-$(git -C "$(repo_root)" rev-parse HEAD 2>/dev/null || true)}
 RELEASED_AT=${RELEASED_AT:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
 EOF
 
-	scp "$release_file" "$(build_ssh_target "$target" "$(remote_admin_user)"):/tmp/lumina-signer-release.env"
+	build_scp_command scp_command
+	scp_command+=(
+		"$release_file"
+		"$(build_ssh_target "$target" "$(remote_admin_user)"):/tmp/lumina-signer-release.env"
+	)
+	"${scp_command[@]}"
 	rm -f "$release_file"
 
 	run_remote_as "$target" "$(remote_admin_user)" \
@@ -210,9 +216,16 @@ main() {
 		ensure_dns_record "$hostname" "$server_ip"
 	fi
 
-	# install_nixos_if_needed returns 0 if nixos-anywhere was run, 1 if already NixOS.
+	# install_nixos_if_needed returns 0 if nixos-anywhere ran successfully,
+	# 1 if the host is already NixOS (skip). Any other failure is fatal.
+	local install_rc=0
+	install_nixos_if_needed "$TARGET_ENV" "$ssh_public_key" "$ci_key" || install_rc=$?
 	fresh_install=0
-	install_nixos_if_needed "$TARGET_ENV" "$ssh_public_key" "$ci_key" && fresh_install=1 || true
+	if [[ "$install_rc" -eq 0 ]]; then
+		fresh_install=1
+	elif [[ "$install_rc" -ne 1 ]]; then
+		die "install_nixos_if_needed failed with exit code ${install_rc}"
+	fi
 
 	upload_runtime_env "$TARGET_ENV" "$runtime_env_file"
 	upload_release_env "$TARGET_ENV" "$IMAGE_REF"
