@@ -1,0 +1,66 @@
+name: Signer Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/signer/**"
+      - ".github/workflows/signer-image.yml"
+      - ".github/workflows/signer-deploy-testnet.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-image:
+    name: Build signer image
+    runs-on: ubuntu-latest
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push signer image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/signer/Dockerfile
+          push: true
+          provenance: false
+          tags: ghcr.io/lumina-dex/lumina-signer:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Publish digest summary
+        run: |
+          {
+            echo "## Signer image"
+            echo
+            echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
+            echo "- Image: \`ghcr.io/lumina-dex/lumina-signer@${{ steps.build.outputs.digest }}\`"
+            echo "- Git SHA: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-testnet:
+    name: Deploy zeko testnet signer
+    needs: build-image
+    uses: ./.github/workflows/signer-deploy-testnet.yml
+    with:
+      image_digest: ${{ needs.build-image.outputs.image_digest }}
+    secrets: inherit
