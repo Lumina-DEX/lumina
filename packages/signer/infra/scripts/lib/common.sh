@@ -38,6 +38,18 @@ default_admin_user() {
 	printf 'lumina-admin'
 }
 
+remote_state_dir() {
+	printf '%s' "${LUMINA_SIGNER_STATE_DIR:-/var/lib/lumina-signer}"
+}
+
+remote_runtime_env_path() {
+	printf '%s' "${LUMINA_SIGNER_ENV_FILE:-$(remote_state_dir)/env}"
+}
+
+remote_release_env_path() {
+	printf '%s' "${LUMINA_SIGNER_RELEASE_ENV_FILE:-$(remote_state_dir)/release.env}"
+}
+
 default_bootstrap_user() {
 	printf 'root'
 }
@@ -74,12 +86,6 @@ target_host_config() {
 		zeko-mainnet) printf 'zeko-mainnet-signer' ;;
 		*) die "Unsupported target: ${1:-}" ;;
 	esac
-}
-
-target_generated_hardware_path() {
-	printf '%s/packages/signer/infra/nixos/hosts/generated/%s-hardware.nix' \
-		"$(repo_root)" \
-		"$(target_host_config "$1")"
 }
 
 target_network_value() {
@@ -177,6 +183,7 @@ target_identity_file() {
 	ssh_alias="$(target_ssh_alias "$target")"
 	identity_file="$(ssh_config_value "$ssh_alias" identityfile)"
 	[[ -n "$identity_file" ]] || return 1
+	identity_file="${identity_file/#\~/$HOME}"
 	printf '%s' "$identity_file"
 }
 
@@ -199,6 +206,23 @@ admin_public_key() {
 
 	[[ -n "$identity_file" && -f "$identity_file" ]] || return 1
 	ssh-keygen -y -f "$identity_file"
+}
+
+ci_public_key() {
+	local target="$1"
+	local prefix key_file
+
+	if [[ -n "${LUMINA_SIGNER_CI_AUTHORIZED_KEY:-}" ]]; then
+		printf '%s' "$LUMINA_SIGNER_CI_AUTHORIZED_KEY"
+		return 0
+	fi
+
+	prefix="$(target_prefix "$target")"
+	key_file="$(env_get "${prefix}_CI_KEY_FILE")"
+	key_file="${key_file/#\~/$HOME}"
+
+	[[ -n "$key_file" && -f "$key_file" ]] || return 1
+	cat "$key_file"
 }
 
 build_ssh_target() {

@@ -8,6 +8,7 @@ in
     services.caddy = {
       enable = true;
       virtualHosts.${signerCfg.publicHostname}.extraConfig = ''
+        tls internal
         encode gzip zstd
         reverse_proxy ${signerCfg.listenAddress}:${toString signerCfg.listenPort}
       '';

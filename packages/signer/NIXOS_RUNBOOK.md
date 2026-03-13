@@ -1,34 +1,93 @@
 # Lumina Signer NixOS Runbook
 
-This runbook is intentionally split in two:
+Use this runbook either:
 
-- operator preparation: the minimum local setup a human must do
-- agent rollout: the concrete steps the agent runs once the shell is ready
+- as a human operator doing every step manually
+- as an agent driving the shell, with explicit pauses to ask the operator for inputs only when needed
 
-## Operator Preparation
+> [!WARNING]
+> This rollout is only for new NixOS signer hosts.
+> Do not run it against the existing legacy Dokku signer host.
 
-The operator prepares the workstation once, then the agent takes over.
+## 1. Prepare the local workstation
 
-### 1. Install the required local tools
-
-Have these available in the operator shell:
+Required local tools:
 
 - `ssh`
 - `scp`
 - `curl`
 - `jq`
-- `nix`
-- `nixos-anywhere`
-- `nixos-rebuild`
+- `gh`
+- `docker`
 
-### 2. Install Debian 12 on the new Hetzner server
+Agent note:
+Prefer a containerized Nix toolchain so the operator machine does not need a host-level Nix install.
 
-The target host starts as plain Debian 12 with SSH enabled.
+## 2. Generate SSH keypairs
 
-### 3. Create one SSH alias per host
+Create two keypairs per host: one for the human operator, one dedicated for CI.
 
-The alias should only describe how to reach the box. Do not hardcode a user in the alias. The
-agent scripts switch between `root` for bootstrap and `lumina-admin` after NixOS is installed.
+```bash
+# Operator key (for lumina-admin SSH access)
+ssh-keygen -t ed25519 -f ~/.ssh/lumina_signer_zeko_testnet -N '' -C 'lumina_signer_zeko_testnet'
+
+# CI key (for GitHub Actions — do NOT reuse the operator key)
+ssh-keygen -t ed25519 -f ~/.ssh/lumina_ci_zeko_testnet -N '' -C 'lumina_ci_zeko_testnet'
+```
+
+Repeat for each additional host:
+
+- `lumina_signer_mina_mainnet` / `lumina_ci_mina_mainnet`
+- `lumina_signer_zeko_mainnet` / `lumina_ci_zeko_mainnet`
+
+## 3. Add the operator SSH public key in Hetzner Robot
+
+Do not have the agent read the public key file directly. Print it locally yourself:
+
+```bash
+cat ~/.ssh/lumina_signer_zeko_testnet.pub
+```
+
+In Hetzner Robot:
+
+1. Open `Key`
+2. Add a new SSH key
+3. Paste the printed public key
+
+Agent note:
+Ask the operator to do the Hetzner Robot UI step and confirm when it is complete.
+
+## 4. Install Debian 12 from Hetzner Robot
+
+In Hetzner Robot:
+
+1. Open the target server under `Server`
+2. Open the `Linux` tab
+3. Select `Debian 12`
+4. **Check the SSH key checkbox** next to the operator key uploaded in step 3.
+   If this checkbox is skipped, Hetzner will use a random password instead of your SSH key
+   and the bootstrap SSH login in step 6 will fail.
+5. Start the install
+
+After the install completes:
+
+1. Open `Reset`
+2. Click `Execute an automatic hardware reset`
+3. Wait a few minutes for the new SSH login to become available
+
+Agent note:
+Ask the operator to do the Robot install and reset flow, then continue once the operator confirms it is done.
+
+## 5. Create the local SSH alias
+
+Add one alias per host to `~/.ssh/config`.
+
+Bootstrap aliases must not hardcode a user. The login user is chosen at command time:
+
+- use `root@alias` before NixOS is installed
+- use `lumina-admin@alias` after NixOS is installed
+
+Example:
 
 ```sshconfig
 Host lumina_signer_zeko_testnet
@@ -38,141 +97,262 @@ Host lumina_signer_zeko_testnet
   IdentitiesOnly yes
 ```
 
-Repeat for:
+Repeat for each host.
 
-- `lumina_signer_mina_mainnet`
-- `lumina_signer_zeko_mainnet`
+## 6. Verify bootstrap SSH access
 
-### 4. Fill the local fleet env file
-
-```bash
-cp packages/signer/infra/scripts/signer-fleet.env.example packages/signer/infra/scripts/signer-fleet.env
-```
-
-Set:
-
-- the final hostname for each target
-- the server IPv4 for each target
-- the SSH alias for each target
-- the local path to each runtime secrets file
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ZONE_NAME`
-- `SIGNER_IMAGE_REF` with the image digest that already exists in GHCR
-
-### 5. Create the runtime secrets file locally
-
-Create one local file per target. The agent uploads it to `/var/lib/lumina-signer/env`.
-
-Required contents:
-
-- `DATABASE_URL`
-- `INFISICAL_ENVIRONMENT`
-- `INFISICAL_PROJECT_ID`
-- `INFISICAL_CLIENT_ID`
-- `INFISICAL_CLIENT_SECRET`
-
-## Agent Rollout
-
-Once the operator preparation is complete, the agent runs the rollout.
-
-### Preferred path
-
-The preferred agent path is the helper script:
+Clear any stale host keys from previous installs, then verify:
 
 ```bash
-packages/signer/infra/scripts/rollout-host.sh --target zeko-testnet
+ssh-keygen -R <server-ip>
+ssh -o StrictHostKeyChecking=accept-new root@lumina_signer_zeko_testnet 'source /etc/os-release && echo "$ID $VERSION_ID"'
 ```
 
-Use `mina-mainnet` or `zeko-mainnet` for the production hosts.
+Expected output: `debian 12`
 
-If the helper fails at any point, the agent must continue by following the manual step breakdown
-below. The manual steps are the source of truth for debugging and recovery.
+## 7. Local fleet env file
 
-### Manual step breakdown
+You should find a fleet env file under `packages/signer/infra/scripts/`.
 
-### 1. Validate the local operator setup
+If it doesn't exist, you can create one like so:
 
 ```bash
-packages/signer/infra/scripts/validate-local-setup.sh --target zeko-testnet
+cp packages/signer/infra/scripts/signer-fleet.env.example \
+  packages/signer/infra/scripts/signer-fleet.env
 ```
 
-### 2. Create or update the Cloudflare DNS record
+The `*_CI_KEY_FILE` paths are pre-filled from the keypair names in step 2 and do not need to be changed unless you used different filenames.
+
+Agent note:
+If you created the env file, ask the operator to fill the real secret values before continuing.
+
+## 8. Local runtime secrets file
+
+For a given environment, you should find a corresponding secrets file under `packages/signer/infra/secrets/`.
+If the env file does not exist, you can create one like so :
 
 ```bash
-ZONE_ID="$(curl -fsS "https://api.cloudflare.com/client/v4/zones?name=${CLOUDFLARE_ZONE_NAME}" \
-  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-  -H 'Content-Type: application/json' | jq -r '.result[0].id')"
-
-RECORD_ID="$(curl -fsS "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?type=A&name=${ZEKO_TESTNET_HOSTNAME}" \
-  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-  -H 'Content-Type: application/json' | jq -r '.result[0].id // empty')"
-
-PAYLOAD="$(jq -cn \
-  --arg type A \
-  --arg name "${ZEKO_TESTNET_HOSTNAME}" \
-  --arg content "${ZEKO_TESTNET_SERVER_IP}" \
-  '{type: $type, name: $name, content: $content, proxied: true, ttl: 1}')"
-
-if [[ -n "${RECORD_ID}" ]]; then
-  curl -fsS -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-    -H 'Content-Type: application/json' \
-    --data "${PAYLOAD}"
-else
-  curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-    -H 'Content-Type: application/json' \
-    --data "${PAYLOAD}"
-fi
+cat > packages/signer/infra/secrets/zeko-testnet-signer.env <<'EOF'
+DATABASE_URL=replace-me
+INFISICAL_ENVIRONMENT=replace-me
+INFISICAL_PROJECT_ID=replace-me
+INFISICAL_CLIENT_ID=replace-me
+INFISICAL_CLIENT_SECRET=replace-me
+EOF
+chmod 600 packages/signer/infra/secrets/zeko-testnet-signer.env
 ```
 
-### 3. Install NixOS if the host is still on Debian
+These values stay local and are uploaded to `/var/lib/lumina-signer/env` on the host.
+
+Agent note:
+If you created the env file, ask the operator to fill the real secret values before continuing.
+
+## 9. Validate all secrets upfront
+
+Run this before touching any infrastructure. It normalizes the env file (strips any quoted values
+that would break `podman --env-file`) and tests Infisical authentication live:
+
+```bash
+# For zeko-testnet
+cd packages/signer && pnpm tsx scripts/validate-infisical.ts infra/secrets/zeko-testnet-signer.env
+```
+
+If this fails, fix the credentials before continuing. Do not proceed past this step with broken secrets.
+Then, run the validate-local-setup.sh script to ensure your local environment is ready:
+
+```bash
+bash packages/signer/infra/scripts/validate-local-setup.sh --target zeko-testnet
+```
+
+If this fails, fix any issues before proceeding.
+
+## 10. Install NixOS via nixos-anywhere
 
 The generated hardware file stays gitignored under `packages/signer/infra/nixos/hosts/generated/`.
 
-```bash
-mkdir -p packages/signer/infra/nixos/hosts/generated
+Run from inside the Nix toolbox container. `$LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY` and
+`$LUMINA_SIGNER_CI_AUTHORIZED_KEY` must already be set (injected via `-e` in step 10).
 
-LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$(ssh-keygen -y -f "$(ssh -G lumina_signer_zeko_testnet | awk '/^identityfile / { print $2; exit }')")" \
-LUMINA_SIGNER_IMAGE_REF="${SIGNER_IMAGE_REF}" \
-nixos-anywhere \
-  --generate-hardware-config \
-  nixos-generate-config \
+Write a script then run it — do not use heredoc piping into docker:
+
+Write the script to the monorepo root (outside Docker), then run the container non-interactively:
+
+```bash
+# From the monorepo root, on the host machine
+cat > nixos-install.sh << 'SCRIPT'
+#!/bin/sh
+set -e
+mkdir -p packages/signer/infra/nixos/hosts/generated
+LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="${LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY}" \
+LUMINA_SIGNER_CI_AUTHORIZED_KEY="${LUMINA_SIGNER_CI_AUTHORIZED_KEY}" \
+nix --extra-experimental-features "nix-command flakes" run github:nix-community/nixos-anywhere -- \
+  --build-on remote \
+  --option pure-eval false \
+  --generate-hardware-config nixos-generate-config \
   packages/signer/infra/nixos/hosts/generated/zeko-testnet-signer-hardware.nix \
   --flake "path:./packages/signer/infra/nixos#zeko-testnet-signer" \
   --target-host root@lumina_signer_zeko_testnet
+SCRIPT
+
+ADMIN_KEY="$(cat ~/.ssh/lumina_signer_zeko_testnet.pub)"
+CI_KEY="$(cat ~/.ssh/lumina_ci_zeko_testnet.pub)"
+
+docker run --rm -i \
+  -v "$PWD:/work" \
+  -v "$HOME/.ssh:/root/.ssh" \
+  -e LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ADMIN_KEY" \
+  -e LUMINA_SIGNER_CI_AUTHORIZED_KEY="$CI_KEY" \
+  -w /work \
+  nixos/nix:2.24.14 sh nixos-install.sh
+
+rm nixos-install.sh
 ```
 
-Skip this step if `ssh lumina-admin@lumina_signer_zeko_testnet 'source /etc/os-release && echo "$ID"'`
-already returns `nixos`.
+**Why `--build-on remote`:** The operator machine may be aarch64 (Apple Silicon). nixos-anywhere
+with `--build-on remote` evaluates the Nix expression locally (reading env vars) but compiles
+derivations on the target x86_64 host. Without this flag, the build fails on aarch64 with
+`required system: 'x86_64-linux'`.
 
-### 4. Upload the runtime secrets file
+**Why `--option pure-eval false`:** Nix flakes evaluate in pure mode by default, which blocks
+`builtins.getEnv`. The NixOS config reads `LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY` and
+`LUMINA_SIGNER_CI_AUTHORIZED_KEY` to populate `lumina-admin`'s `openssh.authorizedKeys`. Without
+this flag those env vars evaluate to `""` and `lumina-admin` ends up locked out.
+Note: `--impure` is NOT equivalent here — it does not override `pure-eval` for flake evaluation
+in the Nix version used by the container (`nixos/nix:2.24.14`).
+
+Skip this step if:
 
 ```bash
+ssh lumina-admin@lumina_signer_zeko_testnet 'source /etc/os-release && echo "$ID"'
+```
+
+already returns `nixos`.
+
+After nixos-anywhere completes, clear the stale host key and verify from the host machine (not inside the container):
+
+```bash
+source packages/signer/infra/scripts/signer-fleet.env
+ssh-keygen -R "${ZEKO_TESTNET_SERVER_IP}"
+ssh -o StrictHostKeyChecking=accept-new lumina-admin@lumina_signer_zeko_testnet \
+  'source /etc/os-release && echo "$ID"'
+```
+
+Expected: `nixos`
+
+## 11. Upload the runtime secrets
+
+The signer service requires **two** files under `/var/lib/lumina-signer/`:
+
+- `env` — Infisical credentials and database URL
+- `release.env` — image metadata (`IMAGE_REF`, `GIT_SHA`, `RELEASED_AT`)
+
+Run from the host machine (not inside the container):
+
+```bash
+source packages/signer/infra/scripts/signer-fleet.env
+
+# Upload runtime secrets
 scp "${ZEKO_TESTNET_RUNTIME_ENV_FILE}" lumina-admin@lumina_signer_zeko_testnet:/tmp/lumina-signer-env
 ssh lumina-admin@lumina_signer_zeko_testnet \
   'sudo install -d -m 700 -o root -g root /var/lib/lumina-signer && \
    sudo install -m 600 -o root -g root /tmp/lumina-signer-env /var/lib/lumina-signer/env && \
    rm -f /tmp/lumina-signer-env'
+
+# Upload release metadata
+RELEASE_ENV="$(mktemp)"
+cat >"${RELEASE_ENV}" <<EOF
+IMAGE_REF=${SIGNER_IMAGE_REF}
+GIT_SHA=$(git rev-parse HEAD)
+RELEASED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+EOF
+scp "${RELEASE_ENV}" lumina-admin@lumina_signer_zeko_testnet:/tmp/lumina-signer-release.env
+rm -f "${RELEASE_ENV}"
+ssh lumina-admin@lumina_signer_zeko_testnet \
+  'sudo install -m 600 -o root -g root /tmp/lumina-signer-release.env /var/lib/lumina-signer/release.env && \
+   rm -f /tmp/lumina-signer-release.env'
 ```
 
-### 5. Apply the signer host config
+> [!NOTE]
+> The `lumina-signer` systemd `ExecCondition` checks that **both** files are non-empty (`test -s`).
+> If either is missing the service will not start. On subsequent deploys `rebuild-host.sh` writes
+> `release.env` automatically.
+
+## 12. Start the service and verify
 
 ```bash
-packages/signer/infra/scripts/rebuild-host.sh --target zeko-testnet --image-ref "${SIGNER_IMAGE_REF}"
-```
-
-### 6. Verify the host
-
-```bash
+ssh lumina-admin@lumina_signer_zeko_testnet 'sudo systemctl restart lumina-signer'
+sleep 30
 packages/signer/infra/scripts/check-host.sh --target zeko-testnet --path /graphql
 ```
 
-## CI / Automation
+## 13. Configure GitHub Actions environment secrets
 
-- [signer-image.yml](../../.github/workflows/signer-image.yml) builds and publishes the signer image digest to GHCR
-- [signer-deploy-testnet.yml](../../.github/workflows/signer-deploy-testnet.yml) auto-deploys that digest to `zeko-testnet`
-- [signer-promote.yml](../../.github/workflows/signer-promote.yml) manually promotes an approved digest to `mina-mainnet` or `zeko-mainnet`
+After the host is bootstrapped and reachable, create the `signer-zeko-testnet` GitHub Actions
+environment with the **CI key** (not the operator key):
 
-Normal CI deploys do not upload runtime secrets or touch Cloudflare. Those stay in the first-time
-agent rollout flow only.
+```bash
+source packages/signer/infra/scripts/signer-fleet.env
+
+gh secret set SSH_HOST --env signer-zeko-testnet --body "${ZEKO_TESTNET_SERVER_IP}"
+gh secret set SSH_PORT --env signer-zeko-testnet --body "22"
+gh secret set SSH_USER --env signer-zeko-testnet --body "lumina-admin"
+gh secret set TARGET_HOSTNAME --env signer-zeko-testnet --body "${ZEKO_TESTNET_HOSTNAME}"
+gh secret set SSH_PRIVATE_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zeko_testnet
+# Scan the server IP directly — the hostname resolves to Cloudflare's edge when proxied
+ssh-keyscan -H "${ZEKO_TESTNET_SERVER_IP}" 2>/dev/null | gh secret set SSH_KNOWN_HOSTS --env signer-zeko-testnet
+```
+
+> [!NOTE]
+> `SSH_KNOWN_HOSTS` must be updated after every OS reinstall because the host SSH fingerprint changes.
+
+## CI workflows
+
+- [signer-image.yml](../../.github/workflows/signer-image.yml)
+- [signer-deploy-testnet.yml](../../.github/workflows/signer-deploy-testnet.yml)
+- [signer-promote.yml](../../.github/workflows/signer-promote.yml)
+
+Normal CI deploys do not upload runtime secrets, mutate Cloudflare, or regenerate keypairs.
+Those are first-time rollout steps only.
+
+---
+
+## Troubleshooting
+
+### nixos-anywhere completes but lumina-admin cannot SSH in
+
+**Cause:** `--option pure-eval false` was missing (or replaced with `--impure`, which is not
+equivalent). The NixOS config read `builtins.getEnv "LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY"` as `""`
+and `lumina-admin.openssh.authorizedKeys.keys` was empty.
+
+**Fix:** Re-run nixos-anywhere with `--option pure-eval false` and both key env vars set. Then verify SSH access.
+
+### ssh-copy-id fails with "Read-only file system" inside container
+
+**Cause:** `~/.ssh` was mounted with `:ro`. nixos-anywhere internally runs `ssh-copy-id` which
+creates a temp dir inside `~/.ssh`.
+
+**Fix:** Remove `:ro` from the SSH volume mount in the `docker run` command (see step 10).
+
+### Service stays inactive after secrets are uploaded
+
+**Cause:** The systemd `ExecCondition` runs at start time. If the service was started before
+the secrets files were placed, it will remain inactive.
+
+**Fix:** `sudo systemctl restart lumina-signer`
+
+### Caddy fails to obtain Let's Encrypt certificate
+
+**Cause:** The DNS record is `proxied: true` (Cloudflare proxy). Cloudflare terminates TLS at
+the edge using the ACM wildcard certificate for `*.signer.luminadex.com`. Caddy's ACME HTTP-01
+challenge cannot reach port 80 through the proxy. Caddy should not attempt to manage its own
+cert when Cloudflare handles TLS end-to-end.
+
+**Note:** The `rollout-host.sh` script uses `proxied: true`. The Cloudflare ACM wildcard for
+`*.signer.luminadex.com` must exist for this to work. If it is missing, request it in the
+Cloudflare dashboard → SSL/TLS → Edge Certificates → Advanced Certificate Manager.
+
+### SSH_KNOWN_HOSTS mismatch in CI after reinstall
+
+**Cause:** The host SSH fingerprint changes every time Debian/NixOS is reinstalled.
+
+**Fix:** Re-run the `ssh-keyscan` line from step 14 to update the GitHub Actions secret.

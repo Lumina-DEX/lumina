@@ -9,6 +9,7 @@
 
 let
   adminKeyFromEnv = builtins.getEnv adminKeyEnv;
+  ciKeyFromEnv = builtins.getEnv "LUMINA_SIGNER_CI_AUTHORIZED_KEY";
 in
 {
   imports = [
@@ -28,7 +29,9 @@ in
 
       lumina.baseHardening = {
         enable = true;
-        adminAuthorizedKeys = lib.optional (adminKeyFromEnv != "") adminKeyFromEnv;
+        adminAuthorizedKeys =
+          lib.optional (adminKeyFromEnv != "") adminKeyFromEnv
+          ++ lib.optional (ciKeyFromEnv != "") ciKeyFromEnv;
       };
 
       lumina.signer = {
