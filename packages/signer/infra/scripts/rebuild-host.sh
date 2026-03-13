@@ -7,12 +7,10 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 TARGET_ENV="${TARGET_ENV:-}"
 IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
-CONTAINER_PORT="${CONTAINER_PORT:-}"
-ENV_FILE_PATH="${ENV_FILE_PATH:-}"
 
 usage() {
 	cat <<'EOF'
-Usage: rebuild-host.sh --target <env> [--image-ref <container-image>] [--container-port <port>] [--env-file <path>]
+Usage: rebuild-host.sh --target <env> [--image-ref <container-image>]
 EOF
 }
 
@@ -27,16 +25,6 @@ parse_args() {
 			--image-ref)
 				[[ $# -ge 2 ]] || die "--image-ref requires a value"
 				IMAGE_REF="$2"
-				shift 2
-				;;
-			--container-port)
-				[[ $# -ge 2 ]] || die "--container-port requires a value"
-				CONTAINER_PORT="$2"
-				shift 2
-				;;
-			--env-file)
-				[[ $# -ge 2 ]] || die "--env-file requires a value"
-				ENV_FILE_PATH="$2"
 				shift 2
 				;;
 			-h | --help)
@@ -56,8 +44,6 @@ main() {
 	parse_args "$@"
 	maybe_source_env
 	IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
-	CONTAINER_PORT="${CONTAINER_PORT:-${LUMINA_SIGNER_CONTAINER_PORT:-}}"
-	ENV_FILE_PATH="${ENV_FILE_PATH:-${LUMINA_SIGNER_ENV_FILE:-}}"
 
 	require_command nixos-rebuild
 	require_command scp
@@ -98,8 +84,6 @@ EOF
 	# working tree, including any uncommitted rollout fixes.
 	LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ssh_public_key" \
 		LUMINA_SIGNER_CI_AUTHORIZED_KEY="$(ci_public_key "$TARGET_ENV" || true)" \
-		LUMINA_SIGNER_CONTAINER_PORT="${CONTAINER_PORT:-3001}" \
-		LUMINA_SIGNER_ENV_FILE="${ENV_FILE_PATH:-$(remote_runtime_env_path)}" \
 		nixos-rebuild switch \
 		--option pure-eval false \
 		--flake "path:${flake_dir}#$(target_host_config "$TARGET_ENV")" \

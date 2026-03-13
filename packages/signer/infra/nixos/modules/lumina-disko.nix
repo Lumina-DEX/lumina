@@ -29,6 +29,9 @@ in
         };
       };
     }
+    # Claim the secondary disk with an empty GPT table so disko manages it
+    # during nixos-anywhere. Partitions will be added when the disk is needed
+    # (e.g. for database storage or backups).
     (lib.optionalAttrs (host.system.secondaryDisk != null) {
       secondary = {
         type = "disk";

@@ -18,4 +18,7 @@ mkSignerHost {
     ../modules/lumina-hetzner-ax41.nix
     ../modules/lumina-disko.nix
   ];
+  extraConfig = {
+    lumina.baseHardening.autoUpgradeEnable = false;
+  };
 }
