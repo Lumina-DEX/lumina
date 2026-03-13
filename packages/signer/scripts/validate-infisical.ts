@@ -1,6 +1,6 @@
-import { InfisicalSDK } from "@infisical/sdk"
 import { readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
+import { InfisicalSDK } from "@infisical/sdk"
 
 function loadAndNormalizeEnvFile(path: string): Record<string, string> {
 	const content = readFileSync(path, "utf8")
