@@ -117,13 +117,13 @@ bootstrap_host_os() {
 
 install_nixos_if_needed() {
 	local target="$1"
-	local image_ref="$2"
-	local ssh_public_key="$3"
-	local flake_dir hardware_path bootstrap_os
+	local ssh_public_key="$2"
+	local ci_public_key="$3"
+	local flake_dir bootstrap_os
 
 	if host_is_nixos "$target"; then
 		log "${target} already reports NixOS. Skipping nixos-anywhere."
-		return 0
+		return 1
 	fi
 
 	bootstrap_os="$(bootstrap_host_os "$target")"
@@ -134,18 +134,15 @@ install_nixos_if_needed() {
 		"Unable to determine the remote OS for ${target}. Refusing to run nixos-anywhere blindly."
 
 	flake_dir="$(repo_root)/packages/signer/infra/nixos"
-	hardware_path="$(target_generated_hardware_path "$target")"
-	mkdir -p "$(dirname "$hardware_path")"
-
-	log "Running nixos-anywhere for ${target}."
+	log "Running nixos-anywhere with disko for ${target}."
 	LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ssh_public_key" \
-		LUMINA_SIGNER_IMAGE_REF="$image_ref" \
+		LUMINA_SIGNER_CI_AUTHORIZED_KEY="$ci_public_key" \
 		nixos-anywhere \
-		--generate-hardware-config \
-		nixos-generate-config \
-		"$hardware_path" \
+		--build-on remote \
+		--option pure-eval false \
 		--flake "path:${flake_dir}#$(target_host_config "$target")" \
 		--target-host "$(remote_bootstrap_user)@$(target_ssh_alias "$target")"
+	return 0
 }
 
 upload_runtime_env() {
@@ -164,37 +161,69 @@ upload_runtime_env() {
 	"${scp_command[@]}"
 
 	run_remote_as "$target" "$(remote_admin_user)" \
-		"sudo install -d -m 700 -o root -g root /var/lib/lumina-signer && \
-		sudo install -m 600 -o root -g root ${remote_tmp} /var/lib/lumina-signer/env && \
+		"sudo install -d -m 700 -o root -g root $(remote_state_dir) && \
+		sudo install -m 600 -o root -g root ${remote_tmp} $(remote_runtime_env_path) && \
 		rm -f ${remote_tmp}"
 }
 
+upload_release_env() {
+	local target="$1"
+	local image_ref="$2"
+	local release_file
+
+	release_file="$(mktemp)"
+	cat >"$release_file" <<EOF
+IMAGE_REF=${image_ref}
+GIT_SHA=${GIT_SHA:-$(git -C "$(repo_root)" rev-parse HEAD 2>/dev/null || true)}
+RELEASED_AT=${RELEASED_AT:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
+EOF
+
+	scp "$release_file" "$(build_ssh_target "$target" "$(remote_admin_user)"):/tmp/lumina-signer-release.env"
+	rm -f "$release_file"
+
+	run_remote_as "$target" "$(remote_admin_user)" \
+		"sudo install -d -m 700 -o root -g root $(remote_state_dir) && \
+		sudo install -m 600 -o root -g root /tmp/lumina-signer-release.env $(remote_release_env_path) && \
+		rm -f /tmp/lumina-signer-release.env"
+}
+
 main() {
-	local hostname server_ip runtime_env_file ssh_public_key
+	local hostname server_ip runtime_env_file ssh_public_key ci_key fresh_install
 
 	parse_args "$@"
 	maybe_source_env
 	IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
 	RUNTIME_ENV_FILE_OVERRIDE="${RUNTIME_ENV_FILE_OVERRIDE:-${RUNTIME_ENV_FILE:-}}"
 
-	"$SCRIPT_DIR/validate-local-setup.sh" \
-		--target "$TARGET_ENV" \
-		--runtime-env-file "${RUNTIME_ENV_FILE_OVERRIDE:-$(target_runtime_env_file "$TARGET_ENV" || true)}" \
-		--image-ref "$IMAGE_REF"
+	[[ -n "$TARGET_ENV" ]] || die "--target is required"
 
 	hostname="$(target_hostname "$TARGET_ENV")"
 	server_ip="$(target_server_ip "$TARGET_ENV" || true)"
 	runtime_env_file="${RUNTIME_ENV_FILE_OVERRIDE:-$(target_runtime_env_file "$TARGET_ENV")}"
 	ssh_public_key="$(admin_public_key "$TARGET_ENV")"
+	ci_key="$(ci_public_key "$TARGET_ENV" || true)"
+
+	[[ -n "$ssh_public_key" ]] || die \
+		"Provide LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY or configure an SSH alias identity file."
 
 	if [[ "$SKIP_DNS" -eq 0 ]]; then
 		ensure_dns_record "$hostname" "$server_ip"
 	fi
 
-	# Bootstrap the machine first, then move into steady-state admin access.
-	install_nixos_if_needed "$TARGET_ENV" "$IMAGE_REF" "$ssh_public_key"
+	# install_nixos_if_needed returns 0 if nixos-anywhere was run, 1 if already NixOS.
+	fresh_install=0
+	install_nixos_if_needed "$TARGET_ENV" "$ssh_public_key" "$ci_key" && fresh_install=1 || true
+
 	upload_runtime_env "$TARGET_ENV" "$runtime_env_file"
-	"$SCRIPT_DIR/rebuild-host.sh" --target "$TARGET_ENV" --image-ref "$IMAGE_REF"
+	upload_release_env "$TARGET_ENV" "$IMAGE_REF"
+
+	if [[ "$fresh_install" -eq 1 ]]; then
+		# nixos-anywhere already installed the full config; just start the service.
+		run_remote_as "$TARGET_ENV" "$(remote_admin_user)" "sudo systemctl restart lumina-signer"
+	else
+		"$SCRIPT_DIR/rebuild-host.sh" --target "$TARGET_ENV" --image-ref "$IMAGE_REF"
+	fi
+
 	"$SCRIPT_DIR/check-host.sh" --target "$TARGET_ENV"
 
 	log "Rollout completed for ${TARGET_ENV}."
