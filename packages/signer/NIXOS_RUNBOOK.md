@@ -351,6 +351,10 @@ cert when Cloudflare handles TLS end-to-end.
 `*.signer.luminadex.com` must exist for this to work. If it is missing, request it in the
 Cloudflare dashboard → SSL/TLS → Edge Certificates → Advanced Certificate Manager.
 
+**Important:** Caddy uses `tls internal` (self-signed origin cert). The Cloudflare zone SSL/TLS
+mode must be set to **Full**, not **Full (Strict)**. Full (Strict) requires a valid origin
+certificate and will reject the self-signed cert with a 526 error.
+
 ### SSH_KNOWN_HOSTS mismatch in CI after reinstall
 
 **Cause:** The host SSH fingerprint changes every time Debian/NixOS is reinstalled.
