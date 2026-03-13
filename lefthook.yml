@@ -18,25 +18,13 @@
 #       run: bundle audit
 #
 pre-commit:
-  parallel: true
+  parallel: false
   jobs:
-    - name: format
-      run: npx dprint fmt --allow-no-files {staged_files}
+    - run: pnpm exec moon run :lint-fix --affected
       stage_fixed: true
-    - name: lint
-      run: npx biome check --formatter-enabled=false --no-errors-on-unmatched {staged_files}
-    - name: typecheck-signer
-      glob: "packages/signer/**/*.{ts,tsx}"
-      root: "packages/signer/"
-      run: npx tsc --noEmit
-    - name: typecheck-sdk
-      glob: "packages/sdk/**/*.{ts,tsx}"
-      root: "packages/sdk/"
-      run: npx tsc --noEmit
-    - name: typecheck-dex-ui
-      glob: "packages/dex-ui/**/*.{ts,tsx}"
-      root: "packages/dex-ui/"
-      run: npx tsc --noEmit
+    - run: pnpm exec moon run :format-fix --affected
+      stage_fixed: true
+    - run: pnpm exec moon run :typecheck --affected
 #
 #     - name: rubocop
 #       glob: "*.rb"
