@@ -18,11 +18,6 @@ cat >"$STUB_BIN/jq" <<'EOF'
 exit 0
 EOF
 
-cat >"$STUB_BIN/nixos-anywhere" <<'EOF'
-#!/usr/bin/env bash
-exit 0
-EOF
-
 cat >"$STUB_BIN/nixos-rebuild" <<'EOF'
 #!/usr/bin/env bash
 exit 0
@@ -45,7 +40,7 @@ fi
 exit 0
 EOF
 
-chmod +x "$STUB_BIN/curl" "$STUB_BIN/jq" "$STUB_BIN/nixos-anywhere" \
+chmod +x "$STUB_BIN/curl" "$STUB_BIN/jq" \
   "$STUB_BIN/nixos-rebuild" "$STUB_BIN/scp" "$STUB_BIN/ssh"
 
 ssh-keygen -q -t ed25519 -N '' -f "$TMP_DIR/test-key" >/dev/null
@@ -120,12 +115,5 @@ run_expect_success \
   "$SCRIPT_DIR/validate-local-setup.sh" \
   --target zeko-testnet \
   --runtime-env-file "$TMP_DIR/complete.env"
-
-run_expect_fail "Missing required key INFISICAL_CLIENT_SECRET" \
-  "${COMMON_ENV[@]}" \
-  "$SCRIPT_DIR/rollout-host.sh" \
-  --target zeko-testnet \
-  --runtime-env-file "$TMP_DIR/incomplete.env" \
-  --skip-dns
 
 printf 'helper script checks passed\n'
