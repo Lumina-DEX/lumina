@@ -32,8 +32,6 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY: ${{ secrets.ADMIN_AUTHORIZED_KEY }}
-      LUMINA_SIGNER_CI_AUTHORIZED_KEY: ${{ secrets.CI_AUTHORIZED_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -45,12 +43,9 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-
-      - name: Rebuild NixOS host with signer image
+      - name: Deploy signer image
         run: |
-          packages/signer/infra/scripts/rebuild-host.sh \
+          packages/signer/infra/scripts/deploy.sh \
             --target "${{ inputs.target_env }}" \
             --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}"
 

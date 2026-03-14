@@ -9,6 +9,19 @@ Use this runbook either:
 > This rollout is only for new NixOS signer hosts.
 > Do not run it against the existing legacy Dokku signer host.
 
+## Architecture overview
+
+There are two deployment paths:
+
+- **Initial rollout** (this runbook): Installs NixOS on a bare Hetzner server via `nixos-anywhere`,
+  uploads secrets, starts the signer service, and configures GitHub Actions secrets.
+- **CI image deploys** (`deploy.sh`): Updates the container image on an existing NixOS host.
+  Uploads a new `release.env`, pre-pulls the image, and restarts the service. No `nixos-rebuild`
+  needed — the NixOS config does not change when only the container image changes.
+
+`rebuild-host.sh` is reserved for when the NixOS configuration itself changes (SSH keys, system
+modules, packages). It requires `nix` and `nixos-rebuild` on the build machine.
+
 ## 1. Prepare the local workstation
 
 Required local tools:
@@ -18,10 +31,11 @@ Required local tools:
 - `curl`
 - `jq`
 - `gh`
-- `docker`
+- `docker` (for the nixos-anywhere install step only)
 
 Agent note:
-Prefer a containerized Nix toolchain so the operator machine does not need a host-level Nix install.
+The initial NixOS install (step 10) uses a Docker container with nix. Subsequent deploys only
+need `ssh` and `scp`.
 
 ## 2. Generate SSH keypairs
 
@@ -129,7 +143,7 @@ If you created the env file, ask the operator to fill the real secret values bef
 ## 8. Local runtime secrets file
 
 For a given environment, you should find a corresponding secrets file under `packages/signer/infra/secrets/`.
-If the env file does not exist, you can create one like so :
+If the env file does not exist, you can create one like so:
 
 ```bash
 cat > packages/signer/infra/secrets/zeko-testnet-signer.env <<'EOF'
@@ -171,12 +185,7 @@ If this fails, fix any issues before proceeding.
 Hardware configuration is provided by `lumina-hetzner-ax41.nix` and `lumina-disko.nix` — no
 generated hardware file is needed.
 
-Run from inside the Nix toolbox container. `$LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY` and
-`$LUMINA_SIGNER_CI_AUTHORIZED_KEY` must already be set (injected via `-e` in step 10).
-
-Write a script then run it — do not use heredoc piping into docker:
-
-Write the script to the monorepo root (outside Docker), then run the container non-interactively:
+Write the install script to the monorepo root (outside Docker), then run the container non-interactively:
 
 ```bash
 # From the monorepo root, on the host machine
@@ -195,10 +204,14 @@ SCRIPT
 ADMIN_KEY="$(cat ~/.ssh/lumina_signer_zeko_testnet.pub)"
 CI_KEY="$(cat ~/.ssh/lumina_ci_zeko_testnet.pub)"
 
+# Copy SSH dir to a writable temp so nix tools can write temp files
+SSH_TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$SSH_TMPDIR"' EXIT
+cp -a "$HOME/.ssh/." "$SSH_TMPDIR/"
+
 docker run --rm -i \
   -v "$PWD:/work" \
-  -v "$HOME/.ssh/lumina_signer_zeko_testnet:/root/.ssh/id_ed25519:ro" \
-  -v "$HOME/.ssh/known_hosts:/root/.ssh/known_hosts" \
+  -v "$SSH_TMPDIR:/root/.ssh" \
   -e LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ADMIN_KEY" \
   -e LUMINA_SIGNER_CI_AUTHORIZED_KEY="$CI_KEY" \
   -w /work \
@@ -219,6 +232,10 @@ this flag those env vars evaluate to `""` and `lumina-admin` ends up locked out.
 Note: `--impure` is NOT equivalent here — it does not override `pure-eval` for flake evaluation
 in the Nix version used by the container (`nixos/nix:2.24.14`).
 
+**Why writable SSH directory:** The SSH identity key and known_hosts are copied to a writable temp
+directory. nixos-anywhere internally creates temp files under `~/.ssh`, and read-only mounts
+cause "Read-only file system" errors.
+
 Skip this step if:
 
 ```bash
@@ -237,6 +254,14 @@ ssh -o StrictHostKeyChecking=accept-new lumina-admin@lumina_signer_zeko_testnet 
 ```
 
 Expected: `nixos`
+
+Verify **both** SSH keys are in authorized_keys:
+
+```bash
+ssh lumina-admin@lumina_signer_zeko_testnet 'cat /etc/ssh/authorized_keys.d/lumina-admin'
+```
+
+Expected: two `ssh-ed25519` lines (operator key and CI key).
 
 ## 11. Upload the runtime secrets
 
@@ -273,14 +298,18 @@ ssh lumina-admin@lumina_signer_zeko_testnet \
 
 > [!NOTE]
 > The `lumina-signer` systemd `ExecCondition` checks that **both** files are non-empty (`test -s`).
-> If either is missing the service will not start. On subsequent deploys `rebuild-host.sh` writes
+> If either is missing the service will not start. On subsequent deploys `deploy.sh` writes
 > `release.env` automatically.
 
-## 12. Start the service and verify
+## 12. Pre-pull the container image and start the service
+
+The `ExecStartPre` pull has a `TimeoutStartSec` of 600 seconds. For the initial deploy with no
+cached layers, it is safer to pre-pull manually:
 
 ```bash
+ssh lumina-admin@lumina_signer_zeko_testnet 'sudo podman pull ghcr.io/lumina-dex/lumina-signer:latest'
 ssh lumina-admin@lumina_signer_zeko_testnet 'sudo systemctl restart lumina-signer'
-sleep 30
+sleep 10
 packages/signer/infra/scripts/check-host.sh --target zeko-testnet --path /graphql
 ```
 
@@ -307,18 +336,44 @@ gh secret set CI_AUTHORIZED_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zek
 
 > [!NOTE]
 > `SSH_KNOWN_HOSTS` must be updated after every OS reinstall because the host SSH fingerprint changes.
-> `ADMIN_AUTHORIZED_KEY` and `CI_AUTHORIZED_KEY` ensure CI deploys preserve both the operator
-> and CI SSH access. Without them, `rebuild-host.sh` derives keys from the CI runner's ephemeral
-> private key and silently removes the operator's access.
+> `ADMIN_AUTHORIZED_KEY` and `CI_AUTHORIZED_KEY` are used by `rebuild-host.sh` when NixOS config
+> changes need to be applied. Normal image deploys via `deploy.sh` do not use these keys.
 
 ## CI workflows
 
-- [signer-image.yml](../../.github/workflows/signer-image.yml)
-- [signer-deploy-testnet.yml](../../.github/workflows/signer-deploy-testnet.yml)
-- [signer-promote.yml](../../.github/workflows/signer-promote.yml)
+- [signer-image.yml](../../.github/workflows/signer-image.yml) — builds the container image
+- [signer-deploy-testnet.yml](../../.github/workflows/signer-deploy-testnet.yml) — deploys to testnet via `deploy.sh`
+- [signer-promote.yml](../../.github/workflows/signer-promote.yml) — promotes to production via `deploy.sh`
 
-Normal CI deploys do not upload runtime secrets, mutate Cloudflare, or regenerate keypairs.
-Those are first-time rollout steps only.
+### What CI does on each deploy
+
+1. Uploads `release.env` with the new `IMAGE_REF` to `/var/lib/lumina-signer/release.env`
+2. Pre-pulls the container image on the remote host
+3. Restarts the `lumina-signer` systemd service
+4. Verifies the `/graphql` endpoint responds
+
+CI does **not** run `nixos-rebuild`. It does not upload runtime secrets, mutate Cloudflare, or
+regenerate keypairs. Those are first-time rollout steps only.
+
+### When to use rebuild-host.sh
+
+Use `rebuild-host.sh` only when the NixOS configuration changes:
+
+- SSH authorized keys change
+- NixOS modules are added or modified
+- System packages or services are updated
+
+This requires `nix` and `nixos-rebuild` on the build machine (CI installs these via
+`cachix/install-nix-action`). It is not needed for container image updates.
+
+## Scripts reference
+
+| Script                    | Purpose                                   | Requires nix |
+| ------------------------- | ----------------------------------------- | :----------: |
+| `deploy.sh`               | Deploy a new container image (CI default) |      No      |
+| `rebuild-host.sh`         | Apply NixOS config changes                |     Yes      |
+| `check-host.sh`           | Verify service health                     |      No      |
+| `validate-local-setup.sh` | Validate local prerequisites              |      No      |
 
 ---
 
@@ -334,11 +389,10 @@ and `lumina-admin.openssh.authorizedKeys.keys` was empty.
 
 ### ssh-copy-id fails with "Read-only file system" inside container
 
-**Cause:** The SSH identity key is mounted with `:ro`. nixos-anywhere internally runs `ssh-copy-id`
+**Cause:** The SSH directory is mounted read-only. nixos-anywhere internally runs `ssh-copy-id`
 which creates a temp dir inside `~/.ssh`.
 
-**Fix:** The `known_hosts` volume is mounted read-write so `ssh-copy-id` can write to `~/.ssh`.
-If you still see errors, verify both volume mounts in step 10 are present.
+**Fix:** Copy the SSH directory to a writable temp directory before mounting, as shown in step 10.
 
 ### Service stays inactive after secrets are uploaded
 
@@ -346,6 +400,18 @@ If you still see errors, verify both volume mounts in step 10 are present.
 the secrets files were placed, it will remain inactive.
 
 **Fix:** `sudo systemctl restart lumina-signer`
+
+### Service times out during first start
+
+**Cause:** The `ExecStartPre` image pull exceeds `TimeoutStartSec` (600s) on a cold pull with
+no cached layers.
+
+**Fix:** Pre-pull the image manually before starting the service:
+
+```bash
+ssh lumina-admin@<host> 'sudo podman pull <image-ref>'
+ssh lumina-admin@<host> 'sudo systemctl restart lumina-signer'
+```
 
 ### Caddy fails to obtain Let's Encrypt certificate
 
@@ -366,4 +432,4 @@ certificate and will reject the self-signed cert with a 526 error.
 
 **Cause:** The host SSH fingerprint changes every time Debian/NixOS is reinstalled.
 
-**Fix:** Re-run the `ssh-keyscan` line from step 14 to update the GitHub Actions secret.
+**Fix:** Re-run the `ssh-keyscan` line from step 13 to update the GitHub Actions secret.

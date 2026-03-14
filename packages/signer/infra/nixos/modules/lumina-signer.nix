@@ -114,7 +114,7 @@ in
         Type = "simple";
         Restart = "always";
         RestartSec = "5s";
-        TimeoutStartSec = "300";
+        TimeoutStartSec = "600";
         ExecCondition = preflightScript;
         ExecStartPre = [
           pullScript
