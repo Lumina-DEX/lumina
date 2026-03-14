@@ -18,10 +18,13 @@
 #       run: bundle audit
 #
 pre-commit:
-  parallel: true
+  parallel: false
   jobs:
-    - run: npx dprint fmt --allow-no-files {staged_files}
+    - run: pnpm exec moon run :lint-fix --affected
       stage_fixed: true
+    - run: pnpm exec moon run :format-fix --affected
+      stage_fixed: true
+    - run: pnpm exec moon run :typecheck --affected
 #
 #     - name: rubocop
 #       glob: "*.rb"
