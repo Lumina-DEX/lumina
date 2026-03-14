@@ -30,8 +30,6 @@ jobs:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
       SSH_USER: ${{ secrets.SSH_USER }}
-      LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY: ${{ secrets.LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY }}
-      LUMINA_SIGNER_CI_AUTHORIZED_KEY: ${{ secrets.LUMINA_SIGNER_CI_AUTHORIZED_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,23 +41,16 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-
-      - name: Rebuild NixOS host with signer image
+      - name: Deploy signer image
         run: |
-          export LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="${LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY:-$(ssh-keygen -y -f ~/.ssh/id_ed25519)}"
-          nix shell nixpkgs#nixos-rebuild --command \
-            packages/signer/infra/scripts/rebuild-host.sh \
+          packages/signer/infra/scripts/deploy.sh \
             --target zeko-testnet \
-            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}" \
-            --container-port 3001 \
-            --env-file /var/lib/lumina-signer/env
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}"
 
       - name: Diagnose service on failure
         if: failure()
         run: |
-          ssh -o StrictHostKeyChecking=no -p "${SSH_PORT:-22}" "${SSH_USER:-lumina-admin}@${SSH_HOST}" \
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p "${SSH_PORT:-22}" "${SSH_USER:-lumina-admin}@${SSH_HOST}" \
             "sudo journalctl -u lumina-signer --no-pager -n 80; echo '---'; sudo podman ps -a; echo '---'; sudo podman images"
 
       - name: Check signer endpoint

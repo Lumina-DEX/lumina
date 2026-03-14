@@ -20,5 +20,25 @@
       ];
       description = "Static deployment environment label for the signer host.";
     };
+
+    system = {
+      interface = lib.mkOption {
+        type = lib.types.str;
+        default = "eno1";
+        description = "Primary network interface name for the host.";
+      };
+
+      primaryDisk = lib.mkOption {
+        type = lib.types.str;
+        default = "/dev/nvme0n1";
+        description = "Primary installation disk for the host.";
+      };
+
+      secondaryDisk = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = "/dev/nvme1n1";
+        description = "Optional secondary disk for the host.";
+      };
+    };
   };
 }

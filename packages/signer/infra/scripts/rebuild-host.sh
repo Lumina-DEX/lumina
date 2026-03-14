@@ -7,12 +7,10 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 TARGET_ENV="${TARGET_ENV:-}"
 IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
-CONTAINER_PORT="${CONTAINER_PORT:-}"
-ENV_FILE_PATH="${ENV_FILE_PATH:-}"
 
 usage() {
 	cat <<'EOF'
-Usage: rebuild-host.sh --target <env> [--image-ref <container-image>] [--container-port <port>] [--env-file <path>]
+Usage: rebuild-host.sh --target <env> [--image-ref <container-image>]
 EOF
 }
 
@@ -29,16 +27,6 @@ parse_args() {
 				IMAGE_REF="$2"
 				shift 2
 				;;
-			--container-port)
-				[[ $# -ge 2 ]] || die "--container-port requires a value"
-				CONTAINER_PORT="$2"
-				shift 2
-				;;
-			--env-file)
-				[[ $# -ge 2 ]] || die "--env-file requires a value"
-				ENV_FILE_PATH="$2"
-				shift 2
-				;;
 			-h | --help)
 				usage
 				exit 0
@@ -51,20 +39,19 @@ parse_args() {
 }
 
 main() {
-	local ssh_target flake_dir image_ref ssh_public_key
+	local ssh_target flake_dir image_ref ssh_public_key release_payload
+	local -a scp_command
 
 	parse_args "$@"
 	maybe_source_env
 	IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
-	CONTAINER_PORT="${CONTAINER_PORT:-${LUMINA_SIGNER_CONTAINER_PORT:-}}"
-	ENV_FILE_PATH="${ENV_FILE_PATH:-${LUMINA_SIGNER_ENV_FILE:-}}"
 
 	require_command nixos-rebuild
+	require_command scp
 	require_command ssh
 
 	[[ -n "$TARGET_ENV" ]] || die "--target is required"
-	[[ -n "$IMAGE_REF" ]] || die "--image-ref or SIGNER_IMAGE_REF is required"
-	image_ref="$IMAGE_REF"
+	image_ref="${IMAGE_REF:-}"
 
 	ssh_target="$(build_ssh_target "$TARGET_ENV" "$(remote_admin_user)")"
 	flake_dir="$(repo_root)/packages/signer/infra/nixos"
@@ -76,48 +63,38 @@ main() {
 		export NIX_SSHOPTS="-p ${SSH_PORT}"
 	fi
 
-	# Fetch hardware config from target if not present locally (e.g. in CI).
-	local hardware_path
-	hardware_path="$(target_generated_hardware_path "$TARGET_ENV")"
-	if [[ ! -f "$hardware_path" ]]; then
-		log "Hardware config not found locally — fetching from ${ssh_target}..."
-		mkdir -p "$(dirname "$hardware_path")"
-		local -a ssh_cmd
-		build_ssh_command ssh_cmd "$TARGET_ENV" "$(remote_admin_user)"
-		"${ssh_cmd[@]}" "sudo nixos-generate-config --show-hardware-config" >"$hardware_path"
+	if [[ -n "$image_ref" ]]; then
+		release_payload="$(mktemp)"
+		cat >"$release_payload" <<EOF
+IMAGE_REF=${image_ref}
+GIT_SHA=${GIT_SHA:-$(git -C "$(repo_root)" rev-parse HEAD 2>/dev/null || true)}
+RELEASED_AT=${RELEASED_AT:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
+EOF
+
+		build_scp_command scp_command
+		scp_command+=("$release_payload" "${ssh_target}:/tmp/lumina-signer-release.env")
+		"${scp_command[@]}"
+		rm -f "$release_payload"
+
+		run_remote_as "$TARGET_ENV" "$(remote_admin_user)" \
+			"sudo install -d -m 700 -o root -g root $(remote_state_dir) && \
+			sudo install -m 600 -o root -g root /tmp/lumina-signer-release.env $(remote_release_env_path) && \
+			rm -f /tmp/lumina-signer-release.env"
 	fi
 
-	# nixos-rebuild --target-host uses ssh:// transport, which runs
-	# nix-store --serve --write on the remote.  This checks require-sigs
-	# (not trusted-users) and rejects unsigned locally-built paths.
-	# Patch the remote nix.conf to accept unsigned paths before deploying.
-	# On NixOS /etc/nix/nix.conf is an immutable store symlink, so we
-	# replace it with a mutable copy.  After nixos-rebuild switch succeeds
-	# the system activation restores the proper symlink (which now includes
-	# the setting from our NixOS module).
-	local -a patch_cmd
-	build_ssh_command patch_cmd "$TARGET_ENV" "$(remote_admin_user)"
-	"${patch_cmd[@]}" \
-		'if ! grep -q "^require-sigs = false" /etc/nix/nix.conf 2>/dev/null; then
-			sudo cp --dereference /etc/nix/nix.conf /tmp/nix.conf.patched 2>/dev/null || sudo cp /etc/nix/nix.conf /tmp/nix.conf.patched
-			printf "\ntrusted-users = root @wheel\nrequire-sigs = false\n" | sudo tee -a /tmp/nix.conf.patched >/dev/null
-			sudo mv /tmp/nix.conf.patched /etc/nix/nix.conf
-			sudo systemctl restart nix-daemon
-		fi' \
-		|| log "Warning: could not patch remote nix.conf (non-fatal)"
-
 	log "Applying $(target_host_config "$TARGET_ENV") to ${ssh_target}"
-	# Use a path flake so local generated hardware files are visible even though
-	# they stay gitignored.
+	# Use a path flake so local host modules are evaluated directly from the
+	# working tree, including any uncommitted rollout fixes.
 	LUMINA_SIGNER_ADMIN_AUTHORIZED_KEY="$ssh_public_key" \
-		LUMINA_SIGNER_IMAGE_REF="$image_ref" \
-		LUMINA_SIGNER_CONTAINER_PORT="${CONTAINER_PORT:-3001}" \
-		LUMINA_SIGNER_ENV_FILE="${ENV_FILE_PATH:-/var/lib/lumina-signer/env}" \
+		LUMINA_SIGNER_CI_AUTHORIZED_KEY="$(ci_public_key "$TARGET_ENV" || true)" \
 		nixos-rebuild switch \
+		--option pure-eval false \
 		--flake "path:${flake_dir}#$(target_host_config "$TARGET_ENV")" \
+		--build-host "$ssh_target" \
 		--target-host "$ssh_target" \
-		--use-remote-sudo \
-		--impure
+		--use-remote-sudo
+
+	run_remote_as "$TARGET_ENV" "$(remote_admin_user)" "sudo systemctl restart lumina-signer"
 }
 
 main "$@"

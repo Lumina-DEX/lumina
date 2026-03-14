@@ -60,7 +60,7 @@ vi.mock("../src/helpers/pool", () => ({
 
 vi.mock("../src/helpers/factory", () => ({
 	deployFactoryAndTransaction: vi.fn(
-		async ({ deployer, network, protocol, delegator, data, jobId }: DeployFactoryInputType & { jobId: string }) => {
+		async ({ deployer, network, jobId }: DeployFactoryInputType & { jobId: string }) => {
 			console.log(`Mock called for job ${jobId} at ${new Date().toISOString()}`)
 			await new Promise((resolve) => setTimeout(resolve, 100))
 

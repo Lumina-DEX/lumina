@@ -1,6 +1,7 @@
 import { createServer } from "node:http"
 import { commitHash, env, yoga } from "."
 import { logger } from "./helpers/utils"
+import { drainQueue } from "./queue"
 
 const port = 3001
 const hostname = "0.0.0.0"
@@ -16,15 +17,13 @@ server.listen(port, hostname, () => {
 	logger.info(`🚀 Server running at http://localhost:${port}${yoga.graphqlEndpoint} (rev: ${commitHash})`)
 })
 
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
 	logger.info(`Received ${signal}, shutting down...`)
-	server.close((err) => {
-		if (err) {
-			logger.error("Error during server close:", err)
-			process.exit(1)
-		}
-		process.exit(0)
-	})
+	server.close()
+	logger.info("Draining job queue (waiting for in-flight job to finish)...")
+	await drainQueue()
+	logger.info("Queue drained, exiting.")
+	process.exit(0)
 }
 
 process.on("SIGINT", () => shutdown("SIGINT"))

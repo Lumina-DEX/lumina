@@ -48,14 +48,18 @@ main() {
 	local hostname server_ip ssh_alias identity_file resolved_hostname runtime_env_file ssh_public_key
 
 	parse_args "$@"
+
+	local env_file
+	env_file="${SIGNER_FLEET_ENV_FILE:-${SCRIPT_DIR}/signer-fleet.env}"
+	[[ -f "$env_file" ]] || die "signer-fleet.env not found. Copy signer-fleet.env.example and fill in real values."
+
 	maybe_source_env
 	IMAGE_REF="${IMAGE_REF:-${SIGNER_IMAGE_REF:-}}"
 	RUNTIME_ENV_FILE_OVERRIDE="${RUNTIME_ENV_FILE_OVERRIDE:-${RUNTIME_ENV_FILE:-}}"
 
 	require_command curl
 	require_command jq
-	require_command nixos-anywhere
-	require_command nixos-rebuild
+	require_command docker
 	require_command scp
 	require_command ssh
 	require_command ssh-keygen
@@ -69,8 +73,10 @@ main() {
 	runtime_env_file="${RUNTIME_ENV_FILE_OVERRIDE:-$(target_runtime_env_file "$TARGET_ENV" || true)}"
 
 	[[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || die "Missing CLOUDFLARE_API_TOKEN"
+	[[ "${CLOUDFLARE_API_TOKEN}" != "replace-me" ]] || die "CLOUDFLARE_API_TOKEN is not set (replace-me)."
 	[[ -n "${CLOUDFLARE_ZONE_NAME:-}" ]] || die "Missing CLOUDFLARE_ZONE_NAME"
 	[[ -n "$server_ip" ]] || die "Missing server IP for ${TARGET_ENV}."
+	[[ "$server_ip" != "replace-me" ]] || die "Server IP for ${TARGET_ENV} is not set (replace-me)."
 	[[ -n "$runtime_env_file" ]] || die \
 		"Provide --runtime-env-file or set $(target_prefix "$TARGET_ENV")_RUNTIME_ENV_FILE."
 

@@ -8,6 +8,11 @@ mkSignerHost {
     hostName = "lumina-signer-local-arm64-test";
     publicHostname = "localhost";
     targetEnvironment = "zeko-testnet";
+    system = {
+      interface = "eth0";
+      primaryDisk = "/dev/vda";
+      secondaryDisk = null;
+    };
   };
   extraImports = [
     ../modules/lumina-orbstack-local-vm.nix
