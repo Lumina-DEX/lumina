@@ -90,11 +90,22 @@ type Worker<T> = (item: T) => Promise<void>
 class Queuer<T> {
 	#queue: Set<T> = new Set()
 	#processing = false
+	#draining = false
+	#drainResolve: (() => void) | null = null
 	constructor(private worker: Worker<T>) {}
 	public addItem(item: T) {
+		if (this.#draining) return
 		this.#queue.add(item)
 		if (this.#processing) return
 		this.processQueue()
+	}
+	public drain(): Promise<void> {
+		this.#draining = true
+		this.#queue.clear()
+		if (!this.#processing) return Promise.resolve()
+		return new Promise<void>((resolve) => {
+			this.#drainResolve = resolve
+		})
 	}
 	private async processQueue() {
 		this.#processing = true
@@ -110,11 +121,17 @@ class Queuer<T> {
 			}
 		}
 		this.#processing = false
+		if (this.#drainResolve) {
+			this.#drainResolve()
+			this.#drainResolve = null
+		}
 	}
 }
 
 // Serial processing, one job at a time
 const queuer = new Queuer<JobTask>(async (task) => await processJob(task))
+
+export const drainQueue = () => queuer.drain()
 
 export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 	return {

@@ -115,13 +115,14 @@ in
         Restart = "always";
         RestartSec = "5s";
         TimeoutStartSec = "600";
+        TimeoutStopSec = "600";
         ExecCondition = preflightScript;
         ExecStartPre = [
           pullScript
           "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}"
         ];
         ExecStart = runScript;
-        ExecStop = "-${pkgs.podman}/bin/podman stop -t 15 ${cfg.appName}";
+        ExecStop = "-${pkgs.podman}/bin/podman stop -t 570 ${cfg.appName}";
         ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}";
       };
     };

@@ -313,31 +313,75 @@ sleep 10
 packages/signer/infra/scripts/check-host.sh --target zeko-testnet --path /graphql
 ```
 
-## 13. Configure GitHub Actions environment secrets
+## 13. Create the Cloudflare DNS record
 
-After the host is bootstrapped and reachable, create the `signer-zeko-testnet` GitHub Actions
-environment with the **CI key** (not the operator key):
+Each signer host needs an A record under `signer.luminadex.com` pointing to the server IP,
+with Cloudflare proxy enabled (`proxied: true`).
+
+The naming convention is `<env>.signer.luminadex.com`:
+
+| Environment  | DNS record                          |
+| ------------ | ----------------------------------- |
+| zeko-testnet | `zeko-testnet.signer.luminadex.com` |
+| mina-mainnet | `mina-mainnet.signer.luminadex.com` |
+| zeko-mainnet | `zeko-mainnet.signer.luminadex.com` |
+
+Create the record in the Cloudflare dashboard or via API:
+
+```bash
+source packages/signer/infra/scripts/signer-fleet.env
+# Replace ZEKO_TESTNET with the appropriate prefix for your environment
+curl -X POST "https://api.cloudflare.com/client/v4/zones/$(
+  curl -s -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    "https://api.cloudflare.com/client/v4/zones?name=${CLOUDFLARE_ZONE_NAME}" | jq -r '.result[0].id'
+)/dns_records" \
+  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data "{
+    \"type\": \"A\",
+    \"name\": \"zeko-testnet.signer\",
+    \"content\": \"${ZEKO_TESTNET_SERVER_IP}\",
+    \"proxied\": true
+  }"
+```
+
+**Important:** The Cloudflare zone must have an ACM wildcard certificate for `*.signer.luminadex.com`.
+If it doesn't exist, create it in Cloudflare → SSL/TLS → Edge Certificates → Advanced Certificate Manager.
+The zone SSL/TLS mode must be **Full** (not Full Strict) because Caddy uses `tls internal` (self-signed).
+
+Agent note:
+Ask the operator to verify the DNS record is created and the Cloudflare ACM wildcard exists.
+
+## 14. Configure GitHub Actions environment secrets
+
+First create the GitHub Actions environment if it doesn't exist. The environment name follows
+the pattern `signer-<env>` (e.g. `signer-zeko-testnet`, `signer-mina-mainnet`).
+
+Then set the secrets using the **CI key** (not the operator key):
 
 ```bash
 source packages/signer/infra/scripts/signer-fleet.env
 
-gh secret set SSH_HOST --env signer-zeko-testnet --body "${ZEKO_TESTNET_SERVER_IP}"
-gh secret set SSH_PORT --env signer-zeko-testnet --body "22"
-gh secret set SSH_USER --env signer-zeko-testnet --body "lumina-admin"
-gh secret set TARGET_HOSTNAME --env signer-zeko-testnet --body "${ZEKO_TESTNET_HOSTNAME}"
-gh secret set SSH_PRIVATE_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zeko_testnet
-# Scan the server IP directly — the hostname resolves to Cloudflare's edge when proxied
-ssh-keyscan -H "${ZEKO_TESTNET_SERVER_IP}" 2>/dev/null | gh secret set SSH_KNOWN_HOSTS --env signer-zeko-testnet
+# Replace signer-zeko-testnet and ZEKO_TESTNET with the appropriate env
+ENV_NAME="signer-zeko-testnet"
+PREFIX="ZEKO_TESTNET"
 
-# Operator and CI public keys — used by rebuild-host.sh to populate authorized_keys
-gh secret set ADMIN_AUTHORIZED_KEY --env signer-zeko-testnet < ~/.ssh/lumina_signer_zeko_testnet.pub
-gh secret set CI_AUTHORIZED_KEY --env signer-zeko-testnet < ~/.ssh/lumina_ci_zeko_testnet.pub
+SERVER_IP_VAR="${PREFIX}_SERVER_IP"
+HOSTNAME_VAR="${PREFIX}_HOSTNAME"
+
+gh secret set SSH_HOST --env "$ENV_NAME" --body "${!SERVER_IP_VAR}"
+gh secret set SSH_PORT --env "$ENV_NAME" --body "22"
+gh secret set SSH_USER --env "$ENV_NAME" --body "lumina-admin"
+gh secret set TARGET_HOSTNAME --env "$ENV_NAME" --body "${!HOSTNAME_VAR}"
+gh secret set SSH_PRIVATE_KEY --env "$ENV_NAME" < ~/.ssh/lumina_ci_${PREFIX,,}
+# Scan the server IP directly — the hostname resolves to Cloudflare's edge when proxied
+ssh-keyscan -H "${!SERVER_IP_VAR}" 2>/dev/null | gh secret set SSH_KNOWN_HOSTS --env "$ENV_NAME"
 ```
 
 > [!NOTE]
 > `SSH_KNOWN_HOSTS` must be updated after every OS reinstall because the host SSH fingerprint changes.
-> `ADMIN_AUTHORIZED_KEY` and `CI_AUTHORIZED_KEY` are used by `rebuild-host.sh` when NixOS config
-> changes need to be applied. Normal image deploys via `deploy.sh` do not use these keys.
+> The `SSH_PRIVATE_KEY` is the **CI private key**, not the operator key. `deploy.sh` uses this key
+> to SSH into the host and restart the service.
 
 ## CI workflows
 
@@ -432,4 +476,4 @@ certificate and will reject the self-signed cert with a 526 error.
 
 **Cause:** The host SSH fingerprint changes every time Debian/NixOS is reinstalled.
 
-**Fix:** Re-run the `ssh-keyscan` line from step 13 to update the GitHub Actions secret.
+**Fix:** Re-run the `ssh-keyscan` line from step 14 to update the GitHub Actions secret.
