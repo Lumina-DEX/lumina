@@ -54,6 +54,12 @@ jobs:
             --target "${{ inputs.target_env }}" \
             --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}"
 
+      - name: Diagnose service on failure
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p "${SSH_PORT:-22}" "${SSH_USER:-lumina-admin}@${SSH_HOST}" \
+            "sudo journalctl -u lumina-signer --no-pager -n 80; echo '---'; sudo podman ps -a; echo '---'; sudo podman images"
+
       - name: Check signer endpoint
         run: |
           packages/signer/infra/scripts/check-host.sh \
