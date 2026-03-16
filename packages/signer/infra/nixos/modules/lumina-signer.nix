@@ -1,30 +1,37 @@
 { config, lib, pkgs, ... }:
 
 let
-  imageFromEnv = builtins.getEnv "LUMINA_SIGNER_IMAGE_REF";
-  containerPortFromEnv = builtins.getEnv "LUMINA_SIGNER_CONTAINER_PORT";
-  envFileFromEnv = builtins.getEnv "LUMINA_SIGNER_ENV_FILE";
   cfg = config.lumina.signer;
-  envArgs =
+  podmanArgs = lib.concatStringsSep " " (map lib.escapeShellArg cfg.extraPodmanArgs);
+  envFileArg =
     if cfg.envFile == null then
-      [ ]
+      ""
     else
-      [
-        "--env-file"
-        cfg.envFile
-      ];
-  podmanCommand = [
-    "${pkgs.podman}/bin/podman"
-    "run"
-    "--rm"
-    "--replace"
-    "--name"
-    cfg.appName
-    "-p"
-    "${cfg.listenAddress}:${toString cfg.listenPort}:${toString cfg.containerPort}"
-  ] ++ envArgs ++ cfg.extraPodmanArgs ++ [
-    cfg.imageRef
-  ];
+      "--env-file ${lib.escapeShellArg cfg.envFile}";
+  pullScript = pkgs.writeShellScript "lumina-signer-pull" ''
+    set -euo pipefail
+    . ${lib.escapeShellArg cfg.releaseEnvFile}
+    exec ${pkgs.podman}/bin/podman pull "$IMAGE_REF"
+  '';
+  runScript = pkgs.writeShellScript "lumina-signer-run" ''
+    set -euo pipefail
+    . ${lib.escapeShellArg cfg.releaseEnvFile}
+    exec ${pkgs.podman}/bin/podman run \
+      --rm \
+      --replace \
+      --name ${lib.escapeShellArg cfg.appName} \
+      -p ${lib.escapeShellArg "${cfg.listenAddress}:${toString cfg.listenPort}:${toString cfg.containerPort}"} \
+      ${envFileArg} \
+      ${podmanArgs} \
+      "$IMAGE_REF"
+  '';
+  preflightScript = pkgs.writeShellScript "lumina-signer-preflight" ''
+    set -euo pipefail
+    test -s ${lib.escapeShellArg cfg.releaseEnvFile}
+    ${lib.optionalString (cfg.envFile != null) ''
+      test -s ${lib.escapeShellArg cfg.envFile}
+    ''}
+  '';
 in
 {
   options.lumina.signer = {
@@ -50,16 +57,6 @@ in
       description = "Static environment label for the host.";
     };
 
-    imageRef = lib.mkOption {
-      type = lib.types.str;
-      default =
-        if imageFromEnv != "" then imageFromEnv else throw "Set LUMINA_SIGNER_IMAGE_REF before rebuilding the host.";
-      description = ''
-        Container image to run. CI and the initial bootstrap both inject the signer image digest
-        through LUMINA_SIGNER_IMAGE_REF.
-      '';
-    };
-
     listenAddress = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
@@ -74,18 +71,20 @@ in
 
     containerPort = lib.mkOption {
       type = lib.types.port;
-      default =
-        if containerPortFromEnv != "" then
-          builtins.fromJSON containerPortFromEnv
-        else
-          3001;
+      default = 3001;
       description = "Port exposed by the container image.";
     };
 
     envFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = if envFileFromEnv != "" then envFileFromEnv else "/var/lib/lumina-signer/env";
+      default = "/var/lib/lumina-signer/env";
       description = "Optional env file passed to podman.";
+    };
+
+    releaseEnvFile = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/lumina-signer/release.env";
+      description = "Release metadata file consumed by the systemd service.";
     };
 
     extraPodmanArgs = lib.mkOption {
@@ -107,6 +106,7 @@ in
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
       path = [
+        pkgs.bash
         pkgs.coreutils
         pkgs.podman
       ];
@@ -114,26 +114,16 @@ in
         Type = "simple";
         Restart = "always";
         RestartSec = "5s";
-        TimeoutStartSec = "300";
+        TimeoutStartSec = "600";
+        TimeoutStopSec = "30";
+        ExecCondition = preflightScript;
         ExecStartPre = [
-          (lib.escapeShellArgs [
-            "${pkgs.podman}/bin/podman"
-            "pull"
-            cfg.imageRef
-          ])
+          pullScript
           "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}"
         ];
-        ExecStart = lib.escapeShellArgs podmanCommand;
-        ExecStop = "-${pkgs.podman}/bin/podman stop -t 15 ${cfg.appName}";
+        ExecStart = runScript;
+        ExecStop = "-${pkgs.podman}/bin/podman stop -t 20 ${cfg.appName}";
         ExecStopPost = "-${pkgs.podman}/bin/podman rm -f ${cfg.appName}";
-      } // lib.optionalAttrs (cfg.envFile != null) {
-        # Use an explicit argv so the env-file path is quoted correctly even if
-        # it ever contains whitespace.
-        ExecCondition = lib.escapeShellArgs [
-          "${pkgs.coreutils}/bin/test"
-          "-s"
-          cfg.envFile
-        ];
       };
     };
   };

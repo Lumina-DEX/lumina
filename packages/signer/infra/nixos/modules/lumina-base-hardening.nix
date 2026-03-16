@@ -39,12 +39,32 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # The generated hardware config (hosts/generated/*-hardware.nix) carries
+    # the real boot-loader settings for each host.  When that file is absent
+    # (e.g. in CI, where it is gitignored) we must still pass the NixOS grub
+    # assertions.  Disabling grub here is safe: nixos-rebuild switch will
+    # activate the new generation and restart services without touching the
+    # boot loader, so the host keeps booting from whatever nixos-anywhere
+    # installed during the initial rollout.  When the hardware config IS
+    # present it can override this with the correct grub device.
+    boot.loader.grub.enable = lib.mkDefault false;
+
     time.timeZone = cfg.timezone;
 
     nix.settings.experimental-features = [
       "nix-command"
       "flakes"
     ];
+
+    # nixos-rebuild --target-host uses ssh:// transport, which runs
+    # nix-store --serve --write on the remote.  This rejects unsigned
+    # locally-built store paths unless require-sigs is disabled.
+    # trusted-users is also needed for daemon-based operations.
+    nix.settings.trusted-users = [
+      "root"
+      "@wheel"
+    ];
+    nix.settings.require-sigs = false;
 
     networking.firewall.enable = true;
     networking.firewall.allowedTCPPorts = [

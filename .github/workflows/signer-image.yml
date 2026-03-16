@@ -42,7 +42,9 @@ jobs:
           file: packages/signer/Dockerfile
           push: true
           provenance: false
-          tags: ghcr.io/lumina-dex/lumina-signer:sha-${{ github.sha }}
+          tags: |
+            ghcr.io/lumina-dex/lumina-signer:sha-${{ github.sha }}
+            ghcr.io/lumina-dex/lumina-signer:latest
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
@@ -56,6 +58,16 @@ jobs:
             echo "- Image: \`ghcr.io/lumina-dex/lumina-signer@${{ steps.build.outputs.digest }}\`"
             echo "- Git SHA: \`${{ github.sha }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ensure package visibility is public
+        run: |
+          curl -s -L \
+            -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/orgs/lumina-dex/packages/container/lumina-signer \
+            -d '{"visibility":"public"}'
 
   deploy-testnet:
     name: Deploy zeko testnet signer
