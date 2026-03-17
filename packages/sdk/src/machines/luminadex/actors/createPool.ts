@@ -248,7 +248,7 @@ export const createPoolMachine = setup({
 	initial: "INIT",
 	context: ({ input }) => ({
 		...input,
-		client: createPoolSignerClient(),
+		client: createPoolSignerClient(input.network),
 		job: { id: "", status: "", transactionJson: "", poolPublicKey: "" },
 		transaction: { hash: "", url: "" },
 		exists: { pool: false, tokenA: false, tokenB: false },

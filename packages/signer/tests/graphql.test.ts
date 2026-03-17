@@ -128,6 +128,7 @@ describe("GraphQL API", () => {
 			context: {
 				jobQueue,
 				pubsub,
+				hostname: "localhost",
 				database: getDb,
 				env: {
 					DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
@@ -359,6 +360,61 @@ describe("GraphQL API", () => {
 
 			expect(confirmAgain.errors).toBeUndefined()
 			expect(confirmAgain.data?.confirmJob).toContain("already confirmed")
+		})
+	})
+
+	describe("network validation", () => {
+		it("rejects pool creation for mismatched network", async () => {
+			// Create a yoga instance that simulates a mainnet-only server
+			const mainnetYoga = createYoga<Context>({
+				schema,
+				logging: true,
+				maskedErrors: false,
+				context: {
+					jobQueue,
+					pubsub,
+					hostname: "mina-mainnet.signer.luminadex.com",
+					database: getDb,
+					env: {
+						DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
+						INFISICAL_ENVIRONMENT: "test",
+						INFISICAL_PROJECT_ID: "test",
+						INFISICAL_CLIENT_ID: "test",
+						INFISICAL_CLIENT_SECRET: "test"
+					},
+					shouldUpdateCDN: false
+				}
+			})
+
+			const response = await mainnetYoga.fetch("http://localhost:4000/graphql", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					query: `mutation CreatePool($input: CreatePoolInput!) {
+						createPool(input: $input) { id status }
+					}`,
+					variables: {
+						input: {
+							user: `${USER_PREFIX}-network-mismatch`,
+							tokenA: "B62tokenA",
+							tokenB: "B62tokenB",
+							network: "mina_devnet"
+						}
+					}
+				})
+			})
+			const createResult = await response.json()
+
+			// Job is created but will fail during processing
+			const jobId = createResult.data?.createPool?.id as string
+			expect(jobId).toBeTruthy()
+
+			// Wait for the job to be processed and fail
+			await new Promise((resolve) => setTimeout(resolve, 300))
+
+			using q = jobQueue()
+			const job = q.getPoolJob(jobId)
+			expect(job?.status).toBe("failed")
 		})
 	})
 

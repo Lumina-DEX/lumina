@@ -19,6 +19,7 @@ export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
 	isAdmin: boolean
+	hostname: string
 	database: Database
 	jobQueue: JobQueue
 	pubsub: ReturnType<typeof createPubSub<Record<string, [job: AnyJobResult]>>>
@@ -44,8 +45,10 @@ export const yoga = createYoga<{ env: typeof env }>({
 		const authToken = request.headers.get("Authorization") || ""
 		const apiKey = await getApiKey()
 		const isAdmin = authToken === `Bearer ${apiKey}`
+		const hostname = request.headers.get("Host") || ""
 		return {
 			isAdmin,
+			hostname,
 			env,
 			database: getDb,
 			jobQueue,

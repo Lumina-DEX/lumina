@@ -429,12 +429,12 @@ builder.mutationField("createPool", (t) =>
 		type: Job,
 		description: "Create a new pool",
 		args: { input: t.arg({ type: CreatePoolInput, required: true }) },
-		resolve: async (_, { input }, { jobQueue }) => {
+		resolve: async (_, { input }, { jobQueue, hostname }) => {
 			using q = jobQueue()
 			const id = globalThis.crypto.randomUUID()
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
-			q.addJob(id, input)
+			q.addJob(id, input, hostname)
 			logger.log(`Pool creation job ${id} added to queue`)
 			return { id, status: "created" }
 		}
@@ -503,12 +503,12 @@ builder.mutationField("deployFactory", (t) =>
 		type: Job,
 		description: "Deploy a new factory",
 		args: { input: t.arg({ type: DeployFactoryInput, required: true }) },
-		resolve: async (_, { input }, { jobQueue }) => {
+		resolve: async (_, { input }, { jobQueue, hostname }) => {
 			using q = jobQueue()
 			const id = globalThis.crypto.randomUUID()
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
-			q.addJob(id, input)
+			q.addJob(id, input, hostname)
 			logger.log(`Factory deployment job ${id} added to queue`)
 			return { id, status: "created" }
 		}

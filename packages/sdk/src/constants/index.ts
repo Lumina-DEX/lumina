@@ -106,4 +106,9 @@ export const poolInstance = {
 	}
 } as const
 
-export const poolCreationUrl = "https://pool-signer.luminadex.com/graphql"
+export const poolCreationUrls = {
+	"mina:mainnet": "https://mina-mainnet.signer.luminadex.com/graphql",
+	"mina:devnet": "https://zeko-testnet.signer.luminadex.com/graphql",
+	"zeko:testnet": "https://zeko-testnet.signer.luminadex.com/graphql",
+	"zeko:mainnet": "NOT_IMPLEMENTED"
+} as const

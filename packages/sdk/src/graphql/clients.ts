@@ -1,7 +1,8 @@
 import { createClient as createSSEClient } from "graphql-sse"
 import { Client, type ClientOptions, fetchExchange, subscriptionExchange } from "urql"
-import { poolCreationUrl } from "../constants"
+import { poolCreationUrls } from "../constants"
 import { getRetryExchange } from "../graphql/helpers"
+import type { Networks } from "../machines/wallet/types"
 
 const clientCache = new Map<string, Client>()
 
@@ -21,12 +22,19 @@ export const createMinaClient = (url: string) => {
 	return client
 }
 
-const sseClient = createSSEClient({ url: poolCreationUrl })
+const sseClientCache = new Map<string, ReturnType<typeof createSSEClient>>()
 
-export const createPoolSignerClient = () => {
-	const url = poolCreationUrl
+export const createPoolSignerClient = (network: Networks) => {
+	const url = poolCreationUrls[network]
 	const cached = clientCache.get(url)
 	if (cached) return cached
+
+	let sseClient = sseClientCache.get(url)
+	if (!sseClient) {
+		sseClient = createSSEClient({ url })
+		sseClientCache.set(url, sseClient)
+	}
+
 	const client = new Client({
 		url,
 		requestPolicy: "network-only",
@@ -38,7 +46,7 @@ export const createPoolSignerClient = () => {
 					return {
 						subscribe: (sink) => {
 							const newOperation = Object.assign({}, operation, { query: operation.query ?? "" })
-							const dispose = sseClient.subscribe(newOperation, sink)
+							const dispose = sseClient!.subscribe(newOperation, sink)
 							return { unsubscribe: dispose }
 						}
 					}

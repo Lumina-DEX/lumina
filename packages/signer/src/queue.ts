@@ -2,6 +2,7 @@ import type { PubSub } from "graphql-yoga"
 import type { CreatePoolInputType, DeployFactoryInputType, FactoryJobResult, JobResult } from "./graphql"
 import { ensureCompiled } from "./helpers/contracts"
 import { deployFactoryAndTransaction } from "./helpers/factory"
+import { validateNetwork } from "./helpers/network"
 import { createPoolAndTransaction } from "./helpers/pool"
 import { logger } from "./helpers/utils"
 
@@ -10,6 +11,7 @@ export type AnyJobResult = JobResult | FactoryJobResult
 type JobTask = {
 	jobId: string
 	data: CreatePoolInputType | DeployFactoryInputType
+	hostname: string
 	pubsub: PubSub<Record<string, [AnyJobResult]>>
 }
 
@@ -26,10 +28,11 @@ const isPoolJob = (data: CreatePoolInputType | DeployFactoryInputType): data is 
 	return "user" in data && "tokenA" in data && "tokenB" in data
 }
 
-const processJob = async ({ jobId, data, pubsub }: JobTask) => {
+const processJob = async ({ jobId, data, hostname, pubsub }: JobTask) => {
 	logger.log(`Processing job ${jobId}:`, Date.now())
 
 	try {
+		validateNetwork(data.network, hostname)
 		await ensureCompiled(data.network)
 
 		if (isFactoryJob(data)) {
@@ -135,7 +138,7 @@ export const drainQueue = () => queuer.drain()
 
 export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 	return {
-		addJob: (jobId: string, data: CreatePoolInputType | DeployFactoryInputType) => {
+		addJob: (jobId: string, data: CreatePoolInputType | DeployFactoryInputType, hostname: string) => {
 			if (isFactoryJob(data)) {
 				jobs.set(jobId, {
 					status: "pending",
@@ -151,7 +154,7 @@ export const getJobQueue = (pubsub: PubSub<Record<string, [AnyJobResult]>>) => {
 					completedAt: new Date()
 				} as JobResult)
 			}
-			queuer.addItem({ jobId, data, pubsub })
+			queuer.addItem({ jobId, data, hostname, pubsub })
 		},
 		getJob: (jobId: string) => jobs.get(jobId),
 		getFactoryJob: (jobId: string) => {
