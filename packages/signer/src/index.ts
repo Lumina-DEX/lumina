@@ -1,8 +1,11 @@
+import { hostname } from "node:os"
+import type { Networks } from "@lumina-dex/sdk"
 import { createPubSub, createYoga } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
 import { getApiKey } from "./helpers/job"
+import { resolveAllowedNetworks } from "./helpers/network"
 import { type AnyJobResult, getJobQueue } from "./queue"
 
 const Schema = v.object({
@@ -19,7 +22,7 @@ export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
 	isAdmin: boolean
-	hostname: string
+	allowedNetworks: Networks[]
 	database: Database
 	jobQueue: JobQueue
 	pubsub: ReturnType<typeof createPubSub<Record<string, [job: AnyJobResult]>>>
@@ -31,6 +34,7 @@ export const commitHash = process.env.GIT_REV || "development" // This is inject
 
 const pubsub = createPubSub<Record<string, [AnyJobResult]>>()
 const jobQueue = () => getJobQueue(pubsub)
+const allowedNetworks = resolveAllowedNetworks(hostname())
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -45,10 +49,9 @@ export const yoga = createYoga<{ env: typeof env }>({
 		const authToken = request.headers.get("Authorization") || ""
 		const apiKey = await getApiKey()
 		const isAdmin = authToken === `Bearer ${apiKey}`
-		const hostname = request.headers.get("Host") || ""
 		return {
 			isAdmin,
-			hostname,
+			allowedNetworks,
 			env,
 			database: getDb,
 			jobQueue,

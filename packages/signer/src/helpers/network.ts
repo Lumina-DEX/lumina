@@ -17,9 +17,8 @@ export function resolveAllowedNetworks(hostname?: string): Networks[] {
 	return ALL_NETWORKS
 }
 
-export function validateNetwork(queryNetwork: Networks, hostname?: string): void {
-	const allowed = resolveAllowedNetworks(hostname)
-	if (!allowed.includes(queryNetwork)) {
-		throw new Error(`Network "${queryNetwork}" not allowed on this server (hostname: ${hostname})`)
+export function validateNetwork(queryNetwork: Networks, allowedNetworks: Networks[]): void {
+	if (!allowedNetworks.includes(queryNetwork)) {
+		throw new Error(`Network "${queryNetwork}" is not allowed on this server. Allowed: ${allowedNetworks.join(", ")}`)
 	}
 }

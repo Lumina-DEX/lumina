@@ -20,7 +20,7 @@ Each signer server is dedicated to a specific environment, determined by the `Ho
 | `zeko-testnet.signer.luminadex.com` | `mina:devnet`, `zeko:testnet` |
 | `localhost` / `127.0.0.1`           | All networks (dev fallback)   |
 
-Requests for a mismatched network are rejected at job processing time. Contracts are compiled once per server lifecycle since each server handles a single proving-key environment.
+The allowed networks are resolved once at startup from the system hostname (`os.hostname()`), not from request headers. Requests for a mismatched network are rejected immediately at the GraphQL resolver level. Contracts are compiled once per server lifecycle since each server handles a single proving-key environment.
 
 ## Local Development
 

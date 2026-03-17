@@ -7,6 +7,7 @@ import { type GraphQLSchemaWithContext, Repeater, type YogaInitialContext } from
 import { factory, multisig, pool, signerMerkle, signerMerkleNetworks } from "../drizzle/schema"
 import type { Context } from "."
 import { updateStatusAndCDN } from "./helpers/job"
+import { validateNetwork } from "./helpers/network"
 import { logger } from "./helpers/utils"
 import { jobKey } from "./queue"
 
@@ -429,12 +430,13 @@ builder.mutationField("createPool", (t) =>
 		type: Job,
 		description: "Create a new pool",
 		args: { input: t.arg({ type: CreatePoolInput, required: true }) },
-		resolve: async (_, { input }, { jobQueue, hostname }) => {
+		resolve: async (_, { input }, { jobQueue, allowedNetworks }) => {
+			validateNetwork(input.network, allowedNetworks)
 			using q = jobQueue()
 			const id = globalThis.crypto.randomUUID()
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
-			q.addJob(id, input, hostname)
+			q.addJob(id, input)
 			logger.log(`Pool creation job ${id} added to queue`)
 			return { id, status: "created" }
 		}
@@ -503,12 +505,13 @@ builder.mutationField("deployFactory", (t) =>
 		type: Job,
 		description: "Deploy a new factory",
 		args: { input: t.arg({ type: DeployFactoryInput, required: true }) },
-		resolve: async (_, { input }, { jobQueue, hostname }) => {
+		resolve: async (_, { input }, { jobQueue, allowedNetworks }) => {
+			validateNetwork(input.network, allowedNetworks)
 			using q = jobQueue()
 			const id = globalThis.crypto.randomUUID()
 			const job = q.getJob(id)
 			if (job) return { id, status: job.status }
-			q.addJob(id, input, hostname)
+			q.addJob(id, input)
 			logger.log(`Factory deployment job ${id} added to queue`)
 			return { id, status: "created" }
 		}

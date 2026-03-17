@@ -8,6 +8,7 @@ import type { Context } from "../src"
 import { getDb } from "../src/db"
 import type { CreatePoolInputType, DeployFactoryInputType, JobResult } from "../src/graphql"
 import { schema } from "../src/graphql"
+import { resolveAllowedNetworks } from "../src/helpers/network"
 import { getJobQueue } from "../src/queue"
 import { readSSEStream, streamContainsError } from "./sse"
 
@@ -128,7 +129,7 @@ describe("GraphQL API", () => {
 			context: {
 				jobQueue,
 				pubsub,
-				hostname: "localhost",
+				allowedNetworks: resolveAllowedNetworks("localhost"),
 				database: getDb,
 				env: {
 					DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
@@ -364,7 +365,7 @@ describe("GraphQL API", () => {
 	})
 
 	describe("network validation", () => {
-		it("rejects pool creation for mismatched network", async () => {
+		it("rejects pool creation for mismatched network at resolver level", async () => {
 			// Create a yoga instance that simulates a mainnet-only server
 			const mainnetYoga = createYoga<Context>({
 				schema,
@@ -373,7 +374,7 @@ describe("GraphQL API", () => {
 				context: {
 					jobQueue,
 					pubsub,
-					hostname: "mina-mainnet.signer.luminadex.com",
+					allowedNetworks: resolveAllowedNetworks("mina-mainnet.signer.luminadex.com"),
 					database: getDb,
 					env: {
 						DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
@@ -405,16 +406,10 @@ describe("GraphQL API", () => {
 			})
 			const createResult = await response.json()
 
-			// Job is created but will fail during processing
-			const jobId = createResult.data?.createPool?.id as string
-			expect(jobId).toBeTruthy()
-
-			// Wait for the job to be processed and fail
-			await new Promise((resolve) => setTimeout(resolve, 300))
-
-			using q = jobQueue()
-			const job = q.getPoolJob(jobId)
-			expect(job?.status).toBe("failed")
+			// Request should fail immediately with a GraphQL error — no job created
+			expect(createResult.errors).toBeDefined()
+			expect(createResult.errors[0].message).toContain("not allowed")
+			expect(createResult.data?.createPool).toBeNull()
 		})
 	})
 

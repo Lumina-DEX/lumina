@@ -29,23 +29,26 @@ describe("resolveAllowedNetworks", () => {
 })
 
 describe("validateNetwork", () => {
-	it("does not throw for mina:mainnet on mainnet hostname", () => {
-		expect(() => validateNetwork("mina:mainnet", "mina-mainnet.signer.luminadex.com")).not.toThrow()
+	const mainnetOnly = resolveAllowedNetworks("mina-mainnet.signer.luminadex.com")
+	const testnetOnly = resolveAllowedNetworks("zeko-testnet.signer.luminadex.com")
+
+	it("does not throw for mina:mainnet on mainnet server", () => {
+		expect(() => validateNetwork("mina:mainnet", mainnetOnly)).not.toThrow()
 	})
 
-	it("throws for mina:devnet on mainnet hostname", () => {
-		expect(() => validateNetwork("mina:devnet", "mina-mainnet.signer.luminadex.com")).toThrow()
+	it("throws for mina:devnet on mainnet server", () => {
+		expect(() => validateNetwork("mina:devnet", mainnetOnly)).toThrow()
 	})
 
-	it("does not throw for zeko:testnet on testnet hostname", () => {
-		expect(() => validateNetwork("zeko:testnet", "zeko-testnet.signer.luminadex.com")).not.toThrow()
+	it("does not throw for zeko:testnet on testnet server", () => {
+		expect(() => validateNetwork("zeko:testnet", testnetOnly)).not.toThrow()
 	})
 
-	it("does not throw for mina:devnet on testnet hostname (same proving keys)", () => {
-		expect(() => validateNetwork("mina:devnet", "zeko-testnet.signer.luminadex.com")).not.toThrow()
+	it("does not throw for mina:devnet on testnet server (same proving keys)", () => {
+		expect(() => validateNetwork("mina:devnet", testnetOnly)).not.toThrow()
 	})
 
-	it("throws for mina:mainnet on testnet hostname", () => {
-		expect(() => validateNetwork("mina:mainnet", "zeko-testnet.signer.luminadex.com")).toThrow()
+	it("throws for mina:mainnet on testnet server", () => {
+		expect(() => validateNetwork("mina:mainnet", testnetOnly)).toThrow()
 	})
 })
