@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 1.2.0
+
+### Minor Changes
+
+- a86d35f: Route pool creation requests to per-environment signer servers based on network
+
 ## 1.1.0
 
 ### Minor Changes
