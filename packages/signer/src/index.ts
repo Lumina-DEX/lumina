@@ -1,6 +1,6 @@
 import { hostname } from "node:os"
 import type { Networks } from "@lumina-dex/sdk"
-import { createPubSub, createYoga } from "graphql-yoga"
+import { createPubSub, createYoga, useReadinessCheck } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
@@ -30,11 +30,12 @@ export type Context = {
 	shouldUpdateCDN?: boolean
 }
 
-export const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+export const commitHash = process.env.GIT_REV || "development"
+const resolvedHostname = hostname()
 
 const pubsub = createPubSub<Record<string, [AnyJobResult]>>()
 const jobQueue = () => getJobQueue(pubsub)
-const allowedNetworks = resolveAllowedNetworks(hostname())
+const allowedNetworks = resolveAllowedNetworks(resolvedHostname)
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -60,9 +61,22 @@ export const yoga = createYoga<{ env: typeof env }>({
 		} satisfies Context
 	},
 	plugins: [
+		// biome-ignore lint/correctness/useHookAtTopLevel: not a React hook, it's a GraphQL Yoga plugin
+		useReadinessCheck({
+			endpoint: "/ready",
+			check: () => {
+				if (allowedNetworks.length === 0) {
+					throw new Error(
+						`No allowed networks resolved for hostname "${resolvedHostname}". Server cannot accept requests.`
+					)
+				}
+			}
+		}),
 		{
 			onResponse({ response }) {
 				response.headers.set("Revision", commitHash)
+				response.headers.set("X-Hostname", resolvedHostname)
+				response.headers.set("X-Allowed-Networks", allowedNetworks.join(","))
 			}
 		}
 	]
