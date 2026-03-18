@@ -11,12 +11,14 @@ on:
           - mina-mainnet
           - zeko-mainnet
       image_digest:
-        description: "Signer image digest to deploy"
-        required: true
+        description: "Signer image digest to deploy (leave empty to use latest)"
+        required: false
+        default: ""
         type: string
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: signer-promote-${{ inputs.target_env }}
@@ -36,6 +38,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Resolve image digest
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DIGEST="${{ inputs.image_digest }}"
+          if [[ -z "$DIGEST" ]]; then
+            echo "No digest provided, resolving :latest tag from GHCR..."
+            # Authenticate with GHCR registry API
+            TOKEN=$(curl -sf \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://ghcr.io/token?scope=repository:lumina-dex/lumina-signer:pull" \
+              | jq -r '.token') || { echo "::error::Failed to authenticate with GHCR"; exit 1; }
+            # Resolve digest for :latest tag
+            DIGEST=$(curl -sf -I \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json" \
+              "https://ghcr.io/v2/lumina-dex/lumina-signer/manifests/latest" \
+              | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r\n')
+            if [[ -z "$DIGEST" ]]; then
+              echo "::error::Failed to resolve latest image digest from GHCR"
+              exit 1
+            fi
+            echo "Resolved latest digest: ${DIGEST}"
+          fi
+          if [[ ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Invalid digest '${DIGEST}'. Must be sha256:<64 hex chars>."
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -47,7 +80,7 @@ jobs:
         run: |
           packages/signer/infra/scripts/deploy.sh \
             --target "${{ inputs.target_env }}" \
-            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ inputs.image_digest }}"
+            --image-ref "ghcr.io/lumina-dex/lumina-signer@${{ steps.resolve.outputs.digest }}"
 
       - name: Diagnose service on failure
         if: failure()
