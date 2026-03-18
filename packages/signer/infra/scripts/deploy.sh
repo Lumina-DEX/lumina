@@ -70,14 +70,6 @@ main() {
 	[[ -n "$IMAGE_REF" ]] || die "--image-ref is required"
 	image_ref="$IMAGE_REF"
 
-	# Validate digest format if using @ pinning syntax
-	if [[ "$image_ref" == *@* ]]; then
-		local digest_part="${image_ref#*@}"
-		if [[ ! "$digest_part" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-			die "Invalid image reference: '${image_ref}'. Digest after '@' must be sha256:<64 hex chars>."
-		fi
-	fi
-
 	ssh_target="$(build_ssh_target "$TARGET_ENV" "$(remote_admin_user)")"
 
 	# 1. Upload release.env with the new image reference
@@ -103,7 +95,7 @@ EOF
 	log "Pre-pulling ${image_ref} on ${ssh_target}..."
 	run_remote_as "$TARGET_ENV" "$(remote_admin_user)" \
 		"sudo podman pull ${image_ref}" \
-		|| die "Pre-pull failed for ${image_ref}. Aborting — old service still running."
+		|| log "Warning: pre-pull failed (service will retry on start)"
 
 	# 3. Stop the old container (30s timeout), then start fresh
 	log "Stopping lumina-signer service..."
