@@ -21,6 +21,7 @@ let
       --replace \
       --name ${lib.escapeShellArg cfg.appName} \
       -p ${lib.escapeShellArg "${cfg.listenAddress}:${toString cfg.listenPort}:${toString cfg.containerPort}"} \
+      -e ENVIRONMENT=${lib.escapeShellArg cfg.targetEnvironment} \
       ${envFileArg} \
       ${podmanArgs} \
       "$IMAGE_REF"

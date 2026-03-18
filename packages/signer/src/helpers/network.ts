@@ -2,19 +2,15 @@ import type { Networks } from "@lumina-dex/sdk"
 
 const ALL_NETWORKS: Networks[] = ["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"]
 
-const HOSTNAME_MAP: Record<string, Networks[]> = {
+const ENVIRONMENT_MAP: Record<string, Networks[]> = {
 	"mina-mainnet": ["mina:mainnet"],
-	"zeko-testnet": ["mina:devnet", "zeko:testnet"]
+	"zeko-testnet": ["mina:devnet", "zeko:testnet"],
+	"zeko-mainnet": ["zeko:mainnet"]
 }
 
-export function resolveAllowedNetworks(hostname?: string): Networks[] {
-	if (!hostname) return ALL_NETWORKS
-	const host = hostname.split(":")[0]
-	if (host === "localhost" || host === "127.0.0.1") return ALL_NETWORKS
-	for (const [prefix, networks] of Object.entries(HOSTNAME_MAP)) {
-		if (host.startsWith(prefix)) return networks
-	}
-	return []
+export function resolveAllowedNetworks(environment?: string): Networks[] {
+	if (!environment) return ALL_NETWORKS
+	return ENVIRONMENT_MAP[environment] ?? []
 }
 
 export function validateNetwork(queryNetwork: Networks, allowedNetworks: Networks[]): void {

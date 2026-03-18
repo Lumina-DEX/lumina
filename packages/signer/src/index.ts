@@ -1,4 +1,3 @@
-import { hostname } from "node:os"
 import type { Networks } from "@lumina-dex/sdk"
 import { createPubSub, createYoga, useReadinessCheck } from "graphql-yoga"
 import * as v from "valibot"
@@ -31,11 +30,11 @@ export type Context = {
 }
 
 export const commitHash = process.env.GIT_REV || "development"
-const resolvedHostname = hostname()
+const signerEnvironment = process.env.ENVIRONMENT
 
 const pubsub = createPubSub<Record<string, [AnyJobResult]>>()
 const jobQueue = () => getJobQueue(pubsub)
-const allowedNetworks = resolveAllowedNetworks(resolvedHostname)
+const allowedNetworks = resolveAllowedNetworks(signerEnvironment)
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -63,11 +62,11 @@ export const yoga = createYoga<{ env: typeof env }>({
 	plugins: [
 		// biome-ignore lint/correctness/useHookAtTopLevel: not a React hook, it's a GraphQL Yoga plugin
 		useReadinessCheck({
-			endpoint: "/ready",
+			endpoint: "/health",
 			check: () => {
 				if (allowedNetworks.length === 0) {
 					throw new Error(
-						`No allowed networks resolved for hostname "${resolvedHostname}". Server cannot accept requests.`
+						`No allowed networks resolved for ENVIRONMENT="${signerEnvironment ?? ""}". Server cannot accept requests.`
 					)
 				}
 			}
@@ -75,7 +74,7 @@ export const yoga = createYoga<{ env: typeof env }>({
 		{
 			onResponse({ response }) {
 				response.headers.set("Revision", commitHash)
-				response.headers.set("X-Hostname", resolvedHostname)
+				response.headers.set("X-Environment", signerEnvironment ?? "local")
 				response.headers.set("X-Allowed-Networks", allowedNetworks.join(","))
 			}
 		}
