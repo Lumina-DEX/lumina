@@ -18,6 +18,7 @@ const createMeasure = (l: ConsolaInstance) => (label: string) => {
 const time = createMeasure(logger)
 
 let isCompiled = false
+let compiledForNetwork: Networks | null = null
 
 export const compileContracts = async (network: Networks) => {
 	if (isCompiled) {
@@ -47,11 +48,17 @@ export const compileContracts = async (network: Networks) => {
 	c()
 
 	isCompiled = true
+	compiledForNetwork = network
 	logger.log("✅ All contracts compiled successfully")
 }
 
 export const ensureCompiled = async (network: Networks) => {
 	logger.log("Check contract is compiled.")
+	if (isCompiled && compiledForNetwork && compiledForNetwork !== network) {
+		logger.warn(
+			`⚠️ Contracts were compiled for ${compiledForNetwork} but job requests ${network}. In production each server handles a single environment. Recompilation is not supported — results may be incorrect.`
+		)
+	}
 	if (!isCompiled) {
 		logger.error("Contracts were not compiled.")
 		await compileContracts(network)

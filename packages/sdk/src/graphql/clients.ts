@@ -26,6 +26,9 @@ const sseClientCache = new Map<string, ReturnType<typeof createSSEClient>>()
 
 export const createPoolSignerClient = (network: Networks) => {
 	const url = poolCreationUrls[network]
+	if (url === "NOT_IMPLEMENTED") {
+		throw new Error(`Network "${network}" is not supported for pool creation.`)
+	}
 	const cached = clientCache.get(url)
 	if (cached) return cached
 

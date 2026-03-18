@@ -26,6 +26,10 @@ describe("resolveAllowedNetworks", () => {
 	it("returns all networks for undefined hostname", () => {
 		expect(resolveAllowedNetworks(undefined)).toEqual(["mina:mainnet", "mina:devnet", "zeko:testnet", "zeko:mainnet"])
 	})
+
+	it("returns empty array for unknown hostname (deny by default)", () => {
+		expect(resolveAllowedNetworks("unknown.example.com")).toEqual([])
+	})
 })
 
 describe("validateNetwork", () => {
@@ -50,5 +54,11 @@ describe("validateNetwork", () => {
 
 	it("throws for mina:mainnet on testnet server", () => {
 		expect(() => validateNetwork("mina:mainnet", testnetOnly)).toThrow()
+	})
+
+	it("throws for any network on unknown hostname (deny by default)", () => {
+		const empty = resolveAllowedNetworks("unknown.example.com")
+		expect(() => validateNetwork("mina:mainnet", empty)).toThrow()
+		expect(() => validateNetwork("mina:devnet", empty)).toThrow()
 	})
 })
