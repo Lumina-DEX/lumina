@@ -129,7 +129,7 @@ describe("GraphQL API", () => {
 			context: {
 				jobQueue,
 				pubsub,
-				allowedNetworks: resolveAllowedNetworks("localhost"),
+				allowedNetworks: resolveAllowedNetworks(undefined),
 				database: getDb,
 				env: {
 					DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
@@ -374,7 +374,7 @@ describe("GraphQL API", () => {
 				context: {
 					jobQueue,
 					pubsub,
-					allowedNetworks: resolveAllowedNetworks("mina-mainnet.signer.luminadex.com"),
+					allowedNetworks: resolveAllowedNetworks("mina-mainnet"),
 					database: getDb,
 					env: {
 						DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
