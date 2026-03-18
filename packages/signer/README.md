@@ -1,75 +1,52 @@
-# Pool Creation Service
+# Pool Creation Signer Service
 
-Server-side proof generation service for pool creation.
+Server-side proof generation for pool creation and factory deployment on Mina-compatible blockchains.
 
 ## Tech Stack
 
-- **TypeScript**: node runtime
-- **Database**: Drizzle ORM + PostgreSQL (Supabase)
-- **Queue**: TanStack Pacer (in-memory, serial processing)
-- **GraphQL**: Pothos + GraphQL Yoga (with built-in PubSub)
-- **Secrets**: Infisical
-- **Deployment**: NixOS + Podman + Caddy for new signer hosts
+- **TypeScript** / Node.js runtime
+- **PostgreSQL** (Supabase) with **Drizzle ORM** (v2 relations)
+- **GraphQL Yoga** + **Pothos** schema builder (with built-in PubSub for subscriptions)
+- **Infisical** for secrets management
+- **NixOS** + **Podman** + **Caddy** for deployment
 
-## Installation
+## Architecture
 
-This app use drizzle as ORM and infisical as vault
+Each signer server is dedicated to a specific environment, determined by the `Host` header:
 
-> **Note:** Drizzle v2 relations are used : https://rqbv2.drizzle-orm-fe.pages.dev/docs/relations-v1-v2
+| Hostname                            | Allowed Networks              |
+| ----------------------------------- | ----------------------------- |
+| `mina-mainnet.signer.luminadex.com` | `mina:mainnet`                |
+| `zeko-testnet.signer.luminadex.com` | `mina:devnet`, `zeko:testnet` |
+| `localhost` / `127.0.0.1`           | All networks (dev fallback)   |
 
-```bash
-pnpm i
-```
+The allowed networks are resolved once at startup from the system hostname (`os.hostname()`), not from request headers. Requests for a mismatched network are rejected immediately at the GraphQL resolver level. Contracts are compiled once per server lifecycle since each server handles a single proving-key environment.
 
-Create an .env file base on .env.example
+## Local Development
 
-## Database
+### Prerequisites
 
-### PostgreSQL (Local Development)
+- Node.js, pnpm
+- Docker (for PostgreSQL)
 
-Start the PostgreSQL service using Docker Compose:
+### Setup
 
-```bash
-docker-compose up -d
-```
+1. Copy environment config:
+   ```bash
+   cp .env.example .env
+   ```
 
-This starts PostgreSQL on port 5432 (database: `signer`, user: `postgres`, password: `postgres`).
-
-Create and migrate the database:
-
-```bash
-moon signer:db-migrate && moon signer:db-seed
-```
-
-The application expects a `DATABASE_URL` environment variable. For local development:
-
-```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/signer"
-```
-
-### PostgreSQL (Production - Supabase)
-
-For production, use Supabase:
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Get your database URL from Project Settings > Database
-3. Set the `DATABASE_URL` environment variable to your Supabase connection string
-
-## Development
-
-Start the development environment:
-
-1. **Start PostgreSQL**:
+2. Start PostgreSQL:
    ```bash
    moon signer:services-start
    ```
 
-2. **Run migrations and seed** (first time only):
+3. Run migrations and seed (first time only):
    ```bash
    moon signer:db-migrate && moon signer:db-seed
    ```
 
-3. **Start the server**:
+4. Start the server:
    ```bash
    moon signer:dev
    ```
@@ -80,37 +57,25 @@ Or run everything at once:
 moon signer:all
 ```
 
-The server compiles o1js contracts once at startup, then processes pool creation jobs serially as they arrive.
+The GraphQL playground is available at http://localhost:3001/graphql.
 
-Use the GraphQL playground at http://localhost:3001/graphql to test the API.
+### Available Commands
 
-**Available scripts:**
+- `moon signer:services-start` — Start PostgreSQL container
+- `moon signer:services-stop` — Stop containers
+- `moon signer:dev` — Start server in watch mode
+- `moon signer:all` — Start services, server, and web interface
+- `moon signer:test` — Run tests
 
-- `moon signer:services-start` - Start PostgreSQL container
-- `moon signer:services-stop` - Stop containers
-- `moon signer:dev` - Start server in watch mode
-- `moon signer:all` - Start services, server, and web interface
+## Docker
 
-## Deploy
-
-The signer rollout files now live under `packages/signer/infra/`.
-
-- Runbook: `packages/signer/NIXOS_RUNBOOK.md`
-- NixOS configs: `packages/signer/infra/nixos/`
-- Operator and CI helper scripts: `packages/signer/infra/scripts/`
-
-The rollout files under `packages/signer/infra/` manage the NixOS hosts and CI-driven signer image
-deploys for new servers.
-
-### Docker
-
-Build the docker image from the root of the monorepo:
+Build the image from the monorepo root:
 
 ```bash
 docker build -t luminadex-signer -f packages/signer/Dockerfile .
 ```
 
-Create network and run the services:
+Run with PostgreSQL:
 
 ```bash
 docker network create lumina-net
@@ -130,79 +95,12 @@ docker run --rm -it --network lumina-net -p 3001:3001 \
   luminadex-signer
 ```
 
-Clean-up:
+## Deployment
 
-```bash
-docker stop postgres-server && docker rm postgres-server
-docker network rm lumina-net
-```
+Signer servers run on dedicated NixOS machines managed via the infrastructure files in this package:
 
-### Dokku
+- **Runbook**: `NIXOS_RUNBOOK.md`
+- **NixOS configs**: `infra/nixos/`
+- **Operator and CI scripts**: `infra/scripts/`
 
-Deploy the app with Dokku:
-
-```bash
-# Create the Dokku app
-dokku apps:create pool-signer
-
-# Set the Dockerfile path
-dokku builder-dockerfile:set pool-signer dockerfile-path packages/signer/Dockerfile
-
-# Set the build to use Dockerfile
-dokku config:set pool-signer DOKKU_BUILD_ATTEMPT=dockerfile
-```
-
-Set the environment variables for the app:
-
-```bash
-dokku config:set pool-signer \
-  DATABASE_URL=your_postgresql_database_url \
-  INFISICAL_ENVIRONMENT=your_infisical_environment \
-  INFISICAL_PROJECT_ID=your_infisical_project_id \
-  INFISICAL_CLIENT_ID=your_infisical_client_id \
-  INFISICAL_CLIENT_SECRET=your_infisical_client_secret
-```
-
-Configure the domain :
-(Make sure the DNS record in cloudflare points to the server IP)
-
-```bash
-dokku domains:add pool-signer pool-signer.luminadex.com
-dokku letsencrypt:enable pool-signer
-dokku ports:set pool-signer http:80:3001
-```
-
-To inspect the logs :
-
-```bash
-dokku logs pool-signer -t
-```
-
-TODO :
-
-- [x] Switch to PostgreSQL + Supabase for simplified database management
-- [x] Domain config
-- DB Clean-up script
-- [] Firewall config
-- [] CI dokku
-
-## SQLite Backup (Legacy)
-
-The previous SQLite backup implementation has been moved to `scripts/sqlite/` directory for reference. This includes:
-
-- `scripts/sqlite/backup-db.sh` - Database backup script
-- `scripts/sqlite/cron-wrapper.sh` - Cron wrapper script
-- `scripts/sqlite/docker-entrypoint.sh` - Docker entrypoint with cron setup
-- `scripts/sqlite/Dockerfile.sqlite` - Dockerfile with backup dependencies
-- `scripts/sqlite/BACKUP.md` - Backup documentation
-
-Use these files if you need to revert to SQLite with automated backups.
-
-Create the sqlite db file and mount the storage :
-
-```bash
-sudo mkdir -p /usr/src/app/packages/signer/data
-sudo touch /usr/src/app/packages/signer/data/db.sqlite
-dokku storage:mount pool-signer /var/lib/dokku/data/pool-signer-data:/usr/src/app/packages/signer/data
-sudo chmod 777 /var/lib/dokku/data/pool-signer-data
-```
+See the runbook for full provisioning, deployment, and troubleshooting instructions.

@@ -8,6 +8,7 @@ import type { Context } from "../src"
 import { getDb } from "../src/db"
 import type { CreatePoolInputType, DeployFactoryInputType, JobResult } from "../src/graphql"
 import { schema } from "../src/graphql"
+import { resolveAllowedNetworks } from "../src/helpers/network"
 import { getJobQueue } from "../src/queue"
 import { readSSEStream, streamContainsError } from "./sse"
 
@@ -128,6 +129,7 @@ describe("GraphQL API", () => {
 			context: {
 				jobQueue,
 				pubsub,
+				allowedNetworks: resolveAllowedNetworks("localhost"),
 				database: getDb,
 				env: {
 					DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
@@ -359,6 +361,55 @@ describe("GraphQL API", () => {
 
 			expect(confirmAgain.errors).toBeUndefined()
 			expect(confirmAgain.data?.confirmJob).toContain("already confirmed")
+		})
+	})
+
+	describe("network validation", () => {
+		it("rejects pool creation for mismatched network at resolver level", async () => {
+			// Create a yoga instance that simulates a mainnet-only server
+			const mainnetYoga = createYoga<Context>({
+				schema,
+				logging: true,
+				maskedErrors: false,
+				context: {
+					jobQueue,
+					pubsub,
+					allowedNetworks: resolveAllowedNetworks("mina-mainnet.signer.luminadex.com"),
+					database: getDb,
+					env: {
+						DATABASE_URL: process.env.DATABASE_URL || "postgresql://localhost/lumina_test",
+						INFISICAL_ENVIRONMENT: "test",
+						INFISICAL_PROJECT_ID: "test",
+						INFISICAL_CLIENT_ID: "test",
+						INFISICAL_CLIENT_SECRET: "test"
+					},
+					shouldUpdateCDN: false
+				}
+			})
+
+			const response = await mainnetYoga.fetch("http://localhost:4000/graphql", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					query: `mutation CreatePool($input: CreatePoolInput!) {
+						createPool(input: $input) { id status }
+					}`,
+					variables: {
+						input: {
+							user: `${USER_PREFIX}-network-mismatch`,
+							tokenA: "B62tokenA",
+							tokenB: "B62tokenB",
+							network: "mina_devnet"
+						}
+					}
+				})
+			})
+			const createResult = await response.json()
+
+			// Request should fail immediately with a GraphQL error — no job created
+			expect(createResult.errors).toBeDefined()
+			expect(createResult.errors[0].message).toContain("not allowed")
+			expect(createResult.data?.createPool).toBeNull()
 		})
 	})
 

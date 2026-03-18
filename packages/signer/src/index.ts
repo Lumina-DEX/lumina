@@ -1,8 +1,11 @@
-import { createPubSub, createYoga } from "graphql-yoga"
+import { hostname } from "node:os"
+import type { Networks } from "@lumina-dex/sdk"
+import { createPubSub, createYoga, useReadinessCheck } from "graphql-yoga"
 import * as v from "valibot"
 import { getDb } from "./db"
 import { schema } from "./graphql"
 import { getApiKey } from "./helpers/job"
+import { resolveAllowedNetworks } from "./helpers/network"
 import { type AnyJobResult, getJobQueue } from "./queue"
 
 const Schema = v.object({
@@ -19,6 +22,7 @@ export type JobQueue = () => ReturnType<typeof getJobQueue>
 export type Env = typeof env
 export type Context = {
 	isAdmin: boolean
+	allowedNetworks: Networks[]
 	database: Database
 	jobQueue: JobQueue
 	pubsub: ReturnType<typeof createPubSub<Record<string, [job: AnyJobResult]>>>
@@ -26,10 +30,12 @@ export type Context = {
 	shouldUpdateCDN?: boolean
 }
 
-export const commitHash = process.env.GIT_REV || "development" // This is injected by Dokku.
+export const commitHash = process.env.GIT_REV || "development"
+const resolvedHostname = hostname()
 
 const pubsub = createPubSub<Record<string, [AnyJobResult]>>()
 const jobQueue = () => getJobQueue(pubsub)
+const allowedNetworks = resolveAllowedNetworks(resolvedHostname)
 
 export const yoga = createYoga<{ env: typeof env }>({
 	schema,
@@ -46,6 +52,7 @@ export const yoga = createYoga<{ env: typeof env }>({
 		const isAdmin = authToken === `Bearer ${apiKey}`
 		return {
 			isAdmin,
+			allowedNetworks,
 			env,
 			database: getDb,
 			jobQueue,
@@ -54,9 +61,22 @@ export const yoga = createYoga<{ env: typeof env }>({
 		} satisfies Context
 	},
 	plugins: [
+		// biome-ignore lint/correctness/useHookAtTopLevel: not a React hook, it's a GraphQL Yoga plugin
+		useReadinessCheck({
+			endpoint: "/ready",
+			check: () => {
+				if (allowedNetworks.length === 0) {
+					throw new Error(
+						`No allowed networks resolved for hostname "${resolvedHostname}". Server cannot accept requests.`
+					)
+				}
+			}
+		}),
 		{
 			onResponse({ response }) {
 				response.headers.set("Revision", commitHash)
+				response.headers.set("X-Hostname", resolvedHostname)
+				response.headers.set("X-Allowed-Networks", allowedNetworks.join(","))
 			}
 		}
 	]

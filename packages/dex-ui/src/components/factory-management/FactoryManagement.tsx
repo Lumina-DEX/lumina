@@ -1,4 +1,4 @@
-import { poolCreationUrl } from "@lumina-dex/sdk"
+import { poolCreationUrls } from "@lumina-dex/sdk"
 import { useSelector } from "@lumina-dex/sdk/react"
 import { useCallback, useContext, useEffect, useState } from "react"
 import { FACTORY_QUERIES, SIGNER_QUERIES } from "@/models/queries"
@@ -20,7 +20,7 @@ interface FactoryJob {
 
 export default function FactoryManagement() {
 	const [apiKey, setApiKey] = useState("")
-	const [endpoint, setEndpoint] = useState(poolCreationUrl)
+	const [endpoint, setEndpoint] = useState<string>(poolCreationUrls["mina:mainnet"])
 	const [client, setClient] = useState<GraphQLClient | null>(null)
 	const [signers, setSigners] = useState<Signer[]>([])
 	const [error, setError] = useState("")
