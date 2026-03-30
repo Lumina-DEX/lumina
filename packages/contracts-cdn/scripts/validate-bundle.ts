@@ -10,7 +10,7 @@ const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
 const isValidNetwork = networks.includes(network)
 if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
 
-const version = process.argv[3] ?? process.env.CONTRACTS_VERSION_OVERRIDE ?? defaultVersion
+const version = process.argv[3]?.trim() || process.env.CONTRACTS_VERSION_OVERRIDE?.trim() || defaultVersion
 const bundlePath = path.resolve(__dirname, `../tmp/contract-cache/${network}/v${version}/bundle.zip`)
 
 const bundle = await fs.readFile(bundlePath)
