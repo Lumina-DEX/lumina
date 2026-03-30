@@ -82,17 +82,30 @@ jobs:
           CONTRACTS_VERSION_OVERRIDE: ${{ inputs.contracts_version }}
         working-directory: packages/contracts-cdn
         run: |
-          version="${CONTRACTS_VERSION_OVERRIDE:-$(jq '.version' ../contracts/package.json -r)}"
+          version="$(printf '%s' "${CONTRACTS_VERSION_OVERRIDE:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          version="${version:-$(jq '.version' ../contracts/package.json -r)}"
 
           echo "Uploading contract-cache version v${version} to R2 bucket ${R2_BUCKET_CACHE}..."
 
-          rclone sync tmp/contract-cache "r2:${R2_BUCKET_CACHE}/contract-cache" \
-            --config ./rclone.conf \
-            --checksum \
-            --fast-list \
-            --transfers 16 \
-            --checkers 32 \
-            --exclude "/**/temp_diff/**"
+          for network in mina:devnet mina:mainnet; do
+            source_dir="tmp/contract-cache/${network}/v${version}"
+            manifest_path="${source_dir}/manifest.json"
+
+            if [ ! -f "${manifest_path}" ]; then
+              echo "Expected manifest not found: ${manifest_path}"
+              exit 1
+            fi
+
+            echo "Uploading ${source_dir} to contract-cache/${network}/v${version}..."
+
+            rclone copy "${source_dir}" "r2:${R2_BUCKET_CACHE}/contract-cache/${network}/v${version}" \
+              --config ./rclone.conf \
+              --checksum \
+              --fast-list \
+              --transfers 16 \
+              --checkers 32 \
+              --exclude "/temp_diff/**"
+          done
 
   deploy-cdn:
     name: Deploy CDN Worker
