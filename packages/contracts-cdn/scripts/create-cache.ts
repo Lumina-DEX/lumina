@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process"
 import fs from "node:fs/promises"
 import path from "node:path"
-import { networks, contractsVersion as version } from "@lumina-dex/sdk/constants"
+import { contractsVersion as defaultVersion, networks } from "@lumina-dex/sdk/constants"
 import { unzipSync, zipSync } from "fflate"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
@@ -9,6 +9,7 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname)
 const network = (process.argv[2] ?? "mina:devnet") as (typeof networks)[number]
 const isValidNetwork = networks.includes(network)
 if (!isValidNetwork) throw new Error(`Invalid network argument. Expected one of: ${networks.join(", ")}`)
+const version = process.argv[3] ?? process.env.CONTRACTS_VERSION_OVERRIDE ?? defaultVersion
 
 // Cache directory per network
 export const cacheDir = path.resolve(__dirname, `../cache/${network}`)

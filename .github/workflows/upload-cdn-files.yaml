@@ -2,7 +2,25 @@ name: Upload CDN Files
 
 on:
   workflow_dispatch:
+    inputs:
+      contracts_version:
+        description: "Contracts version path to rebuild and upload (defaults to packages/contracts/package.json version)"
+        required: false
+        type: string
+      deploy_worker:
+        description: "Also deploy the CDN worker after uploading assets"
+        required: false
+        default: false
+        type: boolean
   workflow_call:
+    inputs:
+      contracts_version:
+        required: false
+        type: string
+      deploy_worker:
+        required: false
+        default: false
+        type: boolean
 
 concurrency: wc-${{ github.workflow }}-${{ github.ref }}
 permissions:
@@ -54,14 +72,17 @@ jobs:
           rclone lsf "r2:${R2_BUCKET_CACHE}" --config ./rclone.conf --max-depth 1 > /dev/null && echo "✓ R2 connection successful" || exit 1
 
       - name: 🗂️ Build contracts-cdn cache
+        env:
+          CONTRACTS_VERSION_OVERRIDE: ${{ inputs.contracts_version }}
         run: moon contracts-cdn:build-cache
 
       - name: ☁️ Upload CDN assets to Cloudflare R2
         env:
           R2_BUCKET_CACHE: ${{ secrets.R2_CDN_CACHE_BUCKET }}
+          CONTRACTS_VERSION_OVERRIDE: ${{ inputs.contracts_version }}
         working-directory: packages/contracts-cdn
         run: |
-          version=$(jq '.version' ../contracts/package.json -r)
+          version="${CONTRACTS_VERSION_OVERRIDE:-$(jq '.version' ../contracts/package.json -r)}"
 
           echo "Uploading contract-cache version v${version} to R2 bucket ${R2_BUCKET_CACHE}..."
 
@@ -72,3 +93,10 @@ jobs:
             --transfers 16 \
             --checkers 32 \
             --exclude "/**/temp_diff/**"
+
+  deploy-cdn:
+    name: Deploy CDN Worker
+    needs: [upload-cdn]
+    if: ${{ inputs.deploy_worker == true }}
+    uses: ./.github/workflows/cdn.yaml
+    secrets: inherit
