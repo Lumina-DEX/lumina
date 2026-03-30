@@ -1,8 +1,8 @@
 import fs from "node:fs/promises"
 import path from "node:path"
-import { FungibleToken, FungibleTokenAdmin, Pool, PoolFactory, PoolTokenHolder } from "@lumina-dex/contracts"
 import { archiveUrls, networks } from "@lumina-dex/sdk/constants"
 import { Cache, Mina } from "o1js"
+import { cdnContracts } from "./contracts.ts"
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 
@@ -26,23 +26,16 @@ export async function compileContracts() {
 		})
 	)
 
-	interface Contract {
-		name: string
-		compile: ({ cache }: { cache: Cache }) => Promise<unknown>
-	}
-
-	const ct = async (contract: Contract) => {
+	const ct = async (contract: (typeof cdnContracts)[number]["contract"]) => {
 		console.log(`Compiling ${contract.name}`)
 		console.time(contract.name)
 		await contract.compile({ cache })
 		console.timeEnd(contract.name)
 	}
 
-	await ct(FungibleTokenAdmin)
-	await ct(FungibleToken)
-	await ct(PoolFactory)
-	await ct(Pool)
-	await ct(PoolTokenHolder)
+	for (const { contract } of cdnContracts) {
+		await ct(contract)
+	}
 
 	console.log("Compilation done")
 }
