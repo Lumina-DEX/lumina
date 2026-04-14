@@ -1,5 +1,11 @@
 # @lumina-dex/sdk
 
+## 1.3.0
+
+### Minor Changes
+
+- 557988d: Fixed a bug related to the loading status of contracts when the wallet is connected after the contracts have finished loading
+
 ## 1.2.0
 
 ### Minor Changes
