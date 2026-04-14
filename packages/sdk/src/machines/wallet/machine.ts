@@ -48,7 +48,7 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 			 * Invoked on initialization to listen to Mina wallet changes.
 			 */
 			listenToWalletChange: fromCallback<WalletEvent, WalletEvent>(({ sendBack }) => {
-				if (!window.mina) {
+				if (!window?.mina) {
 					sendBack({ type: "WalletExtensionNotDetected" })
 					return () => {
 						logger.error("listenToWalletChange : No Mina wallet detected")
@@ -130,11 +130,19 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 			}),
 			spawnBalanceUpdate: enqueueActions(
 				({ enqueue, context }, { tokens, network }: { tokens: CustomToken[]; network: Networks }) => {
+					if (!context.account) {
+						logger.info("Skipping balance fetch: no connected account")
+						return
+					}
+
 					const lastUpdated = context.lastUpdated.get(JSON.stringify({ network, tokens })) ?? 0
-					//If the balance was fetched less than 1 second ago, skip.
+
+					// Skip if fetched too recently
 					if (Date.now() - lastUpdated < 1_000) return
+
 					const id = crypto.randomUUID()
 					const input = { id, createMinaClient, address: context.account, tokens, network }
+
 					enqueue.spawnChild("fetchBalance", { id, input })
 					enqueue.assign(
 						produce(context, (draft) => {
@@ -177,11 +185,19 @@ export const createWalletMachine = ({ createMinaClient }: { createMinaClient: (u
 				})
 			},
 			Disconnect: { target: ".INIT", actions: assign({ account: "" }) },
-			FetchBalance: {
-				actions: enqueueActions(({ enqueue, event: { network, tokens } }) => {
-					enqueue({ type: "spawnBalanceUpdate", params: { network, tokens } })
-				})
-			},
+			FetchBalance: [
+				{
+					guard: ({ context }) => !!context.account,
+					actions: enqueueActions(({ enqueue, event: { network, tokens } }) => {
+						enqueue({ type: "spawnBalanceUpdate", params: { network, tokens } })
+					})
+				},
+				{
+					actions: () => {
+						logger.info("Ignoring FetchBalance: wallet not connected yet")
+					}
+				}
+			],
 			FetchBalanceSuccess: {
 				actions: enqueueActions(({ enqueue, context, event }) => {
 					enqueue.assign(
