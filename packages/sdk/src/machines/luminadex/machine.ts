@@ -224,7 +224,9 @@ export const createLuminaDexMachine = () =>
 						entry: enqueueActions(({ context, enqueue }) => {
 							const currentNetwork = context.wallet.getSnapshot().context.currentNetwork
 							const loadedNetwork = context.contract.loadedNetwork
+
 							logger.info("Reloading contracts check...", { currentNetwork, loadedNetwork })
+
 							// zeko:testnet and mina:devnet are interchangeable
 							if (
 								currentNetwork === loadedNetwork ||
@@ -257,7 +259,10 @@ export const createLuminaDexMachine = () =>
 
 							enqueue.raise({ type: "ReloadContracts" })
 						}),
-						on: { ReloadContracts: { target: "LOADING" } }
+						on: {
+							ReloadContracts: { target: "LOADING" },
+							ContractsReady: { target: "READY" }
+						}
 					},
 					LOADING: {
 						description: "The compiled contracts are loading.",
