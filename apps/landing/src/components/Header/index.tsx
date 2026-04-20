@@ -69,15 +69,15 @@ const Header = () => {
 						}}
 					/>
 				</Link>
-				<div onClick={showDrawer} className="w-full max-[1980px]:hidden max-md:flex justify-end">
-					<div
-						className="w-10 h-9 cursor-pointer"
-						style={{
-							backgroundImage: "url(/logo/logo.png)",
-							backgroundSize: "contain",
-							backgroundRepeat: "no-repeat"
-						}}
-					/>
+			<div onClick={showDrawer} className="w-full md:hidden flex justify-end">
+				<div
+					className="w-10 h-9 cursor-pointer"
+					style={{
+						backgroundImage: "url(/logo/logo.png)",
+						backgroundSize: "contain",
+						backgroundRepeat: "no-repeat"
+					}}
+				/>
 				</div>
 
 				{leftMenu()}
