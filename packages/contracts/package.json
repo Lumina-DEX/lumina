@@ -7,7 +7,7 @@
 	"author": {
 		"name": "youtpout"
 	},
-	"license": "BSL-1.0",
+	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/Lumina-DEX/lumina.git",

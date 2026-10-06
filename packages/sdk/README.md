@@ -3,7 +3,7 @@
 > State machine-driven SDK for interacting with the Lumina DEX on the Mina blockchain
 
 [![npm version](https://img.shields.io/npm/v/@lumina-dex/sdk.svg)](https://www.npmjs.com/package/@lumina-dex/sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
 ## ⚠️ Disclaimer
 
@@ -289,4 +289,4 @@ For full working examples, check out:
 
 ## License
 
-MIT
+[Apache License 2.0](LICENSE)
