@@ -125,3 +125,7 @@ You might need to install [dprint](https://dprint.dev/install/) globally to get 
 ```bash
 curl -fsSL https://dprint.dev/install.sh | sh
 ```
+
+## License
+
+Lumina-owned code in this repository is licensed under the [Apache License 2.0](LICENSE). Third-party code and dependencies retain their own licenses and notices.
